@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Obsidian 个人窗口布局
+.obsidian/workspace.json
+
+# MCP 本地路径（用 mcp.json.example 复制后改 vault 路径）
+.cursor/mcp.json
+
+# 进行中的个人任务 plan（框架目录用 .gitkeep 保留）
+Plans/Bug排查/*.md
+Plans/功能开发/*.md
+Plans/需求分析/*.md
+Plans/界面开发/*.md
+!Plans/**/.gitkeep
