@@ -49,7 +49,7 @@
 |------|--------|------|
 | [[resume_assistant]] | 续做 | 读取 plan，从当前进度继续 |
 | [[template_generator]] | 用模板 / 生成排查 | 按模板启动新任务 |
-| [[review_assistant]] | 复盘 | 月底生成复盘报告 |
+| [[review_assistant]] | **日报** / **周报** / 复盘 | `Contexts/日报/` · `Contexts/周报/` |
 | [[requirement_analyst]] | 分析需求 / PRD / push 产品 | **先于开发**；逻辑/交互冲突 |
 | [[feature_dev_assistant]] | 做功能 / 开发模块 / 新需求 | 需求通过后：方案+界面 plan |
 | [[figma_ui_assistant]] | 仅 UI / 对稿 | 方案已有，只做界面 |

@@ -36,6 +36,8 @@
 | `/figma-ui-assistant` | 仅 UI 子任务 |
 | `/template-generator` | 排查、技术方案 |
 | `/resume-assistant` | 续做 plan |
+| `/review-assistant 日报` | 今日 → `Contexts/日报/` |
+| `/review-assistant 周报` | 本周 → `Contexts/周报/` |
 | `/learn-assistant` | LLM / 提示词学习 |
 
 ## 多仓库
