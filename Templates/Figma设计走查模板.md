@@ -1,11 +1,12 @@
 ---
 tags: [figma, 走查, 模板]
+date: {{date}}
 ---
 
 # 设计走查：{{title}}
 
 **日期**：{{date}}
-**关联 plan**：[[Plans/界面开发/【plan文件名】]]
+**关联 plan**：`Plans/功能开发/【plan文件名】.md`
 **平台 / 设备**：【iPhone 15 / 真机型号】
 **走查人**：【开发 / 设计】
 

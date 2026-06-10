@@ -12,9 +12,8 @@
 - `Plans/服务端技术方案/` — 服务端技术方案 plan
 - `Plans/代码重构/` — 重构类 plan
 - `Plans/需求分析/` — PRD 分析 plan（逻辑/交互冲突，push 产品；P0 闭环后再开发）
-- `Plans/功能开发/` — **功能/模块开发 plan（需求+方案+界面，默认入口）**
+- `Plans/功能开发/` — **功能/模块开发 plan（需求+方案+界面；纯 UI 设含业务逻辑=否）**
 - `Contexts/需求分析/` — PRD 检查清单、问题模式（无 PRD 链接）
-- `Plans/界面开发/` — 仅 UI 子任务 plan
 - `Contexts/Figma/` — 公共设计规范与最佳实践（不存链接、不存已完成功能清单）
 - `Contexts/` — 会议、调研、踩坑、决策
 - `Contexts/LLM学习/` — LLM/提示词/Agent/Skill/MCP 概念与笔记（长期）
@@ -29,15 +28,15 @@
 4. plan 中的 `[[双向链接]]` 指向的 Contexts 笔记，一并读取。
 
 # Skill 调用规则
-- 用户说"续做"：执行 `.cursor/skills/resume-assistant/SKILL.md` 或读取 `Skills/resume_assistant.md`；要求 plan 路径（含子目录）和当前进度。
-- 用户说"用模板""生成排查/方案/review"：执行 `template-generator`；方案分客户端（`客户端技术方案模板`）与服务端（`服务端技术方案模板`）。
+- 用户说"续做"或 `/resume`：执行 `resume-assistant`；格式 `/resume plan=Plans/【分类】/xxx.md 进度=...`。
+- 用户说"用模板""生成排查/方案/review"：执行 `template-generator`；方案用 `技术方案模板`（platform 区分端）；功能开发用 `客户端功能开发模板`。
 - 用户说"日报""今日总结""整理今天的工作"：执行 `review-assistant` 日报模式；git **仅统计本人**（`--author=wanglongxiang` / 王龙祥），不列他人提交；**写入** `Contexts/日报/YYYY-MM-DD.md`。
 - 用户说"周报""本周总结""整理这周的工作"：执行 `review-assistant` 周报模式；汇总日报 + 本周**本人** git；**写入** `Contexts/周报/起始日至结束日.md`。
 - 用户说"复盘""月度总结"：执行 `review-assistant` 月度模式；可引用 `Contexts/日报/`、`Contexts/周报/`。
 - 用户说"分析需求""看 PRD""需求评审""push 产品"：执行 `requirement-analyst`；plan 存 `Plans/需求分析/`；输出 P0/P1/P2 问产品清单。
 - 用户说"做功能""开发模块""新需求""功能开发"：执行 `feature-dev-assistant`；**须先有关联需求分析或用户声明 PRD 无 P0**；plan 存 `Plans/功能开发/`。
 - 用户说"做界面""Figma""还原设计稿"等（**仅 UI、方案已有**）：执行 `figma-ui-assistant`；读 `Contexts/Figma/` 规范，**Figma 链接由用户当次提供，知识库不存 URL**。
-- 用户说"学习""续学""考我""整理学习笔记"：执行 `learn-assistant`；读 `学习路线-LLM与提示词.md` 与 `Contexts/LLM学习/`。
+- 用户说"学习""续学""考我""整理学习笔记"：执行 `learn-assistant`；读 `Contexts/LLM学习/学习路线-LLM与提示词.md` 与 `Contexts/LLM学习/`。
 
 # MCP 检索规则（enquire-mcp 已启用）
 - 当用户说「查一下」「参考之前的」「知识库里有没有」时，优先调用 enquire MCP 的 `obsidian_search` 工具。

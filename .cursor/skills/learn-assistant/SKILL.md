@@ -7,7 +7,7 @@ description: LLM/提示词学习助手。触发词：学习、续学、考我、
 
 知识库：`/Users/wanglongxiang/Documents/AI-Work-Kit`
 
-必读：`学习路线-LLM与提示词.md`
+必读：`Contexts/LLM学习/学习路线-LLM与提示词.md`
 
 **顺序**：LLM+提示词(1) → 上下文(2) → RAG(3) → Agent(4) → Skill(5) → MCP(6)。新用户从 `Plans/学习/2026-06-12-第1课-LLM与提示词入门.md` 开始；未到第6课不要主推 MCP。
 

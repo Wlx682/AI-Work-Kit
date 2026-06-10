@@ -11,5 +11,4 @@
 Plans/Bug排查/*.md
 Plans/功能开发/*.md
 Plans/需求分析/*.md
-Plans/界面开发/*.md
 !Plans/**/.gitkeep

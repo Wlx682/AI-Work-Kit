@@ -15,41 +15,39 @@
    ```bash
    cp -r .cursor/skills/* ~/.cursor/skills/
    ```
-5. 阅读：`索引.md` · `分享包-快速开始.md`
+5. 阅读：`索引.md` · `分享包-快速开始.md` · `Templates/模板约定.md`
 
 ## 目录
 
 | 路径 | 说明 |
 |------|------|
-| `Templates/` | 排查、方案、功能开发、需求分析等模板 |
+| `Templates/` | 任务模板（见 `模板约定.md`） |
 | `Skills/` | 人类可读的 Skill 提示词（`@` 引用） |
 | `.cursor/skills/` | Cursor Agent 自动 Skill |
-| `Contexts/` | 长期沉淀：规范、调研、LLM 概念 |
-| `Plans/` | 进行中的任务（个人 plan 默认不提交，见 `.gitignore`） |
+| `Contexts/` | 长期沉淀：规范、学习、日报、MCP 指南 |
+| `Plans/` | 进行中的任务（个人 plan 默认不提交） |
+
+**顶层只保留入口文档**（索引、README、分享包、落地计划）；学习路线与 MCP 指南在 `Contexts/`。
 
 ## 常用 Skill
 
 | 命令 | 场景 |
 |------|------|
-| `/requirement-analyst` | PRD 分析（逻辑 / 交互 / 遗漏） |
+| `/requirement-analyst` | PRD 分析 |
 | `/feature-dev-assistant` | 功能开发（需求 + 方案 + 界面） |
 | `/figma-ui-assistant` | 仅 UI 子任务 |
-| `/template-generator` | 排查、技术方案 |
-| `/resume-assistant` | 续做 plan |
+| `/template-generator` | 排查、技术方案、review |
+| `/resume plan=Plans/... 进度=...` | 续做 plan |
 | `/review-assistant 日报` | 今日 → `Contexts/日报/` |
 | `/review-assistant 周报` | 本周 → `Contexts/周报/` |
 | `/learn-assistant` | LLM / 提示词学习 |
 
-## 多仓库
-
-- **知识库** = 本仓库（Vault）
-- **代码** = 当前 Cursor 工作区，无需在 Skill 里写死仓库路径
-
 ## 文档
 
 - [分享方案](分享方案-AI知识库与Cursor协作.md)
-- [MCP 进阶指南](MCP进阶指南.md)
-- [学习路线](学习路线-LLM与提示词.md)
+- [MCP 进阶指南](Contexts/MCP进阶指南.md)
+- [学习路线](Contexts/LLM学习/学习路线-LLM与提示词.md)
+- [模板约定](Templates/模板约定.md)
 
 ## License
 

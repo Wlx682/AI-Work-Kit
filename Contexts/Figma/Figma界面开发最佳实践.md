@@ -166,5 +166,5 @@ plan 里维护 **节点度量表**（见模板），不要只贴一张截图。
 ## 相关
 
 - 规范：[[项目设计规范]]
-- 模板：[[Templates/Figma界面开发模板]]、[[Templates/Figma设计走查模板]]
+- 模板：[[Templates/客户端功能开发模板]]、[[Templates/Figma设计走查模板]]
 - Skill：[[Skills/figma_ui_assistant]]

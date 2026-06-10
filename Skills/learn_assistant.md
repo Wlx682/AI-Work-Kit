@@ -4,7 +4,7 @@
 
 ## 必读
 
-- [[学习路线-LLM与提示词]]
+- [[Contexts/LLM学习/学习路线-LLM与提示词]]
 - [[Contexts/LLM学习/知识地图]]
 - `Templates/学习笔记模板.md`、`Templates/概念卡模板.md`
 
