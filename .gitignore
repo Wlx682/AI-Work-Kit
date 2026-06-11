@@ -9,10 +9,10 @@
 .mcp.json
 
 # Claude Code 个人配置与同步产物（.claude/skills 由 scripts/sync-claude-skills.sh 生成）
+# .claude/workflows/ 为手写可复用 workflow 脚本，纳入版本库
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/skills/
-.claude/workflows/
 
 # 进行中的个人任务 plan（框架目录用 .gitkeep 保留）
 Plans/Bug排查/*.md
