@@ -3,6 +3,7 @@
 
 # Obsidian 个人窗口布局
 .obsidian/workspace.json
+.obsidian/graph.json
 
 # MCP 本地路径（用 mcp.json.example 复制后改 vault 路径）
 .cursor/mcp.json
