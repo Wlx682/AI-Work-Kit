@@ -28,7 +28,9 @@
 | `Plans/学习/` | 进行中的学习计划 |
 | `Templates/` | 任务模板 |
 | `Skills/` | 人类可读 Skill（对话中 `@Skills/xxx.md` 引用） |
-| `.claude/skills/` | Claude Code 自动 Skill（可选，从 `.cursor/skills/` 同步） |
+| `scripts/` | 确定性脚本（学习进度读取/快照/审计取证、Skill 同步） |
+| `.claude/skills/` | Claude Code 自动 Skill（由 `scripts/sync-claude-skills.sh` 从 `.cursor/skills/` 同步） |
+| `.claude/workflows/` | 命名 workflow（如 `learning-audit`，入库可复跑） |
 
 ## 使用规则
 
@@ -49,7 +51,8 @@
 | 分析需求、看 PRD | `requirement-analyst` | plan → `Plans/需求分析/` |
 | 做功能、新需求 | `feature-dev-assistant` | 须有关联需求分析或用户声明 PRD 无 P0 |
 | 做界面、Figma | `figma-ui-assistant` | Figma 链接由用户当次提供 |
-| 学习、续学、考我 | `learn-assistant` | 读 `Contexts/LLM学习/学习路线-LLM与提示词.md` |
+| 学习、续学、考我 | `learn-assistant` | **开场**跑 `scripts/learning-progress-read.sh` 读进度并动态出资料；**收尾**跑 `scripts/learning-progress-snapshot.sh` |
+| 审计学习进度、learning-audit | `learning-audit` workflow（或 `learning-audit-assistant`） | 多 agent 交叉取证；报告 → `Contexts/LLM学习/笔记/YYYY-MM-DD-学习进度审计报告.md` |
 | 准备资料、PM 物料 | `material-prep-assistant` | 写 `Contexts/{分类}/`，不写业务仓库 docs |
 
 在 Claude Code 中：说触发词，或 `@Skills/resume_assistant.md` 等显式引用。
