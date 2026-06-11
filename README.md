@@ -16,6 +16,7 @@
    cp -r .cursor/skills/* ~/.cursor/skills/
    ```
 5. 阅读：`索引.md` · `分享包-快速开始.md` · `Templates/模板约定.md`
+6. **Claude Code**（可选）：`cd AI-Work-Kit && claude` · 见 `Contexts/Claude-Code集成AI-Work-Kit.md` · 根目录 `CLAUDE.md`
 
 ## 目录
 

@@ -1,0 +1,16 @@
+{
+  "_comment": "Claude Code 项目级 MCP。复制为 .mcp.json 后去掉 _comment，改 --vault 为你的 AI-Work-Kit 绝对路径。",
+  "mcpServers": {
+    "enquire": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@oomkapwn/enquire-mcp@latest",
+        "serve",
+        "--vault",
+        "/path/to/AI-Work-Kit",
+        "--persistent-index"
+      ]
+    }
+  }
+}

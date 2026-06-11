@@ -6,9 +6,20 @@
 
 # MCP 本地路径（用 mcp.json.example 复制后改 vault 路径）
 .cursor/mcp.json
+.mcp.json
+
+# Claude Code 个人配置与同步产物（.claude/skills 由 scripts/sync-claude-skills.sh 生成）
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/skills/
+.claude/workflows/
 
 # 进行中的个人任务 plan（框架目录用 .gitkeep 保留）
 Plans/Bug排查/*.md
 Plans/功能开发/*.md
 Plans/需求分析/*.md
 !Plans/**/.gitkeep
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
