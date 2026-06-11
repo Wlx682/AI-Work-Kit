@@ -21,6 +21,11 @@
 - `Templates/` — 任务模板
 - `Skills/` — 提示词笔记（可用 @ 引用）
 
+# 资料存放（硬规则）
+- **所有资料类产出只写 AI-Work-Kit**，禁止写入业务代码仓库的 `docs/`、`.cursor/plans/` 等路径（工程 README/架构说明除外）。
+- Plan → `Plans/【中文分类】/YYYY-MM-DD-标题.md`；长期物料 → `Contexts/【主题】/`。细则见 `Contexts/决策/资料与代码仓库边界.md`。
+- 代码工作区是 ClawAI 等仓库时：写 Plan/Contexts 仍用 Vault 绝对路径或让用户在 Vault 工作区续做。
+
 # 知识库使用规则
 1. 当用户提到"查一下""参考之前的""根据计划"时，优先搜索 `Plans/` 和 `Contexts/`。
 2. 回答问题或生成代码前，若涉及已知信息（错误码、历史决策），先引用笔记内容。
