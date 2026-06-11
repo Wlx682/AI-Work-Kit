@@ -15,7 +15,7 @@
 - `Plans/功能开发/` — **功能/模块开发 plan（需求+方案+界面；纯 UI 设含业务逻辑=否）**
 - `Contexts/需求分析/` — PRD 检查清单、问题模式（无 PRD 链接）
 - `Contexts/Figma/` — 公共设计规范与最佳实践（不存链接、不存已完成功能清单）
-- `Contexts/` — 会议、调研、踩坑、决策
+- `Contexts/` — 会议、调研、踩坑、决策、**PM 物料对照表**（如 `Contexts/收银台/`）
 - `Contexts/LLM学习/` — LLM/提示词/Agent/Skill/MCP 概念与笔记（长期）
 - `Plans/学习/` — 进行中的学习计划（做完可删）
 - `Templates/` — 任务模板
@@ -37,6 +37,7 @@
 - 用户说"做功能""开发模块""新需求""功能开发"：执行 `feature-dev-assistant`；**须先有关联需求分析或用户声明 PRD 无 P0**；plan 存 `Plans/功能开发/`。
 - 用户说"做界面""Figma""还原设计稿"等（**仅 UI、方案已有**）：执行 `figma-ui-assistant`；读 `Contexts/Figma/` 规范，**Figma 链接由用户当次提供，知识库不存 URL**。
 - 用户说"学习""续学""考我""整理学习笔记"：执行 `learn-assistant`；读 `Contexts/LLM学习/学习路线-LLM与提示词.md` 与 `Contexts/LLM学习/`。
+- 用户说"准备资料""整理资料""沉淀到资料库""PM 物料""对照表""收银台配置表"：执行 `material-prep-assistant`；产出写 `Contexts/{分类}/`，**不写业务仓库 docs/**；示例 `Contexts/收银台/MSPay收银台配置对照表.md`。
 
 # MCP 检索规则（enquire-mcp 已启用）
 - 当用户说「查一下」「参考之前的」「知识库里有没有」时，优先调用 enquire MCP 的 `obsidian_search` 工具。

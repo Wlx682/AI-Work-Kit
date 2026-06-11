@@ -15,11 +15,11 @@
 
 `@Skills/template_generator.md` **只能在打开 AI-Work-Kit 作为工作区时** 搜到。
 
-在业务代码仓库里，用全局 Skill：`/template-generator`、`/resume`、`/feature-dev-assistant` 等。
+在业务代码仓库里，用全局 Skill：`/template-generator`、`/resume`、`/feature-dev-assistant`、`/material-prep` 等。
 
 ## 多仓库
 
-**不用记仓库路径。** 代码 = 当前 Cursor 工作区；知识库 = AI-Work-Kit Vault。
+**不用记仓库路径。** 代码 = 当前 Cursor 工作区；**资料库** = AI-Work-Kit Vault 的 `Contexts/`（`/material-prep` 从代码仓提炼配置，写入 Vault，不写业务 `docs/`）。
 
 ## Skill 一览
 
@@ -32,6 +32,7 @@
 | [[figma_ui_assistant]] | `/figma-ui-assistant` | 仅 UI |
 | [[review_assistant]] | `/review-assistant 日报/周报` | 汇报 |
 | [[learn_assistant]] | `/learn-assistant` | LLM 学习 |
+| [[material_prep_assistant]] | `/material-prep` | 资料沉淀到 Contexts（PM 物料、对照表） |
 
 ## 快速示例
 
@@ -47,4 +48,6 @@
 /review-assistant 日报
 
 /learn-assistant 新主题，题目=LLM基础与提示词入门
+
+/material-prep 类型=收银台，参考=Claw，新App=namiWork
 ```

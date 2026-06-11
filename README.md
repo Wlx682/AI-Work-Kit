@@ -1,6 +1,6 @@
 # AI-Work-Kit
 
-个人 / 团队的 **Obsidian 知识库 + Cursor Skill** 协作框架：模板开工、plan 续做、需求分析、功能开发、Figma 1:1 还原、LLM 学习路线。
+个人 / 团队的 **Obsidian 知识库 + Cursor Skill** 协作框架：模板开工、plan 续做、需求分析、功能开发、Figma 1:1 还原、LLM 学习、**PM 资料沉淀**。
 
 ## 快速开始
 
@@ -24,7 +24,7 @@
 | `Templates/` | 任务模板（见 `模板约定.md`） |
 | `Skills/` | 人类可读的 Skill 提示词（`@` 引用） |
 | `.cursor/skills/` | Cursor Agent 自动 Skill |
-| `Contexts/` | 长期沉淀：规范、学习、日报、MCP 指南 |
+| `Contexts/` | 长期沉淀：规范、学习、日报、**PM 物料对照表**、MCP 指南 |
 | `Plans/` | 进行中的任务（个人 plan 默认不提交） |
 
 **顶层只保留入口文档**（索引、README、分享包、落地计划）；学习路线与 MCP 指南在 `Contexts/`。
@@ -41,12 +41,14 @@
 | `/review-assistant 日报` | 今日 → `Contexts/日报/` |
 | `/review-assistant 周报` | 本周 → `Contexts/周报/` |
 | `/learn-assistant` | LLM / 提示词学习 |
+| `/material-prep` | PM 物料 / 配置对照表 → `Contexts/` |
 
 ## 文档
 
 - [分享方案](分享方案-AI知识库与Cursor协作.md)
 - [MCP 进阶指南](Contexts/MCP进阶指南.md)
 - [学习路线](Contexts/LLM学习/学习路线-LLM与提示词.md)
+- [收银台配置对照表](Contexts/收银台/MSPay收银台配置对照表.md)（示例）
 - [模板约定](Templates/模板约定.md)
 
 ## License

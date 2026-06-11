@@ -70,6 +70,12 @@ npx -y @oomkapwn/enquire-mcp index --vault "/你的路径/AI-Work-Kit"
 
 ### 与 Skill 配合
 
+| 场景 | 用法 |
+|------|------|
+| 续做 plan | `/resume plan=Plans/... 进度=...` |
+| 搜历史再开工 | `obsidian_search` → `/template-generator` 或 `/resume` |
+| PM 物料对照表 | 代码仓库 `/material-prep` → 写入 Vault `Contexts/`（见 [[Skills/material_prep_assistant]]） |
+
 ```
 用户：知识库里有没有 API 超时相关的排查？
   → MCP obsidian_search
