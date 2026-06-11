@@ -15,12 +15,7 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/skills/
 
-# 进行中的个人任务 plan（框架目录用 .gitkeep 保留）
-Plans/Bug排查/*.md
-Plans/功能开发/*.md
-Plans/需求分析/*.md
-!Plans/**/.gitkeep
-
+# Plans/ 纳入版本库（进行中任务可同步；发布前检查敏感信息）
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md

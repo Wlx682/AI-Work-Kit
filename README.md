@@ -26,7 +26,7 @@
 | `Skills/` | 人类可读的 Skill 提示词（`@` 引用） |
 | `.cursor/skills/` | Cursor Agent 自动 Skill |
 | `Contexts/` | 长期沉淀：规范、学习、日报、**PM 物料对照表**、MCP 指南 |
-| `Plans/` | 进行中的任务（个人 plan 默认不提交） |
+| `Plans/` | 进行中的任务（纳入仓库同步；做完可归档或删） |
 
 **顶层只保留入口文档**（索引、README、分享包、落地计划）；学习路线与 MCP 指南在 `Contexts/`。
 
