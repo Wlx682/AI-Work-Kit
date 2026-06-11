@@ -32,6 +32,7 @@
 | [[figma_ui_assistant]] | `/figma-ui-assistant` | 仅 UI |
 | [[review_assistant]] | `/review-assistant 日报/周报` | 汇报 |
 | [[learn_assistant]] | `/learn-assistant` | LLM 学习 |
+| [[learning_audit_assistant]] | `/learning-audit-assistant` | 学习进度审计（对齐 Claude `learning-audit`） |
 | [[material_prep_assistant]] | `/material-prep` | 资料沉淀到 Contexts（PM 物料、对照表） |
 
 ## 快速示例

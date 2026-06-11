@@ -106,6 +106,8 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 /learn-assistant 续学，plan=学习/2026-06-12-第1课-LLM与提示词入门.md，进度=已读完LLM概念卡，还没写3个prompt
 ```
 
+或只说 `/learn-assistant 继续` —— Agent 会读 `学习进度快照.md` 与 plan 勾选，**只出下一未勾步骤**（见 `Skills/learn_assistant.md`）。
+
 ### 周末检验（费曼）
 
 ```
