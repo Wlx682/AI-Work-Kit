@@ -7,6 +7,7 @@
 
 # MCP 本地路径（用 mcp.json.example 复制后改 vault 路径）
 .cursor/mcp.json
+.cursor/figma.env
 .mcp.json
 
 # Claude Code 个人配置与同步产物（.claude/skills 由 scripts/sync-claude-skills.sh 生成）

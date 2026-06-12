@@ -1,51 +1,36 @@
 # Figma 界面开发 Skill
 
-当用户说「做界面」「Figma 开发」「还原设计稿」「UI 实现」时执行。
+当用户说「做界面」「Figma 开发」「还原设计稿」「对稿」「Figma MCP」时执行。
 
-> **定位：仅 UI 子任务。** 新功能/新模块（方案+界面一起）→ 用 `feature-dev-assistant`。  
-> 纯 UI 使用 `Templates/客户端功能开发模板.md`，设 **含业务逻辑=否**。
+> **定位：仅 UI 子任务。** 新功能/新模块 → `feature-dev-assistant`。
 
-## 知识库路径
+## MCP 配置（必读）
 
-- 公共规范：`Contexts/Figma/项目设计规范.md`
-- 最佳实践：`Contexts/Figma/Figma界面开发最佳实践.md`
-- 模板：`Templates/客户端功能开发模板.md`
+`Contexts/Figma/Figma-MCP配置.md`
 
-**代码仓库**：默认 = 当前 Cursor 工作区；工作区是 AI-Work-Kit 时加 `仓库=/path` 或先打开代码项目。
-- Plan 存放：`Plans/功能开发/`（推荐，与完整功能同一目录）
+- 推荐：`/add-plugin figma`（官方插件 + OAuth）
+- 项目已写 `.cursor/mcp.json`：`figma`（remote）+ `figma-desktop`（备选）
+- 对稿必须用 MCP 读节点，禁止截图估像素
 
-## 新任务（开工）
+## 知识库
 
-1. 读取项目设计规范 + 最佳实践（**不读、不猜 Figma URL**）。
-2. 若用户未提供 Figma 链接，先索要；链接只用于当次任务和 plan，不写回 Contexts。
-3. 读取客户端功能开发模板，设 **含业务逻辑=否**，填充：链接、Frame 名、平台、需求摘要。
-4. 在**代码仓库**内搜索类似 UI 组件。
-5. 有 Figma 链接时：**用 Figma MCP 逐节点读取** Frame 及子 layer。
-6. 输出：节点度量表、组件映射、Variant 清单、Plan 草稿、第一步指令。
-7. 用户确认后再写代码。
+- 规范：`Contexts/Figma/项目设计规范.md`
+- 实践：`Contexts/Figma/Figma界面开发最佳实践.md`
+- 模板：`Templates/客户端功能开发模板.md`（含业务逻辑=否）
+- Plan：`Plans/功能开发/`
+- Cursor Skill：`~/.cursor/skills/figma-ui-assistant/SKILL.md`
 
-## 续做
+## 新任务
+
+1. 确认 Figma MCP 已连接（绿点 / `whoami`）
+2. 索要带 node-id 的 Figma 链接
+3. `get_metadata` + `get_design_context`（指定 Swift/UIKit、@2x÷2=pt）
+4. 输出度量表 + `**` 切图清单 + 差异表 → 写 Plan → 确认后编码
+
+## 续做 / 走查
 
 ```
 /resume plan=Plans/功能开发/xxx.md 进度=【】
 ```
 
-## 设计走查
-
-用户说「走查」「对稿」时：读取 `Templates/Figma设计走查模板.md`，对照 plan 逐项检查。
-
-## 触发示例
-
-```
-/figma-ui-assistant 新任务，Figma=【链接】，平台=iOS，页面=0608模型选择
-
-/resume plan=Plans/功能开发/2026-06-10-设置页.md 进度=已完成静态UI
-
-/figma-ui-assistant 走查，plan=Plans/功能开发/2026-06-10-设置页.md
-```
-
-## 代码原则
-
-- **1:1 还原**：@2x px ÷ 2 = pt；规范默认值仅设计未标注时使用
-- 逐节点读取，不靠截图目测
-- 切片：读节点 → 骨架 → 静态 → 数据 → 交互 → 异常态 → 走查
+走查：`Templates/Figma设计走查模板.md` + MCP `get_screenshot`
