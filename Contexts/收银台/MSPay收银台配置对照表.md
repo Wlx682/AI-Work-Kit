@@ -6,8 +6,8 @@
 | --------------- | ------------------------------------------------------------------------------ | ---------------------------------- |
 | product         | `360clawcloud`                                                                 | `namiwork`                         |
 | appKey          | `094f36fdaa92acaf363e079bd29fed38`                                             | `08a247e821eaee43d7d5d6cc462a200f` |
-| serviceURL      | `https://pop.vip.360.cn/help/360clawcloud/client/vipServicesAgreement.html`    | 待收银台部门提供                           |
-| subscriptionURL | `https://pop.vip.360.cn/help/360clawcloud/client/vipServicesAgreement_xf.html` | 待收银台部门提供                           |
+| serviceURL      | `https://pop.vip.360.cn/help/360clawcloud/client/vipServicesAgreement.html`    | `https://pop.vip.360.cn/help/fwxy/namiwork/client/vipServicesAgreement.html`    |
+| subscriptionURL | `https://pop.vip.360.cn/help/360clawcloud/client/vipServicesAgreement_xf.html` | `https://pop.vip.360.cn/help/fwxy/namiwork/client/vipServicesAgreement_xf.html` |
 | IAP 回调 URL（正式）  | `https://member.shouji.360.cn/v2/ios_notification_callback`                    | 同上                                 |
 | IAP 回调 URL（测试）  | `https://membertest.shouji.360.cn/v2/ios_notification_callback`                | 同上                                 |
 
