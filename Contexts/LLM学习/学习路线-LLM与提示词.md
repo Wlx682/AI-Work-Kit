@@ -8,7 +8,7 @@ tags: [学习, LLM, 入口]
 
 ## ⭐ 从这里开始（不要跳课）
 
-**第一课**：[[Plans/学习/2026-06-12-第1课-LLM与提示词入门]]
+**第一课**：[[Plans/学习/2026-06-15-第1课-LLM与提示词入门]]（路线 v2，2026-06-15 重生成）
 
 ```
 /learn-assistant 新主题，题目=LLM基础与提示词入门，目标=能解释token和上下文窗口，并写出结构化prompt
@@ -60,8 +60,8 @@ flowchart LR
 | 4 | [[Contexts/LLM学习/概念/Agent]] | Agent 和「一次问答」区别？工具调用流程？ | 概念卡 |
 | 5 | [[Contexts/LLM学习/概念/Skill]] | Cursor Skill vs Obsidian 笔记 Skill？ | 对照你自己的 [[Skills/README]] |
 | 6 | [[Contexts/LLM学习/概念/MCP]] | MCP 解决什么问题？ | 对照 [[MCP进阶指南]] + 亲手调 enquire |
-| 7 | 评估与安全 | 幻觉、越狱、评测怎么做？ | 踩坑笔记 `#学习/踩坑` |
-| 8 | 综合实践 | 用 Kit 完成一次「学→练→沉淀」闭环 | `Plans/学习/` 案例 |
+| 7 | 评估与安全 | 幻觉、HITL、DoD、审计 verdict | `Plans/学习/2026-06-15-第7课-评估与安全` |
+| 8 | 综合实践 | 全栈毕业项目、进化链答辩 | `Plans/学习/2026-06-15-第8课-Kit综合实践` |
 
 ---
 
@@ -103,7 +103,7 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 ### 隔天续学
 
 ```
-/learn-assistant 续学，plan=学习/2026-06-12-第1课-LLM与提示词入门.md，进度=已读完LLM概念卡，还没写3个prompt
+/learn-assistant 续学，plan=学习/2026-06-15-第1课-LLM与提示词入门.md，进度=【你做到哪一步】
 ```
 
 或只说 `/learn-assistant 继续` —— Agent 会读 `学习进度快照.md` 与 plan 勾选，**只出下一未勾步骤**（见 `Skills/learn_assistant.md`）。
@@ -140,7 +140,7 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 
 ## 下一步
 
-1. 打开 [[Plans/学习/2026-06-12-第1课-LLM与提示词入门]] 按步骤做  
+1. 打开 [[Plans/学习/2026-06-15-第1课-LLM与提示词入门]] 按步骤做  
 2. 可选：[[Contexts/LLM学习/知识地图]] 扫一眼全貌（不用全懂）  
 3. 学完用 [[Templates/学习笔记模板]] 沉淀  
-4. **不要**先开 MCP — 那是 [[Plans/学习/示例-第6周-MCP入门]]
+4. **不要**先开 MCP — 完成第 5 课后再学 [[Plans/学习/2026-06-15-第6课-MCP]]
