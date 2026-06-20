@@ -8,7 +8,8 @@ updated: 2026-06-11
 
 # AI-Work-Kit：个人知识库 × Cursor 协作方案
 
-> **一句话**：Obsidian 沉淀**模板与规范**，Cursor 执行任务；进行中的 plan 和 Figma 链接**不长期存档**。
+> **一句话**：Obsidian 存**模板与通用规范**，Cursor 执行任务；**`Plans/` 只放进行中**（做完删），**`Contexts/` 只放跨任务仍有效的资料**。  
+> 原则：[[Contexts/决策/Kit核心原则]] · 上手：[[分享包-快速开始]]
 
 ---
 

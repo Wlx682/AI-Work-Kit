@@ -1,75 +1,49 @@
 # AI-Work-Kit · Claude Code 项目说明
 
-> 与 Cursor 共用同一份 Obsidian 知识库。完整集成步骤见 [[Contexts/Claude-Code集成AI-Work-Kit]]。
+> 与 Cursor 共用 Vault。集成：[[Contexts/Claude-Code集成AI-Work-Kit]]。
 
-## 角色
+## 核心原则
 
-你是我的 AI 开发助手，使用 Obsidian 知识库 **AI-Work-Kit** 辅助工作。
+**只认** [[Contexts/决策/Kit核心原则]]：`Plans/` 任务临时 · `Contexts/` 通用固定 · 做完删 plan。  
+YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-Kit工作流总览]]。
 
 ## 多仓库
 
-- **知识库 Vault**：本仓库（AI-Work-Kit）。
-- **代码仓库**：Claude Code 当前工作目录；不要假设固定项目名。
-- 工作区仅是 AI-Work-Kit 时，向用户索要业务代码路径，或请其在业务仓库另开 Claude Code 会话。
+- Vault：本仓库。代码：Claude 当前工作目录。仅 Vault 时向用户要代码路径。
 
-## 知识库结构
+## 目录
 
 | 路径 | 用途 |
 |------|------|
-| `Plans/Bug排查/` | 排查类 plan |
-| `Plans/客户端技术方案/`、`Plans/服务端技术方案/` | 技术方案 plan |
-| `Plans/代码重构/` | 重构类 plan |
-| `Plans/需求分析/` | PRD 分析（P0 闭环后再开发） |
-| `Plans/功能开发/` | 功能/模块开发 plan |
-| `Contexts/需求分析/` | PRD 检查清单、问题模式 |
-| `Contexts/Figma/` | 设计规范（不存 Figma URL） |
-| `Contexts/` | 会议、调研、踩坑、决策、PM 物料 |
-| `Contexts/LLM学习/` | LLM/Agent/Skill/MCP 概念与笔记 |
-| `Plans/学习/` | 进行中的学习计划 |
-| `Templates/` | 任务模板 |
-| `Skills/` | 人类可读 Skill（对话中 `@Skills/xxx.md` 引用） |
-| `scripts/` | 确定性脚本（学习进度读取/快照/审计取证、Skill 同步） |
-| `.claude/skills/` | Claude Code 自动 Skill（由 `scripts/sync-claude-skills.sh` 从 `.cursor/skills/` 同步） |
-| `.claude/workflows/` | 命名 workflow（如 `learning-audit`，入库可复跑） |
+| `Plans/` | 进行中（Epic、需求、开发、学习…） |
+| `Contexts/` | 通用规范与长期资料 |
+| `Templates/` · `Skills/` · `scripts/` | 模板、Skill、脚本 |
+| `.claude/workflows/` | full-cycle、learning-audit 等 |
 
-## 使用规则
+## 规则
 
-1. 用户说「查一下」「参考之前的」「根据计划」→ 优先搜 `Plans/`、`Contexts/`；若 enquire MCP 可用则先语义检索。
-2. 回答或写代码前，涉及已知信息（错误码、历史决策）→ 先读笔记并注明路径。
-3. plan 中 `[[双向链接]]` 指向的 Contexts 笔记一并读取。
-4. 写回笔记前须经用户确认（除非用户明确说「存档到 Contexts」）。
+1. 查资料 → `Plans/` + `Contexts/`（可选 enquire MCP）。
+2. 写 **Contexts 前须用户确认**（「存档到 Contexts」除外）。
+3. Epic 入口与 Cursor `.cursorrules` 一致；无 Epic 不建功能主 plan。
 
-## Skill 调用（与 Cursor 命令对齐）
+## Skill 表
 
-| 用户说法 | 执行 | 说明 |
-|----------|------|------|
-| 续做、`/resume` | `resume-assistant` | `/resume plan=Plans/【分类】/xxx.md 进度=...` |
-| 用模板、排查/方案/review | `template-generator` | 方案区分客户端/服务端平台 |
-| 日报、今日总结 | `review-assistant` 日报 | git **仅本人** `--author=wanglongxiang`（+王龙祥）；**写入** `Contexts/日报/YYYY-MM-DD.md` |
-| 周报、本周总结 | `review-assistant` 周报 | **写入** `Contexts/周报/` |
-| 复盘、月度总结 | `review-assistant` 月度 | 可引用日报/周报 |
-| 分析需求、看 PRD | `requirement-analyst` | plan → `Plans/需求分析/` |
-| 做功能、新需求 | `feature-dev-assistant` | 须有关联需求分析或用户声明 PRD 无 P0 |
-| 做界面、Figma | `figma-ui-assistant` | Figma 链接由用户当次提供 |
-| 学习、续学、考我 | `learn-assistant` | **开场**跑 `scripts/learning-progress-read.sh` 读进度并动态出资料；**收尾**跑 `scripts/learning-progress-snapshot.sh` |
-| 审计学习进度、learning-audit | `learning-audit` workflow（或 `learning-audit-assistant`） | 多 agent 交叉取证；报告 → `Contexts/LLM学习/笔记/YYYY-MM-DD-学习进度审计报告.md` |
-| 准备资料、PM 物料 | `material-prep-assistant` | 写 `Contexts/{分类}/`，不写业务仓库 docs |
+与 `.cursorrules` Skill 触发一致；显式引用 `@Skills/xxx.md`。
 
-在 Claude Code 中：说触发词，或 `@Skills/resume_assistant.md` 等显式引用。
+| 说法 | Skill |
+|------|-------|
+| 续做 | `resume-assistant` |
+| 全流程 / full-cycle | `full-cycle-assistant` + `full-cycle-boot.sh` |
+| 需求/架构/开发/测试/部署/变更 | 见 `.cursorrules` |
+| 学习 | `learn-assistant`（snapshot stdout） |
+| PM 物料 | `material-prep-assistant` → Contexts |
 
-## MCP（enquire，可选）
+全流程步骤结束输出：
 
-- 配置：项目根 `.mcp.json`（见 `.mcp.json.example`）。
-- 用户说「知识库里有没有…」→ 优先 `obsidian_search`，再按 Skill 流程续做或开工。
+```text
+📌 当前阶段：[阶段] | 下一个阶段：[Skill] | 如需中断：/resume plan=Plans/.../xxx.md
+```
 
-## 输出要求
+## 入口
 
-- 知识库无相关信息 → 明确说明，再补充通用知识。
-- 任务结束 → 提醒更新 `Plans/` 勾选或沉淀 `Contexts/`。
-- 续做 → 输出：已完成 / 下一步 / 可能原因 / 验证方法。
-
-## 常用入口
-
-- 索引：`索引.md`
-- 快速开始：`分享包-快速开始.md`
-- Claude 集成：`Contexts/Claude-Code集成AI-Work-Kit.md`
+[[索引]] · [[分享包-快速开始]] · [[Contexts/决策/Kit核心原则]]

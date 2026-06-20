@@ -1,0 +1,108 @@
+{
+  "name": "full-cycle",
+  "version": "1.0.0",
+  "description": "全流程开发状态机：Requirement → Architecture → Development → Test → Deploy。机械门禁 scripts/full-cycle-gate.sh（Epic plans.* + WBS + plan-gate-check）；上一阶段未满足退出条件不进入下一阶段。",
+  "triggerPhrases": [
+    "开始做这个项目",
+    "全流程开发",
+    "全流程闭环",
+    "启动全流程",
+    "full-cycle",
+    "/full-cycle",
+    "project-manager",
+    "full-cycle-assistant"
+  ],
+  "states": {
+    "requirement": {
+      "label": "需求分析",
+      "planFolder": "Plans/需求分析",
+      "skill": "requirement-analyst",
+      "template": "Templates/需求分析-带验收标准模板.md",
+      "requiredSections": [
+        "边界情况清单",
+        "异常流程矩阵",
+        "验收标准"
+      ],
+      "exitCriteria": {
+        "status": ["已采纳"],
+        "p0Open": 0
+      },
+      "next": "architecture"
+    },
+    "architecture": {
+      "label": "架构设计",
+      "planFolders": [
+        "Plans/客户端技术方案",
+        "Plans/服务端技术方案"
+      ],
+      "skill": "architecture-design-assistant",
+      "template": "Templates/技术方案模板.md",
+      "requiredSections": [
+        "模块边界",
+        "数据模型",
+        "API Schema"
+      ],
+      "exitCriteria": {
+        "status": ["已采纳"]
+      },
+      "next": "development"
+    },
+    "development": {
+      "label": "功能开发",
+      "planFolder": "Plans/功能开发",
+      "skills": [
+        "task-splitter",
+        "feature-dev-assistant"
+      ],
+      "exitCriteria": {
+        "allSubtasksChecked": true
+      },
+      "next": "test"
+    },
+    "test": {
+      "label": "自动化测试",
+      "planFolder": "Plans/自动化测试",
+      "skill": "test-generator",
+      "template": "Templates/自动化测试模板.md",
+      "exitCriteria": {
+        "testsPass": true
+      },
+      "next": "deploy"
+    },
+    "deploy": {
+      "label": "部署",
+      "planFolder": "Plans/部署",
+      "skill": "deployment-assistant",
+      "template": "Templates/部署模板.md",
+      "exitCriteria": {
+        "status": ["已采纳"]
+      },
+      "next": null
+    }
+  },
+  "transitions": [
+    { "from": "requirement", "to": "architecture", "guard": "requirement.exitCriteria" },
+    { "from": "architecture", "to": "development", "guard": "architecture.exitCriteria" },
+    { "from": "development", "to": "test", "guard": "development.exitCriteria" },
+    { "from": "test", "to": "deploy", "guard": "test.exitCriteria" }
+  ],
+  "rollback": {
+    "onChange": {
+      "skill": "change-impact-analysis",
+      "markStatus": "pending-change"
+    },
+    "onBug": {
+      "planFolder": "Plans/Bug排查",
+      "requiredLinks": [
+        "Plans/需求分析",
+        "Plans/功能开发"
+      ]
+    }
+  },
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  },
+  "executableWorkflow": ".claude/workflows/full-cycle.js",
+  "gateScript": "scripts/full-cycle-gate.sh",
+  "bootScript": "scripts/full-cycle-boot.sh"
+}

@@ -4,7 +4,6 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLANS_DIR="Plans/学习"
-SNAPSHOT="$ROOT/Contexts/LLM学习/笔记/学习进度快照.md"
 NOTES_DIR="$ROOT/Contexts/LLM学习/笔记"
 
 echo "# 学习进度摘要（开场必读）"
@@ -38,20 +37,6 @@ if [[ -z "$current" ]]; then
 fi
 [[ -z "$current" ]] && echo "- （无明显进行中课程，见上方取证或学习路线）"
 echo ""
-
-if [[ -f "$SNAPSHOT" ]]; then
-  echo "## 最近快照（最多 3 条）"
-  awk '
-    /^## [0-9]{4}-[0-9]{2}-[0-9]{2}/ { if (n>=3) exit; buf=$0; block=buf"\n"; n++; next }
-    n>0 && /^## / && !/^## [0-9]{4}/ { exit }
-    n>0 { block=block $0 "\n" }
-    END {
-      # 简化：打印文件末尾约 40 行
-    }
-  ' "$SNAPSHOT" 2>/dev/null || true
-  tail -n 25 "$SNAPSHOT" | sed 's/^/  /'
-  echo ""
-fi
 
 latest_audit="$(ls -t "$NOTES_DIR"/*-学习进度审计报告.md 2>/dev/null | head -1 || true)"
 if [[ -n "$latest_audit" ]]; then

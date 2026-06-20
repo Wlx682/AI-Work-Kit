@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Epic 看板 · AI-Work-Kit</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --done: #22c55e;
+      --todo: #64748b;
+      --active: #f59e0b;
+      --blocked: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+    .sub { color: var(--muted); font-size: 0.85rem; }
+    button, select {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    main { padding: 1rem 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
+      margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
+    }
+    .meta span b { color: var(--text); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .col h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 0.5rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .card.done { border-left: 3px solid var(--done); }
+    .card.active { border-left: 3px solid var(--active); }
+    .card.todo { border-left: 3px solid var(--todo); }
+    .card.blocked { border-left: 3px solid var(--blocked); }
+    .card h3 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+    .card p { margin: 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+    .card-actions { margin-top: 0.5rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .card-actions button { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    section { margin-top: 1.5rem; }
+    section > h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 0.85rem;
+    }
+    th, td {
+      text-align: left; padding: 0.5rem 0.65rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-weight: 500; }
+    .toast {
+      position: fixed; bottom: 1rem; right: 1rem;
+      background: var(--surface); border: 1px solid var(--done);
+      padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .empty { color: var(--muted); padding: 2rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Epic 看板</h1>
+      <div class="sub">markdown 为唯一真相 · 写回 Obsidian 即时同步</div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <select id="epicSelect"></select>
+      <button id="refreshBtn">刷新</button>
+      <button class="primary" id="triggerBtn">复制续做命令</button>
+    </div>
+  </header>
+  <main id="app"><div class="empty">加载中…</div></main>
+  <div class="toast" id="toast"></div>
+  <script>
+    let board = [];
+    let current = null;
+    let revision = null;
+    let pollTimer = null;
+    const POLL_MS = 2500;
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    async function loadBoard(quiet) {
+      const res = await fetch('/api/board');
+      const payload = await res.json();
+      const epics = Array.isArray(payload) ? payload : (payload.epics || []);
+      revision = payload.revision ?? revision;
+      board = epics;
+      const sel = document.getElementById('epicSelect');
+      const prev = current ? current.file : sel.value;
+      sel.innerHTML = board.map(e => `<option value="${e.file}">${e.name}</option>`).join('');
+      if (!board.length) {
+        document.getElementById('app').innerHTML = '<div class="empty">Plans/Epic/ 下暂无 Epic。先实例化 Epic 母版。</div>';
+        return;
+      }
+      const epicParam = new URLSearchParams(location.search).get('epic');
+      if (epicParam && board.find(e => e.file === epicParam)) {
+        current = board.find(e => e.file === epicParam);
+      } else if (prev && board.find(e => e.file === prev)) {
+        current = board.find(e => e.file === prev);
+      } else if (!current || !board.find(e => e.file === current.file)) {
+        current = board[0];
+      }
+      sel.value = current.file;
+      render(current);
+      const sub = document.querySelector('header .sub');
+      if (sub && payload.updated_at) {
+        sub.textContent = `markdown 为唯一真相 · 自动同步 ${payload.updated_at}${quiet ? '' : ''}`;
+      }
+    }
+
+    async function pollRevision() {
+      try {
+        const res = await fetch('/api/revision');
+        const data = await res.json();
+        if (revision !== null && data.revision !== revision) {
+          await loadBoard(true);
+          toast('看板已同步 markdown 变更');
+        } else if (revision === null) {
+          revision = data.revision;
+        }
+      } catch (_) { /* server restarting */ }
+    }
+
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(pollRevision, POLL_MS);
+    }
+
+    function sliceColumn(s, nextN, p0) {
+      if (p0 > 0 && !s.done && s.n <= 2) return 'blocked';
+      if (s.done) return 'done';
+      if (s.n === nextN) return 'active';
+      if (nextN && s.n > nextN) return 'todo';
+      if (!nextN) return 'done';
+      return 'todo';
+    }
+
+    function colTitle(key) {
+      return { done: '已完成', active: '进行中', todo: '待开始', blocked: '阻塞' }[key];
+    }
+
+    function render(epic) {
+      current = epic;
+      const nextN = epic.next_slice;
+      const cols = { done: [], active: [], todo: [], blocked: [] };
+      (epic.slices || []).forEach(s => {
+        cols[sliceColumn(s, nextN, epic.p0_open || 0)].push(s);
+      });
+
+      const plansRows = (epic.plans || []).map(p => {
+        const st = p.status || '—';
+        return `<tr>
+          <td>${p.stage}</td>
+          <td>${p.path ? `<code>${p.path}</code>` : '—'}</td>
+          <td>${st}</td>
+          <td>
+            ${p.path ? `<select data-plan="${p.path}" class="statusSel">
+              ${['草稿','进行中','评审中','已采纳','搁置'].map(x =>
+                `<option ${x===st?'selected':''}>${x}</option>`).join('')}
+            </select>` : '—'}
+          </td>
+        </tr>`;
+      }).join('');
+
+      const colHtml = ['todo','active','blocked','done'].map(key => `
+        <div class="col">
+          <h2>${colTitle(key)}</h2>
+          ${cols[key].map(s => `
+            <div class="card ${key}">
+              <h3>WBS ${s.n}</h3>
+              <p>${s.label}</p>
+              <div class="card-actions">
+                ${!s.done ? `<button data-slice="${s.n}" data-done="1">完成</button>` : ''}
+                ${s.done ? `<button data-slice="${s.n}" data-done="0">重开</button>` : ''}
+              </div>
+            </div>`).join('') || '<p class="sub">无</p>'}
+        </div>`).join('');
+
+      document.getElementById('app').innerHTML = `
+        <div class="meta">
+          <span><b>epic_id</b> ${epic.epic_id || '—'}</span>
+          <span><b>阶段</b> ${epic.lifecycle_state}</span>
+          <span><b>status</b> ${epic.status}</span>
+          <span><b>p0_open</b> ${epic.p0_open}</span>
+          <span><b>仓库</b> ${epic.repo || '—'} / ${epic.branch || '—'}</span>
+          <span><b>下一切片</b> WBS ${nextN || '—'}</span>
+        </div>
+        <div class="grid">${colHtml}</div>
+        <section>
+          <h2>子 Plan 状态</h2>
+          <table>
+            <thead><tr><th>阶段</th><th>路径</th><th>status</th><th>改状态</th></tr></thead>
+            <tbody>${plansRows}</tbody>
+          </table>
+        </section>`;
+
+      document.querySelectorAll('[data-slice]').forEach(btn => {
+        btn.onclick = () => toggleSlice(+btn.dataset.slice, btn.dataset.done === '1');
+      });
+      document.querySelectorAll('.statusSel').forEach(sel => {
+        sel.onchange = () => setStatus(sel.dataset.plan, sel.value);
+      });
+    }
+
+    async function toggleSlice(n, done) {
+      await fetch('/api/slice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: current.file, slice: n, done, operator: 'web' })
+      });
+      toast(`WBS ${n} ${done ? '已完成' : '已重开'}`);
+      await loadBoard();
+      current = board.find(e => e.file === current.file);
+      render(current);
+    }
+
+    async function setStatus(planPath, status) {
+      await fetch('/api/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: planPath, status, epic: current.file, stage: '—', operator: 'web' })
+      });
+      toast(`${planPath} → ${status}`);
+      await loadBoard();
+      current = board.find(e => e.file === document.getElementById('epicSelect').value);
+      render(current);
+    }
+
+    document.getElementById('refreshBtn').onclick = loadBoard;
+    document.getElementById('epicSelect').onchange = e => {
+      current = board.find(x => x.file === e.target.value);
+      render(current);
+    };
+    document.getElementById('triggerBtn').onclick = async () => {
+      const res = await fetch('/api/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: current.file })
+      });
+      const data = await res.json();
+      await navigator.clipboard.writeText(data.command);
+      toast(`已复制：${data.command}`);
+    };
+
+    loadBoard().then(() => {
+      startPolling();
+    }).catch(err => {
+      document.getElementById('app').innerHTML = `<div class="empty">加载失败：${err.message}<br>请先运行 ./scripts/kanban-server.sh</div>`;
+    });
+  </script>
+</body>
+</html>

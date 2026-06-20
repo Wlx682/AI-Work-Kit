@@ -53,4 +53,6 @@ date: {{date}}
 
 ## 存档
 
-走查结论保存到：`Contexts/Figma/走查记录/{{date}}-{{title}}.md`
+走查记录保存到：**`Plans/功能开发/{{date}}-{{title}}-走查.md`**（或挂在同任务 plan 的 §走查 节）。  
+截图放在同目录 `screenshots/` 或 plan 内链接；**不进 Contexts**。  
+原则：[[Contexts/决策/Kit核心原则]]。

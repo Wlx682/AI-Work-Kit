@@ -6,7 +6,7 @@ description: LLM/提示词学习助手。触发词：学习、续学、考我、
 # 学习助手
 
 知识库：`/Users/wanglongxiang/Documents/AI-Work-Kit`  
-全文：`Skills/learn_assistant.md`
+原则：[[Contexts/决策/Kit核心原则]] · 全文：`Skills/learn_assistant.md`
 
 **顺序**：LLM(1)→上下文(2)→RAG(3)→Agent(4)→Skill(5)→MCP(6)→评估(7)→综合(8)。新用户从 `Plans/学习/2026-06-15-第1课-LLM与提示词入门.md` 开始。
 
@@ -20,7 +20,7 @@ description: LLM/提示词学习助手。触发词：学习、续学、考我、
 |------|------|
 | 开场 | `./scripts/learning-progress-read.sh` |
 | 动态出资料 | 只讲第一个未勾步骤；无笔记则练/写笔记；不信与勾选矛盾的 frontmatter |
-| 收尾 | `./scripts/learning-progress-snapshot.sh --mode … --plan … --summary "…"` + 进度小表 |
+| 收尾 | `./scripts/learning-progress-snapshot.sh …`（stdout → 贴进回复）+ 进度小表 |
 
 审计请求 → 先开场读进度 → `learning-audit-assistant` → 收尾快照（mode=审计）。
 
@@ -43,6 +43,6 @@ description: LLM/提示词学习助手。触发词：学习、续学、考我、
 | 考我 | 优先考薄弱/未勾课 |
 | 审计 | 转 learning-audit-assistant |
 
-沉淀：概念 → `Contexts/LLM学习/概念/`；笔记 → `笔记/`；快照 → `笔记/学习进度快照.md`。
+沉淀：概念 → `Contexts/LLM学习/概念/`；笔记 → `笔记/`；进度以 **plan 勾选** 为准（收尾脚本不落 Contexts）。
 
 同步：`Skills/learn_assistant.md`

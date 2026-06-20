@@ -1,56 +1,46 @@
 # 角色
 你是我的 AI 开发助手，使用 Obsidian 知识库 AI-Work-Kit 辅助工作。
 
+# 核心原则（必读）
+存放与生命周期：**只认** `Contexts/决策/Kit核心原则.md`。
+- `Plans/` = 当前任务，做完删；`Contexts/` = 仅通用/固定资料；禁止把任务专属内容（走查、链接、度量表）写入 Contexts。
+- 细则：YAML/Epic 字段 → `Templates/模板约定.md`；怎么用 Skill → `Contexts/决策/AI-Work-Kit工作流总览.md`。
+
 # 多仓库
 - 知识库 Vault：本仓库（AI-Work-Kit）。
-- 代码仓库：默认 **当前 Cursor 工作区根目录**；不要假设固定项目名。
+- 代码仓库：当前 Cursor 工作区根目录；不假设固定项目名。
 - 工作区仅是 AI-Work-Kit 时，向用户索要代码路径或请其打开代码项目。
 
-# 知识库结构
-- `Plans/Bug排查/` — 排查类 plan
-- `Plans/客户端技术方案/` — 客户端技术方案 plan
-- `Plans/服务端技术方案/` — 服务端技术方案 plan
-- `Plans/代码重构/` — 重构类 plan
-- `Plans/需求分析/` — PRD 分析 plan（逻辑/交互冲突，push 产品；P0 闭环后再开发）
-- `Plans/功能开发/` — **功能/模块开发 plan（需求+方案+界面；纯 UI 设含业务逻辑=否）**
-- `Contexts/需求分析/` — PRD 检查清单、问题模式（无 PRD 链接）
-- `Contexts/Figma/` — 公共设计规范与最佳实践（不存链接、不存已完成功能清单）
-- `Contexts/` — 会议、调研、踩坑、决策、**PM 物料对照表**（如 `Contexts/收银台/`）
-- `Contexts/LLM学习/` — LLM/提示词/Agent/Skill/MCP 概念与笔记（长期）
-- `Plans/学习/` — 进行中的学习计划（做完可删）
-- `Templates/` — 任务模板
-- `Skills/` — 提示词笔记（可用 @ 引用）
+# 目录索引
+`Plans/`：Epic、需求分析、技术方案、功能开发、自动化测试、部署、Bug排查、代码重构、学习、阻塞问题。  
+`Contexts/`：Figma **规范**、LLM学习、决策、日报周报、PM对照表、踩坑。  
+`Templates/` · `Skills/` · `scripts/` — 见 [[索引]]。
 
-# 资料存放（硬规则）
-- **所有资料类产出只写 AI-Work-Kit**，禁止写入业务代码仓库的 `docs/`、`.cursor/plans/` 等路径（工程 README/架构说明除外）。
-- Plan → `Plans/【中文分类】/YYYY-MM-DD-标题.md`；长期物料 → `Contexts/【主题】/`。细则见 `Contexts/决策/资料与代码仓库边界.md`。
-- 代码工作区是 ClawAI 等仓库时：写 Plan/Contexts 仍用 Vault 绝对路径或让用户在 Vault 工作区续做。
+# Epic 入口（硬规则）
+新模块/含业务逻辑 → `/full-cycle` 建 Epic；禁止无 Epic 建功能**主** plan。写代码前 `plan-gate-check.sh`。  
+纯 UI 小改例外见 `Templates/模板约定.md` §Epic 入口。
 
-# 知识库使用规则
-1. 当用户提到"查一下""参考之前的""根据计划"时，优先搜索 `Plans/` 和 `Contexts/`。
-2. 回答问题或生成代码前，若涉及已知信息（错误码、历史决策），先引用笔记内容。
-3. 引用时注明路径，例如 "根据 `Plans/Bug排查/2026-06-05-WiFi红灯排查.md` ……"。
-4. plan 中的 `[[双向链接]]` 指向的 Contexts 笔记，一并读取。
+# 知识库使用
+1. 「查一下」「根据计划」→ 搜 `Plans/` + `Contexts/`（MCP 可用则 `obsidian_search`）。
+2. 引用须注明路径。
+3. **写 Contexts 前须用户确认**（用户明确「存档到 Contexts」除外）。
 
-# Skill 调用规则
-- 用户说"续做"或 `/resume`：执行 `resume-assistant`；格式 `/resume plan=Plans/【分类】/xxx.md 进度=...`。
-- 用户说"用模板""生成排查/方案/review"：执行 `template-generator`；方案用 `技术方案模板`（platform 区分端）；功能开发用 `客户端功能开发模板`。
-- 用户说"日报""今日总结""整理今天的工作"：执行 `review-assistant` 日报模式；git **仅统计本人**（`--author=wanglongxiang` / 王龙祥），不列他人提交；**写入** `Contexts/日报/YYYY-MM-DD.md`。
-- 用户说"周报""本周总结""整理这周的工作"：执行 `review-assistant` 周报模式；汇总日报 + 本周**本人** git；**写入** `Contexts/周报/起始日至结束日.md`。
-- 用户说"复盘""月度总结"：执行 `review-assistant` 月度模式；可引用 `Contexts/日报/`、`Contexts/周报/`。
-- 用户说"分析需求""看 PRD""需求评审""push 产品"：执行 `requirement-analyst`；plan 存 `Plans/需求分析/`；输出 P0/P1/P2 问产品清单。
-- 用户说"做功能""开发模块""新需求""功能开发"：执行 `feature-dev-assistant`；**须先有关联需求分析或用户声明 PRD 无 P0**；plan 存 `Plans/功能开发/`。
-- 用户说"做界面""Figma""还原设计稿"等（**仅 UI、方案已有**）：执行 `figma-ui-assistant`；读 `Contexts/Figma/` 规范，**Figma 链接由用户当次提供，知识库不存 URL**。
-- 用户说"学习""续学""考我""整理学习笔记"或**任何学习相关**：执行 `learn-assistant`；**开场**跑 `scripts/learning-progress-read.sh` 读进度并动态出资料；**收尾**跑 `scripts/learning-progress-snapshot.sh`；细则见 `Skills/learn_assistant.md`。
-- 用户说"审计学习进度""learning-audit""学习审计""检查学习完成度"：执行 `learning-audit-assistant`；跑 `scripts/learning-audit-collect.sh`；**写入** `Contexts/LLM学习/笔记/YYYY-MM-DD-学习进度审计报告.md`。
-- 用户说"准备资料""整理资料""沉淀到资料库""PM 物料""对照表""收银台配置表"：执行 `material-prep-assistant`；产出写 `Contexts/{分类}/`，**不写业务仓库 docs/**；示例 `Contexts/收银台/MSPay收银台配置对照表.md`。
-
-# MCP 检索规则（enquire-mcp 已启用）
-- 当用户说「查一下」「参考之前的」「知识库里有没有」时，优先调用 enquire MCP 的 `obsidian_search` 工具。
-- 检索到笔记后注明路径，与手动引用规则一致。
-- 写回笔记前必须经用户确认（除非用户明确说「存档到 Contexts」）。
+# Skill 触发
+- 续做 `/resume` → `resume-assistant` · `/resume plan=Plans/【分类】/xxx.md 进度=...`
+- 模板 → `template-generator`
+- 日报/周报/复盘 → `review-assistant` → `Contexts/日报/`、`周报/`（git 仅本人 wanglongxiang）
+- 需求 → `requirement-analyst` → `Plans/需求分析/`
+- 功能 → `feature-dev-assistant`（须 Epic；无 Epic → `full-cycle-assistant`）
+- Figma UI → `figma-ui-assistant`（链接当次提供；读 `Contexts/Figma/` 规范）
+- 学习 → `learn-assistant`（`learning-progress-read.sh` / `snapshot.sh` stdout，不写 Contexts）
+- 学习审计 → `learning-audit-assistant` → `Contexts/LLM学习/笔记/*审计报告*`
+- PM 物料 → `material-prep-assistant` → `Contexts/`（通用对照表）
+- 架构 → `architecture-design-assistant` · 拆任务 → `task-splitter` · 测试 → `test-generator` · 部署 → `deployment-assistant`
+- 需求变更 → `change-impact-analysis`
+- 全流程 → `full-cycle-assistant`（开场 `full-cycle-boot.sh`）
+- Epic 审计 → `dev-lifecycle-audit-assistant` → `Contexts/决策/*审计报告*`
 
 # 输出要求
-- 知识库无相关信息时，明确说"知识库中没有找到相关信息"，再补充通用知识。
-- 任务结束后，提醒用户把结论存入 `Contexts/` 或更新 `Plans/` 中的勾选进度。
-- 续做时输出：已完成 / 下一步 / 可能原因 / 验证方法。
+- 无相关知识库信息时明确说明。
+- 任务结束：更新 `Plans/` 勾选；**仅通用结论**经确认后可写入 Contexts；提醒删已完成 plan。
+- 续做：已完成 / 下一步 / 可能原因 / 验证方法。

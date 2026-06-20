@@ -6,6 +6,7 @@
 
 ## 必读
 
+- [[Contexts/决策/Kit核心原则]]（Plans vs Contexts）
 - [[Contexts/LLM学习/学习路线-LLM与提示词]]
 - [[Contexts/LLM学习/知识地图]]
 - `Templates/学习笔记模板.md`、`Templates/概念卡模板.md`
@@ -23,7 +24,7 @@
 | 阶段 | 必做 | 脚本 / 资料 |
 |------|------|-------------|
 | **1. 开场读进度** | 先读再讲 | `./scripts/learning-progress-read.sh` |
-| **2. 动态出资料** | 见下文「动态出资料规则」 | plan + 快照 + 审计报告 + 概念卡 |
+| **2. 动态出资料** | 见下文「动态出资料规则」 | plan + 审计报告 + 概念卡 |
 | **3. 模式执行** | 新主题 / 续学 / 整理笔记 / 考我 | 各模式步骤 |
 | **4. 收尾收集** | 会话结束前必做 | `./scripts/learning-progress-snapshot.sh` |
 
@@ -40,8 +41,8 @@
 | plan 有未勾选步骤 | 只讲 **第一个** `- [ ]` 对应内容；附带概念卡链接 |
 | 步骤全勾、无本课笔记 | 引导 **整理笔记** 或 **练习 A/B**（未填的表） |
 | 练习未完成 | 只出题 / 批改练习，不讲新课 |
-| 快照/审计显示「严重矛盾」 | **不信** frontmatter「已完成」；按勾选从断点续 |
-| 用户说「复习」 | 从快照里 **薄弱点** + 考我错题；不新开章节 |
+| 审计显示「严重矛盾」 | **不信** frontmatter「已完成」；按勾选从断点续 |
+| 用户说「复习」 | 从 **未勾步骤 / 审计薄弱点** + 考我错题；不新开章节 |
 | 新用户、无 plan | 按 [[学习路线-LLM与提示词]] 第 1 课开工 |
 | 要求跳课（如 MCP） | 对照路线前置是否完成；未完成则建议先补 |
 | 用户说「连不上 / 太散 / 看懂不会串」 | **暂停推新步骤**；输出串联图 + Kit 案例分工表；见「学习连贯性原则」 |
@@ -123,11 +124,11 @@
 2. ```bash
    ./scripts/learning-progress-snapshot.sh --mode <模式> --plan <plan路径> --summary "<一句摘要>"
    ```
+   脚本**只输出到 stdout**；Agent 把表格贴进回复末尾，**不写入 Contexts**。
    `--mode`：`新主题` / `续学` / `整理笔记` / `考我` / `审计`。
 3. 回复末尾附 **「本次进度」** 小表（勾选、笔记、与 status 是否一致）。
 4. 矛盾明显 → 提醒 `/learning-audit-assistant`。
 
-快照：`Contexts/LLM学习/笔记/学习进度快照.md`  
 全量审计：[[learning_audit_assistant]]（可周末 Automations）
 
 ---
@@ -140,8 +141,9 @@
 | 全量交叉审计逻辑 | [[learning_audit_assistant]] | 重、低频 |
 | 机械取证脚本 | `scripts/learning-audit-collect.sh` | 确定性 |
 | 开场摘要脚本 | `scripts/learning-progress-read.sh` | 确定性 |
-| 快照追加 | `scripts/learning-progress-snapshot.sh` | 确定性 |
-| 路线与概念 | `Contexts/LLM学习/` | 长期资料 |
+| 快照摘要（stdout） | `scripts/learning-progress-snapshot.sh` | 收尾输出，Agent 贴回复；不落盘 |
+| 路线与概念 | `Contexts/LLM学习/` | 通用知识（见 [[Contexts/决策/Kit核心原则]]） |
+| 进行中进度 | `Plans/学习/` | 勾选；做完可删 plan |
 | Cursor 自动匹配 | `.cursor/skills/learn-assistant/SKILL.md` | 与本文同步 |
 
 **不要**把动态出资料写进 `.cursorrules` 细则 —— 只保留一句「学习相关走 learn-assistant」；细节在本 Skill。
