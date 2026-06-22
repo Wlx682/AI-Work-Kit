@@ -110,7 +110,7 @@ AI-Work-Kit/
 | `resume-assistant` | `/resume plan=... 进度=...` | 跨会话续做 |
 | `requirement-analyst` | `/requirement-analyst` | PRD 分析 |
 | `feature-dev-assistant` | `/feature-dev-assistant` | 功能开发（需求+方案+界面） |
-| `figma-ui-assistant` | `/figma-ui-assistant` | 仅 UI |
+| `figma-ui` | `/figma-ui` | 仅 UI |
 | `review-assistant` | `/review-assistant 日报/周报` | 汇报与复盘 |
 | `learn-assistant` | `/learn-assistant` | LLM 学习 |
 | `material-prep-assistant` | `/material-prep` | PM 物料 / 配置对照表 → `Contexts/` |
@@ -140,7 +140,7 @@ Vault 内等价：`@Skills/xxx.md`
 ### 3. Figma 界面
 
 ```
-/figma-ui-assistant 新任务，Figma=【粘贴】，平台=iOS，页面=xxx
+/figma-ui 新任务，Figma=【粘贴】，平台=iOS，页面=xxx
 ```
 
 → plan 存 `Plans/功能开发/`（纯 UI 设含业务逻辑=否）

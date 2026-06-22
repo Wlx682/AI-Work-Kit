@@ -123,7 +123,7 @@ URL 中 `29450-3465` → MCP 参数 `29450:3465`。
 
 - 图层 `**名称**` = 切图 → 见 [[项目设计规范]]、[[Figma界面开发最佳实践]]
 - 数值优先级：**Figma 节点 > Variant > 规范兜底**
-- Skill：`figma-ui-assistant`（`~/.cursor/skills/figma-ui-assistant/`）
+- Skill：`figma-ui`（`~/.claude/skills/figma-ui/`）
 
 ## 故障排查
 

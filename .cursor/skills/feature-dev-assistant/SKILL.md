@@ -19,6 +19,6 @@ Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
 - Plan：`Plans/功能开发/`
 - 续做：`/resume plan=Plans/功能开发/xxx.md 进度=...`
 
-仅 UI → `figma-ui-assistant`。
+仅 UI → `figma-ui`。
 
 同步：`Skills/feature_dev_assistant.md`

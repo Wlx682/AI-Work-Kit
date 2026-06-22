@@ -165,6 +165,7 @@ plan 里维护 **节点度量表**（见模板），不要只贴一张截图。
 | 没读按压 Variant，点击态不对 | 有 Variant 必读 pressed/active |
 | 整页一次写完，走查改一大片 | 切片开发 + 每片走查 |
 | Figma 链接没带 node-id | 链接必须精确到 Frame |
+| 沿用别项目布局直觉，圆角矩形做成圆形 / 单行漏读 `layoutWrap` / 子图层 icon 漏渲染 | Skill 必须先输出**节点度量表**（含 `cornerRadius` / `strokeWeight` / `layoutWrap` / Variant 列表 / `**` 切图清单）才能写代码；**Figma 节点 > Variant > 规范兜底**，禁止用别项目惯例覆盖真值 |
 
 ---
 
@@ -172,4 +173,4 @@ plan 里维护 **节点度量表**（见模板），不要只贴一张截图。
 
 - 规范：[[项目设计规范]]
 - 模板：[[Templates/客户端功能开发模板]]、[[Templates/Figma设计走查模板]]
-- Skill：[[Skills/figma_ui_assistant]]
+- Skill：`figma-ui`（用户级 `~/.claude/skills/figma-ui/`）

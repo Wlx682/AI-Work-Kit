@@ -31,7 +31,7 @@
 - 日报/周报/复盘 → `review-assistant` → `Contexts/日报/`、`周报/`（git 仅本人 wanglongxiang）
 - 需求 → `requirement-analyst` → `Plans/需求分析/`
 - 功能 → `feature-dev-assistant`（须 Epic；无 Epic → `full-cycle-assistant`）
-- Figma UI → `figma-ui-assistant`（链接当次提供；读 `Contexts/Figma/` 规范）
+- Figma UI → `figma-ui`（链接当次提供；读 `Contexts/Figma/` 规范）
 - 学习 → `learn-assistant`（`learning-progress-read.sh` / `snapshot.sh` stdout，不写 Contexts）
 - 学习审计 → `learning-audit-assistant` → `Contexts/LLM学习/笔记/*审计报告*`
 - PM 物料 → `material-prep-assistant` → `Contexts/`（通用对照表）

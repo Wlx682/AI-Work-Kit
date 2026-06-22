@@ -26,7 +26,7 @@ date: 2026-06-20
 |------|-------|------|
 | 需求 | `requirement-analyst` | `Plans/需求分析/` |
 | 方案 | `architecture-design-assistant` | `Plans/客户端\|服务端技术方案/` |
-| 开发 | `task-splitter` · `feature-dev-assistant` · `figma-ui-assistant` | `Plans/功能开发/` |
+| 开发 | `task-splitter` · `feature-dev-assistant` · `figma-ui` | `Plans/功能开发/` |
 | 测试 | `test-generator` | `Plans/自动化测试/` |
 | 部署 | `deployment-assistant` | `Plans/部署/` |
 
@@ -52,7 +52,7 @@ stateDiagram-v2
 |------|------|------|
 | Bug | `template-generator 任务类型=排查` | `Plans/Bug排查/` |
 | 学习 | `/learn-assistant` | `Plans/学习/` |
-| 纯 UI 小改 | `/figma-ui-assistant` | `Plans/功能开发/` |
+| 纯 UI 小改 | `/figma-ui` | `Plans/功能开发/` |
 | PM 对照表 | `/material-prep` | **Contexts/**（通用） |
 
 ---
@@ -79,7 +79,7 @@ bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 
 ## 五、Skill 速查
 
-开发主线：`full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui-assistant` · `test-generator` · `deployment-assistant` · `change-impact-analysis`
+开发主线：`full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `test-generator` · `deployment-assistant` · `change-impact-analysis`
 
 通用：`resume-assistant` · `template-generator` · `review-assistant` · `material-prep-assistant`
 

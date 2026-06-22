@@ -22,7 +22,7 @@
 | `/architecture-design-assistant` | architecture-design-assistant | 技术方案 plan |
 | `/task-splitter` | task-splitter | 主 plan + 子任务 |
 | `/feature-dev-assistant` | feature-dev-assistant | `Plans/功能开发/` |
-| `/figma-ui-assistant` | figma-ui-assistant | UI plan |
+| `/figma-ui` | figma-ui | UI plan |
 | `/test-generator` | test-generator | `Plans/自动化测试/` |
 | `/deployment-assistant` | deployment-assistant | `Plans/部署/` |
 | `/change-impact-analysis` | change-impact-analysis | 变更影响 |

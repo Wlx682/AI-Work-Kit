@@ -22,7 +22,7 @@
 |-----------------|------------|----------|
 | requirement | `requirement-analyst` | WBS 1 |
 | architecture | `architecture-design-assistant` | WBS 2 |
-| development | `feature-dev-assistant` / `figma-ui-assistant` | WBS 3–10 |
+| development | `feature-dev-assistant` / `figma-ui` | WBS 3–10 |
 | test | `test-generator` | WBS 11 |
 | deploy | `deployment-assistant` | WBS 13–14 |
 
