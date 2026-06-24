@@ -61,6 +61,21 @@ if [[ -n "$epic" ]]; then
   [[ -f "$(resolve_path "$epic")" ]] || fail "epic plan 不存在: $epic"
 fi
 
+# 8. skill_run 反馈块校验（Sprint 1 试点）
+#    协议：Contexts/决策/Skill反馈协议.md
+#    试点期：仅对 Plans/需求分析/ 强制要求块存在；其它路径仅在块存在时校验合法性
+SKILL_RUN_FLAG=""
+case "$PLAN" in
+  *Plans/需求分析/*|*/Plans/需求分析/*)
+    SKILL_RUN_FLAG="--require"
+    ;;
+esac
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/validate-skill-run.py" ]]; then
+  if ! python3 "$ROOT/scripts/validate-skill-run.py" $SKILL_RUN_FLAG "$PLAN" >&2; then
+    fail "skill_run 校验未通过（见上方日志）"
+  fi
+fi
+
 # 仅对功能开发 plan 做完整门禁（路径在 Plans/功能开发/）
 case "$PLAN" in
   *Plans/功能开发/*|*/Plans/功能开发/*)

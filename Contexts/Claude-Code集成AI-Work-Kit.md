@@ -285,7 +285,7 @@ AI-Work-Kit/
 
 ## 11. 相关链接
 
-- [[分享包-快速开始]]
+- [[Contexts/决策/新手引导与最佳实践]]
 - [[MCP进阶指南]]
 - [[Contexts/LLM学习/学习路线-LLM与提示词]]
 - [[Skills/README]]

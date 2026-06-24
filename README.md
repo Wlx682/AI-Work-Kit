@@ -4,10 +4,10 @@ Obsidian 知识库 + Cursor / Claude Skill：模板开工、Epic 闭环、plan �
 
 ## 读文档（按顺序）
 
-1. **[Kit 核心原则](Contexts/决策/Kit核心原则.md)** — 放哪、删不删（全库唯一真相源）
-2. **[快速开始](分享包-快速开始.md)** — 5 分钟 + Case
-3. **[工作流总览](Contexts/决策/AI-Work-Kit工作流总览.md)** — Skill、看板、门禁
-4. **[模板约定](Templates/模板约定.md)** — YAML、续做格式
+1. **[Kit 核心原则](Contexts/决策/Kit核心原则.md)** — 真理源（放哪 / 不放哪 / 做完怎么办）
+2. **[新手引导与最佳实践](Contexts/决策/新手引导与最佳实践.md)** — 3 张地图（入门 / 全流程 / 决策树）
+3. **[工作流总览](Contexts/决策/AI-Work-Kit工作流总览.md)** — Skill 速查 + 看板 + 门禁
+4. **[模板约定](Templates/模板约定.md)** — YAML / Epic 字段 / 续做格式
 5. **[索引](索引.md)** — 目录速查
 
 ## 安装

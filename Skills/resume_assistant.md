@@ -1,6 +1,6 @@
 # 续做助手 Skill
 
-当用户说「续做」或使用 **`/resume`** 命令时执行。
+当用户说「续做」或使用 `**/resume**` 命令时执行。
 
 ## 标准命令（全库统一）
 
@@ -18,16 +18,18 @@
 4. 根据进度判断下一步（对照 plan / Epic WBS 勾选切片）。
 5. **推荐 Skill**（按 `lifecycle_state`）：
 
-| lifecycle_state | 推荐 Skill | 典型切片 |
-|-----------------|------------|----------|
-| requirement | `requirement-analyst` | WBS 1 |
-| architecture | `architecture-design-assistant` | WBS 2 |
-| development | `feature-dev-assistant` / `figma-ui` | WBS 3–10 |
-| test | `test-generator` | WBS 11 |
-| deploy | `deployment-assistant` | WBS 13–14 |
 
-6. 输出结构化结果（见下方格式）。
-7. 进度不足时要求用户补充。
+| lifecycle_state | 推荐 Skill                             | 典型切片      |
+| --------------- | ------------------------------------ | --------- |
+| requirement     | `requirement-analyst`                | WBS 1     |
+| architecture    | `architecture-design-assistant`      | WBS 2     |
+| development     | `feature-dev-assistant` / `figma-ui` | WBS 3–10  |
+| test            | `test-generator`                     | WBS 11    |
+| deploy          | `deployment-assistant`               | WBS 13–14 |
+
+
+1. 输出结构化结果（见下方格式）。
+2. 进度不足时要求用户补充。
 
 ## 输出格式
 
@@ -62,3 +64,4 @@
 
 @Skills/resume_assistant.md 续做，plan=学习/2026-06-12-第4课-Agent.md，进度=概念已讲，待勾选步骤
 ```
+

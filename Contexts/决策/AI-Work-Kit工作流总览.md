@@ -1,13 +1,22 @@
 ---
 tags: [决策, 工作流, Epic]
 date: 2026-06-20
----
+relations:
+  depends_on:
+    - Contexts/决策/Kit核心原则.md
+    - Templates/模板约定.md
+  dependents:
+    - Contexts/决策/新手引导与最佳实践.md
+  supersedes: []
+  superseded_by: []
+  conflicts: []
 
+---
 # AI-Work-Kit 工作流总览
 
 > **原则**（放哪、删不删）→ [[Contexts/决策/Kit核心原则]]（勿在本文件重复）  
 > **格式**（YAML、续做）→ [[Templates/模板约定]]  
-> **上手 Case** → [[分享包-快速开始]]
+> **入门 + 决策树** → [[Contexts/决策/新手引导与最佳实践]]
 
 ---
 
@@ -100,5 +109,5 @@ Claude workflow：`.claude/workflows/full-cycle.js` · `learning-audit` · `dev-
 
 ## 相关
 
-- [[Contexts/分享/2026-06-11-AI工作流的构建]]
+- [[Contexts/决策/新手引导与最佳实践]] — 入门 + 决策树 + 脚本速查
 - [[Contexts/Claude-Code集成AI-Work-Kit]]

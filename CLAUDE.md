@@ -25,6 +25,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 1. 查资料 → `Plans/` + `Contexts/`（可选 enquire MCP）。
 2. 写 **Contexts 前须用户确认**（「存档到 Contexts」除外）。
 3. Epic 入口与 Cursor `.cursorrules` 一致；无 Epic 不建功能主 plan。
+4. **反馈回路硬规则**：任务结束必须输出 `skill_run` YAML 块。有 plan 追加到 plan 末尾；无 plan 追加到 `Contexts/决策/孤立反馈记录.md` 顶部。`utility` 二选一：`high`（必给一句话理由）/ `not-needed`。协议：[[Contexts/决策/Skill反馈协议]]；校验：`scripts/plan-gate-check.sh`。
 
 ## Skill 表
 
@@ -46,4 +47,4 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 
 ## 入口
 
-[[索引]] · [[分享包-快速开始]] · [[Contexts/决策/Kit核心原则]]
+[[索引]] · [[Contexts/决策/新手引导与最佳实践]] · [[Contexts/决策/Kit核心原则]]

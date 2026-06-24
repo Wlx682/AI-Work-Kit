@@ -17,6 +17,13 @@ plans:
   development: Plans/功能开发/{{date}}-{{title}}.md
   test: null
   deploy: null
+relations:
+  depends_on:
+    - Templates/模板约定.md
+  dependents: []
+  supersedes: []
+  superseded_by: []
+  conflicts: []
 ---
 
 # Epic：{{title}}

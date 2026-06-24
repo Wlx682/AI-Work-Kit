@@ -1,0 +1,31 @@
+{
+  "command_timeout": 5,
+  "templates_folder": "Templates",
+  "templates_pairs": [["", ""]],
+  "trigger_on_file_creation": true,
+  "auto_jump_to_cursor": true,
+  "enable_system_commands": false,
+  "shell_path": "",
+  "user_scripts_folder": "",
+  "enable_folder_templates": true,
+  "folder_templates": [
+    { "folder": "Plans/Epic", "template": "Templates/Epic母版.md" },
+    { "folder": "Plans/需求分析", "template": "Templates/需求分析-带验收标准模板.md" },
+    { "folder": "Plans/客户端技术方案", "template": "Templates/技术方案模板.md" },
+    { "folder": "Plans/服务端技术方案", "template": "Templates/技术方案模板.md" },
+    { "folder": "Plans/功能开发", "template": "Templates/客户端功能开发模板.md" },
+    { "folder": "Plans/Bug排查", "template": "Templates/排查问题模板.md" },
+    { "folder": "Plans/自动化测试", "template": "Templates/自动化测试模板.md" },
+    { "folder": "Plans/部署", "template": "Templates/部署模板.md" },
+    { "folder": "Contexts/日报", "template": "Templates/日报模板.md" },
+    { "folder": "Contexts/周报", "template": "Templates/周报模板.md" },
+    { "folder": "Contexts/复盘", "template": "Templates/月度复盘模板.md" },
+    { "folder": "Contexts/LLM学习/笔记", "template": "Templates/学习笔记模板.md" },
+    { "folder": "Contexts/LLM学习/概念", "template": "Templates/概念卡模板.md" },
+    { "folder": "Contexts/LLM学习/复盘", "template": "Templates/学习周复盘模板.md" }
+  ],
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": false,
+  "enabled_templates_hotkeys": [""],
+  "startup_templates": [""]
+}

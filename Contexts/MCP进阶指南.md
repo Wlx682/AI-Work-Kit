@@ -139,5 +139,5 @@ Obsidian 必须运行 + Local REST API 插件。适合插件级读写，无语�
 ## 相关
 
 - 示例：`.cursor/mcp.json.example`
-- 工作流：[[落地计划]] · [[索引]]
+- 工作流：[[Contexts/决策/新手引导与最佳实践]] · [[索引]]
 - Skill：[[Skills/README]]

@@ -25,7 +25,8 @@
       ],
       "exitCriteria": {
         "status": ["已采纳"],
-        "p0Open": 0
+        "p0Open": 0,
+        "skill_run_present": true
       },
       "next": "architecture"
     },
@@ -43,7 +44,8 @@
         "API Schema"
       ],
       "exitCriteria": {
-        "status": ["已采纳"]
+        "status": ["已采纳"],
+        "skill_run_present": true
       },
       "next": "development"
     },
@@ -55,7 +57,8 @@
         "feature-dev-assistant"
       ],
       "exitCriteria": {
-        "allSubtasksChecked": true
+        "allSubtasksChecked": true,
+        "skill_run_present": true
       },
       "next": "test"
     },
@@ -65,7 +68,8 @@
       "skill": "test-generator",
       "template": "Templates/自动化测试模板.md",
       "exitCriteria": {
-        "testsPass": true
+        "testsPass": true,
+        "skill_run_present": true
       },
       "next": "deploy"
     },
@@ -75,7 +79,8 @@
       "skill": "deployment-assistant",
       "template": "Templates/部署模板.md",
       "exitCriteria": {
-        "status": ["已采纳"]
+        "status": ["已采纳"],
+        "skill_run_present": true
       },
       "next": null
     }

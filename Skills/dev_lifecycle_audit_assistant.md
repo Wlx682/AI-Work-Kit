@@ -18,11 +18,11 @@
 
 ## verdict
 
-| 情况 | 判定 |
-|------|------|
+| 情况                                           | 判定   |
+| :------------------------------------------- | ---- |
 | lifecycle=development 但 gate BLOCKED 或缺需求/方案 | 严重矛盾 |
-| WBS 与阶段略有不符、缺 test plan 但未到 test 阶段 | 轻微偏差 |
-| 机械证据与声称一致 | 一致 |
+| WBS 与阶段略有不符、缺 test plan 但未到 test 阶段          | 轻微偏差 |
+| 机械证据与声称一致                                    | 一致   |
 
 ## Claude Code workflow
 

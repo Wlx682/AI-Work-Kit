@@ -78,7 +78,7 @@ flowchart LR
 | Skill | 可复用的任务指令包 | [[Contexts/LLM学习/概念/Skill]] |
 | MCP | AI 与外部系统的标准「接头」 | [[Contexts/LLM学习/概念/MCP]] |
 | Rules / .cursorrules | 常驻系统级约束 | 见 Skill 概念卡 |
-| 工作流 | 模板 + plan + 续做 + 复盘 | [[分享包-快速开始]] |
+| 工作流 | 模板 + plan + 续做 + 复盘 | [[Contexts/决策/新手引导与最佳实践]] |
 
 ---
 

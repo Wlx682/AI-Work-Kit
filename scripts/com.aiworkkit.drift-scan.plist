@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AI-Work-Kit 漂移扫描 · macOS launchd 模板
+
+  安装（手动）：
+    cp scripts/com.aiworkkit.drift-scan.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+
+  卸载：
+    launchctl unload ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+    rm ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+
+  默认：每周日 10:00 跑一次，输出到 Contexts/决策/漂移报告-YYYY-WW.md。
+  日志：/tmp/aiworkkit-drift-scan.{out,err}.log
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aiworkkit.drift-scan</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/wanglongxiang/Documents/AI-Work-Kit/scripts/drift-scan.py</string>
+    <string>--write-report</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/wanglongxiang/Documents/AI-Work-Kit</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>0</integer>
+    <key>Hour</key>
+    <integer>10</integer>
+    <key>Minute</key>
+    <integer>7</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/aiworkkit-drift-scan.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/aiworkkit-drift-scan.err.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

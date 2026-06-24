@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AI-Work-Kit · 漂移扫描周任务（macOS launchd）
+
+  本文件是模板，不会自动生效。手动启用：
+
+      cp scripts/aiworkkit-drift-scan.plist ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+      launchctl load ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+
+  禁用 / 移除：
+
+      launchctl unload ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+      rm ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist
+
+  排查：日志在 /tmp/aiworkkit-drift-scan.{log,err}
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.aiworkkit.drift-scan</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/wanglongxiang/Documents/AI-Work-Kit/scripts/drift-scan.py</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>17</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/aiworkkit-drift-scan.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/aiworkkit-drift-scan.err</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>

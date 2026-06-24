@@ -1,8 +1,28 @@
 ---
 tags: [决策, 原则, 工作流]
 date: 2026-06-20
----
+key_points:
+  - 三层存储：Templates 长期 / Plans 做完删 / Contexts 跨任务
+  - 写 Contexts 前须用户确认（除非用户说「存档到 Contexts」）
+  - Epic 是业务唯一母 plan，子 plan 通过 frontmatter `epic:` 反向链接
+  - 阶段门禁：plan-gate-check.sh 卡 status / lifecycle_state / 反馈块
+  - 反馈回路：每个 Skill 完成必须输出 skill_run（见 §九）
+  - 关系图谱：frontmatter `relations:` 含 5 类双向关系
+relations:
+  depends_on: []
+  dependents:
+    - Contexts/决策/AI-Work-Kit工作流总览.md
+    - Contexts/决策/Contexts漂移检测协议.md
+    - Contexts/决策/Skill反馈协议.md
+    - Contexts/决策/关系图谱协议.md
+    - Contexts/决策/新手引导与最佳实践.md
+    - Templates/模板约定.md
+  supersedes:
+    - Contexts/决策/资料与代码仓库边界.md
+  superseded_by: []
+  conflicts: []
 
+---
 # Kit 核心原则
 
 > **全库唯一真相源。** 其它文件只负责「怎么用」，不得与本文件矛盾。  
@@ -91,7 +111,7 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 | **本文** | 放什么、不放什么、做完怎么办 |
 | [[Templates/模板约定]] | 文件名、YAML、`status`、`epic:`、续做格式、Epic 字段 |
 | [[Contexts/决策/AI-Work-Kit工作流总览]] | Skill 怎么用、Epic 阶段、看板、门禁命令 |
-| [[分享包-快速开始]] | 可复制 Case、5 分钟上手 |
+| [[Contexts/决策/新手引导与最佳实践]] | 3 张地图：入门 / 全流程 / 决策树 |
 | [[索引]] | 目录速查、模板清单 |
 | `.cursorrules` / [[CLAUDE.md]] | Agent 常驻：目录索引 + Skill 触发词 |
 | `Skills/*.md` | 单次任务步骤（引用本文，不另定存放规则） |
@@ -121,8 +141,25 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 
 ---
 
+## 九、反馈回路（必读）
+
+> 协议全文：[[Contexts/决策/Skill反馈协议]]。本节只立硬规则，细节不复述。
+
+每个 Skill 完成任务时**必须**输出 `skill_run` YAML 块：
+- 有 plan → 追加到 plan 末尾
+- 无 plan → 追加到 `Contexts/决策/孤立反馈记录.md` 顶部
+
+`utility` 二选一：`high`（必给一句话理由）/ `not-needed`。
+`scripts/plan-gate-check.sh` 校验存在性与字段合法性；缺则视为任务未完成。
+`scripts/feedback-aggregate.sh` 月度聚合 → 输入月度复盘。
+
+**试点**：`requirement-analyst`，2026-06-24 起；通过后推至全部 Skill。
+
+---
+
 ## 相关
 
+- [[Contexts/决策/Skill反馈协议]]
 - [[Contexts/决策/资料与代码仓库边界]] → 指向本文（兼容旧链接）
 - [[Contexts/决策/AI-Work-Kit工作流总览]]
 - [[Templates/模板约定]]

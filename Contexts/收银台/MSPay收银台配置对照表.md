@@ -1,3 +1,18 @@
+---
+tags: [收银台, MSPay, 对照表, PM物料]
+date: 2026-06-20
+status: 长期
+verified_against:
+  - repo: NamiWork
+    commit: cf726179
+    date: 2026-06-24
+    note: "PaymentManager.register 入参对照（namiwork 列）"
+  - repo: ClawAI
+    commit: 90dc1ad4
+    date: 2026-06-24
+    note: "PaymentManager.register 入参对照（Claw 列）"
+---
+
 # MSPay 收银台配置对照表
 
 收银台部门申请/下发。`product` / `appKey` / 协议 URL 写入 `PaymentManager.register`；IAP 回调 URL 填 App Store Connect。
