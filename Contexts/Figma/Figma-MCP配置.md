@@ -2,9 +2,10 @@
 tags: [figma, mcp, 决策, 界面开发]
 ---
 
-# Figma MCP 配置（Cursor）
+# Figma MCP 配置
 
 > 目标：Agent 通过 MCP 读 Figma 节点属性（非截图估像素），用于对稿与切片 2 度量表。
+> 下文操作示例以 **Cursor** 为主（菜单路径、`.cursor/mcp.json`）；**Claude Code / Codex** 思路一致，只是配置文件位置不同（Claude 用 `.mcp.json` 或 `.claude/.mcp.json`；Codex 按编辑器 MCP 文档对接）。
 
 ## 已配置：Personal Access Token + `figma-api` MCP（本机）
 

@@ -1,4 +1,6 @@
-# MCP 进阶指南：Obsidian ↔ Cursor
+# MCP 进阶指南：Obsidian ↔ AI 编辑器
+
+> 适用于 Cursor / Claude Code / Codex 等任何支持 MCP 的编辑器。下文示例以 Cursor 配置为主，其它编辑器思路一致（改 `.claude/.mcp.json` 或编辑器对应位置）。
 
 > **当前状态（2026-06-10）**：已安装 **enquire-mcp 第 2 档**（`--persistent-index`），`.cursor/mcp.json` 已配置。
 
@@ -35,7 +37,7 @@
 npx -y @oomkapwn/enquire-mcp setup --vault "/你的路径/AI-Work-Kit"
 ```
 
-### Cursor 配置（`.cursor/mcp.json`）
+### 编辑器配置（以 Cursor `.cursor/mcp.json` 为例；Claude Code 用 `.mcp.json` / `.claude/.mcp.json`，结构一致）
 
 ```json
 {
@@ -119,7 +121,7 @@ Obsidian 必须运行 + Local REST API 插件。适合插件级读写，无语�
 
 - [x] `enquire-mcp setup` 完成
 - [x] `.cursor/mcp.json` 已配置
-- [ ] Cursor MCP 面板 enquire 绿灯
+- [ ] AI 编辑器 MCP 面板 enquire 绿灯（Cursor → Settings → MCP；Claude Code → `/mcp` 命令）
 - [ ] 问「知识库里关于 API 超时的记录？」能命中 Plans
 - [ ] 问「网络相关决策？」能命中 Contexts
 - [ ] 与 `/resume plan=...` 组合续做 1 次

@@ -22,7 +22,7 @@ relations:
 
 ## 一、怎么用（给同事）
 
-1. 打开 Vault + Cursor（或业务仓 + 全局 Skill）。
+1. 打开 Vault + AI 编辑器（Cursor / Claude Code / Codex 任选；或业务仓 + 全局 Skill）。
 2. **新需求** → `/full-cycle 模块=XX`。
 3. **续做** → `/resume plan=Plans/... 进度=...`。
 4. **看 WBS** → `./scripts/full-cycle-boot.sh` → http://127.0.0.1:7777/
@@ -31,13 +31,13 @@ relations:
 
 ## 二、Epic 五阶段
 
-| 阶段 | Skill | 产出 |
-|------|-------|------|
-| 需求 | `requirement-analyst` | `Plans/需求分析/` |
-| 方案 | `architecture-design-assistant` | `Plans/客户端\|服务端技术方案/` |
-| 开发 | `task-splitter` · `feature-dev-assistant` · `figma-ui` | `Plans/功能开发/` |
-| 测试 | `test-generator` | `Plans/自动化测试/` |
-| 部署 | `deployment-assistant` | `Plans/部署/` |
+| 阶段  | Skill                                                  | 产出                    |
+| --- | ------------------------------------------------------ | --------------------- |
+| 需求  | `requirement-analyst`                                  | `Plans/需求分析/`         |
+| 方案  | `architecture-design-assistant`                        | `Plans/客户端\|服务端技术方案/` |
+| 开发  | `task-splitter` · `feature-dev-assistant` · `figma-ui` | `Plans/功能开发/`         |
+| 测试  | `test-generator`                                       | `Plans/自动化测试/`        |
+| 部署  | `deployment-assistant`                                 | `Plans/部署/`           |
 
 新建 Epic：复制 [[Templates/Epic母版]] → `Plans/Epic/`。
 

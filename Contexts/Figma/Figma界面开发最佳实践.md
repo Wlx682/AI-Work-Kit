@@ -144,7 +144,7 @@ plan 里维护 **节点度量表**（见模板），不要只贴一张截图。
 
 ---
 
-## 五、AI 协作提示（给 Cursor）
+## 五、AI 协作提示（任意 AI 编辑器：Cursor / Claude Code / Codex）
 
 开发时 AI 应：
 
