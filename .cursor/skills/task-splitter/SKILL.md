@@ -13,4 +13,10 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 3. 子任务 `parent:` 链主 plan；`lifecycle_state: development`  
 4. 实现：`/resume plan=子任务路径`
 
+## ✋ 禁止擅自下结论（硬规则）
+
+- 拆解与 WBS 修订时，**禁止**输出「我推荐方案 A/B/C」式单方面定论。
+- 信息不足或拆分边界不清 → **暂停**，列出待确认项找用户；或建议先走 `requirement-analyst` 闭环 P0。
+- Epic WBS 表结构变更须经本 Skill 产出 plan **或**用户书面确认后再写回 Epic。
+
 同步：`Skills/task_splitter.md`

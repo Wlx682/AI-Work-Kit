@@ -3,7 +3,8 @@ name: full-cycle-assistant
 description: >-
   启动 Epic 全流程闭环开发（需求→方案→开发→测试→部署），支持从中间阶段切入；
   开场必跑 full-cycle-boot.sh 自动打开看板 http://127.0.0.1:7777/。
-  触发词：全流程开发、全流程闭环、启动全流程、full-cycle、/full-cycle、从测试开始、阶段=自动化测试。
+  触发词：全流程开发、全流程闭环、启动全流程、启动项目、一条龙、full-cycle、/full-cycle、从测试开始、阶段=自动化测试。
+  互斥锁：单阶段词路由子Skill，不劫持全流程；≥3 Skill命中→resume-assistant降级兜底。
 ---
 
 # 全流程闭环助手（full-cycle-assistant）
@@ -11,8 +12,43 @@ description: >-
 Vault：`~/Documents/AI-Work-Kit`  
 原则：[[Contexts/决策/Kit核心原则]] · 状态机：`.claude/workflows/full-cycle.json`
 
-> 与 `project-manager` 区别：**本 Skill 可执行**——开场拉起看板、解析入口阶段、路由到子 Skill。  
-> Claude Code 亦可用 `/workflow full-cycle`，但**仍须先跑 boot 脚本**打开看板。
+> 与 `project-manager` 区别：**本 Skill 可执行**——开场拉起看板、解析入口阶段、路由到子 Skill。
+
+## 触发条件
+
+当用户说 **全流程开发 / 全流程闭环 / 启动全流程 / 启动项目 / 一条龙 / full-cycle / /full-cycle**，或 **从【阶段】开始**（如从自动化测试开始）时执行。
+
+## 🔒 互斥锁（必守）
+
+**用户若只说单个阶段词，优先路由到对应子 Skill，不要劫持为「全流程」**：
+
+| 用户输入命中 | 路由到 | 不要走 full-cycle |
+|--------------|--------|-------------------|
+| 「需求分析 / PRD」 | `requirement-analyst` | ✗ |
+| 「系统架构 / 模块边界 / ER 图」 | `architecture-design-assistant` | ✗ |
+| 「拆任务 / WBS」 | `task-splitter` | ✗ |
+| 「开发功能 / 写代码 / 实现 XX」 | `feature-dev-assistant` | ✗ |
+| 「做界面 / 还原 Figma / 对稿」 | `figma-ui` | ✗ |
+| 「写测试 / 生成测试用例」 | `test-generator` | ✗ |
+| 「上线 / 发布 / 灰度」 | `deployment-assistant` | ✗ |
+| 「需求变了 / 改 scope」 | `change-impact-analysis` | ✗ |
+| 「检查 Epic 进度 / 审计」 | `dev-lifecycle-audit-assistant` | ✗ |
+
+**只有用户显式说「全流程 / 启动项目 / 一条龙 / 从需求一直做到上线」时，才走本 Skill**。
+
+## ✋ WBS 修订门禁
+
+修订 Epic WBS（增删切片、改 Skill/验收、重排顺序）时：
+
+1. **优先** `task-splitter` 产出/更新 `Plans/功能开发/` 主 plan + 子任务
+2. 边界不清 → **问用户**，禁止 Agent 单方面推荐拆分方案
+3. 写回 Epic 前须有子 plan 真理源（见 `Contexts/决策/母子plan投影规则.md`）
+
+## 🛟 降级兜底（≥3 Skill 同时命中时）
+
+如果对当前用户输入有 **3 个或以上** Skill 都能匹配，**禁止 Agent 自行选定**，统一路由到 `resume-assistant`，由它询问：
+
+> 「您是想 **续做旧任务**（请给 plan 路径），还是 **开启新流程**（请明确是：需求 / 架构 / 开发 / 测试 / 上线 中的哪一步）？」
 
 ---
 

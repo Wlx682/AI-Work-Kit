@@ -124,7 +124,7 @@ relations:
 | 1.4 | 改 `requirement-analyst` Skill 末尾，加「输出反馈」章节示例 | 10 min |
 | 1.5 | `scripts/plan-gate-check.sh` 加强校验：检测 `skill_run` 块存在性；校验 utility 枚举值（`high`/`not-needed`）；校验 `contexts_used` 路径在仓库中实际存在；任一失败则 exit 1 | 20 min |
 | 1.6 | `.claude/workflows/full-cycle.json` 每个 state 加 `"skill_run_present": true` | 10 min |
-| 1.7 | 写 `scripts/feedback-aggregate.sh`：扫描所有 Plan 末尾的 `skill_run` 块 + 孤立反馈记录.md，输出 Markdown 聚合报告 | 60 min |
+| 1.7 | 写 `scripts/feedback-aggregate.py`：扫描所有 Plan 末尾的 `skill_run` 块 + 孤立反馈记录.md，输出 Markdown 聚合报告 | 60 min |
 | 1.8 | `Templates/月度复盘模板.md` 加"反馈聚合"段落，调用 1.7 | 10 min |
 | 1.9 | 试点执行：用 `requirement-analyst` 完成至少 3 次真实或模拟任务，连续 3 次合规后视为通过 | 1 周 |
 | 1.10 | 试点通过后，将 1.4 的反馈章节推至全部 18 个 Skill | 40 min |
@@ -192,7 +192,7 @@ relations:
 | 2.1 | 新建 `Contexts/决策/关系图谱协议.md`（定义 5 种关系类型、回填规则）| 40 min |
 | 2.2 | `Templates/模板约定.md` 增加 `relations:` 字段约定 | 15 min |
 | 2.3 | **Sprint 2a**：全库回填 `relations:` — Contexts 32 份（优先 `depends_on`/`dependents`，`supersedes`/`conflicts` 可留空后续补）| 120 min |
-| 2.4 | 写 `scripts/relations-check.sh`：双向一致性校验（`supersedes` ↔ `superseded_by`）| 45 min |
+| 2.4 | 写 `scripts/relations-check.py`：双向一致性校验（`supersedes` ↔ `superseded_by`）| 45 min |
 | 2.5 | 写 `.git/hooks/pre-commit`（或 `scripts/pre-commit-relations.sh`）：仅当暂存区包含以下枢纽文件时触发依赖提醒 —— `Contexts/决策/Kit核心原则.md`、`Contexts/决策/AI-Work-Kit工作流总览.md`、`Templates/模板约定.md`；列出所有 `dependents` 条目，提示逐项确认 | 60 min |
 | 2.6 | **Sprint 2b**：回填 Templates 22 份 + Skills 18 份的 `relations:` | 60 min |
 | 2.7 | 新建 `Contexts/决策/关系图谱.md`（Dataview 视图，按关系类型呈现）| 30 min |
@@ -243,7 +243,7 @@ relations:
 | 3.1 | B 最小版：选 2 份长方案文档加章节锚点 + frontmatter `key_points` | 30 min |
 | 3.2 | C 最小版：写 `Templates/查询锦囊.md`，列 5 条 Dataview 查询 | 30 min |
 | 3.3 | H 完整版：建立 `~/.config/aiworkkit/projects.list` 业务仓列表 | 5 min |
-| 3.4 | 写 `scripts/drift-scan.sh`：周扫所有业务仓，对比 Contexts 中 `verified_against` commit-sha，输出差异报告 | 60 min |
+| 3.4 | 写 `scripts/drift-scan.py`：周扫所有业务仓，对比 Contexts 中 `verified_against` commit-sha，输出差异报告 | 60 min |
 | 3.5 | 配置 macOS launchd / cron 周日跑 3.4，输出 `Contexts/决策/漂移报告-YYYY-WW.md` | 10 min |
 
 **成功标准**：漂移报告至少跑出 1 条真实漂移并完成确认/修复。

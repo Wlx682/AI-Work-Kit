@@ -76,6 +76,64 @@ if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/validate-skill-run
   fi
 fi
 
+# 8b. 文档脚本引用一致性（防止文档说 .sh、实际是 .py 这类漂移）
+#     协议：见 Contexts/决策/孤立反馈记录.md → scripts/doc-script-refs-check.py
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/doc-script-refs-check.py" ]]; then
+  if ! python3 "$ROOT/scripts/doc-script-refs-check.py" --quiet "$PLAN" >&2; then
+    fail "文档脚本引用校验未通过（见上方日志）"
+  fi
+fi
+
+# 10. Epic 看板 SLICE_RE 解析预检
+#     约束：fenced checklist 行必须能被 kanban-server.py 的 SLICE_RE 匹配
+#     真理源：scripts/kanban-server.py SLICE_RE（importlib 复用，避免正则漂移）
+case "$PLAN" in
+  */Plans/Epic/*|*Plans/Epic/*)
+    if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/kanban-server.py" ]]; then
+      python3 - "$ROOT" "$PLAN" >&2 <<'PY' || fail "Epic 看板 checklist 解析失败（见上方日志）"
+import importlib.util, pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+plan = pathlib.Path(sys.argv[2])
+spec = importlib.util.spec_from_file_location("kanban_server", root / "scripts" / "kanban-server.py")
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+text = plan.read_text(encoding="utf-8")
+in_fence = False
+bad = []
+for ln, line in enumerate(text.splitlines(), 1):
+    if line.strip() == "```":
+        in_fence = not in_fence
+        continue
+    if not in_fence:
+        continue
+    if re.match(r"^\s*\[[^\]]*\]\s*\S", line) and not mod.SLICE_RE.match(line):
+        bad.append((ln, line.rstrip()))
+if bad:
+    print(f"[epic-slice-check] {len(bad)} 行 checklist 无法被看板解析（kanban-server.py SLICE_RE）:", file=sys.stderr)
+    for ln, l in bad[:5]:
+        print(f"  L{ln}: {l}", file=sys.stderr)
+    print("  约束见 Templates/Epic母版.md §三 注释。", file=sys.stderr)
+    sys.exit(1)
+PY
+    fi
+    ;;
+esac
+
+# 9. 母子 plan 投影校验（Epic 看板 ↔ 子 plan WBS 表 一致性）
+#    协议：Contexts/决策/母子plan投影规则.md
+#    触发：Plans/Epic/* 强制校验；带 epic: 字段的子 plan 也校验；其它 plan 跳过
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/validate-epic-projection.py" ]]; then
+  PROJ_FLAG=""
+  case "$PLAN" in
+    */Plans/Epic/*|*Plans/Epic/*) PROJ_FLAG="--require" ;;
+  esac
+  if [[ -n "$PROJ_FLAG" || -n "$(read_fm epic)" ]]; then
+    if ! python3 "$ROOT/scripts/validate-epic-projection.py" $PROJ_FLAG "$PLAN" >&2; then
+      fail "母子 plan 投影校验未通过（见上方日志）"
+    fi
+  fi
+fi
+
 # 仅对功能开发 plan 做完整门禁（路径在 Plans/功能开发/）
 case "$PLAN" in
   *Plans/功能开发/*|*/Plans/功能开发/*)

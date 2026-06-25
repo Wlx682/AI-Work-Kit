@@ -1,16 +1,18 @@
 ---
 name: project-manager
 description: >-
-  项目经理状态机与全流程编排说明（需求→架构→开发→测试→部署，含变更/Bugfix 回流）。
-  执行入口已迁移至 full-cycle-assistant；本 Skill 仅做阶段推荐 + 手动确认，不全自动写代码。
-  触发词：项目经理、/project-manager、阶段推荐、状态机、编排说明。
+  trigger: internal_only — 状态机与编排说明，不对用户暴露自然语言触发。
+  仅 full-cycle-assistant 内部引用，或显式 /project-manager 救急。
+  用户说全流程/启动项目一律路由 full-cycle-assistant。
 ---
 
 # 项目经理 Skill（长期 / Agent 化）
 
-> **执行入口已迁移至 `full-cycle-assistant`**（开场自动 boot 看板）。本文保留状态机与编排说明。
+> **trigger: internal_only** — 本 Skill **不对用户直接暴露**自然语言触发词；仅由 `full-cycle-assistant` 内部引用，或显式 `/project-manager` 命令救急。
+>
+> **执行入口已迁移至 `full-cycle-assistant`**（开场自动 boot 看板）。本文保留状态机与编排说明，供 full-cycle 内部参考。
 
-当用户说「帮我开发 XX 模块」「全流程开发」「/project-manager」时，**优先** `@Skills/full_cycle_assistant.md` 或 `.cursor/skills/full-cycle-assistant/`。
+所有「全流程开发 / 帮我开发 XX 模块 / 启动项目」类用户输入 → **一律路由到** `@Skills/full_cycle_assistant.md`；本 Skill 不响应。
 
 > **目标态**：用户一句话，AI 按 Workflow 自动串联各阶段 Skill；遇阻塞写入 `Plans/阻塞问题/` 并在 `Contexts/` 记录决策。
 
@@ -35,21 +37,5 @@ Requirement → Architecture → Development → Test → Deploy
 ```
 📌 当前阶段：[阶段名] | 正在执行：[Skill名] | 下一个阶段：[...] | 如需中断：/resume plan=xxx
 ```
-
-## 前置条件（当前为草案 Skill）
-
-- P0 资产就绪：`architecture-design-assistant`、`task-splitter`、`test-generator`、`deployment-assistant`
-- Workflow：`.claude/workflows/full-cycle.js`
-- 至少 1 次 P2 小功能全流程试点通过
-
-## 触发示例
-
-```
-/project-manager 帮我开发支付模块，PRD=【飞书链接】，平台=服务端
-```
-
-**注意**：在试点完成前，本 Skill 仅做**阶段推荐 + 手动确认**，不全自动写代码。
-
----
 
 同步：`Skills/project_manager.md`

@@ -1,6 +1,18 @@
 # 变更影响分析 Skill
 
-当用户说「需求变更」「改 scope」「变更影响」「/change-impact-analysis」时执行。
+## 触发条件（口语前置）
+
+当用户说以下任一时执行 —— 口语化说法优先匹配，PM 日常对话中的「改东西」类发问直接走本 Skill：
+
+- **口语优先**：「**需求变了**」「**改个东西**」「**Scope 调整**」「**临时改一下**」「**这个不做了 / 加一个**」「**PRD 又改了**」
+- **正式词**：「需求变更」「改 scope」「变更影响」「变更影响分析」
+- `/change-impact-analysis` 命令
+
+**不响应（让位给其他 Skill）**：
+
+- 「开发流程审计 / 检查 Epic 进度」→ `dev-lifecycle-audit-assistant`
+- 「重新做需求分析（全新需求）」→ `requirement-analyst`
+- 「重新设计架构（方案级重写）」→ `architecture-design-assistant`
 
 > 需求变了、开发做到一半：通过 Obsidian 双向链接反向查找受影响 plan，输出变更影响报告。
 

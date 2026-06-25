@@ -16,16 +16,18 @@
 2. **Epic 感知**：若 frontmatter 含 `epic:`，读取 Epic 母 plan 的 `lifecycle_state`、WBS 复选框、子 Plan 索引表。
 3. **门禁（开发阶段）**：对 `Plans/功能开发/` 下 plan，先跑 `bash scripts/plan-gate-check.sh <plan> --stage development`；若 `BLOCKED:` → **只输出补文档任务，不建议写代码**。
 4. 根据进度判断下一步（对照 plan / Epic WBS 勾选切片）。
-5. **推荐 Skill**（按 `lifecycle_state`）：
+5. **推荐 Skill**（按 `lifecycle_state`；development 须读 WBS/子 plan **Skill 列**）：
 
 
 | lifecycle_state | 推荐 Skill                             | 典型切片      |
 | --------------- | ------------------------------------ | --------- |
 | requirement     | `requirement-analyst`                | WBS 1     |
 | architecture    | `architecture-design-assistant`      | WBS 2     |
-| development     | `feature-dev-assistant` / `figma-ui` | WBS 3–10  |
+| development     | Skill=`figma-ui` → `figma-ui`；否则 `feature-dev-assistant` | WBS 3–10  |
 | test            | `test-generator`                     | WBS 11    |
 | deploy          | `deployment-assistant`               | WBS 13–14 |
+
+**WBS 修订**：用户要改切片/拆任务 → 路由 `task-splitter` 或列待确认项找用户；禁止擅自推荐 A/B/C 方案。
 
 
 1. 输出结构化结果（见下方格式）。

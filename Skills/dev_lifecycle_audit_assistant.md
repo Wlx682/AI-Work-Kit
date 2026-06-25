@@ -1,6 +1,18 @@
 # 开发流程审计 Skill
 
-当用户说「开发流程审计」「Epic 审计」「dev-lifecycle-audit」「检查 Epic 进度真实性」时执行。
+## 触发条件
+
+当用户说以下任一时执行 —— 包含口语化变体，PM 日常说法即可：
+
+- **正式词**：「开发流程审计」「Epic 审计」「dev-lifecycle-audit」「检查 Epic 进度真实性」
+- **口语变体**：「**检查 Epic 进度**」「**审计版本状态**」「**这个 Epic 做完了吗**」「**这个需求做完了吗**」「**这个版本做的咋样了**」「**真不真实**」
+- `/dev-lifecycle-audit` 命令
+
+**不响应（让位给其他 Skill）**：
+
+- 「日报 / 周报 / 项目复盘」→ `review-assistant`
+- 「学习进度审计」→ `learning-audit-assistant`
+- 「需求变更影响」→ `change-impact-analysis`
 
 > 对标 `learning-audit`：机械脚本 + 多维度交叉比对 → 决策文档。
 

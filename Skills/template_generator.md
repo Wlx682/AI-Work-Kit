@@ -1,6 +1,19 @@
 # 模板生成器 Skill
 
-当用户需要启动高频任务时，按任务类型选用 `Templates/` 下模板。全库约定见 `Templates/模板约定.md`。
+## 触发条件（侧重「格式」）
+
+当用户说以下任一时执行 —— 关键词偏 **要骨架 / 套模板**，与「设计系统内容」区分开：
+
+- 「**生成 [XX] 模板**」「**套用模板**」「**给我一个 [XX] 骨架**」「**起个 plan 模板**」
+- `/template-generator` 命令
+
+**不响应（让位给其他 Skill）**：
+
+- 「系统架构设计 / 模块边界 / ER 图」（要内容不要骨架）→ `architecture-design-assistant`
+- 「需求分析 / PRD 评审」→ `requirement-analyst`
+- 「开发功能 / 实现模块」→ `feature-dev-assistant`
+
+按任务类型选用 `Templates/` 下模板。全库约定见 `Templates/模板约定.md`。
 
 ## 支持的任务类型
 

@@ -20,7 +20,7 @@ relations:
 
 # Skill 反馈协议
 
-> **全库唯一定义**：每个 Skill 完成任务时如何输出反馈数据，由 `scripts/feedback-aggregate.sh` 聚合，月度复盘消费。
+> **全库唯一定义**：每个 Skill 完成任务时如何输出反馈数据，由 `scripts/feedback-aggregate.py` 聚合，月度复盘消费。
 > 与 [[Contexts/决策/Kit核心原则]] §九 联动；任何 Skill 修改不得违反本协议。
 
 ---
@@ -41,7 +41,7 @@ relations:
 | 任务对应 plan 存在 | 该 plan 文件**末尾**追加 `skill_run` YAML 块 |
 | 任务无 plan（如 `template-generator` 一次性输出、`learn-assistant` 续读不写 plan）| `Contexts/决策/孤立反馈记录.md` 顶部追加一条 |
 
-**`Contexts/决策/孤立反馈记录.md`** 倒序排列（最新在上），每条独立 YAML 节，便于 `feedback-aggregate.sh` 同一脚本扫描。
+**`Contexts/决策/孤立反馈记录.md`** 倒序排列（最新在上），每条独立 YAML 节，便于 `feedback-aggregate.py` 同一脚本扫描。
 
 ---
 
@@ -98,7 +98,7 @@ skill_run:
 
 ---
 
-## 五、聚合规则（feedback-aggregate.sh 月度执行）
+## 五、聚合规则（feedback-aggregate.py 月度执行）
 
 | 输出分组 | 触发条件 |
 |---------|----------|
@@ -128,4 +128,4 @@ skill_run:
 - [[Contexts/决策/Kit核心原则]] §九（反馈回路）
 - [[Templates/月度复盘模板]]（消费聚合报告）
 - `scripts/plan-gate-check.sh`（结构校验）
-- `scripts/feedback-aggregate.sh`（聚合）
+- `scripts/feedback-aggregate.py`（聚合）

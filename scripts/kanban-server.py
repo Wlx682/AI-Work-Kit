@@ -17,7 +17,88 @@ HOST = "127.0.0.1"
 PORT = 7777
 
 PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change"}
-SLICE_RE = re.compile(r"^(\[[ xX]\])\s*(\d+)\.\s*(.+)$")
+SLICE_RE = re.compile(r"^(\[[ xX~]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
+WBS_TABLE_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
+
+
+def clean_md_cell(s: str) -> str:
+    return re.sub(r"[*`]+", "", s).strip()
+
+
+def parse_wbs_table(path: Path) -> dict[int, dict[str, str]]:
+    """Parse §三 WBS markdown table → detail by slice number."""
+    text = path.read_text(encoding="utf-8")
+    in_section = False
+    details: dict[int, dict[str, str]] = {}
+    for line in text.splitlines():
+        if re.search(r"##\s*三、WBS", line):
+            in_section = True
+            continue
+        if in_section and line.startswith("## ") and not re.search(r"WBS", line):
+            break
+        if not in_section or not line.startswith("|"):
+            continue
+        if "---" in line or re.match(r"^\|\s*#\s*\|", line) or "切片" in line:
+            continue
+        parts = [p.strip() for p in line.split("|")[1:-1]]
+        if not parts or not parts[0].isdigit():
+            continue
+        n = int(parts[0])
+        if len(parts) >= 6:
+            details[n] = {
+                "title": clean_md_cell(parts[1]),
+                "skill": clean_md_cell(parts[2]),
+                "input": parts[3],
+                "output": parts[4],
+                "acceptance": parts[5],
+            }
+        elif len(parts) >= 5:
+            details[n] = {
+                "title": clean_md_cell(parts[1]),
+                "skill": "",
+                "input": parts[2],
+                "output": parts[3],
+                "acceptance": parts[4],
+            }
+    return details
+
+
+# 看板卡片「白话一句」— 与 WBS 表 title 互补
+SLICE_SUMMARY: dict[int, str] = {
+    1: "把飞书 PRD、Figma、接口文档整理成可开发的需求文档",
+    2: "定技术栈、模块划分、路由与 Repository 契约",
+    3: "用 Figma 量每个页面的尺寸/圆角/色值，写度量表",
+    4: "搭 domain 模型与目录骨架（不含 UI）",
+    5: "Mock 假数据 + 日后换真 API 的 Repository",
+    6: "按设计稿 1:1 画三个主页的布局（先像再动）",
+    7: "页面接上假数据：Banner、灵感列表等能展示",
+    8: "补交互：Tab、弹层、hover、播放器等业务态",
+    9: "空数据、失败、未登录等边界页面",
+    10: "接真实接口 + 和设计走查验收",
+    11: "写自动化测试 plan 并跑通 CI",
+    12: "Code Review，清 P0",
+    13: "上线前检查清单",
+    14: "发布后冒烟与监控",
+    15: "沉淀通用资料、关闭 Epic",
+}
+
+SLICE_PLAN_STAGE: dict[int, str] = {
+    1: "requirement",
+    2: "architecture",
+    3: "development",
+    4: "development",
+    5: "development",
+    6: "development",
+    7: "development",
+    8: "development",
+    9: "development",
+    10: "development",
+    11: "test",
+    12: "development",
+    13: "deploy",
+    14: "deploy",
+    15: "development",
+}
 
 
 def resolve_plan(rel: str) -> Path:
@@ -127,7 +208,7 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
 def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
     text = path.read_text(encoding="utf-8")
     in_fence = False
-    slices: list[dict[str, Any]] = []
+    raw: list[dict[str, Any]] = []
     for line in text.splitlines():
         if line.strip() == "```":
             in_fence = not in_fence
@@ -137,8 +218,24 @@ def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
         m = SLICE_RE.match(line)
         if not m:
             continue
-        mark, num, label = m.group(1), int(m.group(2)), m.group(3).strip()
-        slices.append({"n": num, "done": mark.lower() == "[x]", "label": label, "line": line})
+        mark, num, suffix, label = m.group(1).lower(), int(m.group(2)), m.group(3), m.group(4).strip()
+        raw.append({"n": num, "suffix": suffix, "mark": mark, "label": label, "line": line})
+    grouped: dict[int, list[dict[str, Any]]] = {}
+    for r in raw:
+        grouped.setdefault(r["n"], []).append(r)
+    slices: list[dict[str, Any]] = []
+    for n in sorted(grouped):
+        items = grouped[n]
+        marks = [it["mark"] for it in items]
+        done = all(m == "[x]" for m in marks)
+        if len(items) == 1:
+            label = items[0]["label"]
+        else:
+            label = " · ".join(
+                (f"{it['suffix']}: {it['label']}" if it['suffix'] else it['label'])
+                for it in items
+            )
+        slices.append({"n": n, "done": done, "label": label, "line": items[0]["line"]})
     return slices
 
 
@@ -146,8 +243,30 @@ def scan_epic(path: Path) -> dict[str, Any]:
     fm, _, _ = read_frontmatter(path)
     rel = str(path.relative_to(ROOT))
     slices = parse_wbs_slices(path)
+    wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
+    plan_by_stage = {p["stage_key"]: p.get("path") for p in plans if p.get("path")}
     first_open = next((s["n"] for s in slices if not s["done"]), None)
+    enriched: list[dict[str, Any]] = []
+    for s in slices:
+        n = s["n"]
+        tbl = wbs_table.get(n, {})
+        stage_key = SLICE_PLAN_STAGE.get(n, "development")
+        enriched.append(
+            {
+                "n": n,
+                "done": s["done"],
+                "label": s["label"],
+                "title": tbl.get("title") or s["label"],
+                "summary": SLICE_SUMMARY.get(n, ""),
+                "skill": tbl.get("skill", ""),
+                "input": tbl.get("input", ""),
+                "output": tbl.get("output", ""),
+                "acceptance": tbl.get("acceptance", ""),
+                "related_plan": plan_by_stage.get(stage_key),
+                "stage_key": stage_key,
+            }
+        )
     return {
         "file": rel,
         "name": path.stem,
@@ -157,7 +276,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "p0_open": int(fm.get("p0_open", "0") or "0"),
         "repo": fm.get("repo", ""),
         "branch": fm.get("branch", ""),
-        "slices": [{"n": s["n"], "done": s["done"], "label": s["label"]} for s in slices],
+        "slices": enriched,
         "plans": plans,
         "next_slice": first_open,
     }
@@ -225,7 +344,7 @@ def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") ->
     text = epic.read_text(encoding="utf-8")
     lines = text.splitlines()
     in_fence = False
-    changed = False
+    matches: list[tuple[int, re.Match[str]]] = []
     for i, line in enumerate(lines):
         if line.strip() == "```":
             in_fence = not in_fence
@@ -235,12 +354,16 @@ def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") ->
         m = SLICE_RE.match(line)
         if not m or int(m.group(2)) != slice_n:
             continue
-        mark = "[x]" if done else "[ ]"
-        lines[i] = f"{mark} {slice_n}.  {m.group(3).strip()}"
-        changed = True
-        break
-    if not changed:
+        matches.append((i, m))
+    if not matches:
         raise ValueError(f"slice {slice_n} not found")
+    if len(matches) > 1 or matches[0][1].group(3):
+        raise ValueError(
+            f"slice {slice_n} has sub-items (e.g. {slice_n}a/{slice_n}b); edit the Epic file directly"
+        )
+    i, m = matches[0]
+    mark = "[x]" if done else "[ ]"
+    lines[i] = f"{mark} {slice_n}.  {m.group(4).strip()}"
     epic.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
     action = "勾选切片" if done else "取消切片"
     append_change_log(epic, action, "development", str(slice_n), operator, f"WBS {slice_n} → {'done' if done else 'open'}")

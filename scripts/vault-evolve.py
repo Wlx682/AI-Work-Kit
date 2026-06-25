@@ -2,12 +2,13 @@
 """
 vault-evolve.py — Vault 月度进化中央调度脚本
 
-聚合 5 个进化子任务的输出为一份统一月度报告：
+聚合 6 个进化子任务的输出为一份统一月度报告：
   §1 反馈聚合（调用 feedback-aggregate.py）
   §2 业务仓漂移（调用 drift-scan.py）
   §3 关系图谱（调用 relations-check.py）
   §4 Contexts 老化扫描（本脚本实现）
   §5 死链巡逻（本脚本实现）
+  §6 文档脚本引用一致性（调用 doc-script-refs-check.py）
 
 用法：
   scripts/vault-evolve.py                       # 跑全套 + 写月度报告
@@ -32,7 +33,7 @@ from datetime import date, datetime, timedelta
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
 
-SUBTASKS = ["feedback", "drift", "relations", "aging", "links"]
+SUBTASKS = ["feedback", "drift", "relations", "aging", "links", "docrefs"]
 
 # 老化扫描排除目录（与 relations-check.py 的 IGNORE_PATTERNS 一致）
 AGING_IGNORE = [
@@ -99,6 +100,14 @@ def run_drift() -> str:
 def run_relations() -> str:
     ok, out = run_subprocess(["python3", str(SCRIPTS / "relations-check.py")])
     status = "✓ 一致" if ok else "✗ 不一致"
+    return f"**结果**：{status}\n\n```\n{out.strip()}\n```\n"
+
+
+# ===== §6 文档脚本引用一致性 =====
+
+def run_docrefs() -> str:
+    ok, out = run_subprocess(["python3", str(SCRIPTS / "doc-script-refs-check.py")])
+    status = "✓ 一致" if ok else "✗ 有死引用"
     return f"**结果**：{status}\n\n```\n{out.strip()}\n```\n"
 
 
@@ -330,6 +339,7 @@ def render(month: str, sections: dict[str, str]) -> str:
         "relations": "三、关系图谱一致性",
         "aging": "四、Contexts 老化扫描",
         "links": "五、死链巡逻",
+        "docrefs": "六、文档脚本引用一致性",
     }
     for key in SUBTASKS:
         if key not in sections:
@@ -376,6 +386,8 @@ def main() -> None:
             sections[key] = run_aging(args.aging_days)
         elif key == "links":
             sections[key] = run_links()
+        elif key == "docrefs":
+            sections[key] = run_docrefs()
 
     text = render(args.month, sections)
 

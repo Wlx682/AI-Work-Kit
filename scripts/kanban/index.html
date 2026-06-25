@@ -99,6 +99,31 @@
     }
     .toast.show { opacity: 1; }
     .empty { color: var(--muted); padding: 2rem; text-align: center; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      display: none; align-items: center; justify-content: center;
+      padding: 1rem; z-index: 100;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; max-width: 520px; width: 100%;
+      max-height: 85vh; overflow: auto; padding: 1.25rem;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+    }
+    .modal h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .modal .lead { color: var(--muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1rem; }
+    .detail-grid { display: grid; gap: 0.65rem; font-size: 0.85rem; }
+    .detail-row { display: grid; grid-template-columns: 4.5rem 1fr; gap: 0.5rem; }
+    .detail-row dt { color: var(--muted); margin: 0; }
+    .detail-row dd { margin: 0; line-height: 1.45; }
+    .modal code { font-size: 0.8rem; word-break: break-all; }
+    .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .btn-link {
+      background: transparent; border: none; color: var(--accent);
+      padding: 0; font-size: 0.78rem; cursor: pointer; text-decoration: underline;
+    }
+    .btn-link:hover { color: #60a5fa; }
   </style>
 </head>
 <body>
@@ -115,6 +140,17 @@
   </header>
   <main id="app"><div class="empty">加载中…</div></main>
   <div class="toast" id="toast"></div>
+  <div class="modal-backdrop" id="detailModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="detailTitle">
+      <h2 id="detailTitle"></h2>
+      <p class="lead" id="detailLead"></p>
+      <dl class="detail-grid" id="detailBody"></dl>
+      <div class="modal-actions">
+        <button type="button" id="detailCopyPlan">复制 plan 路径</button>
+        <button type="button" class="primary" id="detailClose">关闭</button>
+      </div>
+    </div>
+  </div>
   <script>
     let board = [];
     let current = null;
@@ -128,6 +164,61 @@
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 2200);
     }
+
+    function escapeHtml(t) {
+      return String(t ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    let detailPlanPath = '';
+
+    function openDetail(slice) {
+      const modal = document.getElementById('detailModal');
+      document.getElementById('detailTitle').textContent =
+        `WBS ${slice.n} · ${slice.title || slice.label}`;
+      document.getElementById('detailLead').textContent =
+        slice.summary || '（暂无白话说明）';
+      detailPlanPath = slice.related_plan || '';
+      const rows = [
+        ['Skill', slice.skill || '—'],
+        ['输入', slice.input || '—'],
+        ['输出', slice.output || '—'],
+        ['验收', slice.acceptance || '—'],
+        ['勾选文案', slice.label || '—'],
+      ];
+      if (detailPlanPath) rows.push(['关联 plan', detailPlanPath]);
+      document.getElementById('detailBody').innerHTML = rows.map(([k, v]) =>
+        `<div class="detail-row"><dt>${escapeHtml(k)}</dt><dd>${k === '关联 plan'
+          ? `<code>${escapeHtml(v)}</code>`
+          : escapeHtml(v)}</dd></div>`
+      ).join('');
+      document.getElementById('detailCopyPlan').style.display =
+        detailPlanPath ? '' : 'none';
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDetail() {
+      const modal = document.getElementById('detailModal');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('detailClose').onclick = closeDetail;
+    document.getElementById('detailModal').onclick = e => {
+      if (e.target.id === 'detailModal') closeDetail();
+    };
+    document.getElementById('detailCopyPlan').onclick = async () => {
+      if (!detailPlanPath) return;
+      await navigator.clipboard.writeText(detailPlanPath);
+      toast(`已复制 ${detailPlanPath}`);
+    };
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDetail();
+    });
 
     async function loadBoard(quiet) {
       const res = await fetch('/api/board');
@@ -218,8 +309,10 @@
           ${cols[key].map(s => `
             <div class="card ${key}">
               <h3>WBS ${s.n}</h3>
-              <p>${s.label}</p>
+              <p>${escapeHtml(s.title || s.label)}</p>
+              ${s.summary ? `<p class="sub" style="margin-top:0.35rem;font-size:0.72rem">${escapeHtml(s.summary)}</p>` : ''}
               <div class="card-actions">
+                <button type="button" data-detail="${s.n}">查看细节</button>
                 ${!s.done ? `<button data-slice="${s.n}" data-done="1">完成</button>` : ''}
                 ${s.done ? `<button data-slice="${s.n}" data-done="0">重开</button>` : ''}
               </div>
@@ -246,6 +339,10 @@
 
       document.querySelectorAll('[data-slice]').forEach(btn => {
         btn.onclick = () => toggleSlice(+btn.dataset.slice, btn.dataset.done === '1');
+      });
+      const sliceByN = Object.fromEntries((epic.slices || []).map(s => [s.n, s]));
+      document.querySelectorAll('[data-detail]').forEach(btn => {
+        btn.onclick = () => openDetail(sliceByN[+btn.dataset.detail]);
       });
       document.querySelectorAll('.statusSel').forEach(sel => {
         sel.onchange = () => setStatus(sel.dataset.plan, sel.value);

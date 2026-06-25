@@ -1,8 +1,10 @@
 # 项目经理 Skill（长期 / Agent 化）
 
-> **执行入口已迁移至 `full-cycle-assistant`**（开场自动 boot 看板）。本文保留状态机与编排说明。
+> **trigger: internal_only** — 本 Skill **不对用户直接暴露**自然语言触发词；仅由 `full-cycle-assistant` 内部引用，或显式 `/project-manager` 命令救急。
+>
+> **执行入口已迁移至 `full-cycle-assistant`**（开场自动 boot 看板）。本文保留状态机与编排说明，供 full-cycle 内部参考。
 
-当用户说「帮我开发 XX 模块」「全流程开发」「/project-manager」时，**优先** `@Skills/full_cycle_assistant.md` 或 `.cursor/skills/full-cycle-assistant/`。
+所有「全流程开发 / 帮我开发 XX 模块 / 启动项目」类用户输入 → **一律路由到** `@Skills/full_cycle_assistant.md`；本 Skill 不响应。
 
 > **目标态**：用户一句话，AI 按 Workflow 自动串联各阶段 Skill；遇阻塞写入 `Plans/阻塞问题/` 并在 `Contexts/` 记录决策。
 

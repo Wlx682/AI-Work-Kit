@@ -100,7 +100,7 @@ verified_against:
 |------|------|
 | 手动（按需）| `python3 scripts/drift-scan.py` |
 | 手动（预览）| `python3 scripts/drift-scan.py --dry-run` |
-| 自动（周扫）| `cp scripts/aiworkkit-drift-scan.plist ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist && launchctl load ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist`（周日 03:17）|
+| 自动（周扫）| `cp scripts/com.aiworkkit.drift-scan.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.aiworkkit.drift-scan.plist`（周日 10:07）|
 
 报告产物纳入**月度复盘**审视一次（取本月所有周报告，归并决策）。
 

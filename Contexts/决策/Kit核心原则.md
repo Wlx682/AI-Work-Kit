@@ -8,6 +8,7 @@ key_points:
   - 阶段门禁：plan-gate-check.sh 卡 status / lifecycle_state / 反馈块
   - 反馈回路：每个 Skill 完成必须输出 skill_run（见 §九）
   - 关系图谱：frontmatter `relations:` 含 5 类双向关系
+  - 母子 plan 投影：子 plan 是 WBS 真理源；看板用 [x]/[~]/[ ] 三态，禁备注偷藏完成态（见 §十）
 relations:
   depends_on: []
   dependents:
@@ -15,6 +16,7 @@ relations:
     - Contexts/决策/Contexts漂移检测协议.md
     - Contexts/决策/Skill反馈协议.md
     - Contexts/决策/关系图谱协议.md
+    - Contexts/决策/母子plan投影规则.md
     - Contexts/决策/新手引导与最佳实践.md
     - Templates/模板约定.md
   supersedes:
@@ -112,6 +114,7 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 | [[Templates/模板约定]] | 文件名、YAML、`status`、`epic:`、续做格式、Epic 字段 |
 | [[Contexts/决策/AI-Work-Kit工作流总览]] | Skill 怎么用、Epic 阶段、看板、门禁命令 |
 | [[Contexts/决策/新手引导与最佳实践]] | 3 张地图：入门 / 全流程 / 决策树 |
+| [[Contexts/决策/母子plan投影规则]] | Epic 看板与子 plan 的真理源、状态机、投影门禁 |
 | [[索引]] | 目录速查、模板清单 |
 | `.cursorrules` / [[CLAUDE.md]] | Agent 常驻：目录索引 + Skill 触发词 |
 | `Skills/*.md` | 单次任务步骤（引用本文，不另定存放规则） |
@@ -151,15 +154,27 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 
 `utility` 二选一：`high`（必给一句话理由）/ `not-needed`。
 `scripts/plan-gate-check.sh` 校验存在性与字段合法性；缺则视为任务未完成。
-`scripts/feedback-aggregate.sh` 月度聚合 → 输入月度复盘。
+`scripts/feedback-aggregate.py` 月度聚合 → 输入月度复盘。
 
 **试点**：`requirement-analyst`，2026-06-24 起；通过后推至全部 Skill。
+
+---
+
+## 十、母子 plan 投影（必读）
+
+> 协议全文：[[Contexts/决策/母子plan投影规则]]。本节只立硬规则，细节不复述。
+
+- **真理源单边化**：WBS 切片状态与备注的唯一真理源是**子 plan**；Epic §三 WBS 看板是只读投影，不得承载子 plan 没有的状态或冲突简写。
+- **状态三态**：`[x]` 全完成 / `[~]` 部分（必须挂分项行或 `分项见 [[子 plan]] §X` 指针）/ `[ ]` 未开始。禁止 `[ ] + 备注 ✅` 这类半完成压扁写法。
+- **粒度对齐**：子 plan 一旦拆切片（如 5→Mock/Http、6→a/b/c），母 plan 必须同步拆行或指针化，不得在备注里塞分项简写。
+- **门禁校验**：`scripts/plan-gate-check.sh` 应增加 Epic 看板 ↔ 子 plan 一致性校验；状态映射或备注冲突即不通过。
 
 ---
 
 ## 相关
 
 - [[Contexts/决策/Skill反馈协议]]
+- [[Contexts/决策/母子plan投影规则]]
 - [[Contexts/决策/资料与代码仓库边界]] → 指向本文（兼容旧链接）
 - [[Contexts/决策/AI-Work-Kit工作流总览]]
 - [[Templates/模板约定]]

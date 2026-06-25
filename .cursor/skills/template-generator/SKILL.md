@@ -1,11 +1,27 @@
 ---
 name: template-generator
-description: 按模板启动排查/技术方案/review/功能开发/会议/API/发布。触发词：用模板、生成排查、写方案、template-generator。
+description: >-
+  按模板生成 plan 骨架（侧重格式，非系统设计内容）。
+  触发词：生成[XX]模板、套用模板、给我一个[XX]骨架、起个plan模板、/template-generator。
+  不响应：系统架构/ER图/模块边界（要内容）→architecture-design-assistant；PRD评审→requirement-analyst；开发功能→feature-dev-assistant。
 ---
 
 # 模板生成器
 
 约定：`Templates/模板约定.md`
+
+## 触发条件（侧重「格式」）
+
+当用户说以下任一时执行 —— 关键词偏 **要骨架 / 套模板**，与「设计系统内容」区分开：
+
+- 「**生成 [XX] 模板**」「**套用模板**」「**给我一个 [XX] 骨架**」「**起个 plan 模板**」
+- `/template-generator` 命令
+
+**不响应（让位给其他 Skill）**：
+
+- 「系统架构设计 / 模块边界 / ER 图」（要内容不要骨架）→ `architecture-design-assistant`
+- 「需求分析 / PRD 评审」→ `requirement-analyst`
+- 「开发功能 / 实现模块」→ `feature-dev-assistant`
 
 ## 任务类型 → 模板
 
@@ -13,11 +29,8 @@ description: 按模板启动排查/技术方案/review/功能开发/会议/API/�
 |------|------|------|
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
 | 技术方案 | `Templates/技术方案模板.md` | `Plans/客户端技术方案/` 或 `Plans/服务端技术方案/` |
-| 重构 | `Templates/技术方案模板.md` | `Plans/代码重构/` |
-| review | `Templates/Code-Review模板.md` | 按需 |
 | 功能开发 | `Templates/客户端功能开发模板.md` | `Plans/功能开发/` |
 | 仅 UI | 同上（含业务逻辑=否） | `Plans/功能开发/` |
-| 会议 / API / 发布 | 对应模板 | `Contexts/会议/` 等 |
 
 续做格式：`/resume plan=Plans/【分类】/xxx.md 进度=...`
 
