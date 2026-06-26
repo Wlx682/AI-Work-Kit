@@ -6,6 +6,7 @@ relations:
     - Contexts/决策/Kit核心原则.md
     - Templates/模板约定.md
   dependents:
+    - Contexts/决策/AI-Work-Kit架构总览.md
     - Contexts/决策/新手引导与最佳实践.md
   supersedes: []
   superseded_by: []

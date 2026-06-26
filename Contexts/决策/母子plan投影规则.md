@@ -79,7 +79,7 @@ Epic 母 plan 内的 WBS 看板与子 plan 的详细切片各自维护、各自�
 
 ## 五、规则 04 · 门禁一致性校验
 
-`scripts/plan-gate-check.sh` 在跑 Epic plan 或任何带 `epic:` frontmatter 的子 plan 时，**应**额外执行以下校验（实现待补）：
+`scripts/plan-gate-check.sh` 在跑 Epic plan 或任何带 `epic:` frontmatter 的子 plan 时，**会**额外执行以下校验（**已实现**于 `scripts/validate-epic-projection.py`，规则 A–E 与下表一一对应）：
 
 | 校验项 | 不通过条件 |
 |--------|------------|
@@ -89,7 +89,14 @@ Epic 母 plan 内的 WBS 看板与子 plan 的详细切片各自维护、各自�
 | 备注一致 | Epic 看板行内出现 `✅` / `完成` / `done` 等完成态字眼，但同切片在子 plan 仍有未完成分项 |
 | 粒度对齐 | 子 plan 拆出分项（如 6a/6b/6c），但母 plan 既未拆行也未指针化 |
 
-实现路径建议：扩展 `scripts/plan-gate-check.sh`，调用 `scripts/validate-skill-run.py` 同级新增 `validate-epic-projection.py` 解析母 plan §三 与子 plan §三 的 WBS 表，比对状态符号与备注关键字。
+实现：`scripts/validate-epic-projection.py`（与 `validate-skill-run.py` 同级）解析母 plan §三 看板与各子 plan §三 WBS 表，比对状态符号与备注关键字；命中任一规则输出 `BLOCKED:epic-projection:<原因>` 并以退出码 1 失败，由 `plan-gate-check.sh` 在门禁阶段调用。路由：plan 在 `Plans/Epic/` 或带 `epic:` 字段才校验，其余跳过。
+
+单独运行：
+
+```bash
+python3 scripts/validate-epic-projection.py Plans/Epic/xxx.md
+python3 scripts/validate-epic-projection.py --require Plans/功能开发/xxx.md   # 强制要求有 epic 链接
+```
 
 ---
 

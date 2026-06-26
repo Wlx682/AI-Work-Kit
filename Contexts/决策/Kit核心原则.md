@@ -13,11 +13,13 @@ relations:
   depends_on: []
   dependents:
     - Contexts/决策/AI-Work-Kit工作流总览.md
+    - Contexts/决策/AI-Work-Kit架构总览.md
     - Contexts/决策/Contexts漂移检测协议.md
     - Contexts/决策/Skill反馈协议.md
     - Contexts/决策/关系图谱协议.md
-    - Contexts/决策/母子plan投影规则.md
+    - Contexts/决策/对话用词习惯.md
     - Contexts/决策/新手引导与最佳实践.md
+    - Contexts/决策/母子plan投影规则.md
     - Templates/模板约定.md
   supersedes:
     - Contexts/决策/资料与代码仓库边界.md
