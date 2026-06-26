@@ -79,7 +79,7 @@ if [ -n "$diff_skills" ]; then
   echo "✗ 内容不一致的 Skill：" >&2
   for n in $diff_skills; do
     echo "  --- $n ---" >&2
-    diff -u "$CURSOR_DIR/$n/SKILL.md" "$CLAUDE_DIR/$n/SKILL.md" | head -n 30 >&2
+    diff -u "$CURSOR_DIR/$n/SKILL.md" "$CLAUDE_DIR/$n/SKILL.md" | head -n 30 >&2 || true
   done
 fi
 
@@ -104,16 +104,19 @@ fi
 # 终判
 if [ "$errors" -gt 0 ]; then
   echo "" >&2
-  echo "❌ 三端校验失败：$errors 项差异。请手动同步后重跑（不会自动覆盖）。" >&2
-  echo "   修复建议：" >&2
-  echo "     - 仅 .cursor 有 → 复制到 .claude 对应目录" >&2
-  echo "     - 内容不一致 → 选 .cursor 为基准修 .claude（或反之），改完跑 --check 验证" >&2
-  echo "     - Skills/ 缺真理源 → 创建对应 Skills/<name>.md" >&2
-  echo "     - 仅当确认 .cursor 是正确基准时，可用 ./scripts/sync-claude-skills.sh --sync 强制刷新 .claude" >&2
-  exit 1
+  echo "❌ 三端校验失败：$errors 项差异。" >&2
+  if [ "$MODE" != "--sync" ]; then
+    echo "   修复建议：" >&2
+    echo "     - 仅 .cursor 有 → 复制到 .claude 对应目录" >&2
+    echo "     - 内容不一致 → 选 .cursor 为基准修 .claude（或反之），改完跑 --check 验证" >&2
+    echo "     - Skills/ 缺真理源 → 创建对应 Skills/<name>.md" >&2
+    echo "     - 仅当确认 .cursor 是正确基准时，可用 ./scripts/sync-claude-skills.sh --sync 强制刷新 .claude" >&2
+    exit 1
+  fi
+  echo "   --sync 模式：以 .cursor 为基准强制覆盖 .claude 及全局副本。" >&2
+else
+  echo "✓ 三端一致：$(echo "$common" | wc -w | tr -d ' ') 个 Skill"
 fi
-
-echo "✓ 三端一致：$(echo "$common" | wc -w | tr -d ' ') 个 Skill"
 
 if [ "$MODE" = "--sync" ]; then
   # 1) 项目内 .cursor → .claude
