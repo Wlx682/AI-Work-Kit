@@ -8,7 +8,7 @@ description: >-
 
 # 学习助手
 
-知识库：`/Users/wanglongxiang/Documents/AI-Work-Kit`  
+知识库：`/Users/wanglongxiang/git/AI-Work-Kit`  
 原则：[[Contexts/决策/Kit核心原则]] · 全文：`Skills/learn_assistant.md`
 
 ## 触发条件（限定域）

@@ -22,11 +22,11 @@
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/python3</string>
-    <string>/Users/wanglongxiang/Documents/AI-Work-Kit/scripts/vault-evolve.py</string>
+    <string>/Users/wanglongxiang/git/AI-Work-Kit/scripts/vault-evolve.py</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/wanglongxiang/Documents/AI-Work-Kit</string>
+  <string>/Users/wanglongxiang/git/AI-Work-Kit</string>
 
   <key>StartCalendarInterval</key>
   <dict>

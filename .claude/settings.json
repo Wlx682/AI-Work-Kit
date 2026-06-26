@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/wanglongxiang/Documents/AI-Work-Kit/scripts/hook-edit-epic-projection.sh"
+            "command": "/Users/wanglongxiang/git/AI-Work-Kit/scripts/hook-edit-epic-projection.sh"
           }
         ]
       }

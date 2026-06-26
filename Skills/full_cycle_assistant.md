@@ -54,7 +54,7 @@
 ## 开场命令（Agent 必须执行）
 
 ```bash
-cd ~/Documents/AI-Work-Kit
+cd ~/git/AI-Work-Kit
 bash scripts/full-cycle-boot.sh [--epic Plans/Epic/xxx.md]
 ```
 

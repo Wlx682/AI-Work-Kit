@@ -9,7 +9,7 @@ description: >-
 
 # 全流程闭环助手（full-cycle-assistant）
 
-Vault：`~/Documents/AI-Work-Kit`  
+Vault：`~/git/AI-Work-Kit`  
 原则：[[Contexts/决策/Kit核心原则]] · 状态机：`.claude/workflows/full-cycle.json`
 
 > 与 `project-manager` 区别：**本 Skill 可执行**——开场拉起看板、解析入口阶段、路由到子 Skill。
@@ -57,7 +57,7 @@ Vault：`~/Documents/AI-Work-Kit`
 **在分析需求或写 plan 之前**，于 Vault 根目录执行：
 
 ```bash
-cd ~/Documents/AI-Work-Kit
+cd ~/git/AI-Work-Kit
 bash scripts/full-cycle-boot.sh [--epic Plans/Epic/YYYY-MM-DD-模块.md]
 ```
 
