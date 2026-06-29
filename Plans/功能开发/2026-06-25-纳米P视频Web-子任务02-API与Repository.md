@@ -6,6 +6,7 @@ status: 已完成
 date: 2026-06-25
 epic: Plans/Epic/2026-06-25-纳米P视频Web.md
 parent: Plans/功能开发/2026-06-25-纳米P视频Web.md
+requirement_plan: Plans/需求分析/2026-06-25-纳米P视频Web.md
 lifecycle_state: development
 skill: feature-dev-assistant
 wbs: 5
@@ -51,6 +52,4 @@ skill_run:
     - path: Plans/功能开发/2026-06-25-纳米P视频Web-接口索引.md
       utility: high
       reason: "endpoint 路径与业务码真理源"
-  contexts_missing: []
-  contexts_stale: []
 ```
