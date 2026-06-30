@@ -17,9 +17,13 @@ CLAUDE.local.md
 .claude/skills/
 .claude/scheduled_tasks.json
 
-# 看板服务运行产物（日志与字节码缓存）
+# 看板服务运行产物（日志、PID、字节码缓存）
 scripts/.kanban-server.log
+scripts/.kanban-server.pid
 scripts/__pycache__/
+
+# ai-usage-stats 报告产物
+ai-usage-report-*.md
 
 # Plans/ 纳入版本库（进行中任务可同步；发布前检查敏感信息）
 
