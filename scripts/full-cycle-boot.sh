@@ -82,10 +82,18 @@ start_server() {
 start_server
 
 if [[ "$NO_OPEN" != "1" ]]; then
+  opened=""
+  # 后台/子进程环境下 open 可能拿不到 GUI 会话；多路尝试并回退
   if command -v open >/dev/null 2>&1; then
-    open "$URL"
-  else
-    echo "Open in browser: $URL"
+    if open "$URL" 2>/dev/null; then
+      opened=1
+    else
+      # 显式指定默认浏览器再试一次
+      open -b com.apple.Safari "$URL" 2>/dev/null && opened=1
+    fi
+  fi
+  if [[ -z "$opened" ]]; then
+    echo "kanban: 浏览器未能自动打开，请手动访问 ↓"
   fi
 fi
 

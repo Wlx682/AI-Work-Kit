@@ -42,6 +42,7 @@ const SETUP_SCHEMA = {
   required: ['gate_text'],
   properties: {
     boot_ok: { type: 'boolean' },
+    kanban_url: { type: 'string', description: 'boot.sh 输出的 KANBAN_URL= 后的地址' },
     gate_text: { type: 'string', description: 'full-cycle-gate.sh 的人类可读 stdout 原文' },
     gate_json: { type: 'string', description: 'full-cycle-gate.sh --json 的 stdout 原文（未解析）' },
   },
@@ -49,10 +50,10 @@ const SETUP_SCHEMA = {
 
 const setup = await agent(
   `你是全流程编排的环境准备步骤。工作目录为仓库根。请用 Bash 工具依次运行：\n` +
-  `1. \`./scripts/full-cycle-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>/dev/null || true\`（拉起看板，失败可忽略）\n` +
+  `1. \`./scripts/full-cycle-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>&1 || true\`（拉起看板并打开浏览器；保留 stdout，从中取 KANBAN_URL= 后的地址放入 kanban_url）\n` +
   `2. \`./scripts/full-cycle-gate.sh ${gateArg}\`（机械门禁，人类可读）\n` +
   `3. \`./scripts/full-cycle-gate.sh ${gateArg} --json\`（机械门禁 JSON）\n` +
-  `把第 2 步完整 stdout 放入 gate_text，第 3 步完整 stdout 放入 gate_json，boot_ok 表示第 1 步是否成功。` +
+  `把第 2 步完整 stdout 放入 gate_text，第 3 步完整 stdout 放入 gate_json，boot_ok 表示第 1 步是否成功，kanban_url 为第 1 步输出的看板地址。` +
   `不要分析、不要改写脚本输出，原样返回。`,
   { label: 'full-cycle-setup', phase: '启动看板与门禁', schema: SETUP_SCHEMA }
 )
@@ -61,6 +62,8 @@ if (!setup || !setup.gate_text) {
   return { error: 'full-cycle-gate.sh 执行失败', setup }
 }
 const gateResult = setup.gate_text
+const kanbanUrl = setup.kanban_url || 'http://127.0.0.1:7777/'
+log(`看板：${kanbanUrl}（若未自动弹出请手动打开）`)
 log(gateResult)
 
 let gate = null
@@ -169,6 +172,8 @@ const executed = await agent(
   `- test-generator / deployment-assistant 产出后须回写 Epic plans.test / plans.deploy\n` +
   `- 若阻塞仅因「未写 plan」→ 按模板创建 plan 到对应 Plans/ 目录\n` +
   `- 若阻塞为 P0/未采纳/WBS → 只输出待办，不进入下一阶段\n` +
+  `- **独立 PRD 门禁**：若用户给的 PRD 与命中 Epic 的 frontmatter prd 不是同一个，说明这是独立需求。看板 plans 块每阶段仅容一个 plan，禁止覆盖或在同 stage 追加第二行——须按 Plans/Epic/ 母版**新建独立 Epic**（plans.requirement 指向新需求 plan），新需求 plan 的 frontmatter epic 指向新 Epic。\n` +
+  `- **需求人类卷门禁**：requirement-analyst 产出的人类卷除 A/B/C 三件套外，须含「D. 需求问题清单」——把不理解/矛盾/遗漏浓缩成产品视角一句话表（标 P0/P1 与三类标签），明细才留在 AI 底稿。\n` +
   `\n完成后 output report：📌 当前阶段 | 产出路径 | 看板 | 下一阶段 | /resume 命令。`,
   { label: `full-cycle-exec:${resolved.current_state}`, phase: '执行当前 Skill', schema: EXEC_SCHEMA }
 )

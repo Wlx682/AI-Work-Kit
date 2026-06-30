@@ -150,8 +150,21 @@ else
       req_p0="${req_p0:-$p0}"
       [[ "$req_p0" =~ ^[0-9]+$ ]] || req_p0=0
       grep -qE '验收标准|## 九、验收标准' "$req_file" || blockers+=("需求 plan 缺少验收标准章节")
+      # 独立 PRD 误挂检测：需求 plan 的 PRD 与 Epic 不一致 → 应新建独立 Epic，而非覆盖/追加同一 stage
+      epic_prd="$(read_fm prd "$EPIC_FILE")"
+      req_prd="$(read_fm prd "$req_file")"
+      if [[ -n "$epic_prd" && -n "$req_prd" && "$epic_prd" != "$req_prd" ]]; then
+        blockers+=("需求 plan 的 PRD 与 Epic 不一致（Epic: ${epic_prd} / 需求: ${req_prd}）—— 疑似独立 PRD，应新建独立 Epic（plans 块每阶段仅容一个 plan）")
+      fi
       [[ "$req_status" == "已采纳" ]] || blockers+=("需求 status 须为「已采纳」（当前: ${req_status:-无}）")
       [[ "$req_p0" -eq 0 ]] || blockers+=("p0_open=${req_p0}，须闭环 P0")
+      # Epic 状态脱钩检测：Epic 标 done/p0_open=0，但需求子 plan 仍未采纳或有未闭环 P0
+      epic_status="$(read_fm status "$EPIC_FILE")"
+      if [[ "$epic_status" == "done" || "$lc" == "done" ]]; then
+        if [[ "$req_status" != "已采纳" || "$req_p0" -gt 0 ]]; then
+          blockers+=("Epic 状态脱钩：Epic status/lifecycle=done，但需求子 plan status=${req_status:-无}、p0_open=${req_p0} —— 须回写 Epic 真实状态")
+        fi
+      fi
       if [[ ${#blockers[@]} -gt 0 ]]; then
         current_state="requirement"
         recommended_skill="requirement-analyst"
