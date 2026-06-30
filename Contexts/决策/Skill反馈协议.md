@@ -59,7 +59,7 @@ skill_run:
   plan: Plans/需求分析/2026-06-24-xxx.md  # 必填：本次 plan 路径；无 plan 时填 "orphan"
   date: 2026-06-24                      # 必填：YYYY-MM-DD
   contexts_used:                        # 必填：本次实际引用的 Contexts 文件清单，按 utility 倒序
-    - path: Contexts/需求分析/PRD分析检查清单.md
+    - path: Contexts/需求分析/需求分析规范.md
       utility: high                     # 二选一: high | not-needed
       reason: "对照 §3.1-3.6 扫遗漏类别"  # utility=high 必填一句话理由；utility=not-needed 时省略
     - path: Contexts/需求分析/示例-创建自动化任务-PRD问题模式.md
