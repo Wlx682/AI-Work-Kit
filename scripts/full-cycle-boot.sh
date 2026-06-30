@@ -14,22 +14,30 @@ PORT=7777
 HOST="127.0.0.1"
 EPIC=""
 NO_OPEN=""
+NEW_REQUIREMENT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --epic) EPIC="${2:-}"; shift 2 ;;
     --no-open) NO_OPEN=1; shift ;;
+    --new-requirement) NEW_REQUIREMENT=1; shift ;;
     -h|--help)
-      echo "Usage: full-cycle-boot.sh [--epic Plans/Epic/xxx.md] [--no-open]"
+      echo "Usage: full-cycle-boot.sh [--epic Plans/Epic/xxx.md] [--no-open] [--new-requirement]"
       echo "  每次都重启看板服务；不传 --epic 时默认选 Plans/Epic/ 下最新的 Epic。"
+      echo "  --new-requirement：新需求阶段，看板尚未创建，只起服务不弹浏览器。"
       exit 0
       ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
 
+# 新需求阶段：看板还没创建，不要自动选旧 Epic、也不弹浏览器
+if [[ -n "$NEW_REQUIREMENT" ]]; then
+  EPIC=""
+fi
+
 # 未指定 --epic：自动选最新的 Epic（文件名倒序，日期前缀越新越靠前）
-if [[ -z "$EPIC" ]]; then
+if [[ -z "$EPIC" && -z "$NEW_REQUIREMENT" ]]; then
   EPIC="$(ls -1 "$ROOT"/Plans/Epic/*.md 2>/dev/null | sort -r | head -1)"
   if [[ -n "$EPIC" ]]; then
     EPIC="Plans/Epic/$(basename "$EPIC")"
@@ -80,6 +88,16 @@ start_server() {
 }
 
 start_server
+
+# 新需求 / 还没有任何 Epic（看板为空）时，只起服务不弹浏览器
+if [[ -z "$EPIC" && "$NO_OPEN" != "1" ]]; then
+  if [[ -n "$NEW_REQUIREMENT" ]]; then
+    echo "kanban: 新需求阶段，看板尚未创建，跳过自动打开浏览器；Epic 建好后再 boot 即会自动打开"
+  else
+    echo "kanban: 暂无 Epic（看板为空），跳过自动打开浏览器；创建 Epic 后再 boot 即会自动打开"
+  fi
+  NO_OPEN=1
+fi
 
 if [[ "$NO_OPEN" != "1" ]]; then
   opened=""

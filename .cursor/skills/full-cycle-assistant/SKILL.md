@@ -65,6 +65,10 @@ bash scripts/full-cycle-boot.sh [--epic Plans/Epic/YYYY-MM-DD-模块.md]
 - 自动用系统浏览器打开 **http://127.0.0.1:7777/**（可加 `?epic=` 预选 Epic）
 - 向用户确认：**「看板已打开，WBS 变更会写回 markdown」**
 
+> **新需求例外**：本次是「创建新需求」、看板/Epic 还没建好时，用
+> `bash scripts/full-cycle-boot.sh --new-requirement`——只起服务、**不**自动打开浏览器，
+> 也不回退选旧 Epic。等 Epic 建好后再 `--epic Plans/Epic/...md` boot，看板才会自动打开。
+
 若 boot 失败：贴 `scripts/.kanban-server.log` 末尾，仍继续文字流程。
 
 **每步有进度**（WBS / lifecycle / 子 plan status）后**必跑**：

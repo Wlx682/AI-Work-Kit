@@ -60,6 +60,10 @@ bash scripts/full-cycle-boot.sh [--epic Plans/Epic/xxx.md]
 
 浏览器：**http://127.0.0.1:7777/**
 
+> **新需求阶段例外**：当本次是「创建新需求」、看板/Epic 还没建好时，用
+> `bash scripts/full-cycle-boot.sh --new-requirement`——只起服务、**不**自动打开浏览器。
+> 等 Epic 建好后再 `--epic Plans/Epic/xxx.md` boot，看板才会自动打开。
+
 ## 阶段入口
 
 | 说法 | lifecycle_state | Skill |
