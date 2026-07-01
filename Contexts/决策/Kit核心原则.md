@@ -7,6 +7,7 @@ key_points:
   - Epic 是业务唯一母 plan，子 plan 通过 frontmatter `epic:` 反向链接
   - 阶段门禁：plan-gate-check.sh 卡 status / lifecycle_state / 反馈块
   - 反馈回路：每个 Skill 完成必须输出 skill_run（见 §九）
+  - Plan Mode：重任务先只读探索+共创方案再动手；副作用动作硬闸门在 settings.json ask（见 §十一）
   - 关系图谱：frontmatter `relations:` 含 5 类双向关系
   - 母子 plan 投影：子 plan 是 WBS 真理源；看板用 [x]/[~]/[ ] 三态，禁备注偷藏完成态（见 §十）
 relations:
@@ -170,6 +171,20 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 - **状态三态**：`[x]` 全完成 / `[~]` 部分（必须挂分项行或 `分项见 [[子 plan]] §X` 指针）/ `[ ]` 未开始。禁止 `[ ] + 备注 ✅` 这类半完成压扁写法。
 - **粒度对齐**：子 plan 一旦拆切片（如 5→Mock/Http、6→a/b/c），母 plan 必须同步拆行或指针化，不得在备注里塞分项简写。
 - **门禁校验**：`scripts/plan-gate-check.sh` 应增加 Epic 看板 ↔ 子 plan 一致性校验；状态映射或备注冲突即不通过。
+
+---
+
+## 十一、Plan Mode（必读）
+
+> 横切通则,所有 Skill 与单阶段入口默认继承,不在各 Skill 重复写。
+
+Plan Mode 不是审批闸门,是**先想后做**的三件事:
+
+- **只读探索**:复杂功能 / 架构 / 重构 / 陌生代码 / Bug 排查,动手前先进 Plan Mode 只读分析(禁改文件),把上下文与意图搞清楚再说。
+- **共创方案**:在 Plan Mode 内与用户**迭代方案到满意**,批准后才落 `Plans/` 文件、才动手。Plan Mode 管「批准前临场讨论」,`Plans/` 文件管「批准后持久载体」——两者互补,不重复。
+- **拆解归 task-splitter**:任务拆解仍走 `task-splitter` + WBS + 看板(持久、跨会话),Plan Mode 不重复做拆解。
+
+**有副作用动作的硬闸门在 harness,不靠本文软约束**:`git commit/push/reset/rm`、`rm`、`sudo` 等已在 `~/.claude/settings.json` `permissions.ask`,执行前强制询问。文档只立"先想后做"的意图,真正拦截靠 settings。
 
 ---
 
