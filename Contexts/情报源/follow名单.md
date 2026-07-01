@@ -36,6 +36,7 @@ date: 2026-07-01
 
 ## 抓取渠道备注
 
-- 我（Agent）能用 **WebSearch/WebFetch** 抓公开博客、arXiv、官方文档、YouTube 文字版。
-- Twitter/X 正文若抓不全 → 输出「⏸ 待人工：贴原推链接」交接给你。
+- **官方文档站优先用 DocShark MCP**：`manage_library` 建库（如 anthropic.com/engineering、OpenAI 文档）→ `search_docs` 搜本周主题 → `get_doc_page` 取正文。适合结构化文档站。
+- 我（Agent）还能用 **WebSearch/WebFetch** 抓公开博客、arXiv、YouTube 文字版——但本环境走第三方网关时二者可能不稳（WebSearch 区域限制、WebFetch 模型映射），失败即降级到 ⏸ 人工。
+- Twitter/X 正文与零散个人博客单帖 → DocShark 不擅长，输出「⏸ 待人工：贴原推链接/正文」交接给你。
 - **硬规则**：进入周帖的原文必须是**英文一手**；中文链接由**纳米Work**人工生成（Agent 不产出该链接）。

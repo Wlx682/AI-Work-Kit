@@ -1,0 +1,22 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-01          # 第 1 期
+  plan: Plans/情报周报/2026-07-01-第1期.md
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 5维加权选出最高分深挖（Harness 45）
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: 定位官方源 Anthropic Eng 作为抓取目标
+    - path: Contexts/情报源/已发去重清单.md
+      utility: not-needed
+      reason: 首期无历史记录，无需去重比对
+  contexts_missing:          # 读入选文章暴露的 Kit 能力缺口（= capability_gap）
+    - "多智能体 harness 架构设计指南（planner/generator/evaluator 分工、评估器可评级标准、context reset vs compaction 取舍、跨会话结构化交接）——本期深挖文章指向此，Kit 有 Workflow/subagents 但无独立评估器环节与此设计范式沉淀"
+  contexts_stale: []
+  notes: |
+    源健康自检：本期仅 Anthropic Eng 一源产出候选，X/个人博客源（Boris/Karpathy/Fiona）本环境抓不到（登录墙+DocShark不擅长单帖），未连续3期故不触发 source_stale_warning，但需关注 X 源长期无法自动化。
+    时效说明：官方源最新一篇 Apr 23（~10周），严格卡8周则本期0篇；首期为跑通流程放宽到近半年，非常规口径。
+    工具说明：DocShark 对 anthropic.com（SPA）需 puppeteer-core 且需重启会话让 server 进程加载；本期实际用 puppeteer 直抓正文完成，DocShark 库仍待重启后重爬。
+    本期人类卷按新版规范「每期深挖1篇」重写：选最高分 Harness 45，四段结构+深度标准（讲机制/前因后果/与Kit逐点对照/落地复用）+Mermaid图+对比表，无emoji。

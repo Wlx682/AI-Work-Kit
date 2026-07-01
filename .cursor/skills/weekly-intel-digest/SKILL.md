@@ -1,7 +1,7 @@
 ---
 name: weekly-intel-digest
 description: >-
-  海外一手 AI 编程/Agent 资讯周报。抓取 follow 名单最新英文原文→按评分标准筛选→出中文导语→套周帖模板→交接纳米Work翻译。
+  海外一手 AI 编程/Agent 资讯周报（双卷分离：人类卷=技术博客水准文章 + AI卷=进化信号）。DocShark 抓官方文档站→评分筛选→按写作规范出人类卷→交接纳米Work翻译→skill_run 反哺进化链。
   触发词：找CC文章、周报选题、海外资讯、整理分享帖、claude code 分享、/intel、/weekly-intel-digest。
   不响应：项目日报/复盘→review-assistant；课程化学习→learn-assistant。
 ---
@@ -9,7 +9,7 @@ description: >-
 # 海外资讯周报助手
 
 知识库：`/Users/wanglongxiang/git/AI-Work-Kit`
-原则：[[Contexts/决策/Kit核心原则]] · 全文：`Skills/weekly_intel_digest.md`
+原则：[[Contexts/决策/Kit核心原则]] · **全文（执行以此为准）：`Skills/weekly_intel_digest.md`**
 
 ## 触发条件
 
@@ -22,23 +22,28 @@ description: >-
 
 - [[Contexts/情报源/follow名单]]、[[Contexts/情报源/筛选评分标准]]、[[Contexts/情报源/周帖模板]]、[[Contexts/情报源/已发去重清单]]
 
-## 执行协议（五步）
+## 执行协议（八步 · 双卷分离，详见全文）
 
 ```
-1. 开场读资产（follow名单+评分标准+去重清单）
-2. 抓取：遍历 follow 名单，WebSearch/WebFetch 拉本周最新英文原文
-3. 筛选打分：按评分标准算分、去重，输出候选表交你终审
-4. 加工组装：套周帖模板，写中文导语，生成「⏸ 待纳米Work」交接清单
-5. 收尾：草稿存 Plans/情报周报/，发布后追加去重清单、删 plan
+1. 读资产（follow名单+评分标准+去重清单）
+2. 抓取：官方源用 DocShark（建库→search_docs→get_doc_page）；X/博客抓不到→⏸人工贴链接
+3. 硬门槛过滤（非英文一手/纯视频/近8周已发→淘汰）
+4. 筛选打分（按评分标准，输出候选表交终审，**每期只选1篇最高分深挖**）
+5. 去重确认（比对已发去重清单）
+6. 组装人类卷：**每期只写1篇**，按「人类卷写作规范」写技术博客水准文章并达深度标准（讲机制+前因后果+与我们做法对照+落地复用），过自查清单，⏸标注纳米Work链接（无YAML）
+7. 生成AI卷：同名 .meta.yaml 写 skill_run，能力缺口→contexts_missing + 源健康自检
+8. 收尾：人类卷+AI卷存 Plans/情报周报/，发布后追加去重清单、删 plan
 ```
 
-## 硬规则
+## 硬规则（详见全文）
 
 1. 原文必须英文一手；传播链接必须纳米Work中文链接，缺一不发。
 2. 不接受小红书/抖音/纯视频独立传播。
-3. 每篇必写「技术看点 + 通用看点」双视角（技术为主，产品设计运营也参与）。
-4. **纳米Work 中文链接 Agent 生成不了** → 输出 ⏸ 交接清单交人工。
+3. 每篇必含「技术看点 + 通用看点」双视角（融入行文）。
+4. **人类卷是技术博客水准署名文章、不含机器块**（四段结构：主题→想法→结论→复用，各用 #### 子标题；禁emoji/段子；能画就画）。
+5. **纳米Work 中文链接 Agent 生成不了** → 输出 ⏸ 交人工。
+6. 进化萃取强制：每期 .meta.yaml 的 contexts_missing 至少一项；源连续3期无入选→source_stale_warning。
 
 ## 反馈回路
 
-结束输出 `skill_run` YAML：有 plan 追加末尾，无 plan 追加 `Contexts/决策/孤立反馈记录.md` 顶部。
+skill_run 写入独立 `.meta.yaml`（人类卷不含 YAML），喂 `feedback-aggregate → vault-evolve`。无 plan 则追加 `Contexts/决策/孤立反馈记录.md`。
