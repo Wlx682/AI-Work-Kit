@@ -3,7 +3,8 @@
 feedback-aggregate.py — 月度聚合 skill_run 反馈块
 
 扫描：
-  - Plans/**/*.md 末尾的 skill_run 块（取 last per file）
+  - Plans/**/*.meta.yaml（人类卷/AI卷分离后的 AI 卷，优先）
+  - Plans/**/*.md 末尾的 skill_run 块（取 last per file；已有同名 .meta.yaml 则跳过去重）
   - Contexts/决策/孤立反馈记录.md 所有 skill_run yaml 块
 
 输出：Contexts/决策/反馈聚合-YYYY-MM.md（或 --dry-run 输出到 stdout）
@@ -110,6 +111,21 @@ def find_all_skill_run_blocks(content: str) -> list[str]:
 
 def scan_all_skill_runs() -> list[dict]:
     runs = []
+    seen_plans = set()  # 已由 .meta.yaml 覆盖的 plan 路径，避免与报告内 skill_run 块重复计数
+    # 1) 优先：Plans/**/*.meta.yaml（人类卷/AI卷分离后的 AI 卷）
+    for p in (ROOT / "Plans").rglob("*.meta.yaml"):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        parsed = parse_skill_run(text)
+        if parsed and "skill_run" in parsed:
+            sr = parsed["skill_run"]
+            sr["_source_file"] = str(p.relative_to(ROOT))
+            runs.append(sr)
+            if sr.get("plan"):
+                seen_plans.add(str(sr["plan"]).strip())
+    # 2) 回退：Plans/**/*.md 末尾的 skill_run 块（兼容未拆分的旧案例）
     for p in (ROOT / "Plans").rglob("*.md"):
         try:
             text = p.read_text(encoding="utf-8")
@@ -119,6 +135,8 @@ def scan_all_skill_runs() -> list[dict]:
             parsed = parse_skill_run(body)
             if parsed and "skill_run" in parsed:
                 sr = parsed["skill_run"]
+                if str(p.relative_to(ROOT)) in seen_plans:
+                    continue  # 已有对应 .meta.yaml，跳过报告内块避免重复
                 sr["_source_file"] = str(p.relative_to(ROOT))
                 runs.append(sr)
     orphan = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"

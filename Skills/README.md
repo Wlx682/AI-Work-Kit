@@ -42,6 +42,7 @@
 | 日报、周报、项目复盘、迭代回顾 | review-assistant | `/review` `/review-assistant` |
 | PM 物料、整理通用资料 | material-prep-assistant | `/material-prep` |
 | 找 CC 文章、周报选题、海外资讯、整理分享帖 | weekly-intel-digest | `/intel` `/weekly-intel-digest` |
+| 提效案例、最佳实践、技术提交分享、产品提效 | best-practice-digest | `/best-practice` `/best-practice-digest` |
 
 ### 学习
 
