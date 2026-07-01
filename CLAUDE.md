@@ -39,6 +39,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 | 需求/架构/开发/测试/部署/变更 | 见 `.cursorrules` |
 | 学习 | `learn-assistant`（snapshot stdout） |
 | PM 物料 | `material-prep-assistant` → Contexts |
+| 找 CC 文章 / 周报选题 / 海外资讯 / 分享帖 | `weekly-intel-digest` → `Contexts/情报源/` |
 
 全流程步骤结束输出：
 

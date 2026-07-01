@@ -41,6 +41,7 @@
 | 生成 XX 模板、套用模板、起个骨架 | template-generator | `/template-generator` |
 | 日报、周报、项目复盘、迭代回顾 | review-assistant | `/review` `/review-assistant` |
 | PM 物料、整理通用资料 | material-prep-assistant | `/material-prep` |
+| 找 CC 文章、周报选题、海外资讯、整理分享帖 | weekly-intel-digest | `/intel` `/weekly-intel-digest` |
 
 ### 学习
 
