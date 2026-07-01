@@ -1,0 +1,17 @@
+skill_run:
+  skill: best-practice-digest
+  plan: Plans/最佳实践/2026-07-01-Skill反馈回路进化链.md
+  date: 2026-07-01
+  contexts_used:
+    - path: Contexts/最佳实践/案例报告模板.md
+      utility: high
+      reason: "按三卷规范：干净人类卷+2张Mermaid图+.prompt.md，叙事顺序主题→想法→结论→数据→复用"
+    - path: Contexts/最佳实践/进化闭环.md
+      utility: high
+      reason: "本案例主题即进化链本身，对照闭环两条腿与月度消费机制"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "取 skill_run 结构与四类信号阈值作为证据链"
+  contexts_missing:
+    - "vault-evolve/launchd 定时任务的挂载与排错指南（plist 已存在但无标准挂载步骤文档）"
+  contexts_stale: []
