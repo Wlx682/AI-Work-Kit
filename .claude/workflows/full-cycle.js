@@ -1,33 +1,44 @@
 export const meta = {
   name: 'full-cycle',
-  description: '全流程开发编排：Epic 优先 → 机械门禁 → 执行当前 Skill。上一阶段 plan 或 WBS 未满足退出条件则不进入下一阶段。',
-  whenToUse: '用户说「开始做这个项目」「全流程开发」「full-cycle」「project-manager 帮我开发」时',
+  description: '通用工作流编排引擎：读蓝图 manifest → 机械门禁（只看子 Plan 事实）→ 执行当前 Skill。蓝图决定阶段链，Epic 仅作数据上下文，不驱动流程。',
+  whenToUse: '用户说「开始做这个项目」「全流程开发」「full-cycle」「电脑管理」「帮我清理电脑」，或任意蓝图触发词时',
   phases: [
-    { title: '启动看板与门禁', detail: 'full-cycle-boot.sh + full-cycle-gate.sh' },
-    { title: '定位项目', detail: '结合门禁结果确认当前阶段' },
-    { title: '执行当前 Skill', detail: '调用对应 assistant 产出 plan' },
-    { title: '汇报与下一步', detail: '上下文汇报 + 推荐下一阶段' },
+    { title: '选蓝图与启动', detail: '参数/Epic字段/自然语言 选蓝图 + boot 看板' },
+    { title: '机械门禁定位', detail: 'workflow-gate.sh 逐 stage 查子 Plan 事实' },
+    { title: '执行当前 Skill', detail: '调用蓝图 stage 对应 Skill 产出 plan' },
+    { title: '汇报与下一步', detail: '上下文汇报 + 推荐下一阶段（游标不写回 Epic）' },
   ],
 }
 
-// args 可能是结构化对象 { projectName, requirementPlan, epic, platform } 或一段原始用户文本。
-// 工作流脚本无 bash() —— 所有 shell 命令必须在持有 Bash 工具的 agent 内运行。
+// args 可能是结构化对象 { workflow, projectName, requirementPlan, epic, platform } 或一段原始用户文本。
+// 三层架构（见 Contexts/决策/AI-Work-Kit工作流总览）：
+//   积木=子 Skill / 状态机=本引擎+蓝图 / 数据上下文=Epic（只存不驱动）。
+// 门禁只看子 Plan 文件系统事实，绝不读 Epic lifecycle_state。
 const rawArgs = typeof args === 'string' ? args : ''
 const objArgs = (args && typeof args === 'object') ? args : {}
 
+const explicitWorkflow = objArgs.workflow || null
 const projectName = objArgs.projectName || null
 const requirementPlan = objArgs.requirementPlan || null
 const epicPath = objArgs.epic || null
-const platform = objArgs.platform || '客户端'
 const userContext = rawArgs || objArgs.context || ''
 
-const STATES = [
-  { key: 'requirement', folder: 'Plans/需求分析', skill: 'requirement-analyst', label: '需求分析' },
-  { key: 'architecture', folder: platform === '服务端' ? 'Plans/服务端技术方案' : 'Plans/客户端技术方案', skill: 'architecture-design-assistant', label: '架构设计' },
-  { key: 'development', folder: 'Plans/功能开发', skill: 'task-splitter / feature-dev-assistant', label: '功能开发' },
-  { key: 'test', folder: 'Plans/自动化测试', skill: 'test-generator', label: '自动化测试' },
-  { key: 'deploy', folder: 'Plans/部署', skill: 'deployment-assistant', label: '部署' },
-]
+phase('选蓝图与启动')
+
+// ---------- 步骤 0：解析可用蓝图清单 + 选定蓝图 ----------
+const RESOLVE_SCHEMA = {
+  type: 'object',
+  required: ['workflow', 'uses_epic', 'boot_ok', 'gate_text'],
+  properties: {
+    workflow: { type: 'string', description: '最终选定的蓝图 name（如 client-dev / computer-mgmt）' },
+    uses_epic: { type: 'boolean' },
+    workflow_reason: { type: 'string', description: '选定该蓝图的依据：参数 / Epic字段 / 自然语言 / 默认' },
+    boot_ok: { type: 'boolean' },
+    kanban_url: { type: 'string' },
+    gate_text: { type: 'string', description: 'workflow-gate.sh 人类可读 stdout 原文' },
+    gate_json: { type: 'string', description: 'workflow-gate.sh --json stdout 原文（未解析）' },
+  },
+}
 
 const gateArg = epicPath
   ? `--epic ${epicPath}`
@@ -35,115 +46,58 @@ const gateArg = epicPath
     ? `--project ${projectName}`
     : ''
 
-phase('启动看板与门禁')
-
-const SETUP_SCHEMA = {
-  type: 'object',
-  required: ['gate_text'],
-  properties: {
-    boot_ok: { type: 'boolean' },
-    kanban_url: { type: 'string', description: 'boot.sh 输出的 KANBAN_URL= 后的地址' },
-    gate_text: { type: 'string', description: 'full-cycle-gate.sh 的人类可读 stdout 原文' },
-    gate_json: { type: 'string', description: 'full-cycle-gate.sh --json 的 stdout 原文（未解析）' },
-  },
-}
-
-const setup = await agent(
-  `你是全流程编排的环境准备步骤。工作目录为仓库根。请用 Bash 工具依次运行：\n` +
-  `1. \`./scripts/full-cycle-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>&1 || true\`（拉起看板并打开浏览器；保留 stdout，从中取 KANBAN_URL= 后的地址放入 kanban_url）\n` +
-  `2. \`./scripts/full-cycle-gate.sh ${gateArg}\`（机械门禁，人类可读）\n` +
-  `3. \`./scripts/full-cycle-gate.sh ${gateArg} --json\`（机械门禁 JSON）\n` +
-  `把第 2 步完整 stdout 放入 gate_text，第 3 步完整 stdout 放入 gate_json，boot_ok 表示第 1 步是否成功，kanban_url 为第 1 步输出的看板地址。` +
-  `不要分析、不要改写脚本输出，原样返回。`,
-  { label: 'full-cycle-setup', phase: '启动看板与门禁', schema: SETUP_SCHEMA }
+const resolveSetup = await agent(
+  `你是通用工作流引擎的「选蓝图与启动」步骤。工作目录为仓库根。\n` +
+  `\n## 1. 列出可用蓝图\n` +
+  `用 Bash 运行 \`ls .claude/workflows/*.json\`，读每个蓝图的 name / label / usesEpic / triggerHints（可 \`cat\` 各 json 的这几个字段）。\n` +
+  `\n## 2. 选定蓝图（优先级，重要）\n` +
+  `a) 若用户给了 workflow 参数「${explicitWorkflow || '（无）'}」→ 直接用。\n` +
+  `b) 否则若指定了 Epic「${epicPath || '（无）'}」→ 读该 Epic frontmatter 的 workflow 字段；有则用。\n` +
+  `c) 否则按**自然语言意图**匹配 triggerHints（用户原文很重要）：\n` +
+  (userContext ? `   用户原文：「${userContext}」\n` : `   用户原文：（无，从对话上下文推断）\n`) +
+  `   把原文与各蓝图 triggerHints 比对，命中最贴切的一个。\n` +
+  `d) 都无法确定 → 默认 client-dev，并在 workflow_reason 注明「默认，建议向用户确认」。\n` +
+  `\n## 3. 启动看板 + 机械门禁\n` +
+  `选定蓝图后（记其 name 为 WF，usesEpic 为 UE）依次运行：\n` +
+  `1. \`./scripts/full-cycle-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>&1 || true\`（UE=false 的蓝图看板可选；取 stdout 中 KANBAN_URL= 后地址放 kanban_url）\n` +
+  `2. \`./scripts/workflow-gate.sh --workflow <WF> ${gateArg}\`（人类可读，放 gate_text）\n` +
+  `3. \`./scripts/workflow-gate.sh --workflow <WF> ${gateArg} --json\`（放 gate_json，原样不解析）\n` +
+  `\n返回：workflow=选定蓝图 name，uses_epic=其 usesEpic，workflow_reason=依据，boot_ok=第1步是否成功，其余同名字段。不要改写脚本输出。`,
+  { label: 'resolve-workflow+setup', phase: '选蓝图与启动', schema: RESOLVE_SCHEMA }
 )
 
-if (!setup || !setup.gate_text) {
-  return { error: 'full-cycle-gate.sh 执行失败', setup }
+if (!resolveSetup || !resolveSetup.gate_text) {
+  return { error: 'workflow-gate.sh 执行失败或未选出蓝图', resolveSetup }
 }
-const gateResult = setup.gate_text
-const kanbanUrl = setup.kanban_url || 'http://127.0.0.1:7777/'
-log(`看板：${kanbanUrl}（若未自动弹出请手动打开）`)
+
+const workflow = resolveSetup.workflow
+const usesEpic = resolveSetup.uses_epic
+const gateResult = resolveSetup.gate_text
+const kanbanUrl = resolveSetup.kanban_url || 'http://127.0.0.1:7777/'
+log(`蓝图：${workflow}（${resolveSetup.workflow_reason || ''}）`)
+if (usesEpic) log(`看板：${kanbanUrl}（若未自动弹出请手动打开）`)
 log(gateResult)
 
 let gate = null
 try {
-  gate = setup.gate_json ? JSON.parse(setup.gate_json) : null
+  gate = resolveSetup.gate_json ? JSON.parse(resolveSetup.gate_json) : null
 } catch {
   gate = null
 }
 
-phase('定位项目')
+phase('机械门禁定位')
 
-const DISCOVER_SCHEMA = {
-  type: 'object',
-  required: ['current_state', 'plans_found', 'blockers', 'recommended_skill', 'report'],
-  properties: {
-    current_state: { type: 'string', enum: ['requirement', 'architecture', 'development', 'test', 'deploy', 'done'] },
-    plans_found: {
-      type: 'object',
-      properties: {
-        requirement: { type: 'string' },
-        architecture: { type: 'string' },
-        development: { type: 'string' },
-        test: { type: 'string' },
-        deploy: { type: 'string' },
-      },
-    },
-    blockers: { type: 'array', items: { type: 'string' } },
-    recommended_skill: { type: 'string' },
-    next_state: { type: 'string' },
-    report: { type: 'string', description: '📌 上下文汇报，中文' },
-  },
+// 门禁已给出 current_state / next_state / recommended_skill / blockers / plans_found（全部基于文件系统事实）。
+// 引擎直接采用门禁结论，不做二次状态推断，也不读 Epic lifecycle_state。
+if (!gate || !gate.current_state) {
+  return { error: '机械门禁未返回 current_state', gate: gateResult }
 }
 
-const discover = await agent(
-  `你是 AI-Work-Kit 全流程编排器。项目名：${projectName || '（未指定，请从用户消息推断）'}。` +
-  (epicPath ? `指定 Epic：${epicPath}。` : '') +
-  (requirementPlan ? `指定需求 plan：${requirementPlan}。` : '') +
-  (userContext ? `\n\n用户原始需求/上下文：\n${userContext}\n` : '') +
-  `\n\n**机械门禁结果（优先采用，勿与 full-cycle.json 冲突）：**\n${gateResult}\n` +
-  (gate ? `\n解析 JSON：${JSON.stringify(gate)}` : '') +
-  `\n\n状态机（Plans/Epic/ 为入口，子 plan 索引见 Epic frontmatter plans:）：\n` +
-  STATES.map(s => `- ${s.label}：${s.folder}/`).join('\n') +
-  `\n\n规则（与 scripts/full-cycle-gate.sh 一致）：\n` +
-  `1. 无 Epic → requirement，recommended_skill=full-cycle-assistant\n` +
-  `2. 需求未采纳或 P0>0 → requirement\n` +
-  `3. 含业务逻辑=是 且方案未采纳 → architecture\n` +
-  `4. plan-gate-check 失败或 WBS 1–10 未完成 → development\n` +
-  `5. 无测试 plan 或 WBS 11 未完成 → test\n` +
-  `6. 无部署 plan 或 WBS 13–14 未完成 → deploy\n` +
-  `7. 全部通过 → done\n` +
-  `\n若机械门禁已给出 current_state / blockers，以之为准，仅补充 plans_found 路径细节。\n` +
-  `输出 report：📌 当前阶段：[X] | 下一个阶段：[Y] | 看板：http://127.0.0.1:7777/ | 如需中断：/resume plan=...\n` +
-  `blockers 列出具体缺失项（中文）。`,
-  { label: 'full-cycle-discover', phase: '定位项目', schema: DISCOVER_SCHEMA }
-)
+const report = gateResult.match(/report: (.+)/)?.[1] || ''
+log(report)
 
-const resolved = gate && gate.current_state
-  ? {
-      current_state: gate.current_state,
-      next_state: gate.next_state,
-      recommended_skill: gate.recommended_skill,
-      blockers: gate.blockers || [],
-      plans_found: Object.fromEntries(
-        (gate.plans_found || [])
-          .map(s => s.split(':'))
-          .filter(p => p.length >= 2)
-          .map(p => [p[0], p.slice(1).join(':')])
-      ),
-      report: gateResult.match(/report: (.+)/)?.[1] || discover?.report,
-    }
-  : discover
-
-if (!resolved) {
-  return { error: '阶段发现失败' }
-}
-
-log(resolved.report || discover?.report)
-
-if (resolved.current_state === 'done') {
-  return { status: 'done', gate: gateResult, report: resolved.report }
+if (gate.current_state === 'done') {
+  return { status: 'done', workflow, gate: gateResult, report }
 }
 
 phase('执行当前 Skill')
@@ -158,40 +112,47 @@ const EXEC_SCHEMA = {
   },
 }
 
-const stateInfo = STATES.find(s => s.key === resolved.current_state)
+const plansFound = (gate.plans_found || [])
+  .map(s => s.split(':'))
+  .filter(p => p.length >= 2)
+  .reduce((acc, p) => { acc[p[0]] = p.slice(1).join(':'); return acc }, {})
+
 const executed = await agent(
-  `执行全流程当前阶段「${stateInfo?.label || resolved.current_state}」。\n` +
-  `调用 Skill：${resolved.recommended_skill || discover?.recommended_skill}（读 Skills/ 或 .cursor/skills/ 对应说明）。\n` +
-  `Epic：${gate?.epic || epicPath || '（见门禁结果）'}。\n` +
+  `执行工作流「${workflow}」当前阶段「${gate.current_state}」。\n` +
+  `调用 Skill：${gate.recommended_skill}（读 Skills/ 或 .cursor/skills/ 对应说明；蓝图 .claude/workflows/${workflow}.json 该 stage 的 skills 数组为候选）。\n` +
+  (usesEpic ? `Epic（仅数据上下文，不写 lifecycle_state）：${gate.epic || epicPath || '（见门禁结果）'}。\n` : `本工作流无 Epic，plan 直接放蓝图 stage 的 planFolder。\n`) +
   (userContext ? `用户原始需求/上下文：${userContext}\n` : '') +
-  `已发现 plan：${JSON.stringify(resolved.plans_found || discover?.plans_found)}。\n` +
-  `阻塞：${(resolved.blockers || discover?.blockers || []).join('；') || '无'}。\n` +
-  `门禁：${gate?.gate_development || '见 full-cycle-gate 输出'}。\n` +
+  (requirementPlan ? `指定需求 plan：${requirementPlan}。\n` : '') +
+  `已发现子 plan：${JSON.stringify(plansFound)}。\n` +
+  `阻塞：${(gate.blockers || []).join('；') || '无'}。\n` +
   `\n硬规则：\n` +
-  `- 开发阶段写代码前须 plan-gate-check.sh 通过\n` +
-  `- test-generator / deployment-assistant 产出后须回写 Epic plans.test / plans.deploy\n` +
-  `- 若阻塞仅因「未写 plan」→ 按模板创建 plan 到对应 Plans/ 目录\n` +
-  `- 若阻塞为 P0/未采纳/WBS → 只输出待办，不进入下一阶段\n` +
-  `- **独立 PRD 门禁**：若用户给的 PRD 与命中 Epic 的 frontmatter prd 不是同一个，说明这是独立需求。看板 plans 块每阶段仅容一个 plan，禁止覆盖或在同 stage 追加第二行——须按 Plans/Epic/ 母版**新建独立 Epic**（plans.requirement 指向新需求 plan），新需求 plan 的 frontmatter epic 指向新 Epic。\n` +
-  `- **需求人类卷门禁**：requirement-analyst 产出的人类卷除 A/B/C 三件套外，须含「D. 需求问题清单」——把不理解/矛盾/遗漏浓缩成产品视角一句话表（标 P0/P1 与三类标签），明细才留在 AI 底稿。\n` +
-  `\n完成后 output report：📌 当前阶段 | 产出路径 | 看板 | 下一阶段 | /resume 命令。`,
-  { label: `full-cycle-exec:${resolved.current_state}`, phase: '执行当前 Skill', schema: EXEC_SCHEMA }
+  `- 阶段退出条件由 workflow-gate.sh 依「子 Plan 文件系统事实」判定（childPlanExists/status/plan-gate-check/WBS 勾选）；**不要**改 Epic frontmatter 的 lifecycle_state 来「推进」阶段。\n` +
+  `- 开发阶段写代码前须 plan-gate-check.sh 通过。\n` +
+  `- 若阻塞仅因「未创建子 plan」→ 按该 stage 的 template 创建 plan 到 planFolder；${usesEpic ? '并回写 Epic plans.<字段> 路径索引（仅路径映射，属数据上下文允许项）。' : '无 Epic 无需回写。'}\n` +
+  `- 若阻塞为 P0/未采纳/WBS 未勾 → 只输出待办，不进入下一阶段。\n` +
+  `- 界面/对稿/还原/Figma 类切片强制 figma-ui，不得用 feature-dev-assistant 手写布局替代。\n` +
+  `- 完成后子 Skill 须在其 plan 末尾追加 skill_run 反馈块（协议见 Contexts/决策/Skill反馈协议）。\n` +
+  `\n完成后 output report：📌 当前阶段 | 产出路径 | ${usesEpic ? '看板 | ' : ''}下一阶段 | /resume 命令。`,
+  { label: `exec:${workflow}:${gate.current_state}`, phase: '执行当前 Skill', schema: EXEC_SCHEMA }
 )
 
 phase('汇报与下一步')
 
-await agent(
-  `用 Bash 工具运行 \`./scripts/kanban-sync.sh --boot ${epicPath ? `--epic ${epicPath} ` : ''}2>/dev/null || true\` 同步看板。` +
-  `只需运行并简短确认，不要分析。`,
-  { label: 'full-cycle-kanban-sync', phase: '汇报与下一步' }
-)
+if (usesEpic) {
+  await agent(
+    `用 Bash 运行 \`./scripts/kanban-sync.sh --boot ${epicPath ? `--epic ${epicPath} ` : ''}2>/dev/null || true\` 同步看板。只需运行并简短确认，不要分析。`,
+    { label: 'kanban-sync', phase: '汇报与下一步' }
+  )
+}
 
 return {
-  current_state: resolved.current_state,
-  next_state: resolved.next_state || discover?.next_state,
-  skill: resolved.recommended_skill || discover?.recommended_skill,
+  workflow,
+  uses_epic: usesEpic,
+  current_state: gate.current_state,
+  next_state: gate.next_state,
+  skill: gate.recommended_skill,
   gate: gateResult,
   execution: executed,
-  report: executed?.report || resolved.report,
-  spec: '.claude/workflows/full-cycle.json',
+  report: executed?.report || report,
+  blueprint: `.claude/workflows/${workflow}.json`,
 }

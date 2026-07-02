@@ -128,9 +128,14 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 
 ## 七、工作流概要（细节见工作流总览）
 
+**积木框架**：`full-cycle` 是通用编排引擎，读蓝图 `.claude/workflows/<name>.json` 组合出不同工作流（client-dev / computer-mgmt …）。三层：积木（子 Skill）/ 状态机（引擎+蓝图）/ 数据上下文（Epic）。
+
+**Epic 边界（硬规则）**：Epic 是**数据上下文（聚合根）**——存子 Plan 路径映射、WBS 勾选、里程碑摘要，**不驱动流程**。阶段推进由 `scripts/workflow-gate.sh` 依「子 Plan 文件系统事实」（childPlanExists / status / plan-gate-check / WBS 勾选）判定。`lifecycle_state` 不参与路由（如需整体阶段跑 `derive-epic-status.sh` 派生），引擎绝不读它做路由依据。
+
 | 场景 | 入口 |
 |------|------|
-| 新模块 / 含业务逻辑 | `/full-cycle` → `Plans/Epic/` |
+| 新模块 / 含业务逻辑 | `/full-cycle` → client-dev 蓝图 → `Plans/Epic/` |
+| 其它工作流 | 自然语言 / `/full-cycle workflow=<name>` |
 | 续做 | `/resume plan=Plans/... 进度=...` |
 | Bug / 学习 / 纯 UI 小改 | 对应 Skill（见 `.cursorrules`） |
 | 写代码前 | `plan-gate-check.sh` 通过 |

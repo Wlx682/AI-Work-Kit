@@ -1,7 +1,44 @@
 {
   "name": "full-cycle",
-  "version": "1.0.0",
-  "description": "全流程开发状态机：Requirement → Architecture → Development → Test → Deploy。机械门禁 scripts/full-cycle-gate.sh（Epic plans.* + WBS + plan-gate-check）；上一阶段未满足退出条件不进入下一阶段。",
+  "version": "2.0.0",
+  "kind": "engine-index",
+  "description": "通用工作流引擎索引。full-cycle 读蓝图 manifest 决定阶段链，具体阶段见各蓝图。Epic 作数据上下文，门禁只看子 Plan 文件系统事实，不读 lifecycle_state。",
+  "engine": ".claude/workflows/full-cycle.js",
+  "gateScript": "scripts/workflow-gate.sh",
+  "bootScript": "scripts/full-cycle-boot.sh",
+  "deriveScript": "scripts/derive-epic-status.sh",
+  "legacyGateShim": "scripts/full-cycle-gate.sh",
+  "blueprints": [
+    {
+      "name": "client-dev",
+      "label": "客户端功能开发（15 步进化版）",
+      "manifest": ".claude/workflows/client-dev.json",
+      "usesEpic": true,
+      "epicTemplate": "Templates/Epic母版-client-dev.md"
+    },
+    {
+      "name": "computer-mgmt",
+      "label": "电脑管理工作流（无 Epic 轻量清单）",
+      "manifest": ".claude/workflows/computer-mgmt.json",
+      "usesEpic": false
+    }
+  ],
+  "blueprintSelection": {
+    "priority": [
+      "命令行参数 workflow=<name>",
+      "Epic frontmatter workflow: 字段",
+      "自然语言意图匹配蓝图 triggerHints（重要）",
+      "默认 client-dev 并向用户确认"
+    ]
+  },
+  "architecture": {
+    "layers": {
+      "execution": "各子 Skill（积木）—— 读写 Plan 文件",
+      "control": "full-cycle 引擎 + 蓝图（状态机）—— 读蓝图决定下一阶段、维护会话游标",
+      "data": "Epic Plan（数据聚合根）—— 只存子 Plan 路径映射 + WBS 勾选 + 里程碑，不驱动流程"
+    },
+    "hardRule": "门禁退出条件全部基于子 Plan 文件系统事实（childPlanExists/status/plan-gate-check/WBS 勾选）；lifecycle_state 不作路由依据。"
+  },
   "triggerPhrases": [
     "开始做这个项目",
     "全流程开发",
@@ -9,105 +46,10 @@
     "启动全流程",
     "full-cycle",
     "/full-cycle",
-    "project-manager",
-    "full-cycle-assistant"
+    "电脑管理",
+    "帮我清理电脑"
   ],
-  "states": {
-    "requirement": {
-      "label": "需求分析",
-      "planFolder": "Plans/需求分析",
-      "skill": "requirement-analyst",
-      "template": "Templates/需求分析-带验收标准模板.md",
-      "requiredSections": [
-        "边界情况清单",
-        "异常流程矩阵",
-        "验收标准"
-      ],
-      "exitCriteria": {
-        "status": ["已采纳"],
-        "p0Open": 0,
-        "skill_run_present": true
-      },
-      "next": "architecture"
-    },
-    "architecture": {
-      "label": "架构设计",
-      "planFolders": [
-        "Plans/客户端技术方案",
-        "Plans/服务端技术方案"
-      ],
-      "skill": "architecture-design-assistant",
-      "template": "Templates/技术方案模板.md",
-      "requiredSections": [
-        "模块边界",
-        "数据模型",
-        "API Schema"
-      ],
-      "exitCriteria": {
-        "status": ["已采纳"],
-        "skill_run_present": true
-      },
-      "next": "development"
-    },
-    "development": {
-      "label": "功能开发",
-      "planFolder": "Plans/功能开发",
-      "skills": [
-        "task-splitter",
-        "feature-dev-assistant"
-      ],
-      "exitCriteria": {
-        "allSubtasksChecked": true,
-        "skill_run_present": true
-      },
-      "next": "test"
-    },
-    "test": {
-      "label": "自动化测试",
-      "planFolder": "Plans/自动化测试",
-      "skill": "test-generator",
-      "template": "Templates/自动化测试模板.md",
-      "exitCriteria": {
-        "testsPass": true,
-        "skill_run_present": true
-      },
-      "next": "deploy"
-    },
-    "deploy": {
-      "label": "部署",
-      "planFolder": "Plans/部署",
-      "skill": "deployment-assistant",
-      "template": "Templates/部署模板.md",
-      "exitCriteria": {
-        "status": ["已采纳"],
-        "skill_run_present": true
-      },
-      "next": null
-    }
-  },
-  "transitions": [
-    { "from": "requirement", "to": "architecture", "guard": "requirement.exitCriteria" },
-    { "from": "architecture", "to": "development", "guard": "architecture.exitCriteria" },
-    { "from": "development", "to": "test", "guard": "development.exitCriteria" },
-    { "from": "test", "to": "deploy", "guard": "test.exitCriteria" }
-  ],
-  "rollback": {
-    "onChange": {
-      "skill": "change-impact-analysis",
-      "markStatus": "pending-change"
-    },
-    "onBug": {
-      "planFolder": "Plans/Bug排查",
-      "requiredLinks": [
-        "Plans/需求分析",
-        "Plans/功能开发"
-      ]
-    }
-  },
   "reporting": {
     "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
-  },
-  "executableWorkflow": ".claude/workflows/full-cycle.js",
-  "gateScript": "scripts/full-cycle-gate.sh",
-  "bootScript": "scripts/full-cycle-boot.sh"
+  }
 }
