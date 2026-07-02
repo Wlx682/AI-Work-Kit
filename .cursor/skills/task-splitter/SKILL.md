@@ -20,3 +20,9 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 - Epic WBS 表结构变更须经本 Skill 产出 plan **或**用户书面确认后再写回 Epic。
 
 同步：`Skills/task_splitter.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+追加到本次 拆分产出的主 plan（`Plans/功能开发/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: task-splitter` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

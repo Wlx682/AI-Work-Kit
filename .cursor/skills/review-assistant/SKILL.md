@@ -32,3 +32,9 @@ Vault：AI-Work-Kit 根目录
 模板：`Templates/日报模板.md` · `Templates/周报模板.md` · `Templates/月度复盘模板.md`
 
 同步：`Skills/review_assistant.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+本 Skill 产出日报/周报/复盘（`Contexts/`）而非 plan，故追加到 `Contexts/决策/孤立反馈记录.md` **顶部**（倒序，`plan: orphan`）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: review-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。喂 `feedback-aggregate → vault-evolve` 进化链。

@@ -172,3 +172,9 @@ Agent 顺序：boot `--epic` → 读 Epic `lifecycle_state` → 路由当前阶�
 ---
 
 同步：`Skills/full_cycle_assistant.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+追加到本次 本步子 Skill 产出的阶段 plan（由该子 Skill 追加；full-cycle 仅编排不重复写） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: full-cycle-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

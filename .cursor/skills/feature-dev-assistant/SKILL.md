@@ -45,3 +45,9 @@ Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
 仅 UI → `figma-ui` 或模板设含业务逻辑=否。
 
 同步：`Skills/feature_dev_assistant.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+追加到本次 功能开发 plan（`Plans/功能开发/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: feature-dev-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

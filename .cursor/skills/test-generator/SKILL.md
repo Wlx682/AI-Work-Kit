@@ -33,3 +33,9 @@ description: 读 Epic+功能开发与需求验收标准，生成单元/集成测
 ```
 
 同步：`Skills/test_generator.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+追加到本次 自动化测试 plan（`Plans/自动化测试/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: test-generator` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

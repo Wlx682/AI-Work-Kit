@@ -15,3 +15,9 @@ description: 续做任意 plan。标准命令 /resume plan=Plans/... 进度=...�
 兼容 `续做，plan=分类/文件.md，进度=...`
 
 同步：`Skills/resume_assistant.md`
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+追加到本次 续做的目标 plan **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: resume-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

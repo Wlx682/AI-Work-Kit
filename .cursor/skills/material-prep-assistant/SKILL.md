@@ -41,3 +41,9 @@ Claw 代码：`NMPaymentManager.registerPayment()`
 /material-prep 类型=收银台，参考=Claw，新App=namiWork
 准备资料 / 沉淀到资料库 / PM 物料 / 对照表
 ```
+
+## 反馈回路（skill_run）
+
+完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
+本 Skill 沉淀资料到 `Contexts/` 而非产 plan，故追加到 `Contexts/决策/孤立反馈记录.md` **顶部**（倒序，`plan: orphan`）。
+`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: material-prep-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。喂 `feedback-aggregate → vault-evolve` 进化链。
