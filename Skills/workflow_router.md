@@ -21,7 +21,7 @@
 只做：
 
 1. 选择 workflow 蓝图
-2. 启动看板
+2. 确保客户端开发 Epic 存在并启动看板
 3. 运行 `workflow-status.py` 输出人话状态
 4. 必要时再查看 `workflow-gate.sh --json` 详情
 
@@ -59,9 +59,25 @@ python3 scripts/workflow-router-check.py '全流程开发一下支付收银台' 
 python3 scripts/test-workflow-refactor.py
 ```
 
+## client-dev Epic 硬门禁
+
+`client-dev` 客户端开发必须创建 Epic；Epic 是看板的数据源。若用户说「客户端全流程开发 PRD=...」「客户端功能」「做个客户端项目」但还没有 `Plans/Epic/xxx.md`，下一步不是停在空看板，也不是直接做需求分析，而是先调用 `template-generator` 按 `Templates/Epic模板-client-dev.md` 创建 Epic，再用该 Epic 启动看板。
+
+这条规则固化在 `.workflows/blueprints/client-dev.json` 的 `startup.createBoard=true` 与 `startup.requireEpicBeforeBoot=true`；入口只执行蓝图契约，不临场判断。
+
+临时命令 `bash scripts/full-cycle-boot.sh --new-requirement` 只允许用于启动空看板服务，不算完成 `client-dev` 看板启动。
+
 ## 命令
 
-新需求先启动看板服务：
+客户端新需求先创建 Epic，再启动具体看板：
+
+```bash
+/template-generator 任务类型=Epic，workflow=client-dev，标题=模块名，PRD=...
+bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
+```
+
+仅临时启动空看板服务：
 
 ```bash
 bash scripts/full-cycle-boot.sh --new-requirement
@@ -101,4 +117,4 @@ bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md --j
 继续：/resume plan=Plans/自动化测试/xxx.md
 ```
 
-若 `blockers` 里提示缺 Epic，下一步是 `template-generator` 创建 Epic；不要手写 `lifecycle_state` 试图推进。
+若 `blockers` 里提示缺 Epic，下一步是 `template-generator` 创建 Epic；创建后必须重新 `boot --epic`。不要手写 `lifecycle_state` 试图推进。

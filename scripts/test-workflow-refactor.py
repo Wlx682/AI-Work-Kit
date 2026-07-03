@@ -93,6 +93,11 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(bp["gateScript"], "scripts/workflow-gate.sh")
         self.assertEqual(bp["bootScript"], "scripts/full-cycle-boot.sh")
         self.assertEqual(bp["epicTemplate"], "Templates/Epic模板-client-dev.md")
+        self.assertTrue(bp["epicRequired"])
+        self.assertTrue(bp["startup"]["createBoard"])
+        self.assertEqual(bp["startup"]["boardSource"], "Epic")
+        self.assertTrue(bp["startup"]["requireEpicBeforeBoot"])
+        self.assertEqual(bp["startup"]["createEpicSkill"], "template-generator")
 
         stages = {stage["key"]: stage for stage in bp["stages"]}
         self.assertEqual(
@@ -253,6 +258,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         cases = {
             "帮我启动一个会员中心客户端功能项目": "client-dev",
             "全流程开发一下支付收银台": "client-dev",
+            "客户端全流程开发prd = XXX": "client-dev",
             "这个需求一条龙走完": "client-dev",
             "做个功能：订单筛选": "client-dev",
             "实现一个客户端设置页": "client-dev",

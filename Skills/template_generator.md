@@ -19,6 +19,7 @@
 
 | 类型 | 模板文件 | 存放路径 |
 |------|----------|----------|
+| **Epic（client-dev）** | `Templates/Epic模板-client-dev.md` | `Plans/Epic/` |
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
 | **技术方案**（客户端/服务端） | `Templates/技术方案模板.md` | `Plans/技术方案/` |
 | 重构 | `Templates/技术方案模板.md` | `Plans/代码重构/` |
@@ -40,6 +41,8 @@
 ```
 /resume plan=Plans/【分类】/{{date}}-{{title}}.md 进度=【】
 ```
+
+当 `workflow-router` 因 `client-dev` 缺 Epic 推荐本 Skill 时，任务类型固定为 Epic，必须生成 `Plans/Epic/xxx.md`，然后提示重新运行 `bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`。
 
 ## 触发示例
 
