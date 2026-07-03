@@ -28,11 +28,14 @@ description: >-
 | 类型 | 模板 | 存放 |
 |------|------|------|
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
+| Epic（client-dev） | `Templates/Epic模板-client-dev.md` | `Plans/Epic/` |
 | 技术方案 | `Templates/技术方案模板.md` | `Plans/技术方案/` |
 | 功能开发 | `Templates/客户端功能开发模板.md` | `Plans/功能开发/` |
 | 仅 UI | 同上（含业务逻辑=否） | `Plans/功能开发/` |
 
 续做格式：`/resume plan=Plans/【分类】/xxx.md 进度=...`
+
+`workflow-router` 推荐创建 `client-dev` Epic 时，必须使用 Epic 模板生成 `Plans/Epic/xxx.md`，再执行 `bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`。
 
 同步：`Skills/template_generator.md`
 

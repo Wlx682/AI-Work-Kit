@@ -40,10 +40,21 @@ description: >-
 
 ## 知识库
 
+- 契约：`Contexts/决策/Skill原子契约.md`
 - 规范：`Contexts/Figma/项目设计规范.md`
 - 实践：`Contexts/Figma/Figma界面开发最佳实践.md`
 - **自检：`Templates/Figma还原自检表.md` ⭐ 报完成前必填**
 - Plan：`Plans/功能开发/`
+
+## 原子契约
+
+| 字段 | 要求 |
+|------|------|
+| 输入 | Figma 链接或截图、目标页面、平台、允许偏差 |
+| 输出 | UI 实现说明、截图、`Figma还原自检表` 或同 plan 自检节 |
+| 门禁 | 自评分 >= 9；差异表完整；未达标时不得说完成 |
+| 越界 | 出现接口联调、埋点、状态机、跨模块业务逻辑时升级到功能开发流程 |
+| smoke | `python3 scripts/skill-smoke-test.py figma-ui tests/fixtures/skills/figma-ui/basic-card.input.md` |
 
 ## 报"完成"前硬门槛
 

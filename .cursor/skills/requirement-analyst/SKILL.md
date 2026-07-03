@@ -17,7 +17,7 @@ Plan：`Plans/需求分析/YYYY-MM-DD-模块名.md`
 3. **遗漏分析是核心**：回答「完整做上线还缺哪几段 PRD」，每条给 2–3 个补全方案
 4. Push 产品时按「**逻辑 · 交互 · 遗漏**」三块归类；P0 遗漏与 P0 矛盾**同等阻塞** `feature-dev-assistant`
 5. **评审/沟通/避坑**：完整规则见规范（讲完让开发复述+测试列 3~5 点才算通过；问题聚焦 3~5 个，>10 条多为过度解读）
-6. ⚠️ **反馈回路试点**：存档后必须在 plan 末尾追加 `skill_run` YAML 块（`utility` 二选一：high+reason / not-needed）。协议见 `Contexts/决策/Skill反馈协议.md`；缺则 `plan-gate-check.sh` 报失败
+6. ⚠️ **反馈回路**：存档后必须在 plan 末尾追加 `skill_run` YAML 块（`utility` 二选一：high+reason / not-needed）。协议见 `Contexts/决策/Skill反馈协议.md`；缺则 `plan-gate-check.sh` 报失败
 7. **人类校验门禁**（收尾自检，不对外输出）：删掉 AI 底稿后，没读过 PRD 的产品须能 3 分钟答清四问——①先点哪里再点哪里（入口）②解决他什么场景的什么问题（价值）③什么能做什么不能做（边界）④有哪些要我拍板（D 问题清单）。D 缺失或答不清则重写人类卷，把冗余踢进底稿
 
 真理源：`Skills/requirement_analyst.md`（含完整 schema 与示例）

@@ -1,6 +1,6 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、workflow=xxx、full-cycle 时触发；只负责选择蓝图、启动看板、运行 workflow-gate，不做需求/架构/开发/测试等阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、workflow=xxx、full-cycle 时触发；只负责选择蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
 ---
 
 # 工作流路由器
@@ -38,14 +38,16 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 不确定时默认 `client-dev`，并在输出中说明
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
 2. 启动看板：
-   - 新需求：`bash scripts/full-cycle-boot.sh --new-requirement`
-   - 已有 Epic：`bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`
+   - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
+   - `client-dev` 客户端开发必须先有 Epic；若无 Epic，先调用 `template-generator` 用 `Templates/Epic模板-client-dev.md` 创建 `Plans/Epic/xxx.md`
+   - 已有/刚创建 Epic：`bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`
+   - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
 3. 看状态：
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
    - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`
    - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
-4. 根据 `recommended_skill` 调用真正阶段 Skill；若阻塞为缺 Epic，调用 `template-generator` 创建 Epic。
+4. 根据 `recommended_skill` 调用真正阶段 Skill；若 `client-dev` 阻塞为缺 Epic，必须先调用 `template-generator` 创建 Epic，然后重新 `boot --epic` 打开具体看板。
 
 ## 输出
 

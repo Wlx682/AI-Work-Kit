@@ -8,6 +8,8 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 输入：`Plans/技术方案/`（已采纳）  
 产出：`Plans/功能开发/YYYY-MM-DD-模块.md` + `xxx-子任务NN-简述.md`
 
+契约：`Contexts/决策/Skill原子契约.md`
+
 1. 读方案 + 需求真理源  
 2. 5–10 原子任务，主 plan Checklist 双链子任务；§五实施切片表必须保留「覆盖 AC」列  
 3. 子任务 `parent:` 链主 plan；`lifecycle_state: development`  
@@ -22,6 +24,16 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 - Epic WBS 表结构变更须经本 Skill 产出 plan **或**用户书面确认后再写回 Epic。
 
 同步：`Skills/task_splitter.md`
+
+## 原子契约
+
+| 字段 | 要求 |
+|------|------|
+| 输入 | 已采纳技术方案、Epic 或明确目标范围 |
+| 输出 | 5-10 个原子任务，必要时写主 plan 与子任务 plan |
+| 门禁 | 每个任务有输入、输出、验收、依赖；不混职责 |
+| 越界 | WBS 方案不明确时请求用户确认，不擅自推荐 A/B/C |
+| smoke | `python3 scripts/skill-smoke-test.py task-splitter tests/fixtures/skills/task-splitter/checkout-tech-plan.input.md` |
 
 ## 反馈回路（skill_run）
 
