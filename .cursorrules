@@ -47,6 +47,7 @@
 - 需求变更 → `change-impact-analysis`
 - 全流程 / 启动项目 / 自然语言工作流 → `workflow-router`（入口 Skill，只选蓝图并启动 `full-cycle` 引擎）
 - Epic 审计 → `dev-lifecycle-audit-assistant` → `Contexts/决策/*审计报告*`
+- 部署/同步/刷新技能 · 更新技能到全局 · skill sync → `skill-sync`（跑 `sync-claude-skills.sh --sync`，运维类，不改 Skill 内容）
 
 # 输出要求
 - 无相关知识库信息时明确说明。

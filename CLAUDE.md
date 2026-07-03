@@ -42,6 +42,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 | 找 CC 文章 / 周报选题 / 海外资讯 / 分享帖 | `weekly-intel-digest` → `Contexts/情报源/` |
 | 提效案例 / 最佳实践 / 技术提交分享 / 产品提效 | `best-practice-digest` → `Contexts/最佳实践/`（附 skill_run 反哺进化链） |
 | 工作流进化 / 反馈闭环 / skill_run 聚合 / 流程改进沉淀 | `workflow-evolution-assistant` |
+| 部署/同步/刷新技能 · 更新技能到全局 · skill sync | `skill-sync`（跑 `sync-claude-skills.sh --sync`，运维类，不改 Skill 内容） |
 
 全流程步骤结束输出：
 
