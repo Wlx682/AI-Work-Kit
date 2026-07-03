@@ -165,7 +165,7 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 `scripts/plan-gate-check.sh` 校验存在性与字段合法性；缺则视为任务未完成。
 `scripts/feedback-aggregate.py` 月度聚合 → 输入月度复盘。
 
-**试点**：`requirement-analyst`，2026-06-24 起；通过后推至全部 Skill。
+自 2026-07-03 起，`plan-gate-check.sh` 对所有 plan 全量强制 `skill_run`。历史 plan 不主动补旧账；下次续做或过门禁时补齐。
 
 ---
 

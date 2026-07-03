@@ -7,7 +7,7 @@ key_points:
   - 格式必须 fenced ```yaml 代码块，不用裸 --- frontmatter 避免双 fm 冲突
   - utility 字段二选一：high（必须附 reason 一句话）或 not-needed
   - 必填字段：skill / plan / date / contexts_used / contexts_missing / contexts_stale
-  - 校验由 scripts/validate-skill-run.py 执行，门禁在 plan-gate-check.sh
+  - 校验由 scripts/validate-skill-run.py 执行，plan-gate-check.sh 对所有 plan 全量强制
   - 月度聚合：scripts/feedback-aggregate.py，挂到月度复盘模板 §六
 relations:
   depends_on:
@@ -116,14 +116,16 @@ skill_run:
 
 ---
 
-## 六、试点期约定
+## 六、全量强制约定
 
 | 项 | 值 |
 |---|---|
-| 试点 Skill | `requirement-analyst` |
-| 试点周期 | 2026-06-24 起 / 至少 3 次真实任务，或 2 周（孰先达成）|
-| 通过标准 | 试点期所有执行均通过 `plan-gate-check.sh` 校验，无手动补救 |
-| 通过后 | 反馈章节推至全部 17 个 Skill |
+| 生效范围 | 所有写入 `Plans/**/*.md` 的 Skill 任务 |
+| 生效时间 | 2026-07-03 起 |
+| 机械门禁 | `bash scripts/plan-gate-check.sh <plan.md>` 默认要求 `skill_run` 存在且合法 |
+| 无 plan 任务 | 写入 `Contexts/决策/孤立反馈记录.md`，`plan: orphan` |
+| 已归位例外 | 反馈结论已写入规则/脚本/审计报告时，只在孤立反馈「归档」补摘要 |
+| 历史 plan | 不主动补旧账；下次续做或过门禁时补齐 |
 
 ---
 

@@ -295,6 +295,12 @@ class WorkflowRefactorTests(unittest.TestCase):
             "/workflow computer-mgmt 先盘点": "computer-mgmt",
             "workflow=client-dev 启动这个项目": "client-dev",
             "工作流：client-dev 做订单模块": "client-dev",
+            "帮我改一下 UI": "ui-change",
+            "Figma还原这个卡片": "ui-change",
+            "线上报错帮我修bug": "bugfix",
+            "这个崩溃走 bugfix": "bugfix",
+            "这个技术方案只拆任务": "task-split-only",
+            "WBS修订一下": "task-split-only",
         }
         for utterance, expected in cases.items():
             with self.subTest(utterance=utterance):
@@ -351,6 +357,131 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["recommended_skill"], "material-prep-assistant")
         self.assertTrue(any("盘点" in item and "子 Plan 未创建" in item for item in data["blockers"]))
 
+    def test_lightweight_workflow_gates_reach_done_with_prefixed_plans(self) -> None:
+        cases = [
+            (
+                "ui-change",
+                [
+                    ("Plans/界面开发/2026-07-03-UI范围-卡片.md", "figma-ui"),
+                    ("Plans/界面开发/2026-07-03-UI实现-卡片.md", "figma-ui"),
+                    ("Plans/界面开发/2026-07-03-UI复核-卡片.md", "review-assistant"),
+                ],
+            ),
+            (
+                "bugfix",
+                [
+                    ("Plans/Bug排查/2026-07-03-复现-价格错误.md", "feature-dev-assistant"),
+                    ("Plans/Bug排查/2026-07-03-定位-价格错误.md", "feature-dev-assistant"),
+                    ("Plans/Bug排查/2026-07-03-修复-价格错误.md", "feature-dev-assistant"),
+                    ("Plans/Bug排查/2026-07-03-回归-价格错误.md", "review-assistant"),
+                ],
+            ),
+            (
+                "task-split-only",
+                [
+                    ("Plans/功能开发/2026-07-03-任务拆分-优惠券.md", "task-splitter"),
+                    ("Plans/功能开发/2026-07-03-任务拆分复核-优惠券.md", "task-splitter"),
+                ],
+            ),
+        ]
+        with self.fixture_repo() as tmp:
+            for workflow, _plans in cases:
+                with self.subTest(workflow=workflow, state="empty"):
+                    blocked = self.run_gate(tmp, "--workflow", workflow, "--json")
+                    self.assertNotEqual(blocked["current_state"], "done")
+                    self.assertTrue(blocked["blockers"])
+
+            for workflow, plans in cases:
+                for rel, skill in plans:
+                    write_file(
+                        tmp / rel,
+                        f"""
+                        ---
+                        status: 已采纳
+                        ---
+
+                        # {rel}
+
+                        轻流程 fixture。
+
+                        {skill_run(skill, rel)}
+                        """,
+                    )
+                with self.subTest(workflow=workflow, state="done"):
+                    data = self.run_gate(tmp, "--workflow", workflow, "--json")
+                    self.assertEqual(data["current_state"], "done", data)
+                    self.assertEqual(data["blockers"], [])
+                    self.assertTrue(data["plans_found"], data)
+
+    def test_workflow_smoke_script_covers_lightweight_workflows(self) -> None:
+        proc = subprocess.run(
+            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
+
+    def test_workflow_plan_init_creates_lightweight_stage_plan(self) -> None:
+        with self.fixture_repo() as tmp:
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-plan-init.py",
+                    "--workflow",
+                    "ui-change",
+                    "--title",
+                    "卡片",
+                    "--date",
+                    "2026-07-03",
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            rel = "Plans/界面开发/2026-07-03-UI范围-卡片.md"
+            self.assertIn(f"created: {rel}", proc.stdout)
+            plan = tmp / rel
+            self.assertTrue(plan.exists())
+            text = plan.read_text(encoding="utf-8")
+            self.assertIn("workflow: ui-change", text)
+            self.assertIn("workflow_stage: ui-scope", text)
+            self.assertIn("skill: figma-ui", text)
+
+            gate = self.run_gate(tmp, "--workflow", "ui-change", "--json")
+            self.assertEqual(gate["current_state"], "ui-scope")
+            self.assertTrue(any("skill_run" in item for item in gate["blockers"]), gate)
+
+    def test_workflow_plan_init_all_with_feedback_can_reach_done(self) -> None:
+        with self.fixture_repo() as tmp:
+            subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-plan-init.py",
+                    "--workflow",
+                    "task-split-only",
+                    "--title",
+                    "优惠券",
+                    "--date",
+                    "2026-07-03",
+                    "--all",
+                    "--include-feedback",
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            gate = self.run_gate(tmp, "--workflow", "task-split-only", "--json")
+            self.assertEqual(gate["current_state"], "done", gate)
+
     def test_workflow_gate_reaches_done_for_complete_client_dev_fixture(self) -> None:
         with self.fixture_repo() as tmp:
             self.create_complete_client_dev_fixture(tmp)
@@ -370,6 +501,44 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIsInstance(data["gate_development"], str)
         self.assertIn("OK:skill_run", data["gate_development"])
         self.assertIn("\n", data["gate_development"])
+
+    def test_plan_gate_requires_skill_run_for_all_plan_categories(self) -> None:
+        with self.fixture_repo() as tmp:
+            plan = tmp / "Plans/技术方案/no-feedback.md"
+            write_file(
+                plan,
+                """
+                ---
+                status: 已采纳
+                ---
+
+                # 技术方案 no feedback
+                """,
+            )
+            missing = subprocess.run(
+                ["bash", "scripts/plan-gate-check.sh", "Plans/技术方案/no-feedback.md"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("skill_run", missing.stderr + missing.stdout)
+
+            write_file(
+                plan,
+                plan.read_text(encoding="utf-8")
+                + "\n"
+                + skill_run("architecture-design-assistant", "Plans/技术方案/no-feedback.md"),
+            )
+            ok = subprocess.run(
+                ["bash", "scripts/plan-gate-check.sh", "Plans/技术方案/no-feedback.md"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(ok.returncode, 0, ok.stderr + ok.stdout)
 
     def test_gate_parse_supports_negative_ac_and_filters_placeholder_tests(self) -> None:
         with self.fixture_repo() as tmp:
@@ -644,6 +813,8 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "Plans/部署",
                     "Plans/最佳实践",
                     "Plans/电脑管理",
+                    "Plans/界面开发",
+                    "Plans/Bug排查",
                 ]:
                     (self.root / plan_dir).mkdir(parents=True, exist_ok=True)
                 write_file(self.root / "Contexts/决策/Skill反馈协议.md", "# Skill反馈协议\n")

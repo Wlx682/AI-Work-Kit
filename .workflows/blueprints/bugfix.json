@@ -1,0 +1,80 @@
+{
+  "name": "bugfix",
+  "label": "Bug 修复",
+  "version": "0.1.0",
+  "description": "无 Epic 轻量流程：用于已有功能缺陷的复现、定位、修复和回归。若根因是需求变更或新增能力，转 change-impact-analysis 或 client-dev。",
+  "usesEpic": false,
+  "planRoot": "Plans/Bug排查",
+  "bootScript": "scripts/full-cycle-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "改bug",
+    "修bug",
+    "修 Bug",
+    "bugfix",
+    "Bug修复",
+    "问题排查",
+    "线上问题",
+    "报错",
+    "崩溃",
+    "回归缺陷"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "reproduce",
+      "label": "复现与影响范围",
+      "planFolder": "Plans/Bug排查",
+      "planPrefix": "复现",
+      "skills": ["feature-dev-assistant"],
+      "template": "Templates/排查问题模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "diagnose"
+    },
+    {
+      "key": "diagnose",
+      "label": "根因定位",
+      "planFolder": "Plans/Bug排查",
+      "planPrefix": "定位",
+      "skills": ["feature-dev-assistant"],
+      "template": "Templates/排查问题模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "fix"
+    },
+    {
+      "key": "fix",
+      "label": "修复实现",
+      "planFolder": "Plans/Bug排查",
+      "planPrefix": "修复",
+      "skills": ["feature-dev-assistant"],
+      "template": "Templates/排查问题模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "regression"
+    },
+    {
+      "key": "regression",
+      "label": "回归与复核",
+      "planFolder": "Plans/Bug排查",
+      "planPrefix": "回归",
+      "skills": ["review-assistant"],
+      "template": "Templates/Code-Review模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

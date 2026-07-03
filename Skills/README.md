@@ -53,6 +53,7 @@
 | PM 物料、整理通用资料 | material-prep-assistant | `/material-prep` |
 | 找 CC 文章、周报选题、海外资讯、整理分享帖 | weekly-intel-digest | `/intel` `/weekly-intel-digest` |
 | 提效案例、最佳实践、技术提交分享、产品提效 | best-practice-digest | `/best-practice` `/best-practice-digest` |
+| 工作流进化、反馈闭环、skill_run 聚合、流程改进沉淀 | workflow-evolution-assistant | `/workflow-evolution` `/workflow-evolution-assistant` |
 
 ### 学习
 
@@ -68,6 +69,8 @@
 | `.claude/workflows/full-cycle.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
 | `scripts/workflow-status.py` | 日常看状态：当前 / 卡点 / 下一步 / 继续 |
 | `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
+| `scripts/workflow-plan-init.py` | 为 `ui-change` / `bugfix` / `task-split-only` 等无 Epic 轻流程创建阶段 plan |
+| `scripts/workflow-smoke-test.py` | 一条命令测试轻流程能路由、阻塞、补齐后 done |
 
 ### 内部（不直接对用户暴露）
 

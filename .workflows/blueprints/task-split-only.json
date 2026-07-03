@@ -1,0 +1,52 @@
+{
+  "name": "task-split-only",
+  "label": "只拆任务",
+  "version": "0.1.0",
+  "description": "无 Epic 轻量流程：用于已有技术方案或明确目标的任务拆分，不进入代码实现。WBS 修订必须走 task-splitter 或用户确认。",
+  "usesEpic": false,
+  "planRoot": "Plans/功能开发",
+  "bootScript": "scripts/full-cycle-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "只拆任务",
+    "拆任务",
+    "任务拆分",
+    "task-split-only",
+    "task splitter",
+    "拆一下任务",
+    "WBS修订",
+    "改WBS"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "split",
+      "label": "原子任务拆分",
+      "planFolder": "Plans/功能开发",
+      "planPrefix": "任务拆分",
+      "skills": ["task-splitter"],
+      "template": "Templates/客户端功能开发模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "check"
+    },
+    {
+      "key": "check",
+      "label": "拆分自检",
+      "planFolder": "Plans/功能开发",
+      "planPrefix": "任务拆分复核",
+      "skills": ["task-splitter"],
+      "template": "Templates/客户端功能开发模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

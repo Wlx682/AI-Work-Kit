@@ -6,9 +6,20 @@
 
 ## 知识库
 
+- 契约：`Contexts/决策/Skill原子契约.md`
 - 输入：`Plans/技术方案/xxx.md`（须 `status: 已采纳` 或用户声明可拆）
 - 模板：`Templates/客户端功能开发模板.md`（子任务简化版）
 - 输出：`Plans/功能开发/`
+
+## 原子契约
+
+| 字段 | 要求 |
+|------|------|
+| 输入 | 已采纳技术方案、Epic 或明确目标范围 |
+| 输出 | 5-10 个原子任务，必要时写主 plan 与子任务 plan |
+| 门禁 | 每个任务有输入、输出、验收、依赖；不混职责 |
+| 越界 | WBS 方案不明确时请求用户确认，不擅自推荐 A/B/C |
+| smoke | `python3 scripts/skill-smoke-test.py task-splitter tests/fixtures/skills/task-splitter/checkout-tech-plan.input.md` |
 
 ## 执行步骤
 

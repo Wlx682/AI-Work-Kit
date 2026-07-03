@@ -1,0 +1,68 @@
+{
+  "name": "ui-change",
+  "label": "纯 UI 小改",
+  "version": "0.1.0",
+  "description": "无 Epic 轻量流程：用于 Figma 还原、界面小改、样式调整。发现接口联调、埋点、状态机或跨模块业务逻辑时升级到 client-dev。",
+  "usesEpic": false,
+  "planRoot": "Plans/界面开发",
+  "bootScript": "scripts/full-cycle-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "纯UI",
+    "纯 UI",
+    "UI小改",
+    "改一下UI",
+    "改一下 UI",
+    "界面小改",
+    "Figma还原",
+    "对稿",
+    "还原设计稿",
+    "只改界面",
+    "样式调整"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "ui-scope",
+      "label": "UI 范围确认",
+      "planFolder": "Plans/界面开发",
+      "planPrefix": "UI范围",
+      "skills": ["figma-ui"],
+      "template": "Templates/Figma还原自检表.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "ui-implement"
+    },
+    {
+      "key": "ui-implement",
+      "label": "UI 实现与自检",
+      "planFolder": "Plans/界面开发",
+      "planPrefix": "UI实现",
+      "skills": ["figma-ui"],
+      "template": "Templates/Figma还原自检表.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "ui-review"
+    },
+    {
+      "key": "ui-review",
+      "label": "UI 复核",
+      "planFolder": "Plans/界面开发",
+      "planPrefix": "UI复核",
+      "skills": ["review-assistant"],
+      "template": "Templates/Code-Review模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

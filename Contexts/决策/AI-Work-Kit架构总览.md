@@ -105,7 +105,7 @@ flowchart TB
 
 | 回路 | 现状 | 影响 |
 |------|------|------|
-| 反馈（skill_run） | 指令只内置在 1/17 个 Skill（仅 requirement-analyst 试点） | 全库样本稀疏 |
+| 反馈（skill_run） | 已升级为全量强制；`plan-gate-check.sh` 默认要求所有 plan 末尾有合法反馈块 | 后续重点转为提升真实样本质量 |
 | 冷却判定 | "90 天无 high 引用即冷却" | 样本稀疏 → 几乎所有 Contexts 假阳性入冷却名单 |
 | 关系图谱 | 仅 11/34 个 Contexts 带 `relations:` | 概念卡/模板/日周报在图谱外，dependents 护栏缺数据 |
 
