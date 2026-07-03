@@ -1,7 +1,7 @@
 ---
 name: weekly-intel-digest
 description: >-
-  海外一手 AI 编程/Agent 资讯周报（双卷分离：人类卷发帖 + AI卷萃取进化信号）。抓取 follow 名单最新英文原文 → 筛选 → 出中文导语套周帖模板 → 交接纳米Work翻译 → 学到的先进理念写进 skill_run.contexts_missing 反哺工作流进化，是否沉淀由你决定。
+  海外一手 AI 编程/Agent 资讯周报（双卷分离：人类卷发帖 + AI卷萃取进化信号）。抓取 follow 名单最新英文原文 → 筛选 → 出技术博客水准中文正文 + 纳米Work提示词 → skill_run.contexts_missing 反哺工作流进化，是否沉淀由你决定。
   触发词：找CC文章、周报选题、海外资讯、整理分享帖、claude code 分享、/intel、/weekly-intel-digest。
   不响应：项目日报/复盘→review-assistant；课程化学习→learn-assistant。
 ---
@@ -29,16 +29,18 @@ description: >-
 
 | 环节 | Agent 能做 | 人工节点 |
 |------|-----------|----------|
-| 抓取·官方文档站 | ✅ **DocShark MCP** 爬取+索引结构化文档站（Anthropic Eng、OpenAI 文档等），再全文搜索 | — |
-| 抓取·X/零散博客 | ⚠️ DocShark 不擅长单帖；WebFetch/WebSearch 本环境不稳 | ⏸ 抓不到时你贴原文链接/正文 |
+| 抓取·官方文档站 | ✅ 有 **DocShark MCP** 时优先爬取+索引结构化文档站；没有该工具时用可用 Web 搜索/浏览能力降级核验 | ⏸ 降级后仍取不到全文时，你贴原文链接/正文 |
+| 抓取·X/零散博客 | ⚠️ DocShark 不擅长单帖；优先用可用 Web 搜索/浏览能力核验 | ⏸ 抓不到时你贴原文链接/正文 |
 | 筛选 | ✅ 按评分标准打分去重 | 你终审选 1 篇（每期只深挖 1 篇） |
 | 中文导语 | ✅ 写技术看点/通用看点/导语 | — |
-| **纳米Work web 链接** | ✅ 在人类卷顶部内置「给纳米Work的生成提示词」，交你喂给纳米Work智能体 | 你把该文档喂给纳米Work，它生成可公开访问的云端 web 链接 |
+| **纳米Work web 链接** | ✅ 产出纯净正文 `.md` + 独立 `.prompt.md`，提示词不进入正文 | 你把两个文件喂给纳米Work，它生成可公开访问的云端 web 链接 |
 | 发帖 | ⚠️ 平台已定「先攒不自动发」 | 你贴到频道 |
 
-## 抓取工具：DocShark MCP（优先）
+## 抓取工具：DocShark MCP（可用时优先）
 
-用户级 MCP，4 个工具（工作模式：**先建库、再搜索**）：
+DocShark 是可选增强能力，不是本 Skill 的硬依赖。当前会话能看到 `manage_library`、`search_docs`、`list_libraries`、`get_doc_page` 这类工具时，官方文档站按「先建库、再搜索」使用；看不到这些工具时，直接降级为可用的 Web 搜索/浏览能力，或请用户贴原文链接/正文，不阻塞整条周报流程。
+
+DocShark 工具（若可用）：
 
 | 工具 | 用途 |
 |------|------|
@@ -47,13 +49,13 @@ description: >-
 | `list_libraries` | 看已索引哪些站，避免重复建库 |
 | `get_doc_page` | 取某页完整 Markdown 正文（喂评分/写导语用） |
 
-**适配**：DocShark 强于**结构化文档站**（官方 engineering / docs），弱于 X 推文与零散个人博客单帖。故官方源走 DocShark，X/博客单帖走 ⏸ 人工贴链接。**它不产出中文/纳米Work链接**——传播链接仍是人工节点，硬规则不变。
+**适配**：DocShark 强于**结构化文档站**（官方 engineering / docs），弱于 X 推文与零散个人博客单帖。故官方源有 DocShark 就优先用；无 DocShark 或单帖抓不到时，降级 Web 搜索/浏览，仍抓不到则 ⏸ 人工贴链接。**它不产出中文/纳米Work链接**——传播链接仍是人工节点，硬规则不变。
 
 ## 执行协议（每期八步 · 双卷分离）
 
 ```
 1. 开场读资产 → follow名单 + 评分标准 + 去重清单
-2. 抓取     → 官方文档源用 DocShark（list_libraries 看已有库→缺则 manage_library 建库→search_docs 搜本周主题→get_doc_page 取正文）；X/零散博客抓不到 → ⏸ 交你贴链接/正文
+2. 抓取     → 官方文档源有 DocShark 时用 list_libraries/manage_library/search_docs/get_doc_page；无 DocShark 时降级 Web 搜索/浏览；X/零散博客抓不到 → ⏸ 交你贴链接/正文
 3. 硬门槛过滤 → 非英文一手 / 纯视频 / 近8周已发 → 淘汰
 4. 筛选打分 → 按评分标准算分，输出候选表（分数+理由）交你终审，**每期只选 1 篇最高分**深挖
 5. 去重确认 → 与已发去重清单比对，避免重复选题
@@ -165,7 +167,7 @@ skill_run:
     - path: Contexts/情报源/筛选评分标准.md
       utility: high
       reason: 按加权分选出 Top3
-  contexts_missing:          # ← capability_gap：读入选文章暴露的 Kit 能力缺口，至少一项；无则显式留空并在 notes 说明
+  contexts_missing:          # ← capability_gap：读入选文章暴露的 Kit 能力缺口，通常至少一项；确实无缺口则填 [] 并在 notes 说明
     - "subagents 配置与并行任务拆分"
   contexts_stale: []
   notes: |                   # 源健康自检写这里
@@ -185,7 +187,7 @@ skill_run:
 2. 不接受小红书/抖音/纯视频独立传播。
 3. 面向技术为主、产品设计运营也参与 → 每篇必含「技术看点 + 通用看点」双视角（融入行文，非贴标签）。
 4. **人类卷是技术博客水准的署名文章，不含机器块**：正文按写作规范四段结构，`skill_run`/YAML 不得出现在 .md 里。
-5. **进化萃取强制**：每期 `.meta.yaml` 的 `contexts_missing` 至少填一项（读入选文章暴露的 Kit 能力缺口）；确实无缺口则显式留空并在 `notes` 写明理由，不得省略此字段。
+5. **进化萃取强制**：每期 `.meta.yaml` 必须包含 `contexts_missing` 字段；通常至少填一项（读入选文章暴露的 Kit 能力缺口），确实无缺口则写 `contexts_missing: []` 并在 `notes` 写明理由，不得省略此字段。
 6. **源健康自检**：某 follow 源连续 3 期无入选文章，`.meta.yaml` 的 `notes` 必须输出 `source_stale_warning`，提醒人工复核名单。判据来自 [[Contexts/情报源/已发去重清单]] 的历史入选记录。
 7. 写 Contexts/情报源/ 下资产前，若非「增补去重清单/follow名单」这类既定动作，须用户确认（遵 CLAUDE.md 规则 2）。
 

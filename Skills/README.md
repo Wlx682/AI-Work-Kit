@@ -66,7 +66,8 @@
 | 入口 | 用途 |
 |------|------|
 | `.claude/workflows/full-cycle.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
-| `scripts/workflow-gate.sh` | 按蓝图与子 Plan 文件事实派生阶段 |
+| `scripts/workflow-status.py` | 日常看状态：当前 / 卡点 / 下一步 / 继续 |
+| `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
 
 ### 内部（不直接对用户暴露）
 

@@ -7,6 +7,7 @@
   "epicTemplate": "Templates/Epic模板-client-dev.md",
   "bootScript": "scripts/full-cycle-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
+  "constitution": ".workflows/constitution.json",
   "triggerHints": [
     "客户端",
     "功能开发",
@@ -107,6 +108,7 @@
       "exitCriteria": {
         "childPlanExists": true,
         "wbsDone": true,
+        "testTraceability": true,
         "skillRun": true
       },
       "next": "development"
@@ -134,6 +136,7 @@
         "childPlanExists": true,
         "planGateCheck": true,
         "wbsDone": true,
+        "devTraceability": true,
         "skillRun": true
       },
       "next": "verify"

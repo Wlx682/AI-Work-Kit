@@ -339,6 +339,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         with self.fixture_repo() as tmp:
             data = self.run_gate(tmp, "--workflow", "computer-mgmt", "--json")
         self.assertFalse(data["uses_epic"])
+        self.assertEqual(data["constitution"]["status"], "not-configured")
         self.assertEqual(data["current_state"], "inventory")
         self.assertEqual(data["next_state"], "cleanup")
         self.assertEqual(data["recommended_skill"], "material-prep-assistant")
@@ -351,6 +352,8 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["current_state"], "done")
         self.assertEqual(data["next_state"], "done")
         self.assertEqual(data["blockers"], [])
+        self.assertEqual(data["constitution"]["path"], ".workflows/constitution.json")
+        self.assertEqual(data["constitution"]["status"], "ok")
         self.assertIn("OK", data["gate_development"])
         self.assertTrue(any(item.startswith("development:Plans/功能开发/") for item in data["plans_found"]))
 
@@ -361,6 +364,235 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIsInstance(data["gate_development"], str)
         self.assertIn("OK:skill_run", data["gate_development"])
         self.assertIn("\n", data["gate_development"])
+
+    def test_gate_parse_supports_negative_ac_and_filters_placeholder_tests(self) -> None:
+        with self.fixture_repo() as tmp:
+            req = tmp / "Plans/需求分析/ac.md"
+            test = tmp / "Plans/自动化测试/ac.md"
+            write_file(
+                req,
+                """
+                # AC fixture
+
+                ## 九、验收标准
+
+                | # | 验收项 | 锚定事件 | Given | When | Then | 优先级 |
+                |---|--------|----------|-------|------|------|--------|
+                | AC1 | 正例 | 已完成 | a | b | c | P0 |
+                | AC1-反 | 反例 | — | a | b | 不应发生 | P0 |
+                | AC2 | 次要 | 已完成 | a | b | c | P1 |
+                """,
+            )
+            write_file(
+                test,
+                """
+                # Test fixture
+
+                ## 二、用例映射（链需求验收标准）
+
+                | 验收项 # | 测试用例 ID | 类型 | 描述 | 状态 |
+                |----------|-------------|------|------|------|
+                | AC1 | UT-001 | 单元 | 覆盖 AC1 | 未实现 |
+                | AC1-反 | UT-002 | 单元 | 【】 | ☐ |
+                | AC2 | UT-003 | 单元 | 覆盖 AC2 | 未实现 |
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("gate_parse", ROOT / "scripts/gate_parse.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            acs = mod.parse_ac_table(req)
+            tests = mod.parse_test_map(test)
+            self.assertIn("AC1-反", acs)
+            self.assertEqual(acs["AC1-反"]["priority"], "P0")
+            self.assertIn("AC1", tests)
+            self.assertNotIn("AC1-反", tests)
+
+    def test_gate_parse_reads_frontmatter_plan_index_and_wbs_status(self) -> None:
+        with self.fixture_repo() as tmp:
+            plan = tmp / "Plans/Epic/parse.md"
+            write_file(
+                plan,
+                """
+                ---
+                workflow: "client-dev" # 展示注释
+                lifecycle_state: requirement  # DEPRECATED
+                含业务逻辑: 是
+                plans:
+                  requirement: Plans/需求分析/parse.md
+                  test: "Plans/自动化测试/parse.md"
+                ---
+
+                # Parse fixture
+
+                ```
+                [x] 1. done
+                [~] 2. doing
+                [ ] 3. todo
+                ```
+
+                | 4 | table done | ✅ |
+                | 5 | table todo | ☐ |
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("gate_parse", ROOT / "scripts/gate_parse.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            fm = mod.read_frontmatter(plan)
+            self.assertEqual(fm["workflow"], "client-dev")
+            self.assertEqual(fm["lifecycle_state"], "requirement")
+            self.assertEqual(fm["含业务逻辑"], "是")
+            plans = mod.read_plan_index(plan)
+            self.assertEqual(plans["requirement"], "Plans/需求分析/parse.md")
+            self.assertEqual(plans["test"], "Plans/自动化测试/parse.md")
+            self.assertEqual(mod.wbs_slice_status(plan, 1), "x")
+            self.assertEqual(mod.wbs_slice_status(plan, 2), "~")
+            self.assertEqual(mod.wbs_slice_status(plan, 3), " ")
+            self.assertEqual(mod.wbs_slice_status(plan, 4), "x")
+            self.assertEqual(mod.wbs_slice_status(plan, 5), " ")
+            self.assertIsNone(mod.wbs_slice_status(plan, 6))
+
+    def test_traceability_blocks_missing_p0_and_negative_test_coverage(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=False, include_dev=False)
+            proc = subprocess.run(
+                ["python3", "scripts/traceability-check.py", "--epic", "Plans/Epic/trace.md", "--check", "test"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("AC1(P0) 无测试覆盖", proc.stderr)
+        self.assertIn("AC1-反(P0) 无测试覆盖", proc.stderr)
+
+    def test_workflow_gate_test_traceability_does_not_require_development_plan(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=False, include_dev=False)
+            data = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/trace.md", "--json")
+        self.assertEqual(data["current_state"], "test-first")
+        self.assertTrue(any("testTraceability" in item for item in data["blockers"]))
+        self.assertFalse(any("devTraceability" in item for item in data["blockers"]))
+        rules = {item["id"]: item["status"] for item in data["constitution"]["rules"]}
+        self.assertEqual(rules["traceability"], "blocked")
+
+    def test_workflow_status_summarizes_done_state_for_humans(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-status.py",
+                    "--workflow",
+                    "client-dev",
+                    "--epic",
+                    "Plans/Epic/fixture.md",
+                    "--json",
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            data = json.loads(proc.stdout)
+        self.assertEqual(data["current"], "全部完成")
+        self.assertFalse(data["blocked"])
+        self.assertEqual(data["blockers"], [])
+        self.assertEqual(data["next"], "归档或蒸馏可复用结论")
+
+    def test_workflow_status_translates_traceability_blocker(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=False, include_dev=False)
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-status.py",
+                    "--workflow",
+                    "client-dev",
+                    "--epic",
+                    "Plans/Epic/trace.md",
+                    "--json",
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            data = json.loads(proc.stdout)
+        self.assertEqual(data["current"], "验收测试先行")
+        self.assertTrue(data["blocked"])
+        self.assertTrue(any("验收标准缺测试覆盖" in item for item in data["blockers"]))
+        self.assertTrue(any("AC1-反" in item for item in data["blockers"]))
+        self.assertFalse(any("BLOCKED:" in item for item in data["blockers"]))
+        self.assertEqual(data["next"], "补自动化测试 plan 的用例映射")
+        self.assertIn("/resume plan=Plans/自动化测试/trace.md", data["resume"])
+
+    def test_traceability_blocks_missing_development_p0_coverage(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=True, include_dev=True, cover_dev=False)
+            proc = subprocess.run(
+                ["python3", "scripts/traceability-check.py", "--epic", "Plans/Epic/trace.md", "--check", "dev"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("AC1(P0) 无开发任务覆盖", proc.stderr)
+        self.assertIn("AC1-反(P0) 无开发任务覆盖", proc.stderr)
+
+    def test_constitution_check_aggregates_client_dev_gate_results(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            proc = subprocess.run(
+                ["python3", "scripts/constitution-check.py", "--epic", "Plans/Epic/fixture.md", "--json"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            data = json.loads(proc.stdout)
+        self.assertEqual(data["status"], "ok")
+        self.assertEqual(data["constitution"], ".workflows/constitution.json")
+        rules = {item["id"]: item["status"] for item in data["rules"]}
+        self.assertEqual(rules["traceability"], "ok")
+        self.assertEqual(rules["figma_forced"], "indexed")
+
+    def test_constitution_check_reports_traceability_blocker_without_rejudging(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=False, include_dev=False)
+            proc = subprocess.run(
+                ["python3", "scripts/constitution-check.py", "--epic", "Plans/Epic/trace.md", "--json"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            data = json.loads(proc.stdout)
+        self.assertEqual(proc.returncode, 1)
+        self.assertEqual(data["status"], "blocked")
+        rules = {item["id"]: item["status"] for item in data["rules"]}
+        self.assertEqual(rules["traceability"], "blocked")
+        self.assertTrue(any("testTraceability" in item for item in data["blockers"]))
+
+    def test_constitution_check_is_blueprint_opt_in_not_global(self) -> None:
+        proc = subprocess.run(
+            ["python3", "scripts/constitution-check.py", "--workflow", "computer-mgmt", "--json"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        data = json.loads(proc.stdout)
+        self.assertEqual(data["status"], "not-configured")
+        self.assertIsNone(data["constitution"])
 
     @staticmethod
     def run_gate(tmp: Path, *args: str) -> dict:
@@ -478,8 +710,11 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         ## 九、验收标准
 
-        - 给定完整蓝图和子 Plan，门禁应进入 done。
-        - 给定不存在的项目名，门禁应要求 bootstrap Epic。
+        | # | 验收项 | 锚定事件 | Given | When | Then | 优先级 |
+        |---|--------|----------|-------|------|------|--------|
+        | AC1 | 完整蓝图进入 done | 已创建完整子 Plan | 运行 gate | 查看 JSON | current_state=done | P0 |
+        | AC1-反 | 不串其它 Epic | — | 指定 Epic | 运行 gate | 不扫描其它 plan | P0 |
+        | AC2 | 不存在项目要求 bootstrap | — | 指定不存在项目 | 运行 gate | 提示 bootstrap | P1 |
 
         {wbs_table([1, 2])}
 
@@ -489,23 +724,38 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         stage_specs = [
             ("Plans/技术方案/fixture.md", "architecture-design-assistant", [3], "已采纳", ""),
-            ("Plans/自动化测试/fixture.md", "test-generator", [4], "", ""),
+            (
+                "Plans/自动化测试/fixture.md",
+                "test-generator",
+                [4],
+                "",
+                """
+                ## 二、用例映射（链需求验收标准）
+
+                | 验收项 # | 测试用例 ID | 类型 | 描述 | 状态 |
+                |----------|-------------|------|------|------|
+                | AC1 | UT-001 | 单元 | 覆盖完整蓝图 done 判断 | 未实现 |
+                | AC1-反 | UT-002 | 单元 | 覆盖指定 Epic 不串 plan | 未实现 |
+                | AC2 | UT-003 | 单元 | 覆盖 bootstrap 提示 | 未实现 |
+                """,
+            ),
             ("Plans/非功能验证/fixture.md", "nfr-assistant", [11], "", ""),
             ("Plans/代码重构/fixture.md", "review-assistant", [12], "", ""),
             ("Plans/部署/fixture.md", "deployment-assistant", [13, 14], "", ""),
             ("Plans/最佳实践/fixture.md", "retro-assistant", [15], "", ""),
         ]
-        for rel, skill, rows, status, extra_fm in stage_specs:
+        for rel, skill, rows, status, extra_body in stage_specs:
             frontmatter = f"status: {status}\n" if status else ""
             write_file(
                 root / rel,
                 f"""
                 ---
                 {frontmatter}epic: Plans/Epic/fixture.md
-                {extra_fm}
                 ---
 
                 # {rel}
+
+                {extra_body}
 
                 {wbs_table(rows)}
 
@@ -533,9 +783,132 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         {wbs_table([5, 6, 7, 8, 9, 10])}
 
+        ## 五、实施切片
+
+        | # | 输入 | 输出 | 覆盖 AC | 验收 | 预估 | 阻塞 |
+        |---|------|------|---------|------|------|------|
+        | 5 | 需求 | Domain | AC1, AC1-反 | 业务规则完成 | 1d | — |
+        | 6 | 需求 | Data | AC2 | 数据接入完成 | 1d | — |
+
         {skill_run("feature-dev-assistant", "Plans/功能开发/fixture.md")}
         """
         write_file(root / "Plans/功能开发/fixture.md", development)
+
+    @staticmethod
+    def create_traceability_fixture(
+        root: Path,
+        *,
+        cover_tests: bool,
+        include_dev: bool,
+        cover_dev: bool = True,
+    ) -> None:
+        dev_plan_line = "  development: Plans/功能开发/trace.md" if include_dev else ""
+        if include_dev:
+            dev_plan_line = "  development: Plans/功能开发/trace.md"
+        write_file(
+            root / "Plans/Epic/trace.md",
+            f"""
+        ---
+        project: trace
+        workflow: client-dev
+        含业务逻辑: 否
+        p0_open: 0
+        plans:
+          requirement: Plans/需求分析/trace.md
+          test: Plans/自动化测试/trace.md
+        {dev_plan_line}
+        ---
+
+        # Trace Epic
+        """,
+        )
+        requirement_body = "需求背景：" + ("这是 traceability fixture。" * 45)
+        write_file(
+            root / "Plans/需求分析/trace.md",
+            f"""
+        ---
+        status: 已采纳
+        p0_open: 0
+        epic: Plans/Epic/trace.md
+        ---
+
+        # Trace Requirement
+
+        {requirement_body}
+
+        ## 九、验收标准
+
+        | # | 验收项 | 锚定事件 | Given | When | Then | 优先级 |
+        |---|--------|----------|-------|------|------|--------|
+        | AC1 | 正例 | 已完成 | a | b | c | P0 |
+        | AC1-反 | 反例 | — | a | b | 不应发生 | P0 |
+        | AC2 | 次要 | 已完成 | a | b | c | P1 |
+
+        {wbs_table([1, 2])}
+
+        {skill_run("requirement-analyst", "Plans/需求分析/trace.md")}
+        """,
+        )
+        if cover_tests:
+            test_rows = """
+            | AC1 | UT-001 | 单元 | 覆盖 AC1 | 未实现 |
+            | AC1-反 | UT-002 | 单元 | 覆盖 AC1-反 | 未实现 |
+            | AC2 | UT-003 | 单元 | 覆盖 AC2 | 未实现 |
+            """
+        else:
+            test_rows = """
+            | AC1 | UT-001 | 单元 | 【】 | ☐ |
+            | AC2 | UT-003 | 单元 | 覆盖 AC2 | 未实现 |
+            """
+        write_file(
+            root / "Plans/自动化测试/trace.md",
+            f"""
+        ---
+        epic: Plans/Epic/trace.md
+        ---
+
+        # Trace Test
+
+        ## 二、用例映射（链需求验收标准）
+
+        | 验收项 # | 测试用例 ID | 类型 | 描述 | 状态 |
+        |----------|-------------|------|------|------|
+        {test_rows}
+
+        {wbs_table([4])}
+
+        {skill_run("test-generator", "Plans/自动化测试/trace.md")}
+        """,
+        )
+        if include_dev:
+            dev_coverage = "AC1, AC1-反" if cover_dev else "—"
+            write_file(
+                root / "Plans/功能开发/trace.md",
+                f"""
+        ---
+        epic: Plans/Epic/trace.md
+        requirement_plan: Plans/需求分析/trace.md
+        p0_open: 0
+        含业务逻辑: 否
+        ---
+
+        # Trace Development
+
+        ## 一、需求分析
+
+        - [[Plans/需求分析/trace.md]]
+
+        {wbs_table([5, 6, 7, 8, 9, 10])}
+
+        ## 五、实施切片
+
+        | # | 输入 | 输出 | 覆盖 AC | 验收 | 预估 | 阻塞 |
+        |---|------|------|---------|------|------|------|
+        | 5 | 需求 | Domain | {dev_coverage} | 完成 | 1d | — |
+
+        {skill_run("feature-dev-assistant", "Plans/功能开发/trace.md")}
+        """,
+            )
 
 
 if __name__ == "__main__":

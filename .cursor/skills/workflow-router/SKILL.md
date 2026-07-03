@@ -6,7 +6,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 # 工作流路由器
 
 定位：**入口 Skill / 路由器**，不是业务执行 Skill。  
-职责：自然语言 → 选择 workflow 蓝图 → 启动 `full-cycle` 引擎 → 把下一步交给阶段 Skill。
+职责：自然语言 → 选择 workflow 蓝图 → 启动 `full-cycle` 引擎 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
 
 ## 触发
 
@@ -40,16 +40,20 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 2. 启动看板：
    - 新需求：`bash scripts/full-cycle-boot.sh --new-requirement`
    - 已有 Epic：`bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`
-3. 跑门禁：
-   - 有 Epic：`bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md`
-   - 有项目名：`bash scripts/workflow-gate.sh --workflow <name> --project <模块名>`
-   - 无 Epic 的轻量工作流：`bash scripts/workflow-gate.sh --workflow <name>`
+3. 看状态：
+   - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
+   - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
+   - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`
+   - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
 4. 根据 `recommended_skill` 调用真正阶段 Skill；若阻塞为缺 Epic，调用 `template-generator` 创建 Epic。
 
 ## 输出
 
 ```text
-📌 当前阶段：[current_state] | 下一个阶段：[recommended_skill] | 如需中断：/resume plan=Plans/.../xxx.md
+当前：[阶段人话名]
+卡点：[一句话 blocker]
+下一步：[下一步动作]
+继续：/resume plan=Plans/.../xxx.md
 ```
 
 ## 回归检查

@@ -18,13 +18,22 @@ Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环�
 4. Claude Code：见 [集成说明](Contexts/Claude-Code集成AI-Work-Kit.md)
 5. Codex：根目录已内置 `AGENTS.md`；执行同步脚本后会生成 `.codex/skills/` 并部署到 `~/.codex/skills/`
 
-## 三条命令
+## 日常三步
 
 ```text
-/full-cycle 模块=XX          # 新需求（自然语言入口：workflow-router）
-/resume plan=Plans/... 进度=...   # 续做
-/review-assistant 日报        # 日报 → Contexts/日报/
+开始/启动… 或 /full-cycle 模块=XX   # 开始一件事（自然语言入口：workflow-router）
+/status                           # 看当前卡点（人话摘要：当前 / 卡点 / 下一步 / 继续）
+/resume plan=Plans/... 进度=...    # 续做
 ```
+
+命令行等价：
+
+```bash
+python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow computer-mgmt
+```
+
+底层详情才看 `scripts/workflow-gate.sh --json`；日常优先看 `workflow-status.py`。
 
 ## License
 

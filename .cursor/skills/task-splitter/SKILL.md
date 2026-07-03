@@ -9,9 +9,11 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 产出：`Plans/功能开发/YYYY-MM-DD-模块.md` + `xxx-子任务NN-简述.md`
 
 1. 读方案 + 需求真理源  
-2. 5–10 原子任务，主 plan Checklist 双链子任务  
+2. 5–10 原子任务，主 plan Checklist 双链子任务；§五实施切片表必须保留「覆盖 AC」列  
 3. 子任务 `parent:` 链主 plan；`lifecycle_state: development`  
 4. 实现：`/resume plan=子任务路径`
+
+「覆盖 AC」列填写需求验收标准 ID，多个用英文逗号分隔，如 `AC1, AC2, AC1-反`；无覆盖填 `—`。P0 AC 必须至少被一个功能开发任务覆盖。
 
 ## ✋ 禁止擅自下结论（硬规则）
 

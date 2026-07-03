@@ -28,7 +28,8 @@ relations:
 2. **新需求** → 自然语言或 `/full-cycle 模块=XX`，先命中 `workflow-router`，再自动选蓝图 client-dev。
 3. **其它工作流** → 自然语言即可（如「帮我清理电脑」→ `workflow-router` → computer-mgmt），或 `/full-cycle workflow=computer-mgmt`。
 4. **续做** → `/resume plan=Plans/... 进度=...`。
-5. **看 WBS** → `./scripts/full-cycle-boot.sh` → http://127.0.0.1:7777/
+5. **看当前卡点** → `python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md`。
+6. **看 WBS** → `./scripts/full-cycle-boot.sh` → http://127.0.0.1:7777/
 
 ---
 
@@ -39,6 +40,7 @@ relations:
 | 层 | 组件 | 职责 |
 |----|------|------|
 | **入口**（路由层） | `workflow-router` | 把自然语言映射到 workflow 蓝图；只启动引擎，不做阶段工作 |
+| **状态外壳**（UX 层） | `workflow-status.py` | 把 `workflow-gate --json` 翻译成「当前 / 卡点 / 下一步 / 继续」 |
 | **积木**（执行层） | 各子 Skill（requirement-analyst 等） | 读写 Plan 文件，干具体活 |
 | **状态机**（控制层） | `full-cycle` 引擎 + 工具中性蓝图 `.workflows/blueprints/<name>.json` | 读蓝图决定下一阶段调哪个 Skill；维护 workflow run 游标 |
 | **数据上下文**（持久层） | Epic Plan（`Plans/Epic/`） | **只存不驱动**：子 Plan 路径映射、WBS 人工确认板、里程碑摘要 |
@@ -94,7 +96,8 @@ stateDiagram-v2
 
 ```bash
 ./scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
-bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
+bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md --json
 bash scripts/derive-epic-status.sh Plans/Epic/xxx.md      # 派生真实阶段（只读）
 bash scripts/kanban-sync.sh --boot --epic Plans/Epic/xxx.md
 bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
@@ -103,6 +106,7 @@ bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 | 脚本 | 用途 |
 |------|------|
 | `full-cycle-boot.sh` | 看板 + 浏览器 |
+| `workflow-status.py` | **日常推荐**：人话状态摘要（当前 / 卡点 / 下一步 / 继续） |
 | `workflow-gate.sh` | **通用**工作流阶段门禁（读蓝图，只看子 Plan 事实） |
 | `derive-epic-status.sh` | 从 WBS+子 Plan status 派生 `derived_status`（只读，不写回） |
 | `full-cycle-gate.sh` | 兼容封装：等价转发到 `workflow-gate.sh --workflow client-dev`；新引用直接使用 `workflow-gate.sh` |
@@ -123,7 +127,7 @@ bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 
 Claude workflow：`.claude/workflows/full-cycle.js` · `learning-audit` · `dev-lifecycle-audit`
 
-工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/full-cycle.js` 只是 Claude Code 的引擎入口。
+工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/full-cycle.js` 只是 Claude Code 的引擎入口。日常状态看 `workflow-status.py`，底层排查才看 `workflow-gate.sh --json`。
 
 详情：[[Skills/README]] · [[索引#高频任务速查]]
 

@@ -22,8 +22,8 @@
 
 1. 选择 workflow 蓝图
 2. 启动看板
-3. 运行 `workflow-gate.sh`
-4. 汇报当前阶段与推荐阶段 Skill
+3. 运行 `workflow-status.py` 输出人话状态
+4. 必要时再查看 `workflow-gate.sh --json` 详情
 
 不做：
 
@@ -71,25 +71,34 @@ bash scripts/full-cycle-boot.sh --new-requirement
 
 ```bash
 bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
-bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
 ```
 
 按项目名定位 Epic：
 
 ```bash
-bash scripts/workflow-gate.sh --workflow client-dev --project 模块名
+python3 scripts/workflow-status.py --workflow client-dev --project 模块名
 ```
 
 无 Epic 轻量工作流：
 
 ```bash
-bash scripts/workflow-gate.sh --workflow computer-mgmt
+python3 scripts/workflow-status.py --workflow computer-mgmt
+```
+
+需要排查底层字段时再跑：
+
+```bash
+bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md --json
 ```
 
 ## 输出
 
 ```text
-📌 当前阶段：[current_state] | 下一个阶段：[recommended_skill] | 如需中断：/resume plan=Plans/.../xxx.md
+当前：验收测试先行
+卡点：P0 反例 AC1-反 还没有测试用例
+下一步：补自动化测试 plan 的用例映射
+继续：/resume plan=Plans/自动化测试/xxx.md
 ```
 
 若 `blockers` 里提示缺 Epic，下一步是 `template-generator` 创建 Epic；不要手写 `lifecycle_state` 试图推进。

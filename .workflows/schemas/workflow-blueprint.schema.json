@@ -39,6 +39,9 @@
     "gateScript": {
       "type": "string"
     },
+    "constitution": {
+      "type": "string"
+    },
     "triggerHints": {
       "type": "array",
       "items": {
@@ -120,7 +123,15 @@
           },
           "exitCriteria": {
             "type": "object",
-            "minProperties": 1
+            "minProperties": 1,
+            "properties": {
+              "testTraceability": {
+                "type": "boolean"
+              },
+              "devTraceability": {
+                "type": "boolean"
+              }
+            }
           },
           "next": {
             "type": "string",

@@ -21,10 +21,11 @@
    - 前端组件 / 页面骨架
    - 联调与走查
 3. 产出 **两份**：
-   - **主清单**：`Plans/功能开发/YYYY-MM-DD-模块名.md`（含子任务 Checklist + 双向链接）
+   - **主清单**：`Plans/功能开发/YYYY-MM-DD-模块名.md`（含子任务 Checklist + 双向链接；§五实施切片表必须保留「覆盖 AC」列）
    - **子任务 plan**：`Plans/功能开发/YYYY-MM-DD-模块名-子任务NN-简述.md`（每任务一个，便于细粒度 `/resume`）
 4. 每个子任务 frontmatter：`lifecycle_state: development`，`parent: Plans/功能开发/主plan.md`
-5. 主 plan Checklist 示例：
+5. 主 plan 的「覆盖 AC」列填写需求验收标准 ID，多个用英文逗号分隔，如 `AC1, AC2, AC1-反`；无覆盖填 `—`。P0 AC 必须至少被一个功能开发任务覆盖。
+6. 主 plan Checklist 示例：
 
 ```markdown
 - [ ] T1 · [[Plans/功能开发/xxx-子任务01-建表.md]]
