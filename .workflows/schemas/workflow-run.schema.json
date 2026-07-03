@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-work-kit.local/schemas/workflow-run.schema.json",
+  "title": "AI-Work-Kit workflow run",
+  "type": "object",
+  "required": ["run_id", "workflow_id", "workflow_version", "status", "current_stage", "started_at", "updated_at", "events"],
+  "additionalProperties": true,
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "epic": {
+      "type": ["string", "null"]
+    },
+    "project": {
+      "type": ["string", "null"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["running", "blocked", "paused", "done", "cancelled"]
+    },
+    "current_stage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "events": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage_history": {
+      "type": "array"
+    },
+    "decisions": {
+      "type": "array"
+    }
+  }
+}

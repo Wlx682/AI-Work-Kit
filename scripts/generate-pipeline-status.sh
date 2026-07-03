@@ -44,7 +44,7 @@ best_status_in_dir() {
 current_stage() {
   local proj="$1"
   local d f st lc
-  for d in Plans/部署 Plans/自动化测试 Plans/功能开发 Plans/客户端技术方案 Plans/服务端技术方案 Plans/需求分析; do
+  for d in Plans/部署 Plans/自动化测试 Plans/功能开发 Plans/技术方案 Plans/需求分析; do
     [[ -d "$ROOT/$d" ]] || continue
     shopt -s nullglob
     for f in "$ROOT/$d"/*.md; do
@@ -64,7 +64,7 @@ current_stage() {
 
 # 收集项目名（去日期前缀、去子任务后缀）
 PROJECTS_FILE="$(mktemp)"
-for dir in Plans/需求分析 Plans/功能开发 Plans/客户端技术方案 Plans/服务端技术方案; do
+for dir in Plans/需求分析 Plans/功能开发 Plans/技术方案; do
   [[ -d "$ROOT/$dir" ]] || continue
   shopt -s nullglob
   for f in "$ROOT/$dir"/*.md; do
@@ -91,10 +91,9 @@ TMP="$(mktemp)"
     while IFS= read -r proj; do
       [[ -z "$proj" ]] && continue
       req="$(best_status_in_dir "$proj" "Plans/需求分析")"
-      ac="$(best_status_in_dir "$proj" "Plans/客户端技术方案")"
-      as="$(best_status_in_dir "$proj" "Plans/服务端技术方案")"
-      if [[ "$ac" == "✅" || "$as" == "✅" ]]; then arch="✅"
-      elif [[ "$ac" == "⏳" || "$as" == "⏳" ]]; then arch="⏳"
+      arch="$(best_status_in_dir "$proj" "Plans/技术方案")"
+      if [[ "$arch" == "✅" ]]; then arch="✅"
+      elif [[ "$arch" == "⏳" ]]; then arch="⏳"
       else arch="⬜"; fi
       dev="$(best_status_in_dir "$proj" "Plans/功能开发")"
       tst="$(best_status_in_dir "$proj" "Plans/自动化测试")"

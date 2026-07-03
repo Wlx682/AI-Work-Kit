@@ -5,7 +5,7 @@ key_points:
   - 三层存储：Templates 长期 / Plans 做完删 / Contexts 跨任务
   - 写 Contexts 前须用户确认（除非用户说「存档到 Contexts」）
   - Epic 是业务唯一母 plan，子 plan 通过 frontmatter `epic:` 反向链接
-  - 阶段门禁：plan-gate-check.sh 卡 status / lifecycle_state / 反馈块
+  - 阶段门禁：workflow-gate.sh 按蓝图派生阶段；plan-gate-check.sh 卡开发前置与反馈块
   - 反馈回路：每个 Skill 完成必须输出 skill_run（见 §九）
   - Plan Mode：重任务先只读探索+共创方案再动手；副作用动作硬闸门在 settings.json ask（见 §十一）
   - 关系图谱：frontmatter `relations:` 含 5 类双向关系
@@ -13,6 +13,7 @@ key_points:
 relations:
   depends_on: []
   dependents:
+    - Contexts/决策/2026-07-03-开发流程审计报告.md
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/AI-Work-Kit架构总览.md
     - Contexts/决策/Contexts漂移检测协议.md
@@ -128,9 +129,9 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 
 ## 七、工作流概要（细节见工作流总览）
 
-**积木框架**：`full-cycle` 是通用编排引擎，读蓝图 `.claude/workflows/<name>.json` 组合出不同工作流（client-dev / computer-mgmt …）。三层：积木（子 Skill）/ 状态机（引擎+蓝图）/ 数据上下文（Epic）。
+**积木框架**：`full-cycle` 是通用编排引擎，读工具中性蓝图 `.workflows/blueprints/<name>.json` 组合出不同工作流（client-dev / computer-mgmt …）。三层：积木（子 Skill）/ 状态机（引擎+蓝图+workflow run）/ 数据上下文（Epic）。
 
-**Epic 边界（硬规则）**：Epic 是**数据上下文（聚合根）**——存子 Plan 路径映射、WBS 勾选、里程碑摘要，**不驱动流程**。阶段推进由 `scripts/workflow-gate.sh` 依「子 Plan 文件系统事实」（childPlanExists / status / plan-gate-check / WBS 勾选）判定。`lifecycle_state` 不参与路由（如需整体阶段跑 `derive-epic-status.sh` 派生），引擎绝不读它做路由依据。
+**Epic 边界（硬规则）**：Epic 是**数据上下文（聚合根）**——存子 Plan 路径映射、WBS 投影、里程碑摘要，**不驱动流程**。阶段推进由 `scripts/workflow-gate.sh` 依「子 Plan 文件系统事实」（childPlanExists / status / plan-gate-check / 子 Plan WBS）判定。`lifecycle_state` 不参与路由（如需整体阶段跑 `derive-epic-status.sh` 派生），引擎绝不读它做路由依据。
 
 | 场景 | 入口 |
 |------|------|

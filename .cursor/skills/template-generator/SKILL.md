@@ -28,7 +28,7 @@ description: >-
 | 类型 | 模板 | 存放 |
 |------|------|------|
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
-| 技术方案 | `Templates/技术方案模板.md` | `Plans/客户端技术方案/` 或 `Plans/服务端技术方案/` |
+| 技术方案 | `Templates/技术方案模板.md` | `Plans/技术方案/` |
 | 功能开发 | `Templates/客户端功能开发模板.md` | `Plans/功能开发/` |
 | 仅 UI | 同上（含业务逻辑=否） | `Plans/功能开发/` |
 

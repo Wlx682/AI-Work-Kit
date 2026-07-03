@@ -18,13 +18,13 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 | `Plans/` | 进行中（Epic、需求、开发、学习…） |
 | `Contexts/` | 通用规范与长期资料 |
 | `Templates/` · `Skills/` · `scripts/` | 模板、Skill、脚本 |
-| `.claude/workflows/` | full-cycle、learning-audit 等 |
+| `.workflows/` | 工具中性的 workflow 蓝图、Schema、运行实例与事件日志 |
 
 ## 规则
 
 1. 查资料 → `Plans/` + `Contexts/`（可选 enquire MCP）。
 2. 写 **Contexts 前须用户确认**（「存档到 Contexts」除外）。
-3. Epic 入口与 Cursor `.cursorrules` 一致；无 Epic 不建功能主 plan。**积木框架**：`full-cycle` 是通用引擎，读蓝图 `.claude/workflows/<name>.json`（client-dev / computer-mgmt）组合工作流。Epic 是**数据上下文，不驱动流程**；阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件系统事实判定，`lifecycle_state` 不参与路由（跑 `derive-epic-status.sh` 派生整体阶段）。
+3. Epic 入口与 Cursor `.cursorrules` 一致；无 Epic 不建功能主 plan。**积木框架**：`full-cycle` 是通用引擎，读工具中性蓝图 `.workflows/blueprints/<name>.json`（client-dev / computer-mgmt）组合工作流。Epic 是**数据上下文，不驱动流程**；阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件系统事实判定，`lifecycle_state` 不参与路由（跑 `derive-epic-status.sh` 派生整体阶段）。
 4. **Skill 路由硬规则**（与 `.cursorrules` 一致）：含「界面/对稿/还原/Figma」或 WBS 指定 `figma-ui` → 强制 `figma-ui`，`feature-dev-assistant` 不得替代；WBS 修订/拆任务 → `task-splitter` 或用户确认，禁止擅自推荐 A/B/C 方案。
 5. **反馈回路硬规则**：任务结束必须输出 `skill_run` YAML 块。有 plan 追加到 plan 末尾；无 plan 追加到 `Contexts/决策/孤立反馈记录.md` 顶部。`utility` 二选一：`high`（必给一句话理由）/ `not-needed`。协议：[[Contexts/决策/Skill反馈协议]]；校验：`scripts/plan-gate-check.sh`。
 
@@ -35,7 +35,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 | 说法 | Skill |
 |------|-------|
 | 续做 | `resume-assistant` |
-| 全流程 / full-cycle | `full-cycle-assistant` + `full-cycle-boot.sh` |
+| 全流程 / full-cycle | `workflow-router` → `full-cycle` 引擎 + 蓝图 manifest + `full-cycle-boot.sh` |
 | 需求/架构/开发/测试/部署/变更 | 见 `.cursorrules` |
 | 学习 | `learn-assistant`（snapshot stdout） |
 | PM 物料 | `material-prep-assistant` → Contexts |

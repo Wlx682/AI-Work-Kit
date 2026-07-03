@@ -112,7 +112,7 @@ if bad:
     print(f"[epic-slice-check] {len(bad)} 行 checklist 无法被看板解析（kanban-server.py SLICE_RE）:", file=sys.stderr)
     for ln, l in bad[:5]:
         print(f"  L{ln}: {l}", file=sys.stderr)
-    print("  约束见 Templates/Epic母版.md §三 注释。", file=sys.stderr)
+    print("  约束见 Templates/Epic模板-client-dev.md §三 注释。", file=sys.stderr)
     sys.exit(1)
 PY
     fi
@@ -206,6 +206,10 @@ if [[ "$biz" == "是" && "$STAGE" == "development" ]]; then
   fi
   if [[ -z "$arch_path" ]]; then
     while IFS= read -r line; do
+      if [[ "$line" =~ (Plans/技术方案/[^]]+) ]]; then
+        arch_path="$(strip_wikilink "${BASH_REMATCH[1]}")"
+        break
+      fi
       if [[ "$line" =~ (Plans/客户端技术方案/[^]]+) ]]; then
         arch_path="$(strip_wikilink "${BASH_REMATCH[1]}")"
         break

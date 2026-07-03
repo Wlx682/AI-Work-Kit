@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 通用工作流机械门禁：读蓝图 manifest（.claude/workflows/<name>.json）驱动，逐 stage 检查退出条件。
-# 退出条件全部基于「子 Plan 文件系统事实」（childPlanExists / status / plan-gate-check / WBS 勾选），
+# 通用工作流机械门禁：读工具中性蓝图 manifest（.workflows/blueprints/<name>.json）驱动，逐 stage 检查退出条件。
+# 退出条件全部基于「子 Plan 文件系统事实」（childPlanExists / status / plan-gate-check / 子 Plan WBS），
 # 绝不读 Epic 的 lifecycle_state。
 #
 # 用法：
@@ -80,6 +80,7 @@ find_epic() {
     fi
     [[ -z "$best" ]] && best="$f"
   done
+  [[ -n "$PROJECT" ]] && return
   [[ -n "$best" ]] && echo "$best"
 }
 
@@ -87,8 +88,15 @@ wbs_slice_done() {
   local f="$1" n="$2"
   local line
   line="$(sed -n '/^```$/,/^```$/p' "$f" | grep -E "^\[[ xX~]\][[:space:]]*${n}\.[[:space:]]" | head -1 || true)"
-  [[ -z "$line" ]] && return 1
-  [[ "$line" =~ ^\[[xX]\] ]] && return 0
+  if [[ -n "$line" ]]; then
+    [[ "$line" =~ ^\[[xX]\] ]] && return 0
+    return 1
+  fi
+
+  line="$(grep -E "^\|[[:space:]]*${n}[[:space:]]*\|" "$f" | head -1 || true)"
+  if [[ -n "$line" ]]; then
+    [[ "$line" == *"✅"* || "$line" == *"[x]"* || "$line" == *"[X]"* ]] && return 0
+  fi
   return 1
 }
 
@@ -100,6 +108,16 @@ wbs_slices_done() {
     wbs_slice_done "$f" "$n" || return 1
   done
   return 0
+}
+
+wbs_missing_slices() {
+  local f="$1"; shift
+  local n missing=()
+  for n in "$@"; do
+    wbs_slice_done "$f" "$n" || missing+=("$n")
+  done
+  local IFS=','
+  echo "${missing[*]}"
 }
 
 emit_json() {
@@ -121,10 +139,22 @@ if [[ -z "$WORKFLOW" ]]; then
   fi
 fi
 
-BLUEPRINT="$ROOT/.claude/workflows/${WORKFLOW}.json"
+BLUEPRINT="$ROOT/.workflows/blueprints/${WORKFLOW}.json"
 if [[ ! -f "$BLUEPRINT" ]]; then
-  echo "BLOCKED: 蓝图不存在: .claude/workflows/${WORKFLOW}.json" >&2
-  exit 1
+  LEGACY_BLUEPRINT="$ROOT/.claude/workflows/${WORKFLOW}.json"
+  if [[ -f "$LEGACY_BLUEPRINT" ]]; then
+    BLUEPRINT="$LEGACY_BLUEPRINT"
+    echo "WARN: 使用 legacy 蓝图路径 .claude/workflows/${WORKFLOW}.json；请迁移到 .workflows/blueprints/" >&2
+  else
+    echo "BLOCKED: 蓝图不存在: .workflows/blueprints/${WORKFLOW}.json" >&2
+    exit 1
+  fi
+fi
+
+if [[ "$BLUEPRINT" == "$ROOT/.workflows/blueprints/"* ]]; then
+  if ! python3 "$ROOT/scripts/validate-workflow-blueprint.py" --quiet "${BLUEPRINT#"$ROOT"/}" >/dev/null; then
+    exit 1
+  fi
 fi
 
 # 读蓝图元信息
@@ -169,7 +199,8 @@ if [[ "$USES_EPIC" == "1" ]]; then
     blockers+=("无 Epic plan（Plans/Epic/）；须先 bootstrap Epic")
     current_state="$(echo "${STAGE_ROWS[0]}" | cut -d$'\x1f' -f1)"
     current_label="$(echo "${STAGE_ROWS[0]}" | cut -d$'\x1f' -f2)"
-    recommended_skill="full-cycle-assistant / requirement-analyst"
+    recommended_skill="template-generator"
+    next_state="bootstrap-epic"
   else
     epic_rel="${EPIC_FILE#"$ROOT"/}"
     biz="$(read_fm 含业务逻辑 "$EPIC_FILE")"
@@ -213,12 +244,13 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
 
     stage_blockers=()
 
-    # 子 Plan 路径解析：有 Epic 用 epicField 从 Epic 读；无 Epic 按 planFolder 扫最新
+    # 子 Plan 路径解析：有 Epic 只用 epicField 从 Epic 读；无 Epic 按 planFolder 扫最新。
+    # 关键：usesEpic=true 的蓝图不得回退扫目录，否则会串到别的 Epic 的 plan。
     child_raw=""
     if [[ "$USES_EPIC" == "1" && -n "$s_epicfield" && -n "$EPIC_FILE" ]]; then
       child_raw="$(read_plan_key "$EPIC_FILE" "$s_epicfield")"
       [[ -n "$child_raw" && "$child_raw" != "null" ]] && plans_found+=("$s_key:$child_raw")
-    elif [[ -n "$s_folder" ]]; then
+    elif [[ "$USES_EPIC" != "1" && -n "$s_folder" ]]; then
       # 无 Epic：按 planFolder（+planPrefix）找子 Plan
       shopt -s nullglob
       cands=("$ROOT/$s_folder"/*"${s_prefix}"*.md)
@@ -264,16 +296,28 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
 
       # planGateCheck（开发阶段写代码前门禁）
       if [[ "$(crit_has "$s_exit" planGateCheck)" == "1" ]]; then
-        gate_development="$(bash "$ROOT/scripts/plan-gate-check.sh" "$child_file" --stage development 2>&1 || true)"
-        [[ "$gate_development" == OK ]] || stage_blockers+=("${s_label}：plan-gate-check: ${gate_development#BLOCKED:}")
+        if gate_development="$(bash "$ROOT/scripts/plan-gate-check.sh" "$child_file" --stage development 2>&1)"; then
+          :
+        else
+          stage_blockers+=("${s_label}：plan-gate-check: ${gate_development#BLOCKED:}")
+        fi
+      fi
+
+      # skillRun（阶段完成反馈回路）
+      if [[ "$(crit_has "$s_exit" skillRun)" == "1" ]]; then
+        skill_run_check="$(python3 "$ROOT/scripts/validate-skill-run.py" --require "$child_file" 2>&1 || true)"
+        [[ "$skill_run_check" == OK:* ]] || stage_blockers+=("${s_label}：skill_run 校验未通过: ${skill_run_check#BLOCKED:skill_run:}")
       fi
     fi
 
-    # wbsDone：本 stage 覆盖的 WBS 切片全勾（需 Epic）
+    # wbsDone：本 stage 覆盖的 WBS 切片全勾。Epic 只是投影，门禁只读子 Plan。
     if [[ "$(crit_has "$s_exit" wbsDone)" == "1" && -n "$s_slices" ]]; then
-      if [[ "$USES_EPIC" == "1" && -n "$EPIC_FILE" ]]; then
+      if [[ -n "$child_file" && -f "$child_file" ]]; then
         IFS=',' read -ra slice_arr <<<"$s_slices"
-        wbs_slices_done "$EPIC_FILE" "${slice_arr[@]}" || stage_blockers+=("${s_label}：WBS 切片 ${s_slices} 未全部完成")
+        if ! wbs_slices_done "$child_file" "${slice_arr[@]}"; then
+          missing_slices="$(wbs_missing_slices "$child_file" "${slice_arr[@]}")"
+          stage_blockers+=("${s_label}：WBS 切片 ${s_slices} 未全部完成（缺: ${missing_slices:-未知}）")
+        fi
       fi
     fi
 
@@ -305,22 +349,25 @@ fi
 if [[ "$JSON" -eq 1 ]]; then
   bl_json="$(printf '%s\n' "${blockers[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
   pf_json="$(printf '%s\n' "${plans_found[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
-  payload="$(cat <<EOF
-{
-  "workflow": "$WORKFLOW",
-  "uses_epic": $([[ "$USES_EPIC" == "1" ]] && echo true || echo false),
-  "epic": "${epic_rel:-}",
-  "lifecycle_state_hint_deprecated": "${lc_hint:-}",
-  "current_state": "$current_state",
-  "next_state": "$next_state",
-  "recommended_skill": "$recommended_skill",
-  "gate_development": "$gate_development",
-  "blockers": $bl_json,
-  "plans_found": $pf_json
+  python3 - "$WORKFLOW" "$USES_EPIC" "${epic_rel:-}" "${lc_hint:-}" "$current_state" "$next_state" "$recommended_skill" "$gate_development" "$bl_json" "$pf_json" <<'PY'
+import json
+import sys
+
+workflow, uses_epic, epic, lc_hint, current_state, next_state, recommended_skill, gate_development, blockers, plans_found = sys.argv[1:]
+payload = {
+    "workflow": workflow,
+    "uses_epic": uses_epic == "1",
+    "epic": epic,
+    "lifecycle_state_hint_deprecated": lc_hint,
+    "current_state": current_state,
+    "next_state": next_state,
+    "recommended_skill": recommended_skill,
+    "gate_development": gate_development,
+    "blockers": json.loads(blockers),
+    "plans_found": json.loads(plans_found),
 }
-EOF
-)"
-  emit_json "$payload"
+print(json.dumps(payload, ensure_ascii=False, indent=2))
+PY
   exit 0
 fi
 

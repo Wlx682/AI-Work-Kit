@@ -4,7 +4,7 @@ date: 2026-06-26
 key_points:
   - 本文是全局心智模型：讲"为什么这样设计 / 四层如何咬合 / 数据流跑到哪"，规则细节一律走链接，不复述
   - 四层架构：存储原则（宪法）/ 执行（Skill+Epic）/ 协议（约定成规范）/ 演进（自检回路）
-  - 两条主线：业务开发线（Epic 五阶段）与 LLM 学习线，并轨不割裂
+  - 两条主线：业务开发线（蓝图驱动）与 LLM 学习线，并轨不割裂
   - 设计理念：机制化而非靠自律——真相源唯一、约定有脚本兜底、腐烂有回路告警、越界有门禁拦截
   - 现状：脚手架已完整，演进回路尚未喂饱（反馈 1/17 Skill、关系图谱 11/34 Contexts），修复链见 Plans/工作流审计
 relations:
@@ -12,12 +12,13 @@ relations:
     - Contexts/决策/Kit核心原则.md
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/新手引导与最佳实践.md
-  dependents: []
+  dependents:
+    - Contexts/决策/2026-07-03-开发流程审计报告.md
   supersedes: []
   superseded_by: []
   conflicts: []
----
 
+---
 # AI-Work-Kit 架构总览
 
 > **本文定位**：给整套库一个**鸟瞰视角 + 设计理念 + 现状评估**。
@@ -39,7 +40,7 @@ AI-Work-Kit 是一套**编辑器中性、自我演进的个人工作流操作系
 ```mermaid
 flowchart TB
     L1["① 存储原则（宪法）<br/>Kit核心原则 = 唯一真相源"]
-    L2["② 执行<br/>17 Skill + Epic 五阶段"]
+    L2["② 执行<br/>蓝图工作流 + Skill 积木"]
     L3["③ 协议<br/>把隐性约定写成显性规范"]
     L4["④ 演进<br/>四个自检回路 = 库的心跳"]
 
@@ -53,7 +54,7 @@ flowchart TB
 | 层 | 角色 | 真相源 / 入口 |
 |----|------|--------------|
 | **① 存储原则** | 库的宪法：放哪、不放哪、做完怎么办 | [[Contexts/决策/Kit核心原则]] |
-| **② 执行** | 把流程变成可路由的 Skill 动作 + Epic 阶段 | [[Contexts/决策/AI-Work-Kit工作流总览]] · `Skills/` |
+| **② 执行** | 把流程变成可路由的蓝图 + Skill 动作 | [[Contexts/决策/AI-Work-Kit工作流总览]] · `Skills/` |
 | **③ 协议** | 把约定固化成可校验的规范 | `Contexts/决策/*协议.md` |
 | **④ 演进** | 让库自己报告：谁在用、谁在腐烂、谁与代码脱钩 | `scripts/vault-evolve.py` |
 
@@ -62,7 +63,7 @@ flowchart TB
 ### 各层一句话
 
 - **① 存储原则** — 三层存储：`Templates/` 长期骨架 / `Plans/` 做完即删的任务态 / `Contexts/` 跨任务通用资料；判定标准是"换个新任务读了会不会被误导成当前背景"。一条反直觉但关键的设计：**默认删 plan**，刻意不让"已完成功能清单"沉淀下来污染未来上下文。
-- **② 执行** — Epic 五阶段（需求→架构→开发→测试→部署）串起主线；17 个 Skill 分四组（开发链 / UI 专项 / 学习审计 / 通用工具），靠路由硬规则互不越界。详见 §三。
+- **② 执行** — `workflow-router` 是自然语言入口，`full-cycle` 是通用编排引擎，读 `.workflows/blueprints/<name>.json` 组合 Skill；`client-dev` 是 15 步客户端开发蓝图，`computer-mgmt` 是无 Epic 轻量清单。Skill 靠路由硬规则互不越界。详见 §三。
 - **③ 协议** — 关系图谱（5 类双向关系）、漂移检测（`verified_against` 锚定代码 commit）、母子 plan 投影（子 plan 是 WBS 唯一真理源）、Skill 反馈（`utility` 二选一防中庸垃圾数据），外加一份个性化的 [[Contexts/决策/对话用词习惯]]。
 - **④ 演进** — 四回路：反馈（skill_run）/ 关系图谱（relations-check）/ 漂移（drift-scan）/ 进化调度（vault-evolve 月度 launchd 自动）。脚本层把协议变成**可执行门禁**——`plan-gate-check.sh` 是唯一开工卡点，串起投影、反馈、看板格式、文档引用四道校验，任一失败即 BLOCKED。
 
@@ -70,9 +71,9 @@ flowchart TB
 
 ## 三、两条主线
 
-### 主线 A · 业务开发线（Epic）
+### 主线 A · 业务开发线（蓝图 + Epic 数据上下文）
 
-入口 `/full-cycle`，建 `Plans/Epic/`，五阶段各一 Skill、一目录、一道门禁。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
+入口 `workflow-router`（自然语言或 `/full-cycle`），先选蓝图；`client-dev` 建 `Plans/Epic/`，Epic 只存子 Plan 路径、WBS 和摘要，不驱动流程。阶段由 `workflow-gate.sh` 读蓝图和子 Plan 文件事实派生。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
 
 防越界是这条线的设计灵魂：**互斥锁**（单阶段词不准被劫持成全流程）、**降级兜底**（≥3 个 Skill 命中 → 转 `resume-assistant` 问用户）、**禁止擅自下 A/B/C 结论**、**figma-ui 与 feature-dev 互斥**（含"界面/对稿/Figma"强制走 figma-ui）。一句话概括：**把"Agent 替用户拿主意"当头号风险来防**。
 
@@ -98,7 +99,7 @@ flowchart TB
 
 > 时效性结论。详细体检发现与可执行修复链 → `Plans/工作流审计/`（做完即删，不在本长期文档承载）。
 
-**结论：脚手架已完整，演进回路尚未喂饱。**
+**结论：脚手架已完整，演进回路仍需继续喂数据。**
 
 四层里前三层（宪法 / 执行 / 协议）和脚本门禁都已成型且在实战中自我纠错过（如 2026-06-25 母子投影"撒谎态"已被规则捕获并修正）。真正的短板集中在第四层的**数据密度**：
 

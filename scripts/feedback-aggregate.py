@@ -48,6 +48,18 @@ def _unquote(s: str) -> str:
     return s
 
 
+def _parse_inline_value(s: str):
+    s = _unquote(s.strip())
+    if s == "[]":
+        return []
+    if s.startswith("[") and s.endswith("]"):
+        body = s[1:-1].strip()
+        if not body:
+            return []
+        return [_unquote(item.strip()) for item in body.split(",") if item.strip()]
+    return s
+
+
 def parse_skill_run(body: str) -> dict | None:
     raw_lines = body.splitlines()
     lines = []
@@ -68,7 +80,7 @@ def parse_skill_run(body: str) -> dict | None:
             continue
         key, val = m.group(1), m.group(2).strip()
         if val:
-            sr[key] = _unquote(val)
+            sr[key] = _parse_inline_value(val)
             i += 1
             continue
         i += 1
@@ -79,15 +91,15 @@ def parse_skill_run(body: str) -> dict | None:
                 first = child[6:].strip()
                 kv = re.match(r"^([A-Za-z_]+)\s*:\s*(.*)$", first)
                 if kv:
-                    item: dict = {kv.group(1): _unquote(kv.group(2).strip())}
+                    item: dict = {kv.group(1): _parse_inline_value(kv.group(2).strip())}
                     i += 1
                     while i < n and re.match(r"^      ([A-Za-z_]+)\s*:\s*(.*)$", lines[i]):
                         sub = re.match(r"^      ([A-Za-z_]+)\s*:\s*(.*)$", lines[i])
-                        item[sub.group(1)] = _unquote(sub.group(2).strip())
+                        item[sub.group(1)] = _parse_inline_value(sub.group(2).strip())
                         i += 1
                     items.append(item)
                 else:
-                    items.append(_unquote(first))
+                    items.append(_parse_inline_value(first))
                     i += 1
             elif child.startswith("  ") and not child.startswith("    "):
                 break
@@ -203,9 +215,14 @@ def aggregate(runs: list[dict], month: str) -> dict:
 
     missing_counter: Counter = Counter()
     for r in runs:
-        for cm in r.get("contexts_missing", []) or []:
+        raw_missing = r.get("contexts_missing", []) or []
+        if isinstance(raw_missing, str):
+            raw_missing = [raw_missing]
+        for cm in raw_missing:
             if isinstance(cm, str):
-                missing_counter[cm.strip()] += 1
+                item = cm.strip()
+                if item and item not in {"[]", "[", "]"}:
+                    missing_counter[item] += 1
     missing = [(s, n) for s, n in missing_counter.most_common() if n >= 2]
 
     return {

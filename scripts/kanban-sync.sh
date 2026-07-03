@@ -6,12 +6,13 @@
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slice 2 --done
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slice 3 --open
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slices-done 1,2,3
-#   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --lifecycle development
+#   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --lifecycle development   # deprecated：仅兼容旧看板字段
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --plan-status Plans/需求分析/xxx.md 已采纳
 #
 # 说明：
 # - 直接改 markdown 后跑 --boot 即可；浏览器每 2.5s 轮询 /api/revision 自动刷新
 # - WBS 勾选推荐走 --slice / --slices-done（写回 markdown + 变更日志，与看板一致）
+# - 阶段推进以 workflow-gate.sh 派生为准；--lifecycle 不得作为 full-cycle 路由依据
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -95,6 +96,7 @@ fi
 
 if [[ -n "$LIFECYCLE" ]]; then
   [[ -n "$EPIC" ]] || { echo "kanban-sync: --lifecycle requires --epic" >&2; exit 1; }
+  echo "kanban-sync: WARNING --lifecycle is deprecated; workflow-gate.sh derives the real stage" >&2
   api_post /api/lifecycle "$(printf '{"file":"%s","lifecycle_state":"%s","operator":"%s"}' "$EPIC" "$LIFECYCLE" "$OPERATOR")"
   echo "kanban-sync: lifecycle_state → ${LIFECYCLE}"
 fi

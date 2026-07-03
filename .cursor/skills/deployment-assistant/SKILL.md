@@ -7,11 +7,11 @@ description: 读 Epic+技术方案与测试 plan，生成部署检查清单到 P
 
 模板：`Templates/部署模板.md` · 参考 `Templates/发布检查清单模板.md`  
 输入：Epic `plans.*`（architecture / development / test）  
-产出：`Plans/部署/`；`lifecycle_state: deploy`
+产出：`Plans/部署/`；frontmatter 保留 `lifecycle_state: deploy` 仅作兼容展示，阶段以 `workflow-gate.sh` 派生为准。
 
 ## 执行步骤
 
-1. 读 Epic frontmatter 与子 Plan 索引；确认测试 plan 存在（WBS 11 建议已完成）。
+1. 读 Epic frontmatter `workflow:` 与子 Plan 索引；运行 `workflow-gate.sh --workflow client-dev --epic <epic>`，确认已进入 `deploy` 或明确用户要准备发布材料。
 2. 读技术方案（迁移、环境、回滚）与自动化测试 plan 通过门槛。
 3. 按模板输出：环境变量、迁移、灰度、回滚、冒烟（链需求 AC）。
 4. Plan → `Plans/部署/YYYY-MM-DD-模块名.md`；frontmatter 含 `epic:`、`lifecycle_state: deploy`。
@@ -24,12 +24,12 @@ description: 读 Epic+技术方案与测试 plan，生成部署检查清单到 P
 ## 门禁
 
 - 缺技术方案 → 停止，引导 `architecture-design-assistant`
-- `full-cycle-gate.sh` 在 deploy 阶段检查 WBS 13–14
+- `workflow-gate.sh --workflow client-dev` 在 deploy 阶段检查部署 plan 与 WBS 13–14；不通过修改 `lifecycle_state` 推进阶段
 
 ## 上下文汇报
 
 ```
-📌 当前阶段：[部署] | 产出：Plans/部署/xxx.md | Epic plans.deploy 已更新 | 下一阶段：[归档 WBS 15] | 中断：/resume plan=...
+📌 当前阶段：[deploy] | 产出：Plans/部署/xxx.md | Epic plans.deploy 已更新 | 下一阶段：[retro / retro-assistant] | 中断：/resume plan=...
 ```
 
 同步：`Skills/deployment_assistant.md`

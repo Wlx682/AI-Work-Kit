@@ -12,12 +12,13 @@ key_points:
 relations:
   depends_on:
     - Contexts/决策/Kit核心原则.md
-  dependents: []
+  dependents:
+    - Contexts/决策/2026-07-03-开发流程审计报告.md
   supersedes: []
   superseded_by: []
   conflicts: []
----
 
+---
 # Skill 反馈协议
 
 > **全库唯一定义**：每个 Skill 完成任务时如何输出反馈数据，由 `scripts/feedback-aggregate.py` 聚合，月度复盘消费。
@@ -40,8 +41,11 @@ relations:
 |------|--------|
 | 任务对应 plan 存在 | 该 plan 文件**末尾**追加 `skill_run` YAML 块 |
 | 任务无 plan（如 `template-generator` 一次性输出、`learn-assistant` 续读不写 plan）| `Contexts/决策/孤立反馈记录.md` 顶部追加一条 |
+| 任务无 plan 但反馈已当场归位（已写入规则/脚本/审计报告） | 不进入「待蒸馏」；只在 `Contexts/决策/孤立反馈记录.md` 的「归档（已蒸馏）」补一行摘要 |
 
 **`Contexts/决策/孤立反馈记录.md`** 倒序排列（最新在上），每条独立 YAML 节，便于 `feedback-aggregate.py` 同一脚本扫描。
+
+**已归位例外**：如果本次反馈只是执行小票（例如“我用了某审计报告来更新某结论”），且真正结论已经写入长期文件、模板、Skill 或自动化脚本，则不要再把这张小票放进「待蒸馏」。只保留一句归档摘要，指向最终承载位置。目标是让知识库保存“以后怎么用”，而不是保存“这次我怎么操作”。
 
 ---
 

@@ -10,12 +10,13 @@
 .cursor/figma.env
 .mcp.json
 
-# Claude Code 个人配置与同步产物（.claude/skills 由 scripts/sync-claude-skills.sh 生成）
+# Claude Code / Codex 个人配置与同步产物（skills 由 scripts/sync-claude-skills.sh 生成）
 # .claude/workflows/ 为手写可复用 workflow 脚本，纳入版本库
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/skills/
 .claude/scheduled_tasks.json
+.codex/skills/
 
 # 看板服务运行产物（日志、PID、字节码缓存）
 scripts/.kanban-server.log

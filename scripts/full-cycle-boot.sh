@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 全流程闭环启动：每次都重启 Epic 看板 + 打开浏览器
-# 默认选 Plans/Epic/ 下最新的 Epic（按文件名倒序）。
+# 未指定 Epic 时仅在唯一 Epic 的情况下自动选择；多个 Epic 必须显式传 --epic。
 # 用法：
 #   ./scripts/full-cycle-boot.sh                # 重启服务 + 打开最新 Epic
 #   ./scripts/full-cycle-boot.sh --epic Plans/Epic/2026-06-20-新版工作空间.md
@@ -36,12 +36,18 @@ if [[ -n "$NEW_REQUIREMENT" ]]; then
   EPIC=""
 fi
 
-# 未指定 --epic：自动选最新的 Epic（文件名倒序，日期前缀越新越靠前）
+# 未指定 --epic：只有唯一 Epic 时自动选择；多个 Epic 必须显式选择，避免并行项目误操作。
 if [[ -z "$EPIC" && -z "$NEW_REQUIREMENT" ]]; then
-  EPIC="$(ls -1 "$ROOT"/Plans/Epic/*.md 2>/dev/null | sort -r | head -1)"
-  if [[ -n "$EPIC" ]]; then
-    EPIC="Plans/Epic/$(basename "$EPIC")"
-    echo "kanban: 未指定 --epic，使用最新 Epic：$EPIC"
+  mapfile -t epic_candidates < <(find "$ROOT/Plans/Epic" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort -r)
+  if [[ ${#epic_candidates[@]} -eq 1 ]]; then
+    EPIC="Plans/Epic/$(basename "${epic_candidates[0]}")"
+    echo "kanban: 未指定 --epic，使用唯一 Epic：$EPIC"
+  elif [[ ${#epic_candidates[@]} -gt 1 ]]; then
+    echo "kanban: 检测到多个 Epic，请显式指定 --epic，避免误操作：" >&2
+    for f in "${epic_candidates[@]}"; do
+      echo "  - Plans/Epic/$(basename "$f")" >&2
+    done
+    exit 1
   fi
 fi
 

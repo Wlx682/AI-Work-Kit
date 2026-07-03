@@ -20,21 +20,21 @@ Vault：AI-Work-Kit 根目录
 **不响应（让位给其他 Skill）**：
 
 - 「**生成技术方案模板**」「**套用方案模板**」（只要骨架）→ `template-generator`
-- 「**全流程开发**」→ `full-cycle-assistant`
+- 「**全流程开发**」→ `full-cycle` 引擎（蓝图 manifest）
 - 「**开发 / 写代码**」（方案已定）→ `feature-dev-assistant`
 
 必读：`Plans/需求分析/` 关联 plan（真理源）  
 模板：`Templates/技术方案模板.md`  
-产出：`Plans/客户端技术方案/` 或 `Plans/服务端技术方案/`
+产出：`Plans/技术方案/`
 
 1. 门禁：需求 P0 闭环；缺边界/异常/验收 → 提醒用 `需求分析-带验收标准模板`  
 2. **必输出**：模块边界、ER 图+字段、API Schema+错误码  
-3. `lifecycle_state: architecture`；`status: 已采纳` 后 → `task-splitter`
+3. frontmatter 可保留 `lifecycle_state: architecture` 作兼容展示；`status: 已采纳` 后由 `workflow-gate.sh` 派生下一阶段（通常进入 `test-first`）
 
 同步：`Skills/architecture_design_assistant.md`
 
 ## 反馈回路（skill_run）
 
 完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
-追加到本次 技术方案 plan（`Plans/客户端|服务端技术方案/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
+追加到本次 技术方案 plan（`Plans/技术方案/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
 `contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: architecture-design-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。

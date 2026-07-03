@@ -6,6 +6,7 @@ relations:
     - Contexts/决策/Kit核心原则.md
     - Templates/模板约定.md
   dependents:
+    - Contexts/决策/2026-07-03-开发流程审计报告.md
     - Contexts/决策/AI-Work-Kit架构总览.md
     - Contexts/决策/新手引导与最佳实践.md
   supersedes: []
@@ -24,8 +25,8 @@ relations:
 ## 一、怎么用（给同事）
 
 1. 打开 Vault + AI 编辑器（Cursor / Claude Code / Codex 任选；或业务仓 + 全局 Skill）。
-2. **新需求** → `/full-cycle 模块=XX`（自动选蓝图 client-dev）。
-3. **其它工作流** → 自然语言即可（如「帮我清理电脑」→ computer-mgmt），或 `/full-cycle workflow=computer-mgmt`。
+2. **新需求** → 自然语言或 `/full-cycle 模块=XX`，先命中 `workflow-router`，再自动选蓝图 client-dev。
+3. **其它工作流** → 自然语言即可（如「帮我清理电脑」→ `workflow-router` → computer-mgmt），或 `/full-cycle workflow=computer-mgmt`。
 4. **续做** → `/resume plan=Plans/... 进度=...`。
 5. **看 WBS** → `./scripts/full-cycle-boot.sh` → http://127.0.0.1:7777/
 
@@ -33,12 +34,13 @@ relations:
 
 ## 二、三层架构（积木框架）
 
-`full-cycle` 是**通用编排引擎**。不同 Skill/模板/脚本通过**蓝图 manifest** 组合成不同工作流。
+`workflow-router` 是**自然语言入口 Skill**；`full-cycle` 是**通用编排引擎**。不同 Skill/模板/脚本通过**蓝图 manifest** 组合成不同工作流。
 
 | 层 | 组件 | 职责 |
 |----|------|------|
+| **入口**（路由层） | `workflow-router` | 把自然语言映射到 workflow 蓝图；只启动引擎，不做阶段工作 |
 | **积木**（执行层） | 各子 Skill（requirement-analyst 等） | 读写 Plan 文件，干具体活 |
-| **状态机**（控制层） | `full-cycle` 引擎 + 蓝图 `.claude/workflows/<name>.json` | 读蓝图决定下一阶段调哪个 Skill；维护会话内游标 |
+| **状态机**（控制层） | `full-cycle` 引擎 + 工具中性蓝图 `.workflows/blueprints/<name>.json` | 读蓝图决定下一阶段调哪个 Skill；维护 workflow run 游标 |
 | **数据上下文**（持久层） | Epic Plan（`Plans/Epic/`） | **只存不驱动**：子 Plan 路径映射、WBS 人工确认板、里程碑摘要 |
 
 **Epic 的硬边界**：
@@ -50,14 +52,14 @@ relations:
 
 | 蓝图 | usesEpic | 说明 | Epic 母版 |
 |------|----------|------|-----------|
-| `client-dev` | 是 | 客户端功能开发 15 步（事件风暴→…→回顾） | `Templates/Epic母版-client-dev.md` |
+| `client-dev` | 是 | 客户端功能开发 15 步（事件风暴→…→回顾） | `Templates/Epic模板-client-dev.md` |
 | `computer-mgmt` | 否 | 电脑管理（盘点→清理→备份→加固→复核），无 Epic 轻量清单 | `Templates/电脑管理清单模板.md` |
 
-新增蓝图：在 `.claude/workflows/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号）。
+新增蓝图：在 `.workflows/blueprints/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号），并跑 `python3 scripts/validate-workflow-blueprint.py`。
 
 ### client-dev 15 步
 
-需求(事件风暴+实例化 1-2) → 架构+ADR(3) → 验收测试先行(4) → 开发(Domain/Data/UI/交互/单测/联调 5-10) → 非功能验证(11) → Review(12) → 发布+灰度+监控(13-14) → 团队回顾(15)。详见 `Templates/Epic母版-client-dev.md` §三。
+需求(事件风暴+实例化 1-2) → 架构+ADR(3) → 验收测试先行(4) → 开发(Domain/Data/UI/交互/单测/联调 5-10) → 非功能验证(11) → Review(12) → 发布+灰度+监控(13-14) → 团队回顾(15)。详见 `Templates/Epic模板-client-dev.md` §三。
 
 ```mermaid
 stateDiagram-v2
@@ -73,7 +75,7 @@ stateDiagram-v2
     retro --> [*]
 ```
 
-新建 client-dev Epic：复制 `Templates/Epic母版-client-dev.md` → `Plans/Epic/`。
+新建 client-dev Epic：复制 `Templates/Epic模板-client-dev.md` → `Plans/Epic/`。
 
 ---
 
@@ -103,7 +105,7 @@ bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 | `full-cycle-boot.sh` | 看板 + 浏览器 |
 | `workflow-gate.sh` | **通用**工作流阶段门禁（读蓝图，只看子 Plan 事实） |
 | `derive-epic-status.sh` | 从 WBS+子 Plan status 派生 `derived_status`（只读，不写回） |
-| `full-cycle-gate.sh` | 旧门禁（写死 client-dev 五阶段/旧 WBS）；旧格式 Epic 兼容用，新工作流走 `workflow-gate.sh` |
+| `full-cycle-gate.sh` | 兼容封装：等价转发到 `workflow-gate.sh --workflow client-dev`；新引用直接使用 `workflow-gate.sh` |
 | `plan-gate-check.sh` | 写代码前（与蓝图正交，不动） |
 | `kanban-sync.sh` | Agent 改进度 |
 | `generate-pipeline-status.sh --write` | 刷新 [[索引]] 进度表 |
@@ -113,13 +115,15 @@ bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 
 ## 五、Skill 速查
 
-开发主线：`full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `test-generator` · `deployment-assistant` · `change-impact-analysis`
+开发主线：`workflow-router` · `full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `test-generator` · `deployment-assistant` · `change-impact-analysis`
 
 通用：`resume-assistant` · `template-generator` · `review-assistant` · `material-prep-assistant`
 
 学习：`learn-assistant` · `learning-audit-assistant`
 
 Claude workflow：`.claude/workflows/full-cycle.js` · `learning-audit` · `dev-lifecycle-audit`
+
+工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/full-cycle.js` 只是 Claude Code 的引擎入口。
 
 详情：[[Skills/README]] · [[索引#高频任务速查]]
 

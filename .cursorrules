@@ -31,7 +31,9 @@
 - 模板 → `template-generator`
 - 日报/周报/复盘 → `review-assistant` → `Contexts/日报/`、`周报/`（git 仅本人 wanglongxiang）
 - 需求 → `requirement-analyst` → `Plans/需求分析/`
-- 功能 → `feature-dev-assistant`（须 Epic；无 Epic → `full-cycle-assistant`）
+- 事件风暴 / 领域事件 / 事件墙 → `event-storming-assistant` → `Plans/需求分析/`
+- 实例化需求 / GWT / Given-When-Then → `spec-by-example-assistant` → `Plans/需求分析/`
+- 功能 → `feature-dev-assistant`（须 Epic；无 Epic → `workflow-router` 选择蓝图并启动 full-cycle 引擎）
 - Figma UI → `figma-ui`（链接当次提供；读 `Contexts/Figma/` 规范）
 
 # Skill 路由硬规则
@@ -40,9 +42,9 @@
 - 学习 → `learn-assistant`（`learning-progress-read.sh` / `snapshot.sh` stdout，不写 Contexts）
 - 学习审计 → `learning-audit-assistant` → `Contexts/LLM学习/笔记/*审计报告*`
 - PM 物料 → `material-prep-assistant` → `Contexts/`（通用对照表）
-- 架构 → `architecture-design-assistant` · 拆任务 → `task-splitter` · 测试 → `test-generator` · 部署 → `deployment-assistant`
+- 架构 → `architecture-design-assistant` · 拆任务 → `task-splitter` · 测试 → `test-generator` · 非功能验证 → `nfr-assistant` · 部署 → `deployment-assistant` · 回顾 → `retro-assistant`
 - 需求变更 → `change-impact-analysis`
-- 全流程 → `full-cycle-assistant`（开场 `full-cycle-boot.sh`）
+- 全流程 / 启动项目 / 自然语言工作流 → `workflow-router`（入口 Skill，只选蓝图并启动 `full-cycle` 引擎）
 - Epic 审计 → `dev-lifecycle-audit-assistant` → `Contexts/决策/*审计报告*`
 
 # 输出要求

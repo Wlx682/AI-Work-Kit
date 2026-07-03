@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/wanglongxiang/git/AI-Work-Kit/scripts/hook-edit-epic-projection.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

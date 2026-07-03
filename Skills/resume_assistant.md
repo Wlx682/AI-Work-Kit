@@ -13,19 +13,22 @@
 ## 执行步骤
 
 1. 读取 `Plans/[plan路径]`；若含 `[[Contexts/]]` 链接一并读取。
-2. **Epic 感知**：若 frontmatter 含 `epic:`，读取 Epic 母 plan 的 `lifecycle_state`、WBS 复选框、子 Plan 索引表。
+2. **Epic 感知**：若 frontmatter 含 `epic:`，读取 Epic 母 plan 的 `workflow`、WBS 复选框、子 Plan 索引表，并运行 `scripts/workflow-gate.sh --workflow <name> --epic <epic>` 派生当前阶段。
 3. **门禁（开发阶段）**：对 `Plans/功能开发/` 下 plan，先跑 `bash scripts/plan-gate-check.sh <plan> --stage development`；若 `BLOCKED:` → **只输出补文档任务，不建议写代码**。
 4. 根据进度判断下一步（对照 plan / Epic WBS 勾选切片）。
-5. **推荐 Skill**（按 `lifecycle_state`；development 须读 WBS/子 plan **Skill 列**）：
+5. **推荐 Skill**：优先采用 `workflow-gate.sh` 输出的 `recommended_skill`；development 仍须读 WBS/子 plan **Skill 列**。
 
 
-| lifecycle_state | 推荐 Skill                             | 典型切片      |
-| --------------- | ------------------------------------ | --------- |
-| requirement     | `requirement-analyst`                | WBS 1     |
-| architecture    | `architecture-design-assistant`      | WBS 2     |
-| development     | Skill=`figma-ui` → `figma-ui`；否则 `feature-dev-assistant` | WBS 3–10  |
-| test            | `test-generator`                     | WBS 11    |
-| deploy          | `deployment-assistant`               | WBS 13–14 |
+| workflow-gate current_state | 推荐 Skill | 典型切片 |
+|-----------------------------|------------|----------|
+| requirement | `event-storming-assistant` / `spec-by-example-assistant` / `requirement-analyst` | WBS 1–2 |
+| architecture | `architecture-design-assistant` | WBS 3 |
+| test-first | `test-generator` | WBS 4 |
+| development | Skill=`figma-ui` → `figma-ui`；否则 `feature-dev-assistant` | WBS 5–10 |
+| verify | `nfr-assistant` | WBS 11 |
+| review | `review-assistant` | WBS 12 |
+| deploy | `deployment-assistant` | WBS 13–14 |
+| retro | `retro-assistant` | WBS 15 |
 
 **WBS 修订**：用户要改切片/拆任务 → 路由 `task-splitter` 或列待确认项找用户；禁止擅自推荐 A/B/C 方案。
 
@@ -40,7 +43,7 @@
 
 **Plan**：`Plans/...`
 **Epic**：`Plans/Epic/...`（如有）
-**阶段**：requirement | architecture | development | test | deploy
+**阶段**：由 workflow-gate 派生（如 requirement / architecture / test-first / development / verify / review / deploy / retro）
 **进度**：...
 
 ### 已完成
@@ -66,4 +69,3 @@
 
 @Skills/resume_assistant.md 续做，plan=学习/2026-06-12-第4课-Agent.md，进度=概念已讲，待勾选步骤
 ```
-

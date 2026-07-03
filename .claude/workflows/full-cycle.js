@@ -49,7 +49,7 @@ const gateArg = epicPath
 const resolveSetup = await agent(
   `你是通用工作流引擎的「选蓝图与启动」步骤。工作目录为仓库根。\n` +
   `\n## 1. 列出可用蓝图\n` +
-  `用 Bash 运行 \`ls .claude/workflows/*.json\`，读每个蓝图的 name / label / usesEpic / triggerHints（可 \`cat\` 各 json 的这几个字段）。\n` +
+  `用 Bash 运行 \`ls .workflows/blueprints/*.json\`，读每个蓝图的 name / label / usesEpic / triggerHints（可 \`cat\` 各 json 的这几个字段）。\n` +
   `\n## 2. 选定蓝图（优先级，重要）\n` +
   `a) 若用户给了 workflow 参数「${explicitWorkflow || '（无）'}」→ 直接用。\n` +
   `b) 否则若指定了 Epic「${epicPath || '（无）'}」→ 读该 Epic frontmatter 的 workflow 字段；有则用。\n` +
@@ -119,7 +119,7 @@ const plansFound = (gate.plans_found || [])
 
 const executed = await agent(
   `执行工作流「${workflow}」当前阶段「${gate.current_state}」。\n` +
-  `调用 Skill：${gate.recommended_skill}（读 Skills/ 或 .cursor/skills/ 对应说明；蓝图 .claude/workflows/${workflow}.json 该 stage 的 skills 数组为候选）。\n` +
+  `调用 Skill：${gate.recommended_skill}（读 Skills/ 或 .cursor/skills/ 对应说明；蓝图 .workflows/blueprints/${workflow}.json 该 stage 的 skills 数组为候选）。\n` +
   (usesEpic ? `Epic（仅数据上下文，不写 lifecycle_state）：${gate.epic || epicPath || '（见门禁结果）'}。\n` : `本工作流无 Epic，plan 直接放蓝图 stage 的 planFolder。\n`) +
   (userContext ? `用户原始需求/上下文：${userContext}\n` : '') +
   (requirementPlan ? `指定需求 plan：${requirementPlan}。\n` : '') +
@@ -154,5 +154,5 @@ return {
   gate: gateResult,
   execution: executed,
   report: executed?.report || report,
-  blueprint: `.claude/workflows/${workflow}.json`,
+  blueprint: `.workflows/blueprints/${workflow}.json`,
 }

@@ -1,6 +1,6 @@
 # AI-Work-Kit
 
-Obsidian 知识库 + Cursor / Claude Skill：模板开工、Epic 闭环、plan 续做。
+Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环、plan 续做。
 
 ## 读文档（按顺序）
 
@@ -14,13 +14,14 @@ Obsidian 知识库 + Cursor / Claude Skill：模板开工、Epic 闭环、plan �
 
 1. Obsidian + Cursor 打开本仓库  
 2. 可选 MCP：`cp .cursor/mcp.json.example .cursor/mcp.json`  
-3. 全局 Skill：`cp -r .cursor/skills/* ~/.cursor/skills/`  
+3. 全局 Skill：`./scripts/sync-agent-skills.sh --sync`（部署到 Claude / Codex；Cursor 可继续 `cp -r .cursor/skills/* ~/.cursor/skills/`）
 4. Claude Code：见 [集成说明](Contexts/Claude-Code集成AI-Work-Kit.md)
+5. Codex：根目录已内置 `AGENTS.md`；执行同步脚本后会生成 `.codex/skills/` 并部署到 `~/.codex/skills/`
 
 ## 三条命令
 
 ```text
-/full-cycle 模块=XX          # 新需求
+/full-cycle 模块=XX          # 新需求（自然语言入口：workflow-router）
 /resume plan=Plans/... 进度=...   # 续做
 /review-assistant 日报        # 日报 → Contexts/日报/
 ```

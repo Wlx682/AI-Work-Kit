@@ -2,17 +2,17 @@
 name: project-manager
 description: >-
   trigger: internal_only — 状态机与编排说明，不对用户暴露自然语言触发。
-  仅 full-cycle-assistant 内部引用，或显式 /project-manager 救急。
-  用户说全流程/启动项目一律路由 full-cycle-assistant。
+  历史编排草案，仅显式 /project-manager 救急。
+  用户说全流程/启动项目一律路由 full-cycle 引擎。
 ---
 
 # 项目经理 Skill（长期 / Agent 化）
 
-> **trigger: internal_only** — 本 Skill **不对用户直接暴露**自然语言触发词；仅由 `full-cycle-assistant` 内部引用，或显式 `/project-manager` 命令救急。
+> **trigger: internal_only** — 本 Skill **不对用户直接暴露**自然语言触发词；仅显式 `/project-manager` 命令救急。新流程以 `full-cycle` 引擎 + 蓝图 manifest 为准。
 >
-> **执行入口已迁移至 `full-cycle-assistant`**（开场自动 boot 看板）。本文保留状态机与编排说明，供 full-cycle 内部参考。
+> **执行入口已迁移至 `full-cycle` 引擎**（开场自动 boot 看板）。本文仅作历史编排草案参考。
 
-所有「全流程开发 / 帮我开发 XX 模块 / 启动项目」类用户输入 → **一律路由到** `@Skills/full_cycle_assistant.md`；本 Skill 不响应。
+所有「全流程开发 / 帮我开发 XX 模块 / 启动项目」类用户输入 → **一律路由到** `workflow-router`，由 `.workflows/blueprints/*.json` 选择工作流；本 Skill 不响应。
 
 > **目标态**：用户一句话，AI 按 Workflow 自动串联各阶段 Skill；遇阻塞写入 `Plans/阻塞问题/` 并在 `Contexts/` 记录决策。
 

@@ -11,7 +11,7 @@ Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
 
 **不响应**：
 
-- 「全流程开发 / 启动项目」→ `full-cycle-assistant`
+- 「全流程开发 / 启动项目」→ `full-cycle` 引擎（蓝图 manifest）
 - 「需求分析 / PRD」→ `requirement-analyst`
 - 「架构 / 技术方案」→ `architecture-design-assistant`
 - 「只做界面 / 还原 Figma」→ `figma-ui`（无业务逻辑时）

@@ -1,8 +1,8 @@
 # 测试生成助手 Skill
 
-当用户说「写测试」「测试计划」「自动化测试」「/test-generator」时执行。
+当用户说「写测试」「测试计划」「自动化测试」「验收测试先行」「/test-generator」时执行。
 
-> 读取功能开发 plan 与代码，生成单元测试 & 集成测试用例 plan。
+> 读取 Epic、需求验收标准、功能开发 plan 与代码，生成验收测试先行或回归测试 plan。
 
 ## 知识库
 
@@ -13,18 +13,18 @@
 
 ## 执行步骤
 
-1. 读 **Epic** frontmatter `plans.development` + 关联功能开发主 plan / 子任务 + 需求 plan **验收标准**。
+1. 读 **Epic** frontmatter `workflow:`、`plans.*` + 关联功能开发主 plan / 子任务 + 需求 plan **验收标准**；运行 `workflow-gate.sh --workflow client-dev --epic <epic>` 确认当前测试语境。
 2. 在代码库定位被测模块（类、API、组件路径）。
 3. 按模板输出：
    - 单元测试清单（UT-xxx）
    - 集成测试清单（IT-xxx）
    - 与 AC 验收项的映射表
    - CI 命令（xcodebuild / pytest / go test 等，按项目实际）
-4. Plan → `Plans/自动化测试/YYYY-MM-DD-模块名.md`；frontmatter：`lifecycle_state: test`、`epic: Plans/Epic/xxx.md`
+4. Plan → `Plans/自动化测试/YYYY-MM-DD-模块名.md`；frontmatter：`lifecycle_state: test`、`epic: Plans/Epic/xxx.md`（`lifecycle_state` 仅兼容展示，阶段以 `workflow-gate.sh` 派生为准）。
 5. **回写 Epic**（与看板对齐）：
    - `plans.test:` 指向新 plan
    - §一 子 Plan 索引表 test 行
-   - WBS 切片 11 状态（完成或 `[~]` + CI 技术债说明）
+   - 验收测试先行阶段对应 WBS 4；开发回归测试对应 WBS 9（如实际用于后置测试，按 Epic WBS 注明）
 
 ## 原则
 
@@ -34,12 +34,12 @@
 
 ## 与 deployment-assistant 衔接
 
-测试 plan 勾选通过 → `/deployment-assistant`
+测试 plan 勾选通过 → 重新运行 `workflow-gate.sh` 获取下一阶段
 
 ## 上下文汇报
 
 ```
-📌 当前阶段：[自动化测试] | 产出：Plans/自动化测试/xxx.md | 下一阶段：[部署 /deployment-assistant] | 中断：/resume plan=...
+📌 当前阶段：[test-first / 自动化测试] | 产出：Plans/自动化测试/xxx.md | 下一阶段：[跑 workflow-gate 派生] | 中断：/resume plan=...
 ```
 
 ## 触发示例

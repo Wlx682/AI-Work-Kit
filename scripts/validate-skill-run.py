@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 validate-skill-run.py — 校验 plan 文件末尾的 skill_run YAML 块
 
@@ -55,6 +56,18 @@ def unquote(s: str) -> str:
     return s
 
 
+def parse_inline_value(s: str):
+    s = unquote(s.strip())
+    if s == "[]":
+        return []
+    if s.startswith("[") and s.endswith("]"):
+        body = s[1:-1].strip()
+        if not body:
+            return []
+        return [unquote(item.strip()) for item in body.split(",") if item.strip()]
+    return s
+
+
 def parse_skill_run(body: str) -> dict | None:
     """解析固定 schema 的 YAML 块。仅支持本协议要求的层级结构。"""
     raw_lines = body.splitlines()
@@ -83,7 +96,7 @@ def parse_skill_run(body: str) -> dict | None:
         key = m.group(1)
         val = m.group(2).strip()
         if val:
-            sr[key] = unquote(val)
+            sr[key] = parse_inline_value(val)
             i += 1
             continue
 
@@ -98,16 +111,16 @@ def parse_skill_run(body: str) -> dict | None:
                 # 是否是 "k: v" 形态？
                 kv = re.match(r"^([A-Za-z_]+)\s*:\s*(.*)$", first)
                 if kv:
-                    item: dict = {kv.group(1): unquote(kv.group(2).strip())}
+                    item: dict = {kv.group(1): parse_inline_value(kv.group(2).strip())}
                     i += 1
                     # 6-空格缩进的同 item 字段
                     while i < n and re.match(r"^      ([A-Za-z_]+)\s*:\s*(.*)$", lines[i]):
                         sub = re.match(r"^      ([A-Za-z_]+)\s*:\s*(.*)$", lines[i])
-                        item[sub.group(1)] = unquote(sub.group(2).strip())
+                        item[sub.group(1)] = parse_inline_value(sub.group(2).strip())
                         i += 1
                     items.append(item)
                 else:
-                    items.append(unquote(first))
+                    items.append(parse_inline_value(first))
                     i += 1
             elif child.startswith("  ") and not child.startswith("    "):
                 # 回到 level-1，跳出 collection
