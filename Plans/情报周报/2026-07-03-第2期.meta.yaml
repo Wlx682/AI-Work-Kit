@@ -1,0 +1,39 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-03          # 第 2 期
+  selected:
+    title: "spec-kit：把规范翻转成生成代码的唯一真理源"
+    source_url: https://github.com/github/spec-kit
+    author: GitHub (open source)
+    topic_tag: spec-driven-development
+    score: 47                # 满分 50，入选线 32
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 按加权维度对 spec-kit 打分 47/50，超入选线确认唯一深挖篇
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: 据抓取渠道备注，官方文档站 DocShark 抓不到 GitHub 仓库正文时降级 curl 取 raw 一手原文
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: 确认清单无 spec-kit/SDD 记录，通过去重
+  contexts_missing:          # ← capability_gap：读 spec-kit 暴露的 Kit 能力缺口
+    - "需求澄清（clarify）作为 requirement→test-first 之间不可跳过的显式门禁 exitCriteria"
+    - "GitHub 开源仓库类源的抓取降级路径（DocShark 抓不到仓库正文→curl raw README/docs）应沉淀为 follow 名单标准动作"
+  contexts_stale: []
+  notes: |
+    打磨记录（2026-07-03 二次迭代，用户要求四项：修正乱码/增补图示/加深正文/优化提示词）：
+    - 修正乱码：正文两处 "主артifact"（西里尔字母混入）→ "主产物"，避免网页渲染异常。
+    - 增补图示：图从 2 张增至 4 张——新增「双向反馈闭环」flowchart（线上现实反向回灌规范）
+      与「我们 vs spec-kit 逐格对照」flowchart（同构/我们偏软/我们更硬三处虚线标注）。
+    - 加深正文：为 clarify 关卡补前因后果（模糊假设如何跨五层扩散→"返工成本指数放大"具体含义），
+      为双向反馈补机制段（回到规范改而非改代码，才不让规范退化成过期 PRD）。
+    - 优化提示词：.prompt.md 从 5 行极简版重写为规范全量模板（首屏识别度/科技长文专题页/
+      4 张 Mermaid 图示容器/响应式移动端图示自适应/自检标准）。
+    源健康自检：
+    - spec-kit 属 follow 名单未登记的 GitHub 生态源（C 区「Codex 等生态」可扩为「规范驱动/开源工具生态」），
+      本期因主题指定（args=speckit）纳入，建议评估是否正式增补进 follow 名单 C 区。
+    - source_stale_warning 阈值（连续 3 期无入选）尚未触发：目前仅 2 期。
+      观察项：Cat Wu、Fiona Fung、Andrej Karpathy 连续 2 期未入选，第 3 期仍无入选则需人工复核 follow 名单。
+    抓取降级记录：DocShark manage_library 对 github.com/github/spec-kit 爬取返回 0 页（GitHub 仓库主页 JS 渲染，
+      DocShark 不擅长），已按 follow 名单备注降级 curl raw.githubusercontent.com 取 README.md + spec-driven.md 一手原文，成功。
