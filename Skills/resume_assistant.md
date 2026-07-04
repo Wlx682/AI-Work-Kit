@@ -64,5 +64,5 @@
 ```
 /resume plan=Plans/功能开发/2026-06-11-会员-首次启动与过期处理.md 进度=§2.2 首页弹窗方案已定
 
-@Skills/resume_assistant.md 续做，plan=学习/2026-06-12-第4课-Agent.md，进度=概念已讲，待勾选步骤
+@Skills/resume_assistant.md 续做，plan=Plans/学习/【课程 plan 文件】，进度=概念已讲，待勾选步骤
 ```
