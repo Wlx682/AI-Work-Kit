@@ -20,9 +20,9 @@
     { "folder": "Contexts/日报", "template": "Templates/日报模板.md" },
     { "folder": "Contexts/周报", "template": "Templates/周报模板.md" },
     { "folder": "Contexts/复盘", "template": "Templates/月度复盘模板.md" },
-    { "folder": "Contexts/LLM学习/笔记", "template": "Templates/学习笔记模板.md" },
-    { "folder": "Contexts/LLM学习/概念", "template": "Templates/概念卡模板.md" },
-    { "folder": "Contexts/LLM学习/复盘", "template": "Templates/学习周复盘模板.md" }
+    { "folder": "学习/笔记", "template": "Templates/学习笔记模板.md" },
+    { "folder": "学习/概念", "template": "Templates/概念卡模板.md" },
+    { "folder": "学习/复盘", "template": "Templates/学习周复盘模板.md" }
   ],
   "syntax_highlighting": true,
   "syntax_highlighting_mobile": false,

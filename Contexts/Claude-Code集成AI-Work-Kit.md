@@ -182,7 +182,7 @@ Workflow 适合 **比单次 Chat 更大、需要并行 subagent** 的任务。
 ### 6.1 触发方式
 
 ```text
-ultracode: 审计 Plans/学习/ 各课完成度，对照 Contexts/LLM学习/概念/，输出学习进度报告到 Contexts/LLM学习/笔记/
+ultracode: 审计 Plans/学习/ 各课完成度，对照 学习/概念/，输出学习进度报告到 学习/笔记/
 
 /deep-research Loop Engineering 与 Claude Dynamic Workflows 的区别，结合 AI-Work-Kit 工作流举例
 ```
@@ -191,7 +191,7 @@ ultracode: 审计 Plans/学习/ 各课完成度，对照 Contexts/LLM学习/概�
 
 | 名称 | 用途 | 触发说法 |
 |------|------|----------|
-| `learning-audit` | 审计 `Plans/学习/` 各课声称状态 vs 实际证据（复选框/概念卡/笔记），报告写入 `Contexts/LLM学习/笔记/` | Claude：`/learning-audit` · Cursor：`/learning-audit-assistant` |
+| `learning-audit` | 审计 `Plans/学习/` 各课声称状态 vs 实际证据（复选框/概念卡/笔记），报告写入 `学习/笔记/` | Claude：`/learning-audit` · Cursor：`/learning-audit-assistant` |
 
 或设置会话级自动 workflow：
 
@@ -287,7 +287,7 @@ AI-Work-Kit/
 
 - [[Contexts/决策/新手引导与最佳实践]]
 - [[MCP进阶指南]]
-- [[Contexts/LLM学习/学习路线-LLM与提示词]]
+- [[学习/学习路线-LLM与提示词]]
 - [[Skills/README]]
 - Claude Code 官方：[Memory / CLAUDE.md](https://code.claude.com/docs/en/memory) · [Dynamic Workflows](https://code.claude.com/docs/en/workflows)
 

@@ -17,6 +17,7 @@ relations:
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/AI-Work-Kit架构总览.md
     - Contexts/决策/Contexts漂移检测协议.md
+    - Contexts/决策/Skill原子契约.md
     - Contexts/决策/Skill反馈协议.md
     - Contexts/决策/关系图谱协议.md
     - Contexts/决策/对话用词习惯.md
@@ -64,7 +65,7 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 | 适合 | 路径示例 |
 |------|----------|
 | 设计 / 协作规范 | `Contexts/Figma/项目设计规范.md` |
-| 概念、学习路线 | `Contexts/LLM学习/` |
+| 概念、学习路线 | `学习/` |
 | 多 App / 长期 PM 对照 | `Contexts/收银台/` |
 | 决策、边界、本原则 | `Contexts/决策/` |
 | 日报 / 周报 | `Contexts/日报/`、`周报/` |
@@ -106,7 +107,7 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 2. **可选**：从中提炼**一条**可复用结论 → 更新现有 Contexts 规范或 `Contexts/踩坑/`（**须用户确认**）。
 3. **禁止**：把整份走查、度量表、截图归档进 Contexts「备查」。
 
-学习线：DoD 满足后 plan 可删；概念卡 / 笔记留在 `Contexts/LLM学习/`（属通用知识）。
+学习线：DoD 满足后 plan 可删；概念卡 / 笔记留在 `学习/`（属通用知识）。
 
 ---
 

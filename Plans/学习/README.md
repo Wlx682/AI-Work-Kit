@@ -37,4 +37,4 @@ audit: skip
 
 ## 路线总览
 
-[[Contexts/LLM学习/学习路线-LLM与提示词]]
+[[学习/学习路线-LLM与提示词]]

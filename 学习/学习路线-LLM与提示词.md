@@ -8,7 +8,7 @@ tags: [学习, LLM, 入口]
 
 ## ⭐ 从这里开始（不要跳课）
 
-**第一课**：[[Plans/学习/2026-06-15-第1课-LLM与提示词入门]]（路线 v2，2026-06-15 重生成）
+**第一课：LLM 基础与提示词入门**（用下方命令生成课程 plan 到 `Plans/学习/`）
 
 ```
 /learn-assistant 新主题，题目=LLM基础与提示词入门，目标=能解释token和上下文窗口，并写出结构化prompt
@@ -33,7 +33,7 @@ tags: [学习, LLM, 入口]
 |------|------|
 | `Templates/排查问题模板` | `Templates/学习笔记模板` |
 | `Plans/Bug排查/` 进行中任务 | `Plans/学习/` 正在学的主题 |
-| `Contexts/` 决策与调研 | `Contexts/LLM学习/` 概念卡与对比 |
+| `Contexts/` 决策与调研 | `学习/` 概念卡与对比 |
 | `/resume plan=Plans/...` 续做 | `/learn-assistant` 续学 |
 | `/report-assistant` 月底复盘 | 学习周复盘 + 费曼检验 |
 
@@ -54,14 +54,14 @@ flowchart LR
 
 | 周 | 主题 | 学完能回答 | 沉淀位置 |
 |----|------|------------|----------|
-| 1 | [[Contexts/LLM学习/概念/大语言模型]] | Token、温度、上下文窗口是什么？ | 概念卡 |
-| 2 | [[Contexts/LLM学习/概念/提示词工程]] | 好 prompt 的结构？System/User 分工？ | 概念卡 + 自写 3 个 prompt |
-| 3 | RAG / 上下文 | RAG 和「把全文塞进 prompt」区别？ | `Contexts/LLM学习/概念/RAG` |
-| 4 | [[Contexts/LLM学习/概念/Agent]] | Agent 和「一次问答」区别？工具调用流程？ | 概念卡 |
-| 5 | [[Contexts/LLM学习/概念/Skill]] | Cursor Skill vs Obsidian 笔记 Skill？ | 对照你自己的 [[Skills/README]] |
-| 6 | [[Contexts/LLM学习/概念/MCP]] | MCP 解决什么问题？ | 对照 [[MCP进阶指南]] + 亲手调 enquire |
-| 7 | 评估与安全 | 幻觉、HITL、DoD、审计 verdict | `Plans/学习/2026-06-15-第7课-评估与安全` |
-| 8 | 综合实践 | 全栈毕业项目、进化链答辩 | `Plans/学习/2026-06-15-第8课-Kit综合实践` |
+| 1 | [[学习/概念/大语言模型]] | Token、温度、上下文窗口是什么？ | 概念卡 |
+| 2 | [[学习/概念/提示词工程]] | 好 prompt 的结构？System/User 分工？ | 概念卡 + 自写 3 个 prompt |
+| 3 | RAG / 上下文 | RAG 和「把全文塞进 prompt」区别？ | `学习/概念/RAG` |
+| 4 | [[学习/概念/Agent]] | Agent 和「一次问答」区别？工具调用流程？ | 概念卡 |
+| 5 | [[学习/概念/Skill]] | Cursor Skill vs Obsidian 笔记 Skill？ | 对照你自己的 [[Skills/README]] |
+| 6 | [[学习/概念/MCP]] | MCP 解决什么问题？ | 对照 [[MCP进阶指南]] + 亲手调 enquire |
+| 7 | 评估与安全 | 幻觉、HITL、DoD、审计 verdict | `/learn-assistant` 生成课程 plan |
+| 8 | 综合实践 | 全栈毕业项目、进化链答辩 | `/learn-assistant` 生成课程 plan |
 
 ---
 
@@ -69,14 +69,14 @@ flowchart LR
 
 | 概念 | 一句话 | 笔记 |
 |------|--------|------|
-| LLM | 预测下一个 token 的大模型 | [[Contexts/LLM学习/概念/大语言模型]] |
-| Prompt | 给模型的输入与指令 | [[Contexts/LLM学习/概念/提示词工程]] |
+| LLM | 预测下一个 token 的大模型 | [[学习/概念/大语言模型]] |
+| Prompt | 给模型的输入与指令 | [[学习/概念/提示词工程]] |
 | Context Window | 模型一次能「看见」的长度 | 见 LLM 概念卡 |
-| RAG | 先检索再生成，补知识库 | [[Contexts/LLM学习/概念/RAG]] |
-| Agent | 能规划、调工具、多步执行的 AI | [[Contexts/LLM学习/概念/Agent]] |
+| RAG | 先检索再生成，补知识库 | [[学习/概念/RAG]] |
+| Agent | 能规划、调工具、多步执行的 AI | [[学习/概念/Agent]] |
 | Tool / Function Calling | Agent 调外部能力的方式 | 见 Agent 概念卡 |
-| Skill | 可复用的任务指令包 | [[Contexts/LLM学习/概念/Skill]] |
-| MCP | AI 与外部系统的标准「接头」 | [[Contexts/LLM学习/概念/MCP]] |
+| Skill | 可复用的任务指令包 | [[学习/概念/Skill]] |
+| MCP | AI 与外部系统的标准「接头」 | [[学习/概念/MCP]] |
 | Rules / .cursorrules | 常驻系统级约束 | 见 Skill 概念卡 |
 | 工作流 | 模板 + plan + 续做 + 复盘 | [[Contexts/决策/新手引导与最佳实践]] |
 
@@ -92,7 +92,7 @@ flowchart LR
 
 ### 学了一节后（10 分钟）
 
-Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/笔记/`
+Obsidian：`Insert template → 学习笔记模板` → 存 `学习/笔记/`
 
 或：
 
@@ -103,7 +103,7 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 ### 隔天续学
 
 ```
-/learn-assistant 续学，plan=学习/2026-06-15-第1课-LLM与提示词入门.md，进度=【你做到哪一步】
+/learn-assistant 续学，plan=Plans/学习/【你的课程 plan 文件】，进度=【你做到哪一步】
 ```
 
 或只说 `/learn-assistant 继续` —— Agent 会跑 `learning-progress-read.sh` 读 plan 勾选，**只出下一未勾步骤**（见 `Skills/learn_assistant.md`）。
@@ -124,11 +124,11 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 
 | 类型 | 放哪 | 说明 |
 |------|------|------|
-| 概念定义、对比表 | `Contexts/LLM学习/概念/` | 长期，越写越厚 |
-| 某本书/课的笔记 | `Contexts/LLM学习/笔记/` | 按 `YYYY-MM-DD-主题` |
+| 概念定义、对比表 | `学习/概念/` | 长期，越写越厚 |
+| 某本书/课的笔记 | `学习/笔记/` | 按 `YYYY-MM-DD-主题` |
 | 正在学的计划 | `Plans/学习/` | 做完可归档或删 |
 | 外链教程 | **对话里贴**或笔记里临时记 | 不强制进索引 |
-| 好 prompt 范例 | `Contexts/LLM学习/范例/` | 自己写的可复用 prompt |
+| 好 prompt 范例 | `学习/范例/` | 自己写的可复用 prompt |
 
 ---
 
@@ -140,7 +140,7 @@ Obsidian：`Insert template → 学习笔记模板` → 存 `Contexts/LLM学习/
 
 ## 下一步
 
-1. 打开 [[Plans/学习/2026-06-15-第1课-LLM与提示词入门]] 按步骤做  
-2. 可选：[[Contexts/LLM学习/知识地图]] 扫一眼全貌（不用全懂）  
+1. 用上方 `/learn-assistant 新主题` 命令生成第一课 plan 到 `Plans/学习/`，按步骤做  
+2. 可选：[[学习/知识地图]] 扫一眼全貌（不用全懂）  
 3. 学完用 [[Templates/学习笔记模板]] 沉淀  
-4. **不要**先开 MCP — 完成第 5 课后再学 [[Plans/学习/2026-06-15-第6课-MCP]]
+4. **不要**先开 MCP — 完成第 5 课后再学 MCP（用 `/learn-assistant` 生成对应课程 plan）

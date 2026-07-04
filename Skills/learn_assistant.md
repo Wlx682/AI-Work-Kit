@@ -18,8 +18,8 @@
 ## 必读
 
 - [[Contexts/决策/Kit核心原则]]（Plans vs Contexts）
-- [[Contexts/LLM学习/学习路线-LLM与提示词]]
-- [[Contexts/LLM学习/知识地图]]
+- [[学习/学习路线-LLM与提示词]]
+- [[学习/知识地图]]
 - `Templates/学习笔记模板.md`、`Templates/概念卡模板.md`
 
 ---
@@ -89,7 +89,7 @@
 
 1. **开场读进度**（统一协议）。
 2. 若路线中已有同主题 plan 且未完成 → **改走续学**，不新建重复 plan。
-3. 查 `Contexts/LLM学习/` 是否已有相关概念卡。
+3. 查 `学习/` 是否已有相关概念卡。
 4. 输出：学习计划（3–5 步）+ 建议 plan 路径 `Plans/学习/YYYY-MM-DD-主题.md`。
 5. **收尾自动收集**。
 
@@ -153,7 +153,7 @@
 | 机械取证脚本 | `scripts/learning-audit-collect.sh` | 确定性 |
 | 开场摘要脚本 | `scripts/learning-progress-read.sh` | 确定性 |
 | 快照摘要（stdout） | `scripts/learning-progress-snapshot.sh` | 收尾输出，Agent 贴回复；不落盘 |
-| 路线与概念 | `Contexts/LLM学习/` | 通用知识（见 [[Contexts/决策/Kit核心原则]]） |
+| 路线与概念 | `学习/` | 通用知识（见 [[Contexts/决策/Kit核心原则]]） |
 | 进行中进度 | `Plans/学习/` | 勾选；做完可删 plan |
 | Cursor 自动匹配 | `.cursor/skills/learn-assistant/SKILL.md` | 与本文同步 |
 
@@ -205,7 +205,7 @@
 5. **用户说「连不上 / 太散 / 看懂但不会串 / 太简单」**：
    - 暂停推 plan 下一未勾步骤；
    - 输出「四课（或至当前课）串联图 + 单案例分工表」；
-   - 建议沉淀 `Contexts/LLM学习/笔记/YYYY-MM-DD-第N课串联.md`（须经用户确认再写入）。
+   - 建议沉淀 `学习/笔记/YYYY-MM-DD-第N课串联.md`（须经用户确认再写入）。
 
 ### 新建或修订 plan 时
 
@@ -286,13 +286,13 @@
 
 1. LLM + 提示词 → 2. 上下文 → 3. RAG → 4. Agent → 5. Skill → 6. MCP → 7. 评估与安全 → 8. Kit 综合实践
 
-课程 plan：`Plans/学习/2026-06-15-第1课` … `第8课`（v2，含连贯性 + 理论实践 + DoD）
+课程 plan：用 `/learn-assistant 新主题` 按上面 8 课顺序生成到 `Plans/学习/`（含连贯性 + 理论实践 + DoD）
 
 ## 触发示例
 
 ```
 /learn-assistant 继续
-/learn-assistant 续学，plan=学习/2026-06-15-第1课-LLM与提示词入门.md
+/learn-assistant 续学，plan=Plans/学习/【你的课程 plan 文件】
 /learn-assistant 考我，范围=Agent
 /learn-assistant 新主题，题目=LLM基础与提示词，目标=…
 ```
