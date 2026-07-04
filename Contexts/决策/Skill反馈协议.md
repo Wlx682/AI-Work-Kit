@@ -14,6 +14,7 @@ relations:
     - Contexts/决策/Kit核心原则.md
   dependents:
     - Contexts/决策/2026-07-03-开发流程审计报告.md
+    - Contexts/决策/Skill原子契约.md
   supersedes: []
   superseded_by: []
   conflicts: []

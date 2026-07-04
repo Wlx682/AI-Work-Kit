@@ -19,7 +19,7 @@
 # Epic 入口（硬规则）
 新模块/含业务逻辑 → `/full-cycle` 建 Epic；禁止无 Epic 建功能**主** plan。写代码前 `plan-gate-check.sh`。
 纯 UI 小改例外见 `Templates/模板约定.md` §Epic 入口。
-**积木框架**：`full-cycle` 是通用引擎，读蓝图 `.claude/workflows/<name>.json`（client-dev 15 步 / computer-mgmt）。Epic 是**数据上下文，不驱动流程**——阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件系统事实判定；`lifecycle_state` 不参与路由（`derive-epic-status.sh` 派生整体阶段，引擎不读）。其它工作流用自然语言或 `workflow=<name>` 触发。
+**积木框架**：`full-cycle` 是通用引擎，读工具中性蓝图 `.workflows/blueprints/<name>.json`（client-dev 15 步 / computer-mgmt）。Epic 是**数据上下文，不驱动流程**——阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件系统事实判定；`lifecycle_state` 不参与路由（`derive-epic-status.sh` 派生整体阶段，引擎不读）。其它工作流用自然语言或 `workflow=<name>` 触发。
 
 # 知识库使用
 1. 「查一下」「根据计划」→ 搜 `Plans/` + `Contexts/`（MCP 可用则 `obsidian_search`）。

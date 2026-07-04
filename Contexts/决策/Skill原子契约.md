@@ -8,13 +8,12 @@ relations:
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/Skill反馈协议.md
     - Templates/模板约定.md
-  dependents:
-    - Plans/工作流建设/2026-07-03-Skill原子化与积木流程改造.md
+  dependents: []
   supersedes: []
   superseded_by: []
   conflicts: []
----
 
+---
 # Skill 原子契约
 
 > 目标：让 Skill 像积木一样被 workflow 蓝图组合，同时能被单独 smoke test。

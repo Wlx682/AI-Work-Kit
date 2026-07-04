@@ -127,20 +127,12 @@ fi
 
 BLUEPRINT="$ROOT/.workflows/blueprints/${WORKFLOW}.json"
 if [[ ! -f "$BLUEPRINT" ]]; then
-  LEGACY_BLUEPRINT="$ROOT/.claude/workflows/${WORKFLOW}.json"
-  if [[ -f "$LEGACY_BLUEPRINT" ]]; then
-    BLUEPRINT="$LEGACY_BLUEPRINT"
-    echo "WARN: 使用 legacy 蓝图路径 .claude/workflows/${WORKFLOW}.json；请迁移到 .workflows/blueprints/" >&2
-  else
-    echo "BLOCKED: 蓝图不存在: .workflows/blueprints/${WORKFLOW}.json" >&2
-    exit 1
-  fi
+  echo "BLOCKED: 蓝图不存在: .workflows/blueprints/${WORKFLOW}.json" >&2
+  exit 1
 fi
 
-if [[ "$BLUEPRINT" == "$ROOT/.workflows/blueprints/"* ]]; then
-  if ! python3 "$ROOT/scripts/validate-workflow-blueprint.py" --quiet "${BLUEPRINT#"$ROOT"/}" >/dev/null; then
-    exit 1
-  fi
+if ! python3 "$ROOT/scripts/validate-workflow-blueprint.py" --quiet "${BLUEPRINT#"$ROOT"/}" >/dev/null; then
+  exit 1
 fi
 
 # 读蓝图元信息

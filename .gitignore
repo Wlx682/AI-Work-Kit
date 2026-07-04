@@ -11,7 +11,7 @@
 .mcp.json
 
 # Claude Code / Codex 个人配置与同步产物（skills 由 scripts/sync-claude-skills.sh 生成）
-# .claude/workflows/ 为手写可复用 workflow 脚本，纳入版本库
+# .claude/workflows/*.js 为 Claude 专属引擎脚本，纳入版本库；蓝图真源在 .workflows/blueprints/
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/skills/

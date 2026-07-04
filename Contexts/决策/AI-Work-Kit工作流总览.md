@@ -8,7 +8,9 @@ relations:
   dependents:
     - Contexts/决策/2026-07-03-开发流程审计报告.md
     - Contexts/决策/AI-Work-Kit架构总览.md
+    - Contexts/决策/Skill原子契约.md
     - Contexts/决策/新手引导与最佳实践.md
+    - Contexts/决策/脚本约定与踩坑.md
   supersedes: []
   superseded_by: []
   conflicts: []
