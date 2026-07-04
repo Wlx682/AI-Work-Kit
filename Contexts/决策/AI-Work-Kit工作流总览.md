@@ -121,6 +121,17 @@ python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only
 | `generate-pipeline-status.sh --write` | 刷新 [[索引]] 进度表 |
 | `learning-progress-read.sh` / `snapshot.sh` | 学习开/收尾 |
 
+### exitCriteria 键 · verdictPass（对抗式视觉验证门禁）
+
+UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员兼裁判、盲区重叠）。改由**独立 context 的对抗验证子 Agent** 产出结构化裁决（schema：`.workflows/schemas/figma-verdict.schema.json`），经**主控复核**滤除 metadata 误报后写回子 Plan `verdict:` 字段。`workflow-gate.sh` 的 `verdictPass` 键只读这份裁决的**文件事实**（`pass==true && reviewed==true`），不实时跑 Agent。
+
+| 取值 | 缺 `verdict:` 字段时 | 用在哪 |
+|------|------|------|
+| `"required"` / `true` | BLOCK（纯 UI 流程必须有裁决） | `ui-change` 的 `ui-implement` |
+| `"ifPresent"` | 豁免（figma-ui 写了 verdict 才强制，纯逻辑开发不误伤） | `client-dev` 的 `development` |
+
+条件触发用「子 Plan 运行时有无 `verdict:` 字段」这一**文件事实**判定，不在静态蓝图里预编码「切片→Skill」——守「文件即状态」原则。三段结构与 prompt 模板见 `Skills/figma_ui.md`。
+
 ---
 
 ## 五、Skill 速查

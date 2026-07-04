@@ -50,6 +50,16 @@ resolve_path() {
   echo "$p"
 }
 
+# 不补 .md 后缀的路径解析（用于 verdict json 等非 md 产物）。
+resolve_path_raw() {
+  local p="$1"
+  if [[ "$p" == /* ]]; then
+    echo "$p"
+  else
+    echo "$ROOT/$p"
+  fi
+}
+
 find_epic() {
   if [[ -n "$EPIC" ]]; then
     resolve_path "$EPIC"
@@ -283,6 +293,41 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
       if [[ "$(crit_has "$s_exit" skillRun)" == "1" ]]; then
         skill_run_check="$(python3 "$ROOT/scripts/validate-skill-run.py" --require "$child_file" 2>&1 || true)"
         [[ "$skill_run_check" == OK:* ]] || stage_blockers+=("${s_label}：skill_run 校验未通过: ${skill_run_check#BLOCKED:skill_run:}")
+      fi
+
+      # verdictPass（对抗式视觉验证裁决）：读子 Plan frontmatter 的 verdict: 路径，
+      # 要求裁决文件存在、JSON 合法、pass==true 且 reviewed==true（经主控复核，防原始误报直接放行）。
+      # 门禁只读文件事实，不实时跑验证子 Agent。
+      # verdictPass 模式：
+      #   true / "required" → 缺 verdict: 字段即 BLOCK（纯 UI 流程强制，如 ui-change）
+      #   "ifPresent"       → 缺 verdict: 字段则豁免（混合开发阶段条件触发，如 client-dev development：
+      #                        figma-ui 做了 UI 还原才写 verdict，纯逻辑开发不写则自动跳过）
+      verdict_mode="$(python3 -c 'import json,sys; c=json.loads(sys.argv[1]); v=c.get("verdictPass"); print("" if v in (None,False) else ("ifPresent" if v=="ifPresent" else "required"))' "$s_exit")"
+      if [[ -n "$verdict_mode" ]]; then
+        verdict_raw="$(read_fm verdict "$child_file" || true)"
+        if [[ -z "$verdict_raw" || "$verdict_raw" == "null" ]]; then
+          [[ "$verdict_mode" == "required" ]] && stage_blockers+=("${s_label}：子 Plan 缺少 verdict: 字段（须指向对抗验证裁决 json）")
+        else
+          verdict_file="$(resolve_path_raw "$verdict_raw")"
+          if [[ ! -f "$verdict_file" ]]; then
+            stage_blockers+=("${s_label}：裁决文件不存在: $verdict_raw")
+          else
+            verdict_msg="$(python3 - "$verdict_file" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1], encoding="utf-8"))
+except Exception as e:
+    print(f"裁决 json 解析失败: {e}"); raise SystemExit
+if d.get("pass") is not True:
+    print("裁决 pass!=true（还原未通过，见 deviations）"); raise SystemExit
+if d.get("reviewed") is not True:
+    print("裁决 reviewed!=true（未经主控复核，不得放行）"); raise SystemExit
+print("OK")
+PY
+)"
+            [[ "$verdict_msg" == "OK" ]] || stage_blockers+=("${s_label}：verdictPass: $verdict_msg")
+          fi
+        fi
       fi
 
       # testTraceability：需求 AC → 测试用例映射闭环。只查测试覆盖，不要求开发 plan 已存在。

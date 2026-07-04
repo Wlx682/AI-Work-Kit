@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-work-kit.local/schemas/figma-verdict.schema.json",
+  "title": "AI-Work-Kit figma 还原对抗验证裁决",
+  "description": "对抗式视觉验证子 Agent 的结构化裁决。gate 的 verdictPass 键读取本文件，要求 pass==true 且 reviewed==true（经主控复核）。",
+  "type": "object",
+  "required": ["pass", "score", "summary", "deviations", "reviewed"],
+  "additionalProperties": true,
+  "properties": {
+    "pass": {
+      "type": "boolean",
+      "description": "终判是否通过。存在任意 P0 偏差应为 false。"
+    },
+    "score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "还原质量分。P0 每个扣≥3，P1 扣1-2，P2 扣0.5。"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "design", "impl", "severity", "fix"],
+        "additionalProperties": true,
+        "properties": {
+          "area": { "type": "string", "minLength": 1 },
+          "design": { "type": "string" },
+          "impl": { "type": "string" },
+          "severity": { "type": "string", "enum": ["P0", "P1", "P2"] },
+          "fix": { "type": "string" }
+        }
+      }
+    },
+    "verified_ok": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewed": {
+      "type": "boolean",
+      "description": "是否已经主控复核（滤除 metadata 误报）。gate 要求为 true 才采信，防止未复核的原始裁决直接放行。"
+    }
+  }
+}

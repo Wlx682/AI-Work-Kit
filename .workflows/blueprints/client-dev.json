@@ -159,6 +159,7 @@
         "planGateCheck": true,
         "wbsDone": true,
         "devTraceability": true,
+        "verdictPass": "ifPresent",
         "skillRun": true
       },
       "next": "done"

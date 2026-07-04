@@ -29,6 +29,9 @@ scripts/__pycache__/
 # ai-usage-stats 报告产物
 ai-usage-report-*.md
 
+# 实验/临时产物（如 figma 验证实验的截图）
+tmp/
+
 # Plans/ 纳入版本库（进行中任务可同步；发布前检查敏感信息）
 
 #Ignore vscode AI rules

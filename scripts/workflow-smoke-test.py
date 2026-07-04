@@ -81,6 +81,36 @@ def assert_route(tmp: Path, workflow: str) -> None:
         raise SmokeError(f"路由未命中 {workflow}: {data}")
 
 
+def inject_verdicts(tmp: Path, bp: dict) -> None:
+    """为含 verdictPass 的阶段注入一个通过裁决 + 子 Plan verdict: 字段，
+    使 smoke-test 覆盖 verdictPass 通过路径（模拟 figma-ui 报完成前落盘的复核裁决）。"""
+    for stage in bp.get("stages", []):
+        if "verdictPass" not in stage.get("exitCriteria", {}):
+            continue
+        stage_key = stage.get("key", "")
+        folder = tmp / stage.get("planFolder", "")
+        if not folder.is_dir():
+            continue
+        for plan in folder.glob("*.md"):
+            text = plan.read_text(encoding="utf-8")
+            if f"workflow_stage: {stage_key}" not in text:
+                continue
+            verdict_path = f"{stage.get('planFolder')}/{plan.stem}.verdict.json"
+            (tmp / verdict_path).write_text(
+                json.dumps(
+                    {"pass": True, "score": 9.5, "summary": "smoke",
+                     "deviations": [], "verified_ok": ["smoke"], "reviewed": True},
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            # 在 frontmatter 首个 --- 后注入 verdict: 字段
+            lines = text.splitlines()
+            if lines and lines[0].strip() == "---":
+                lines.insert(1, f"verdict: {verdict_path}")
+                plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def smoke_workflow(workflow: str) -> str:
     with tempfile.TemporaryDirectory(prefix=f"aiwk-{workflow}-smoke-") as raw:
         tmp = Path(raw)
@@ -110,6 +140,7 @@ def smoke_workflow(workflow: str) -> str:
                 "--include-feedback",
             ],
         )
+        inject_verdicts(tmp, bp)
         done = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--json"])
         if done.get("current_state") != "done" or done.get("blockers"):
             raise SmokeError(f"{workflow} 补齐阶段 plan 后未 done: {done}")

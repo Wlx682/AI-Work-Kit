@@ -48,6 +48,7 @@
       "template": "Templates/Figma还原自检表.md",
       "exitCriteria": {
         "childPlanExists": true,
+        "verdictPass": "required",
         "skillRun": true
       },
       "next": "ui-review"
