@@ -183,14 +183,14 @@ if [ "$MODE" = "--sync" ]; then
   codex_extras=$(comm -23 <(echo "$global_codex_names") <(echo "$project_names") || true)
   extras=""
   if [ -n "$claude_extras" ]; then
-    extras="${extras}"$'\n'"Claude: ${claude_extras//$'\n'/$'\nClaude: }"
+    extras="${extras}$(printf '%s\n' "$claude_extras" | sed 's/^/Claude: /')"$'\n'
   fi
   if [ -n "$codex_extras" ]; then
-    extras="${extras}"$'\n'"Codex: ${codex_extras//$'\n'/$'\nCodex: }"
+    extras="${extras}$(printf '%s\n' "$codex_extras" | sed 's/^/Codex: /')"$'\n'
   fi
   if [ -n "$extras" ]; then
     echo ""
     echo "ℹ️  全局保留用户自装 Skill（未触碰）："
-    echo "$extras" | sed '/^$/d; s/^/  · /'
+    printf '%s\n' "$extras" | sed '/^$/d; s/^/  · /'
   fi
 fi

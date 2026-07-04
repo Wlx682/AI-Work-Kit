@@ -102,13 +102,13 @@ class WorkflowRefactorTests(unittest.TestCase):
         stages = {stage["key"]: stage for stage in bp["stages"]}
         self.assertEqual(
             list(stages),
-            ["requirement", "architecture", "test-first", "development", "verify", "review", "deploy", "retro"],
+            ["requirement", "architecture", "test-first", "split", "development"],
         )
-        self.assertEqual(stages["verify"]["epicField"], "verify")
-        self.assertEqual(stages["review"]["epicField"], "review")
-        self.assertEqual(stages["retro"]["epicField"], "retro")
+        self.assertEqual(stages["test-first"]["epicField"], "test")
+        self.assertEqual(stages["split"]["epicField"], "development")
+        self.assertEqual(stages["development"]["epicField"], "development")
         self.assertEqual(stages["architecture"]["planFolder"], "Plans/技术方案")
-        self.assertEqual(stages["development"]["skills"], ["task-splitter", "feature-dev-assistant", "figma-ui"])
+        self.assertEqual(stages["development"]["skills"], ["feature-dev-assistant", "figma-ui"])
         self.assertIn("workflow-router", (ROOT / "Skills/README.md").read_text(encoding="utf-8"))
 
     def test_workflow_blueprints_validate(self) -> None:
@@ -393,12 +393,26 @@ class WorkflowRefactorTests(unittest.TestCase):
 
             for workflow, plans in cases:
                 for rel, skill in plans:
+                    # verdictPass=required 阶段（ui-change 的 UI 实现）须带经复核的通过裁决，
+                    # 模拟 figma-ui 报完成前落盘 verdict json，否则门禁阻塞在该阶段。
+                    verdict_fm = ""
+                    if "UI实现" in rel:
+                        verdict_rel = rel.replace(".md", ".verdict.json")
+                        write_file(
+                            tmp / verdict_rel,
+                            json.dumps(
+                                {"pass": True, "reviewed": True, "score": 9.5,
+                                 "summary": "fixture", "deviations": []},
+                                ensure_ascii=False,
+                            ),
+                        )
+                        verdict_fm = f"verdict: {verdict_rel}\n"
                     write_file(
                         tmp / rel,
                         f"""
                         ---
                         status: 已采纳
-                        ---
+                        {verdict_fm}---
 
                         # {rel}
 
@@ -425,6 +439,25 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
+
+    def test_skill_smoke_all_fixtures_valid_and_product_skills_covered(self) -> None:
+        proc = subprocess.run(
+            ["python3", "scripts/skill-smoke-all.py"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        combined = proc.stdout + proc.stderr
+        # 所有 fixture 结构必须合法（退出码 0）。
+        self.assertEqual(proc.returncode, 0, combined)
+        self.assertIn("fixture 结构合法", proc.stdout)
+        # 产物类 Skill 全覆盖：不允许出现「尚缺 fixture」缺口。
+        # 新增产物类 Skill 时必须同时补 fixture，否则此断言把缺口挡在回归里。
+        self.assertNotIn("尚缺 fixture", proc.stdout, combined)
+        # 覆盖关键 Skill，防 fixture 目录被误删后静默漏测。
+        for skill in ("requirement-analyst", "architecture-design-assistant", "test-generator"):
+            self.assertIn(f"OK:skill-smoke-test:{skill}", proc.stdout, combined)
 
     def test_workflow_plan_init_creates_lightweight_stage_plan(self) -> None:
         with self.fixture_repo() as tmp:
@@ -885,6 +918,18 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         {requirement_body}
 
+        ## 七、边界情况清单
+
+        - 空仓库无任何子 Plan：门禁应阻塞在首阶段并给出建链提示。
+        - 指定不存在的 Epic 项目：应触发 bootstrap 流程。
+
+        ## 八、异常流程矩阵
+
+        | 异常 | 触发条件 | 预期处理 |
+        |------|----------|----------|
+        | 子 Plan 缺 skill_run | 阶段收尾未追加反馈块 | 门禁阻塞并提示补 skill_run |
+        | WBS 切片未全勾 | 存在未完成切片 | 阻塞并列出缺失切片 |
+
         ## 九、验收标准
 
         | # | 验收项 | 锚定事件 | Given | When | Then | 优先级 |
@@ -900,7 +945,29 @@ class WorkflowRefactorTests(unittest.TestCase):
         write_file(root / "Plans/需求分析/fixture.md", requirement)
 
         stage_specs = [
-            ("Plans/技术方案/fixture.md", "architecture-design-assistant", [3], "已采纳", ""),
+            (
+                "Plans/技术方案/fixture.md",
+                "architecture-design-assistant",
+                [3],
+                "已采纳",
+                """
+                ## 二、模块边界
+
+                - Gate 引擎：读蓝图 + 扫子 Plan，产出阶段判定。
+                - Traceability：需求 AC → 测试/开发覆盖闭环。
+
+                ## 三、数据模型
+
+                | 实体 | 字段 | 说明 |
+                |------|------|------|
+                | Epic | plans, p0_open | 被动数据聚合根 |
+                | Stage | key, exitCriteria | 蓝图阶段定义 |
+
+                ## 四、API Schema
+
+                - `workflow-gate.sh --workflow <name> --json` → `{current_state, blockers, plans_found}`
+                """,
+            ),
             (
                 "Plans/自动化测试/fixture.md",
                 "test-generator",
@@ -958,7 +1025,7 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         - [[Plans/技术方案/fixture.md]]
 
-        {wbs_table([5, 6, 7, 8, 9, 10])}
+        {wbs_table([5, 6, 7, 8, 9, 10, 11])}
 
         ## 五、实施切片
 
@@ -1012,6 +1079,17 @@ class WorkflowRefactorTests(unittest.TestCase):
         # Trace Requirement
 
         {requirement_body}
+
+        ## 七、边界情况清单
+
+        - 测试未覆盖 P0 反例 AC：门禁应在 test-first 阶段阻塞。
+        - 开发任务未覆盖 P0 AC：门禁应在 development 阶段阻塞。
+
+        ## 八、异常流程矩阵
+
+        | 异常 | 触发条件 | 预期处理 |
+        |------|----------|----------|
+        | 用例映射缺 AC1-反 | 测试 plan 漏反例 | testTraceability 阻塞 |
 
         ## 九、验收标准
 
