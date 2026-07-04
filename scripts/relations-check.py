@@ -30,6 +30,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 RELATION_KEYS = ("depends_on", "dependents", "supersedes", "superseded_by", "conflicts")
 
+# 关系图谱只连长期文件；Plans/ 是任务临时产物（做完删），不上图谱。
+# 见 关系图谱协议.md §四「不上」。指向这些前缀的 relations 目标一律报错。
+NON_GRAPH_PREFIXES = ("Plans/",)
+
+
+def is_non_graph_target(p: str) -> bool:
+    return any(p.startswith(prefix) for prefix in NON_GRAPH_PREFIXES)
+
+
 # 校验范围：仅扫这些目录的 .md
 SCAN_DIRS = ["Contexts", "Templates", "Skills"]
 
@@ -38,9 +47,7 @@ IGNORE_PATTERNS = [
     "Contexts/日报/",
     "Contexts/周报/",
     "Contexts/复盘/",
-    "Contexts/LLM学习/笔记/",
-    "Contexts/LLM学习/复盘/",
-    "Contexts/LLM学习/范例/",
+    "学习/",
 ]
 
 FRONTMATTER_RE = re.compile(r'\A﻿?---\s*\n(.*?)\n---\s*\n', re.S)
@@ -233,7 +240,14 @@ def main():
         if not (ROOT / p).exists():
             errors.append(f"{ctx}: 引用文件不存在: {p}")
 
+    def check_not_plan(p: str, ctx: str):
+        if is_non_graph_target(p):
+            errors.append(f"{ctx}: relations 目标是 Plans/ 临时产物，不上图谱（见 关系图谱协议 §四）: {p}")
+
     for src, rel in data.items():
+        for key in RELATION_KEYS:
+            for tgt in rel[key]:
+                check_not_plan(tgt, f"{src}.{key}")
         for tgt in rel["depends_on"]:
             check_path_exists(tgt, f"{src}.depends_on")
             if tgt in data:
