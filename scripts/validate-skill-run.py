@@ -20,6 +20,7 @@ import re
 import sys
 
 ALLOWED_UTILITY = {"high", "not-needed"}
+ALLOWED_OUTCOME = {"pass", "blocked", "partial"}
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
@@ -202,6 +203,21 @@ def main() -> None:
                 fail(f"contexts_stale[{i}] 缺 {k} 或为空")
         if not (ROOT / entry["path"]).exists():
             fail(f"contexts_stale[{i}].path 不存在: {entry['path']}")
+
+    # 执行质量字段（全部可选；填了才校验取值域）
+    if "outcome_status" in sr:
+        if sr["outcome_status"] not in ALLOWED_OUTCOME:
+            fail(f"outcome_status 非法 ({sr['outcome_status']!r})，必须 ∈ {sorted(ALLOWED_OUTCOME)}")
+    if "verdict_score" in sr:
+        try:
+            score = float(sr["verdict_score"])
+        except (TypeError, ValueError):
+            fail(f"verdict_score 必须是 0-10 数字（当前 {sr['verdict_score']!r}）")
+        if not (0 <= score <= 10):
+            fail(f"verdict_score 须在 0-10（当前 {score}）")
+    if "revisit_needed" in sr:
+        if str(sr["revisit_needed"]).lower() not in ("true", "false"):
+            fail(f"revisit_needed 必须是布尔 true/false（当前 {sr['revisit_needed']!r}）")
 
     n_used = len(sr["contexts_used"])
     n_missing = len(sr.get("contexts_missing") or [])

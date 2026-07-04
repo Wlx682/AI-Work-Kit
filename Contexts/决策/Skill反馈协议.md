@@ -77,8 +77,16 @@ skill_run:
   contexts_stale:                       # 可选：本次发现 Contexts 与代码/现网脱钩的文件
     - path: Contexts/收银台/MSPay收银台配置对照表.md
       reason: "代码已上 v2 接口，文档仍 v1"
+  # ↓ 可选：本次执行质量/流程信号（扁平键，供 evolution 优化流程，非 Contexts 健康度）
+  outcome_status: pass                  # 可选：pass | blocked | partial —— 这次任务到底成没成
+  friction: "figma 验证子Agent 拿不到聊天内截图，需先落盘"  # 可选：哪个环节掉链子，一句话；无则省略
+  verdict_score: 3.5                    # 可选：0-10，对接对抗验证裁决分；无验证环节则省略
+  revisit_needed: false                 # 可选：是否需回退上一阶段 true | false
+  revisit_reason: ""                    # 可选：revisit_needed=true 时填一句话
 ```
 ````
+
+**执行质量字段的设计意图**：原有字段监测「Contexts 引用健康度」；`outcome_status` / `friction` / `verdict_score` / `revisit_*` 监测「这次任务/流程本身的质量」，让 `workflow-evolution-assistant` 能识别「哪个 Skill/阶段失败率高、哪里反复卡点、验证分是否走低、哪个阶段常返工」，从而建议流程调整——而非只改 Contexts。**全部可选、扁平键**（不嵌套，兼容零依赖解析器；不增加填表负担）；填了才参与聚合。
 
 **孤立反馈记录格式**（无 plan 时写入 `Contexts/决策/孤立反馈记录.md`）：每条独立 `## 日期-skill` 标题 + 同样 yaml 代码块，倒序排列。
 
@@ -97,6 +105,12 @@ skill_run:
 | `contexts_missing[]` | 字符串数组，每项 < 80 字符；可为空数组或省略 | — |
 | `contexts_stale[].path` | 必须是仓库内真实路径 | `plan-gate-check.sh` |
 | `contexts_stale[].reason` | 必填非空，说明脱钩证据 | `plan-gate-check.sh` |
+| `outcome_status` | 若填，**三选一**：`pass` / `blocked` / `partial` | `validate-skill-run.py` |
+| `verdict_score` | 若填，0-10 数字 | `validate-skill-run.py` |
+| `revisit_needed` | 若填，布尔 `true` / `false` | `validate-skill-run.py` |
+| `friction` / `revisit_reason` | 可选字符串；无则省略 | — |
+
+**执行质量字段全部可选**：不填不报错（旧 plan、无流程信号的一次性任务不受影响）。一旦填了则按上表约束校验取值域，防脏数据。字段扁平（不嵌套），兼容零依赖解析器。
 
 **`utility` 二选一的设计意图**：四选一会催生 `medium` 类垃圾数据。强制 Agent 表态：要么 high（必给理由），要么 not-needed（说明"我看了但没用上"或"我没读但默认列表里"）。
 
@@ -110,6 +124,9 @@ skill_run:
 | **冷却候选** | 最近 90 天内无任何 `utility=high` 引用 |
 | **漂移告警** | `contexts_stale` 同一 path 累计 ≥ 2 次 |
 | **补全候选** | `contexts_missing` 同语义（去重后）累计 ≥ 2 次 |
+| **失败热点** | 同一 `skill` 的 `outcome_status` ∈ {blocked, partial} 累计 ≥ 2 次 |
+| **返工热点** | 同一 `skill` 的 `revisit_needed=true` 累计 ≥ 2 次 |
+| **卡点清单** | 所有非空 `friction`（按 skill 归组，供人工读） |
 
 聚合脚本扫描范围：所有 `Plans/**/*.md` + `Contexts/决策/孤立反馈记录.md`。
 输出文件：`Contexts/决策/反馈聚合-YYYY-MM.md`（与月度复盘同月）。

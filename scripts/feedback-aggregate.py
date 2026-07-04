@@ -225,6 +225,31 @@ def aggregate(runs: list[dict], month: str) -> dict:
                     missing_counter[item] += 1
     missing = [(s, n) for s, n in missing_counter.most_common() if n >= 2]
 
+    # 执行质量聚合（本月窗口）：失败热点 / 返工热点 / 卡点清单
+    fail_counter: Counter = Counter()
+    revisit_counter: Counter = Counter()
+    friction_by_skill: dict = defaultdict(list)
+    score_by_skill: dict = defaultdict(list)
+    for r in month_runs:
+        skill = r.get("skill") or "unknown"
+        if r.get("outcome_status") in ("blocked", "partial"):
+            fail_counter[skill] += 1
+        if str(r.get("revisit_needed", "")).lower() == "true":
+            revisit_counter[skill] += 1
+        fr = (r.get("friction") or "").strip()
+        if fr:
+            friction_by_skill[skill].append(fr)
+        vs = r.get("verdict_score")
+        if vs not in (None, ""):
+            try:
+                score_by_skill[skill].append(float(vs))
+            except (TypeError, ValueError):
+                pass
+    fail_hot = [(s, n) for s, n in fail_counter.most_common() if n >= 2]
+    revisit_hot = [(s, n) for s, n in revisit_counter.most_common() if n >= 2]
+    friction_list = [(s, msgs) for s, msgs in friction_by_skill.items()]
+    score_avg = [(s, round(sum(v) / len(v), 1), len(v)) for s, v in score_by_skill.items()]
+
     return {
         "month": month,
         "n_runs_month": len(month_runs),
@@ -233,6 +258,10 @@ def aggregate(runs: list[dict], month: str) -> dict:
         "cold": cold,
         "drift": drift,
         "missing": missing,
+        "fail_hot": fail_hot,
+        "revisit_hot": revisit_hot,
+        "friction_list": friction_list,
+        "score_avg": score_avg,
     }
 
 
@@ -285,7 +314,47 @@ def render(agg: dict) -> str:
         L += ["（无）"]
     L += [""]
 
-    L += ["---", "", "## 五、Review 决策记录", "", "> review 完毕后在此追加日期 + 每项的处置结果（删 / 合并 / 修 / 保留 / 新建），便于后续追溯。", ""]
+    L += ["---", "", "## 五、执行质量（流程信号，供 workflow-evolution 消费）", ""]
+    L += ["> 来源：skill_run 的 outcome_status / revisit_needed / friction / verdict_score（本月窗口）。", ""]
+
+    L += ["### 失败热点（outcome_status ∈ blocked/partial 累计 ≥ 2）", ""]
+    if agg["fail_hot"]:
+        L += ["| Skill | 失败次数 |", "|-------|---------|"]
+        for s, n in agg["fail_hot"]:
+            L += [f"| `{s}` | {n} |"]
+    else:
+        L += ["（无）"]
+    L += [""]
+
+    L += ["### 返工热点（revisit_needed=true 累计 ≥ 2）", ""]
+    if agg["revisit_hot"]:
+        L += ["| Skill | 返工次数 |", "|-------|---------|"]
+        for s, n in agg["revisit_hot"]:
+            L += [f"| `{s}` | {n} |"]
+    else:
+        L += ["（无）"]
+    L += [""]
+
+    L += ["### 验证分均值（有对抗验证的阶段）", ""]
+    if agg["score_avg"]:
+        L += ["| Skill | 均分 | 样本数 |", "|-------|------|--------|"]
+        for s, avg, n in agg["score_avg"]:
+            L += [f"| `{s}` | {avg} | {n} |"]
+    else:
+        L += ["（无）"]
+    L += [""]
+
+    L += ["### 卡点清单（friction 原文，按 Skill 归组）", ""]
+    if agg["friction_list"]:
+        for s, msgs in agg["friction_list"]:
+            L += [f"- **{s}**"]
+            for m in msgs:
+                L += [f"  - {m}"]
+    else:
+        L += ["（无）"]
+    L += [""]
+
+    L += ["---", "", "## 六、Review 决策记录", "", "> review 完毕后在此追加日期 + 每项的处置结果（删 / 合并 / 修 / 保留 / 新建），便于后续追溯。", ""]
 
     return "\n".join(L) + "\n"
 
@@ -309,6 +378,7 @@ def main() -> None:
     print(f"✓ 已生成 {out_path.relative_to(ROOT)}")
     print(f"  本月 runs: {agg['n_runs_month']} / 全库累计: {agg['n_runs_total']}")
     print(f"  热点: {len(agg['hot'])} / 冷却: {len(agg['cold'])} / 漂移: {len(agg['drift'])} / 补全: {len(agg['missing'])}")
+    print(f"  失败热点: {len(agg['fail_hot'])} / 返工热点: {len(agg['revisit_hot'])} / 卡点: {len(agg['friction_list'])}")
 
 
 if __name__ == "__main__":
