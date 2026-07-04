@@ -27,7 +27,9 @@
       "label": "UI 范围确认",
       "planFolder": "Plans/界面开发",
       "planPrefix": "UI范围",
-      "skills": ["figma-ui"],
+      "skills": [
+        "figma-ui"
+      ],
       "template": "Templates/Figma还原自检表.md",
       "exitCriteria": {
         "childPlanExists": true,
@@ -40,7 +42,9 @@
       "label": "UI 实现与自检",
       "planFolder": "Plans/界面开发",
       "planPrefix": "UI实现",
-      "skills": ["figma-ui"],
+      "skills": [
+        "figma-ui"
+      ],
       "template": "Templates/Figma还原自检表.md",
       "exitCriteria": {
         "childPlanExists": true,
@@ -53,7 +57,9 @@
       "label": "UI 复核",
       "planFolder": "Plans/界面开发",
       "planPrefix": "UI复核",
-      "skills": ["review-assistant"],
+      "skills": [
+        "code-review"
+      ],
       "template": "Templates/Code-Review模板.md",
       "exitCriteria": {
         "childPlanExists": true,

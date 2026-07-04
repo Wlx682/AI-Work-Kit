@@ -9,8 +9,8 @@
 
 **不响应（让位给其他 Skill）**：
 
-- 「学习一下你们的代码规范 / 整理业务笔记 / 整理文档」→ 普通对话或 `review-assistant`
-- 「项目复盘 / 日报 / 周报」→ `review-assistant`
+- 「学习一下你们的代码规范 / 整理业务笔记 / 整理文档」→ 普通对话或 `report-assistant`
+- 「项目复盘 / 日报 / 周报」→ `report-assistant`
 - 「审计学习进度」→ 仍由本 Skill 开场读进度，再转 `learning-audit-assistant`
 
 > **进度采集与动态出资料均在本 Skill 内完成**；全量交叉审计转 [[learning_audit_assistant]]。

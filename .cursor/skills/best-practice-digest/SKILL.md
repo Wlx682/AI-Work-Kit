@@ -3,7 +3,7 @@ name: best-practice-digest
 description: >-
   每周提效最佳实践案例。从真实工作出发，量化提效数据（可测量可验证）→套案例报告模板→附 skill_run 反馈接入工作流进化链。
   触发词：提效案例、最佳实践、技术提交分享、产品提效、每周案例、/best-practice、/best-practice-digest。
-  不响应：找外部文章→weekly-intel-digest；项目日报→review-assistant。
+  不响应：找外部文章→weekly-intel-digest；项目日报→report-assistant。
 ---
 
 # 提效最佳实践助手
@@ -21,7 +21,7 @@ description: >-
 - 「提效案例」「最佳实践」「技术提交分享」「产品提效」「每周案例」
 - `/best-practice` / `/best-practice-digest`
 
-**不响应**：找外部文章→`weekly-intel-digest`；日报复盘→`review-assistant`；需求分析→`requirement-analyst`。
+**不响应**：找外部文章→`weekly-intel-digest`；日报复盘→`report-assistant`；需求分析→`requirement-analyst`。
 
 ## 必读资产
 

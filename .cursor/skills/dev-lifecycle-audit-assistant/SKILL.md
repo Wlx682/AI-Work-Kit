@@ -3,7 +3,7 @@ name: dev-lifecycle-audit-assistant
 description: >-
   审计 Epic 声称阶段 vs 子plan/WBS/门禁证据。正式词：开发流程审计、Epic审计、dev-lifecycle-audit。
   口语：检查Epic进度、审计版本状态、这个需求做完了吗、这个版本做的咋样了、真不真实；/dev-lifecycle-audit。
-  不响应：日报周报→review-assistant；学习审计→learning-audit-assistant。
+  不响应：日报周报→report-assistant；学习审计→learning-audit-assistant。
 ---
 
 # 开发流程审计
@@ -18,7 +18,7 @@ description: >-
 
 **不响应（让位给其他 Skill）**：
 
-- 「日报 / 周报 / 项目复盘」→ `review-assistant`
+- 「日报 / 周报 / 项目复盘」→ `report-assistant`
 - 「学习进度审计」→ `learning-audit-assistant`
 - 「需求变更影响」→ `change-impact-analysis`
 

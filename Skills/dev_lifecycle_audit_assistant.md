@@ -10,7 +10,7 @@
 
 **不响应（让位给其他 Skill）**：
 
-- 「日报 / 周报 / 项目复盘」→ `review-assistant`
+- 「日报 / 周报 / 项目复盘」→ `report-assistant`
 - 「学习进度审计」→ `learning-audit-assistant`
 - 「需求变更影响」→ `change-impact-analysis`
 

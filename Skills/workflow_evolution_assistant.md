@@ -13,9 +13,8 @@
 
 **不响应（让位给其他 Skill）**：
 
-- 具体需求、架构、开发、测试、部署执行 → 对应阶段 Skill
-- 日报、周报、项目复盘 → `review-assistant`
-- 单次团队回顾 → `retro-assistant`
+- 具体需求、架构、开发、测试执行 → 对应阶段 Skill
+- 日报、周报、项目复盘 → `report-assistant`
 - WBS 修订 / 拆任务 → `task-splitter` 或用户确认
 
 ## 职责

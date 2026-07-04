@@ -115,7 +115,7 @@ skill_contract:
 | 越界 | WBS 方案不明确时请求用户确认，不擅自推荐 A/B/C |
 | fixture | `tests/fixtures/skills/task-splitter/checkout-tech-plan.input.md` |
 
-### `review-assistant`
+### `code-review`
 
 | 字段 | 内容 |
 |------|------|
@@ -123,7 +123,7 @@ skill_contract:
 | 输出 | Findings-first review 结论 |
 | 门禁 | 问题按严重级排序；引用文件行号；无问题时说明测试缺口 |
 | 越界 | 需要实现修复时转功能开发或 bugfix 流程 |
-| fixture | `tests/fixtures/skills/review-assistant/risky-diff.input.md` |
+| fixture | `tests/fixtures/skills/code-review/risky-diff.input.md` |
 
 ---
 

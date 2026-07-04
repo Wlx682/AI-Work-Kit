@@ -2,7 +2,7 @@
 name: workflow-evolution-assistant
 description: >-
   工作流进化与反馈闭环治理。用于把 skill_run、孤立反馈、反馈聚合报告、workflow-gate 卡点、蓝图漂移与重复流程摩擦转化为可验证改进；触发词：工作流进化、流程进化、反馈闭环、优化工作流、vault evolve、skill_run 聚合、反馈聚合、流程改进沉淀、/workflow-evolution。
-  不响应：具体需求/架构/开发/测试/部署执行→对应阶段 Skill；日报周报→review-assistant；单次团队复盘→retro-assistant。
+  不响应：具体需求/架构/开发/测试执行→对应阶段 Skill；日报周报→report-assistant。
 ---
 
 # 工作流进化助理

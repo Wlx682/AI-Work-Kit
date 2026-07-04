@@ -26,7 +26,9 @@
       "label": "复现与影响范围",
       "planFolder": "Plans/Bug排查",
       "planPrefix": "复现",
-      "skills": ["feature-dev-assistant"],
+      "skills": [
+        "feature-dev-assistant"
+      ],
       "template": "Templates/排查问题模板.md",
       "exitCriteria": {
         "childPlanExists": true,
@@ -39,7 +41,9 @@
       "label": "根因定位",
       "planFolder": "Plans/Bug排查",
       "planPrefix": "定位",
-      "skills": ["feature-dev-assistant"],
+      "skills": [
+        "feature-dev-assistant"
+      ],
       "template": "Templates/排查问题模板.md",
       "exitCriteria": {
         "childPlanExists": true,
@@ -52,7 +56,9 @@
       "label": "修复实现",
       "planFolder": "Plans/Bug排查",
       "planPrefix": "修复",
-      "skills": ["feature-dev-assistant"],
+      "skills": [
+        "feature-dev-assistant"
+      ],
       "template": "Templates/排查问题模板.md",
       "exitCriteria": {
         "childPlanExists": true,
@@ -65,7 +71,9 @@
       "label": "回归与复核",
       "planFolder": "Plans/Bug排查",
       "planPrefix": "回归",
-      "skills": ["review-assistant"],
+      "skills": [
+        "code-review"
+      ],
       "template": "Templates/Code-Review模板.md",
       "exitCriteria": {
         "childPlanExists": true,

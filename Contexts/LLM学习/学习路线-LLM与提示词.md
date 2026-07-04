@@ -35,7 +35,7 @@ tags: [学习, LLM, 入口]
 | `Plans/Bug排查/` 进行中任务 | `Plans/学习/` 正在学的主题 |
 | `Contexts/` 决策与调研 | `Contexts/LLM学习/` 概念卡与对比 |
 | `/resume plan=Plans/...` 续做 | `/learn-assistant` 续学 |
-| `/review-assistant` 月底复盘 | 学习周复盘 + 费曼检验 |
+| `/report-assistant` 月底复盘 | 学习周复盘 + 费曼检验 |
 
 ---
 

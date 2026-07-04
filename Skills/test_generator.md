@@ -32,9 +32,9 @@
 - 优先补关键路径与边界/异常（来自需求 plan §四 §五）
 - 可输出测试代码片段到 plan，**实际代码写入业务仓库**（非 Vault）
 
-## 与 deployment-assistant 衔接
+## 与下一阶段衔接
 
-测试 plan 勾选通过 → 重新运行 `workflow-gate.sh` 获取下一阶段
+测试 plan（先行）勾选通过 → 重新运行 `workflow-gate.sh` 进入 `split`（`task-splitter`）→ 开发
 
 ## 上下文汇报
 

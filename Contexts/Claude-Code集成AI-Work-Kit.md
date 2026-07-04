@@ -90,7 +90,7 @@ npx -y @oomkapwn/enquire-mcp index --vault "/你的路径/AI-Work-Kit"
 
 | 方式 | 做法 | 何时用 |
 |------|------|--------|
-| **A. 显式引用** | 对话里 `@Skills/review_assistant.md` | 最快，零配置 |
+| **A. 显式引用** | 对话里 `@Skills/report_assistant.md` | 最快，零配置 |
 | **B. 自动 Skill** | 同步到 `.claude/skills/` | 说「续做」「日报」自动匹配 |
 
 **方式 B — 一次性同步**（在 Kit 根目录执行）：
@@ -116,7 +116,7 @@ done
 |------|--------|-------------|
 | 续做 plan | `/resume plan=Plans/... 进度=...` | 同上，或 `@Skills/resume_assistant.md` + 续做 |
 | 排查开工 | `/template-generator 任务类型=排查，背景=...` | 同上 |
-| 今日日报 | `/review-assistant 日报` | 同上，或 `@Skills/review_assistant.md` |
+| 今日日报 | `/report-assistant 日报` | 同上，或 `@Skills/report_assistant.md` |
 | 搜历史 | 「知识库里有没有 xxx？」（enquire） | 同上（需 `.mcp.json`） |
 | 学习 | `/learn-assistant 续学` | 同上 |
 | 写回笔记 | 对话确认后写入 | 同上 |
@@ -136,8 +136,8 @@ done
 |------|----------------------|
 | Goal | 生成当日日报 → `Contexts/日报/YYYY-MM-DD.md` |
 | Trigger | 每天固定时间 |
-| Context | `review_assistant` + 日报模板 + Plans |
-| Skills | `Skills/review_assistant.md` |
+| Context | `report_assistant` + 日报模板 + Plans |
+| Skills | `Skills/report_assistant.md` |
 | Verifier | 模板结构、仅本人 git、正文不写元信息 |
 | Stop | 文件写入完成 |
 | Memory | `Contexts/日报/` 长期沉淀 |
@@ -148,8 +148,8 @@ done
 在 Kit 根目录的 Claude Code 会话中：
 
 ```text
-/loop 30 21 * * * 执行 review-assistant 日报模式：
-读 Skills/review_assistant.md 与 Templates/日报模板.md，
+/loop 30 21 * * * 执行 report-assistant 日报模式：
+读 Skills/report_assistant.md 与 Templates/日报模板.md，
 扫描 ~/git/* 仅统计 --author=wanglongxiang（+王龙祥）的 commit，
 扫描本仓库当日 Plans/，
 写入 Contexts/日报/YYYY-MM-DD.md
@@ -212,7 +212,7 @@ ultracode: 审计 Plans/学习/ 各课完成度，对照 Contexts/LLM学习/概�
 | 场景 | 普通 Agent / Skill | Workflow |
 |------|-------------------|----------|
 | 续做一个 plan | ✅ `/resume` | 过重 |
-| 写今日日报 | ✅ review-assistant | 过重 |
+| 写今日日报 | ✅ report-assistant | 过重 |
 | 审计全库学习进度 + 多文件交叉验证 | 单会话易漏 | ✅ workflow |
 | 全目录 code audit | 单会话协调难 | ✅ workflow |
 
@@ -253,7 +253,7 @@ AI-Work-Kit/
 在 Kit 根目录开 Claude Code，逐项试：
 
 - [ ] 说「续做」+ 给一个真实 plan 路径 → 输出结构化下一步
-- [ ] `@Skills/review_assistant.md` + 「日报」→ 写入 `Contexts/日报/`
+- [ ] `@Skills/report_assistant.md` + 「日报」→ 写入 `Contexts/日报/`
 - [ ] 「知识库里有没有 RAG 相关笔记？」→ enquire 命中（需 MCP）
 - [ ] `/loop` 或定时任务能触发一次日报流程
 - [ ] `ultracode:` 或 `/deep-research` 能跑完并产出报告

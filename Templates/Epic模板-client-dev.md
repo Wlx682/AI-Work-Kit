@@ -15,12 +15,8 @@ p0_open: 0
 plans:
   requirement: Plans/需求分析/{{date}}-{{title}}.md
   architecture: Plans/技术方案/{{date}}-{{title}}.md
-  development: Plans/功能开发/{{date}}-{{title}}.md
   test: null
-  verify: null
-  review: null
-  deploy: null
-  retro: null
+  development: Plans/功能开发/{{date}}-{{title}}.md
 relations:
   depends_on:
     - Templates/模板约定.md
@@ -49,12 +45,9 @@ relations:
 |------|------|--------|
 | 需求分析（事件风暴+实例化） | `Plans/需求分析/{{date}}-{{title}}.md` | ⬜ |
 | 技术方案 + ADR | `Plans/技术方案/{{date}}-{{title}}.md` | ⬜ |
-| 功能开发 | `Plans/功能开发/{{date}}-{{title}}.md` | ⬜ |
 | 验收测试先行 | — | ⬜ |
-| 非功能验证 | — | ⬜ |
-| Code Review | — | ⬜ |
-| 部署 | — | ⬜ |
-| 团队回顾 | — | ⬜ |
+| 拆分任务 | — | ⬜ |
+| 功能开发 | `Plans/功能开发/{{date}}-{{title}}.md` | ⬜ |
 | Bug 排查 | — | — |
 
 ---
@@ -66,15 +59,12 @@ relations:
 | 需求分析 | requirement | 1–2 | 需求 plan `status: 已采纳` 且 `p0_open: 0` + 验收标准章节 |
 | 技术方案 | architecture | 3 | 方案 `status: 已采纳`（含业务逻辑时必经） |
 | 验收测试先行 | test-first | 4 | 测试 plan 存在 + WBS 4 ✅ |
-| 功能开发 | development | 5–10 | `plan-gate-check.sh` OK + WBS 5–10 ✅ |
-| 非功能验证 | verify | 11 | 非功能 plan 存在 + WBS 11 ✅ |
-| Code Review | review | 12 | Review plan 存在 + WBS 12 ✅ |
-| 部署 | deploy | 13–14 | 部署 plan 存在 + WBS 13–14 ✅ |
-| 团队回顾 | retro | 15 | 回顾 plan 存在 + WBS 15 ✅ |
+| 拆分任务 | split | 5 | 主 plan + 子任务已拆 + WBS 5 ✅ |
+| 功能开发 | development | 6–11 | `plan-gate-check.sh` OK + WBS 6–11 ✅ |
 
 ---
 
-## 三、WBS 看板（1–15 · 进化版）
+## 三、WBS 看板（1–11 · 精简版）
 
 | # | 切片 | 归属 stage | Skill | 验收 |
 |---|------|-----------|-------|------|
@@ -82,17 +72,13 @@ relations:
 | 2 | 实例化需求（≥10 组 GWT + 线框） | requirement | spec-by-example-assistant | PO/开发/测试对齐 |
 | 3 | 技术方案 + ADR + 领域模型 | architecture | architecture-design-assistant | status=已采纳 |
 | 4 | 验收测试先行（外层 TDD，先红） | test-first | test-generator | 测试自动化运行，失败仅因未实现 |
-| 5 | Domain / UseCase 实现 | development | feature-dev-assistant | 单测过 |
-| 6 | Data / API 实现与联调 | development | feature-dev-assistant | 真实接口替换假数据 |
-| 7 | UI 骨架 + 静态设计走查 | development | figma-ui | 静态布局走查通过 |
-| 8 | 交互 + 全 Variant（空/错误态） | development | figma-ui | 交互走查 + 边界示例可覆盖 |
-| 9 | 单元测试补充与回归（内层 TDD） | development | test-generator | CI 单测全绿 |
-| 10 | 真机联调 + 集成设计走查 | development | figma-ui / feature-dev-assistant | 真机适配走查通过 |
-| 11 | 非功能验证（性能/安全/可访问性） | verify | nfr-assistant | 性能达标、无安全风险 |
-| 12 | Code Review | review | review-assistant | 无 P0 |
-| 13 | 发布检查 + 灰度 | deploy | deployment-assistant | 检查自动化≥90%、灰度生效 |
-| 14 | 线上监控与反馈收集 | deploy | deployment-assistant | P0 告警=0、数据就绪 |
-| 15 | 团队回顾与流程改进 | retro | retro-assistant | ≥1 条行动项（负责人+截止日） |
+| 5 | 原子任务拆分（主 plan + 子任务） | split | task-splitter | 子任务边界清晰、可独立验收 |
+| 6 | Domain / UseCase 实现 | development | feature-dev-assistant | 单测过 |
+| 7 | Data / API 实现与联调 | development | feature-dev-assistant | 真实接口替换假数据 |
+| 8 | UI 骨架 + 静态设计走查 | development | figma-ui | 静态布局走查通过 |
+| 9 | 交互 + 全 Variant（空/错误态） | development | figma-ui | 交互走查 + 边界示例可覆盖 |
+| 10 | 单元测试补充与回归（内层 TDD） | development | test-generator | CI 单测全绿 |
+| 11 | 真机联调 + 集成设计走查 | development | figma-ui / feature-dev-assistant | 真机适配走查通过 |
 
 > ⚠️ **看板硬约束**：下方 fenced checklist 每行必须为 `[标记] 编号. 描述`；标记 `[ ]`/`[~]`/`[x]`；编号纯数字或 `6a` 后缀。不符合会被 `kanban-server.py` 静默丢弃，`plan-gate-check.sh` 提交时预检。
 
@@ -101,17 +87,13 @@ relations:
 [ ] 2.  实例化需求（≥10 组 Given-When-Then + 线框草图）
 [ ] 3.  技术方案 + ADR + 领域模型草图
 [ ] 4.  验收测试先行（外层 TDD，先红）
-[ ] 5.  Domain / UseCase 实现（单测过）
-[ ] 6.  Data / API 实现与联调
-[ ] 7.  UI 骨架 + 静态设计走查
-[ ] 8.  交互 + 全 Variant（空态 / 错误态）
-[ ] 9.  单元测试补充与回归（内层 TDD）
-[ ] 10. 真机联调 + 集成设计走查
-[ ] 11. 非功能验证（性能 / 安全 / 可访问性）
-[ ] 12. Code Review
-[ ] 13. 发布检查 + 灰度
-[ ] 14. 线上监控与反馈收集
-[ ] 15. 团队回顾与流程改进
+[ ] 5.  原子任务拆分（主 plan + 子任务）
+[ ] 6.  Domain / UseCase 实现（单测过）
+[ ] 7.  Data / API 实现与联调
+[ ] 8.  UI 骨架 + 静态设计走查
+[ ] 9.  交互 + 全 Variant（空态 / 错误态）
+[ ] 10. 单元测试补充与回归（内层 TDD）
+[ ] 11. 真机联调 + 集成设计走查
 ```
 
 ---

@@ -32,8 +32,12 @@
       "label": "盘点（磁盘/应用/启动项/大文件）",
       "planFolder": "Plans/电脑管理",
       "planPrefix": "盘点",
-      "skills": ["material-prep-assistant"],
-      "wbsSlices": [1],
+      "skills": [
+        "material-prep-assistant"
+      ],
+      "wbsSlices": [
+        1
+      ],
       "exitCriteria": {
         "childPlanExists": true,
         "skillRun": true
@@ -45,8 +49,12 @@
       "label": "清理（缓存/临时/无用应用）",
       "planFolder": "Plans/电脑管理",
       "planPrefix": "清理",
-      "skills": ["material-prep-assistant"],
-      "wbsSlices": [2],
+      "skills": [
+        "material-prep-assistant"
+      ],
+      "wbsSlices": [
+        2
+      ],
       "exitCriteria": {
         "childPlanExists": true,
         "skillRun": true
@@ -58,8 +66,12 @@
       "label": "备份（关键数据/配置）",
       "planFolder": "Plans/电脑管理",
       "planPrefix": "备份",
-      "skills": ["material-prep-assistant"],
-      "wbsSlices": [3],
+      "skills": [
+        "material-prep-assistant"
+      ],
+      "wbsSlices": [
+        3
+      ],
       "exitCriteria": {
         "childPlanExists": true,
         "skillRun": true
@@ -71,8 +83,12 @@
       "label": "加固（安全/权限/更新）",
       "planFolder": "Plans/电脑管理",
       "planPrefix": "加固",
-      "skills": ["material-prep-assistant"],
-      "wbsSlices": [4],
+      "skills": [
+        "material-prep-assistant"
+      ],
+      "wbsSlices": [
+        4
+      ],
       "exitCriteria": {
         "childPlanExists": true,
         "skillRun": true
@@ -84,8 +100,12 @@
       "label": "复核（结果核对 + 归档）",
       "planFolder": "Plans/电脑管理",
       "planPrefix": "复核",
-      "skills": ["review-assistant"],
-      "wbsSlices": [5],
+      "skills": [
+        "code-review"
+      ],
+      "wbsSlices": [
+        5
+      ],
       "exitCriteria": {
         "childPlanExists": true,
         "skillRun": true

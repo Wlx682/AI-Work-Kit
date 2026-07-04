@@ -24,11 +24,8 @@
 | requirement | `event-storming-assistant` / `spec-by-example-assistant` / `requirement-analyst` | WBS 1–2 |
 | architecture | `architecture-design-assistant` | WBS 3 |
 | test-first | `test-generator` | WBS 4 |
-| development | Skill=`figma-ui` → `figma-ui`；否则 `feature-dev-assistant` | WBS 5–10 |
-| verify | `nfr-assistant` | WBS 11 |
-| review | `review-assistant` | WBS 12 |
-| deploy | `deployment-assistant` | WBS 13–14 |
-| retro | `retro-assistant` | WBS 15 |
+| split | `task-splitter` | WBS 5 |
+| development | Skill=`figma-ui` → `figma-ui`；否则 `feature-dev-assistant` | WBS 6–11 |
 
 **WBS 修订**：用户要改切片/拆任务 → 路由 `task-splitter` 或列待确认项找用户；禁止擅自推荐 A/B/C 方案。
 

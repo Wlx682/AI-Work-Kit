@@ -1,8 +1,8 @@
 {
   "name": "client-dev",
   "label": "客户端功能开发",
-  "version": "2.0.0",
-  "description": "客户端功能开发工作流蓝图（15 步进化版）。客户端开发必须先创建 Epic；引擎读本蓝图 stages 驱动阶段推进；门禁只看子 Plan 文件系统事实，不读 Epic lifecycle_state。",
+  "version": "3.0.0",
+  "description": "客户端功能开发工作流蓝图（精简版：需求分析→架构设计→验收测试先行→拆分任务→写代码）。客户端开发必须先创建 Epic；引擎读本蓝图 stages 驱动阶段推进；门禁只看子 Plan 文件系统事实，不读 Epic lifecycle_state。",
   "usesEpic": true,
   "epicRequired": true,
   "epicTemplate": "Templates/Epic模板-client-dev.md",
@@ -34,12 +34,9 @@
   "epicMapping": {
     "requirement": "requirement",
     "architecture": "architecture",
-    "development": "development",
-    "test": "test",
-    "verify": "verify",
-    "review": "review",
-    "deploy": "deploy",
-    "retro": "retro"
+    "test-first": "test",
+    "split": "development",
+    "development": "development"
   },
   "stages": [
     {
@@ -120,6 +117,23 @@
         "testTraceability": true,
         "skillRun": true
       },
+      "next": "split"
+    },
+    {
+      "key": "split",
+      "label": "原子任务拆分",
+      "planFolder": "Plans/功能开发",
+      "epicField": "development",
+      "skills": [
+        "task-splitter"
+      ],
+      "wbsSlices": [
+        5
+      ],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
       "next": "development"
     },
     {
@@ -128,17 +142,16 @@
       "planFolder": "Plans/功能开发",
       "epicField": "development",
       "skills": [
-        "task-splitter",
         "feature-dev-assistant",
         "figma-ui"
       ],
       "wbsSlices": [
-        5,
         6,
         7,
         8,
         9,
-        10
+        10,
+        11
       ],
       "gate": "plan-gate-check",
       "exitCriteria": {
@@ -146,83 +159,6 @@
         "planGateCheck": true,
         "wbsDone": true,
         "devTraceability": true,
-        "skillRun": true
-      },
-      "next": "verify"
-    },
-    {
-      "key": "verify",
-      "label": "非功能验证（性能/安全/可访问性）",
-      "planFolder": "Plans/非功能验证",
-      "epicField": "verify",
-      "skills": [
-        "nfr-assistant"
-      ],
-      "template": "Templates/非功能验证模板.md",
-      "wbsSlices": [
-        11
-      ],
-      "exitCriteria": {
-        "childPlanExists": true,
-        "wbsDone": true,
-        "skillRun": true
-      },
-      "next": "review"
-    },
-    {
-      "key": "review",
-      "label": "Code Review",
-      "planFolder": "Plans/代码重构",
-      "epicField": "review",
-      "skills": [
-        "review-assistant"
-      ],
-      "template": "Templates/Code-Review模板.md",
-      "wbsSlices": [
-        12
-      ],
-      "exitCriteria": {
-        "childPlanExists": true,
-        "wbsDone": true,
-        "skillRun": true
-      },
-      "next": "deploy"
-    },
-    {
-      "key": "deploy",
-      "label": "发布检查 + 灰度 + 监控",
-      "planFolder": "Plans/部署",
-      "epicField": "deploy",
-      "skills": [
-        "deployment-assistant"
-      ],
-      "template": "Templates/部署模板.md",
-      "wbsSlices": [
-        13,
-        14
-      ],
-      "exitCriteria": {
-        "childPlanExists": true,
-        "wbsDone": true,
-        "skillRun": true
-      },
-      "next": "retro"
-    },
-    {
-      "key": "retro",
-      "label": "团队回顾与流程改进",
-      "planFolder": "Plans/最佳实践",
-      "epicField": "retro",
-      "skills": [
-        "retro-assistant"
-      ],
-      "template": "Templates/团队回顾模板.md",
-      "wbsSlices": [
-        15
-      ],
-      "exitCriteria": {
-        "childPlanExists": true,
-        "wbsDone": true,
         "skillRun": true
       },
       "next": "done"

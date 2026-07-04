@@ -1,8 +1,8 @@
-# Review Assistant Smoke Expected
+# Code Review Smoke Expected
 
 ## 期望断言
 
-用于检查 `review-assistant` 输出是否符合代码审查口径。
+用于检查 `code-review` 输出是否符合代码审查口径。
 
 ## 必须包含
 

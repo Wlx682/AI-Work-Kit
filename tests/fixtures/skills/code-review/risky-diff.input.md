@@ -1,9 +1,9 @@
 ---
-skill: review-assistant
+skill: code-review
 case: risky-diff
 ---
 
-# Review Assistant Smoke Input
+# Code Review Smoke Input
 
 ## 输入
 

@@ -31,9 +31,7 @@
 | 开发 [模块] 功能、实现 [目标]、写代码 | feature-dev-assistant | `/dev` `/feature-dev-assistant` | `Plans/功能开发/` |
 | Figma 还原、对稿、纯界面开发 | figma-ui | `/ui` `/figma-ui` | UI plan |
 | 写测试、生成测试用例 | test-generator | `/test` `/test-generator` | `Plans/自动化测试/` |
-| 非功能验证、性能/安全/可访问性检查 | nfr-assistant | `/nfr-assistant` | `Plans/非功能验证/` |
-| 上线检查、发布计划、灰度 | deployment-assistant | `/deploy` `/deployment-assistant` | `Plans/部署/` |
-| 团队回顾、复盘、流程改进 | retro-assistant | `/retro-assistant` | `Plans/最佳实践/` |
+| Code Review、review diff、审查 PR、UI 复核 | code-review | `/code-review` `/review` | Findings-first（`Plans/代码重构/`） |
 | 需求变了、改个东西、Scope 调整 | change-impact-analysis | `/change-impact-analysis` | 变更影响 |
 | 检查 Epic 进度、审计版本状态、这个需求做完了吗 | dev-lifecycle-audit-assistant | `/dev-lifecycle-audit` | 审计报告 |
 
@@ -49,7 +47,7 @@
 |---------------------|-------|----------|
 | 续做、接着做、断点续 | resume-assistant | `/resume plan=...` |
 | 生成 XX 模板、套用模板、起个骨架 | template-generator | `/template-generator` |
-| 日报、周报、项目复盘、迭代回顾 | review-assistant | `/review` `/review-assistant` |
+| 日报、周报、项目复盘、迭代回顾 | report-assistant | `/report` `/report-assistant` |
 | PM 物料、整理通用资料 | material-prep-assistant | `/material-prep` |
 | 找 CC 文章、周报选题、海外资讯、整理分享帖 | weekly-intel-digest | `/intel` `/weekly-intel-digest` |
 | 提效案例、最佳实践、技术提交分享、产品提效 | best-practice-digest | `/best-practice` `/best-practice-digest` |
@@ -71,11 +69,5 @@
 | `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
 | `scripts/workflow-plan-init.py` | 为 `ui-change` / `bugfix` / `task-split-only` 等无 Epic 轻流程创建阶段 plan |
 | `scripts/workflow-smoke-test.py` | 一条命令测试轻流程能路由、阻塞、补齐后 done |
-
-### 内部（不直接对用户暴露）
-
-| Skill | 用途 |
-|-------|------|
-| project-manager | `trigger: internal_only`，历史编排草案；新流程以 full-cycle 引擎 + 蓝图为准 |
 
 全文见各 `Skills/*.md`。

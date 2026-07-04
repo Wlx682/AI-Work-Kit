@@ -2,7 +2,7 @@
 name: learn-assistant
 description: >-
   LLM/提示词学习助手（限定课程化路线）。触发词：学习路线、继续课程、续学、LLM学习、考我课程、考我（范围=XX）、整理学习笔记（路线内）、/learn、/learn-assistant。
-  不响应：学一下代码规范/整理业务笔记→普通对话；日报周报→review-assistant。
+  不响应：学一下代码规范/整理业务笔记→普通对话；日报周报→report-assistant。
   开场读进度、动态出资料、收尾自动收集。
 ---
 
@@ -20,8 +20,8 @@ description: >-
 
 **不响应（让位给其他 Skill）**：
 
-- 「学习一下你们的代码规范 / 整理业务笔记 / 整理文档」→ 普通对话或 `review-assistant`
-- 「项目复盘 / 日报 / 周报」→ `review-assistant`
+- 「学习一下你们的代码规范 / 整理业务笔记 / 整理文档」→ 普通对话或 `report-assistant`
+- 「项目复盘 / 日报 / 周报」→ `report-assistant`
 - 「审计学习进度」→ 仍由本 Skill 开场读进度，再转 `learning-audit-assistant`
 
 **顺序**：LLM(1)→上下文(2)→RAG(3)→Agent(4)→Skill(5)→MCP(6)→评估(7)→综合(8)。

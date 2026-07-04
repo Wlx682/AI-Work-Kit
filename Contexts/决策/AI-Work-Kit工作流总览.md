@@ -53,19 +53,19 @@ relations:
 
 ### 已有蓝图
 
-| 蓝图 | usesEpic | 说明 | Epic 母版 |
-|------|----------|------|-----------|
-| `client-dev` | 是 | 客户端功能开发 15 步（事件风暴→…→回顾） | `Templates/Epic模板-client-dev.md` |
-| `computer-mgmt` | 否 | 电脑管理（盘点→清理→备份→加固→复核），无 Epic 轻量清单 | `Templates/电脑管理清单模板.md` |
-| `ui-change` | 否 | 纯 UI 小改（范围确认→实现自检→复核） | `workflow-plan-init.py` 生成阶段 plan |
-| `bugfix` | 否 | Bug 修复（复现→定位→修复→回归） | `workflow-plan-init.py` 生成阶段 plan |
-| `task-split-only` | 否 | 只拆任务（拆分→复核），不进入代码实现 | `workflow-plan-init.py` 生成阶段 plan |
+| 蓝图                | usesEpic | 说明                               | Epic 母版                           |
+| ----------------- | -------- | -------------------------------- | --------------------------------- |
+| `client-dev`      | 是        | 客户端功能开发（需求→架构→测试先行→拆分→开发）          | `Templates/Epic模板-client-dev.md`  |
+| `computer-mgmt`   | 否        | 电脑管理（盘点→清理→备份→加固→复核），无 Epic 轻量清单 | `Templates/电脑管理清单模板.md`           |
+| `ui-change`       | 否        | 纯 UI 小改（范围确认→实现自检→复核）            | `workflow-plan-init.py` 生成阶段 plan |
+| `bugfix`          | 否        | Bug 修复（复现→定位→修复→回归）              | `workflow-plan-init.py` 生成阶段 plan |
+| `task-split-only` | 否        | 只拆任务（拆分→复核），不进入代码实现              | `workflow-plan-init.py` 生成阶段 plan |
 
 新增蓝图：在 `.workflows/blueprints/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号），并跑 `python3 scripts/validate-workflow-blueprint.py`。
 
-### client-dev 15 步
+### client-dev 阶段链
 
-需求(事件风暴+实例化 1-2) → 架构+ADR(3) → 验收测试先行(4) → 开发(Domain/Data/UI/交互/单测/联调 5-10) → 非功能验证(11) → Review(12) → 发布+灰度+监控(13-14) → 团队回顾(15)。详见 `Templates/Epic模板-client-dev.md` §三。
+需求(事件风暴+实例化 1-2) → 架构+ADR(3) → 验收测试先行(4) → 拆分任务(5) → 开发(Domain/Data/UI/交互/单测/联调 6-11)。详见 `Templates/Epic模板-client-dev.md` §三。
 
 ```mermaid
 stateDiagram-v2
@@ -73,12 +73,9 @@ stateDiagram-v2
     [*] --> requirement
     requirement --> architecture: 已采纳/P0=0
     architecture --> test_first: 方案已采纳
-    test_first --> development
-    development --> verify
-    verify --> review
-    review --> deploy
-    deploy --> retro
-    retro --> [*]
+    test_first --> split: WBS 4 ✅
+    split --> development: 子任务已拆
+    development --> [*]
 ```
 
 新建 client-dev Epic：复制 `Templates/Epic模板-client-dev.md` → `Plans/Epic/`。
@@ -128,9 +125,9 @@ python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only
 
 ## 五、Skill 速查
 
-开发主线：`workflow-router` · `full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `test-generator` · `deployment-assistant` · `change-impact-analysis`
+开发主线：`workflow-router` · `full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `test-generator` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `code-review` · `change-impact-analysis`
 
-通用：`resume-assistant` · `template-generator` · `review-assistant` · `material-prep-assistant`
+通用：`resume-assistant` · `template-generator` · `report-assistant` · `material-prep-assistant`
 
 学习：`learn-assistant` · `learning-audit-assistant`
 
