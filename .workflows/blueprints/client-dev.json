@@ -65,6 +65,7 @@
           "已采纳"
         ],
         "p0Open": 0,
+        "sectionsPresent": true,
         "skillRun": true
       },
       "next": "architecture"
@@ -94,6 +95,7 @@
         "status": [
           "已采纳"
         ],
+        "sectionsPresent": true,
         "skillRun": true
       },
       "next": "test-first"

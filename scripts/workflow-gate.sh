@@ -145,7 +145,7 @@ fi
 
 # 读蓝图元信息
 USES_EPIC="$(python3 -c 'import json,sys; print("1" if json.load(open(sys.argv[1])).get("usesEpic") else "0")' "$BLUEPRINT")"
-# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix
+# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)
 # 用非空白分隔符，避免 read 折叠空字段（如空 epicField）导致字段错位。
 mapfile -t STAGE_ROWS < <(python3 - "$BLUEPRINT" <<'PY'
 import json, sys
@@ -160,7 +160,8 @@ for s in bp.get("stages", []):
     exitc = json.dumps(s.get("exitCriteria", {}), ensure_ascii=False)
     onlyif = json.dumps(s.get("onlyIf", {}), ensure_ascii=False)
     prefix = s.get("planPrefix", "")
-    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix]))
+    req_sections = json.dumps(s.get("requiredSections", []), ensure_ascii=False)
+    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix, req_sections]))
 PY
 )
 
@@ -208,7 +209,7 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
   found_stage=""
   n_stages=${#STAGE_ROWS[@]}
   for ((i=0; i<n_stages; i++)); do
-    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix <<<"${STAGE_ROWS[$i]}"
+    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix s_reqsections <<<"${STAGE_ROWS[$i]}"
 
     # onlyIf：如 {"含业务逻辑":"是"}，不满足则跳过该 stage
     onlyif_skip=0
@@ -330,7 +331,14 @@ PY
         fi
       fi
 
-      # testTraceability：需求 AC → 测试用例映射闭环。只查测试覆盖，不要求开发 plan 已存在。
+      # sectionsPresent（交接契约）：requiredSections 声明的每个章节须「标题存在 + 内容非空非纯占位」。
+      # 堵「交接物有标题空架子/漏章节」这类信息丢失。
+      if [[ "$(crit_has "$s_exit" sectionsPresent)" == "1" && -n "$s_reqsections" && "$s_reqsections" != "[]" ]]; then
+        sect_msg="$(python3 "$ROOT/scripts/gate_parse.py" check-sections "$child_file" "$s_reqsections" --msg 2>/dev/null || true)"
+        [[ -z "$sect_msg" ]] || stage_blockers+=("${s_label}：交接契约未满足 [${sect_msg}]")
+      fi
+
+
       if [[ "$(crit_has "$s_exit" testTraceability)" == "1" ]]; then
         traceability_check="$(python3 "$ROOT/scripts/traceability-check.py" --epic "$EPIC_FILE" --check test 2>&1 || true)"
         [[ "$traceability_check" == *"OK:traceability"* ]] || stage_blockers+=("${s_label}：testTraceability: ${traceability_check#BLOCKED:traceability:}")

@@ -225,6 +225,58 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
     return None
 
 
+def check_sections(path: str | Path, sections: list[str]) -> dict[str, list[str]]:
+    """对每个 section 名判定：标题是否存在 + 标题下是否有实质内容。
+    返回 {"missing": [...标题缺失], "empty": [...有标题但内容空/纯占位]}。
+    标题匹配容忍序号前缀（如 '## 三、模块边界' 命中 '模块边界'）。"""
+    p = Path(path)
+    lines = p.read_text(encoding="utf-8").splitlines()
+
+    heads: list[tuple[int, int, str]] = []  # (行号, 级别, 标题文本)
+    in_fence = False
+    for i, line in enumerate(lines):
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if m:
+            heads.append((i, len(m.group(1)), m.group(2).strip()))
+
+    def body_has_content(start_line: int, level: int) -> bool:
+        end = len(lines)
+        for hl, lv, _ in heads:
+            if hl > start_line and lv <= level:
+                end = hl
+                break
+        for raw in lines[start_line + 1:end]:
+            s = raw.strip()
+            if not s:
+                continue
+            # 去掉勾选框/列表符号后判占位
+            stripped = re.sub(r"^[-*]\s*\[[ xX~]\]\s*", "", s)
+            stripped = re.sub(r"^[-*]\s*", "", stripped)
+            if is_placeholder(stripped):
+                continue
+            return True
+        return False
+
+    missing: list[str] = []
+    empty: list[str] = []
+    for want in sections:
+        hit = None
+        for hl, lv, text in heads:
+            if want in text:
+                hit = (hl, lv)
+                break
+        if hit is None:
+            missing.append(want)
+        elif not body_has_content(hit[0], hit[1]):
+            empty.append(want)
+    return {"missing": missing, "empty": empty}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Shared parsers for workflow gate facts.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -240,6 +292,10 @@ def main() -> int:
     wbs_cmd = sub.add_parser("wbs-slice-status")
     wbs_cmd.add_argument("path")
     wbs_cmd.add_argument("slice")
+    sections_cmd = sub.add_parser("check-sections")
+    sections_cmd.add_argument("path")
+    sections_cmd.add_argument("sections", nargs="+")
+    sections_cmd.add_argument("--msg", action="store_true", help="输出人类可读 blocker 串（缺/空章节），全通过则空")
     args = parser.parse_args()
 
     if args.command == "read-frontmatter":
@@ -263,6 +319,25 @@ def main() -> int:
         if status is None:
             return 1
         print(status)
+        return 0
+    elif args.command == "check-sections":
+        secs = args.sections
+        # 容忍单个 JSON 数组参数（gate 直接透传 requiredSections，免在 bash 里拆数组）
+        if len(secs) == 1 and secs[0].lstrip().startswith("["):
+            try:
+                secs = json.loads(secs[0])
+            except Exception:
+                pass
+        result = check_sections(args.path, secs)
+        if args.msg:
+            parts = []
+            if result["missing"]:
+                parts.append("缺章节: " + "/".join(result["missing"]))
+            if result["empty"]:
+                parts.append("空章节: " + "/".join(result["empty"]))
+            print(" ; ".join(parts))
+        else:
+            print(json.dumps(result, ensure_ascii=False))
         return 0
     else:
         raise AssertionError(args.command)
