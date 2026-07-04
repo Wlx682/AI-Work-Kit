@@ -188,7 +188,7 @@ def render(result: dict, week: str) -> str:
         f"# Contexts 漂移检测报告 — {week}",
         "",
         f"> 由 `scripts/drift-scan.py` 自动生成。",
-        f"> 协议：[[Contexts/决策/Contexts漂移检测协议]]",
+        f"> 协议：`Contexts/决策/Contexts漂移检测协议.md`",
         "",
         "## 一、扫描总览",
         "",
