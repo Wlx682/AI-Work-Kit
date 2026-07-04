@@ -15,6 +15,7 @@ relations:
   dependents:
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/AI-Work-Kit架构总览.md
+    - Contexts/决策/AI-Work-Kit运行时拓扑.md
     - Contexts/决策/Contexts漂移检测协议.md
     - Contexts/决策/Skill原子契约.md
     - Contexts/决策/Skill反馈协议.md
