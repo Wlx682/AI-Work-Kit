@@ -12,8 +12,7 @@ relations:
     - Contexts/决策/Kit核心原则.md
     - Contexts/决策/AI-Work-Kit工作流总览.md
     - Contexts/决策/新手引导与最佳实践.md
-  dependents:
-    - Contexts/决策/2026-07-03-开发流程审计报告.md
+  dependents: []
   supersedes: []
   superseded_by: []
   conflicts: []

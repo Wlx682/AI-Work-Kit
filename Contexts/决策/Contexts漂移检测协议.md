@@ -120,7 +120,6 @@ verified_against:
 回填顺序按 ROI（频繁引用且与代码强耦合的优先）：
 
 1. `Contexts/收银台/MSPay收银台配置对照表.md` —— 多仓（NamiWork、ClawAI）+ 接口字段高度依赖代码
-2. `Contexts/API/OpenClaw-API.md` —— 接口定义文档
-3. `Contexts/Figma/项目设计规范.md` —— 引用代码层约定（颜色 token、组件命名等）
+2. `Contexts/Figma/项目设计规范.md` —— 引用代码层约定（颜色 token、组件命名等）
 
 其余 Contexts（学习概念、决策、日报）按 §一 判定不写。
