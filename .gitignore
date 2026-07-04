@@ -18,6 +18,9 @@ CLAUDE.local.md
 .claude/scheduled_tasks.json
 .codex/skills/
 
+# cc-connect 运行产物（系统提示词快照）
+.cc-connect/
+
 # 看板服务运行产物（日志、PID、字节码缓存）
 scripts/.kanban-server.log
 scripts/.kanban-server.pid
