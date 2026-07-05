@@ -135,6 +135,10 @@
     .ecard.amber::before { background: var(--amber); }
     .ecard.green::before { background: var(--green); }
     .ecard.blue::before { background: var(--blue); }
+    .ecard.archived::before { background: var(--faint); }
+    .ecard.archived, .ecard.archived.fade-in.seen { opacity: 0.55; }
+    .ecard.archived:hover, .ecard.archived.fade-in.seen:hover { opacity: 0.85; }
+    .ecard .arch-tag { font-size: 0.66rem; padding: 2px 8px; border-radius: 999px; background: rgba(90,97,120,0.2); color: var(--muted); border: 1px solid var(--stroke); }
     .ecard .e-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
     .ecard .e-name { font-weight: 700; font-size: clamp(14px, 1.3vw, 16px); }
     .ecard .e-stage { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
@@ -209,6 +213,17 @@
     .fade-in { opacity: 0; transform: translateY(14px); }
     .fade-in.seen { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1); }
     @media (prefers-reduced-motion: reduce) { .fade-in { opacity: 1 !important; transform: none !important; } .light.red { animation: none; } }
+
+    button.danger { background: rgba(255,84,112,0.12); border: 1px solid rgba(255,84,112,0.4); color: var(--red); }
+    button.danger:hover { background: rgba(255,84,112,0.22); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(5,7,14,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-backdrop.show { display: flex; }
+    .modal { background: var(--panel-solid); border: 1px solid var(--stroke-strong); border-radius: var(--radius); box-shadow: var(--shadow); padding: clamp(18px,2.4vw,26px); max-width: min(92vw, 460px); }
+    .modal .lead { color: var(--muted); font-size: 0.86rem; margin: 0 0 0.5rem; }
+    .modal .cd-file { background: rgba(0,0,0,0.3); border: 1px solid var(--stroke); border-radius: 9px; padding: 0.6rem 0.8rem; margin-bottom: 0.8rem; }
+    .modal .cd-file code { color: var(--red); word-break: break-all; font-size: 0.78rem; }
+    .modal .cd-keep { font-size: 0.78rem; color: var(--green); margin-bottom: 0.8rem; }
+    .modal .modal-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
   </style>
 </head>
 <body>
@@ -245,7 +260,7 @@
     let toastT;
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
-    const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3 };
+    const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
     const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
@@ -317,9 +332,11 @@
         const gh = e.gate_history || {};
         const pct = e.slices_total ? Math.round(e.slices_done / e.slices_total * 100) : 0;
         const consec = gh.consecutive_fails || 0;
-        const badge = gh.last_gate
-          ? `<span class="gate-badge ${gh.last_gate.result}">${gh.last_gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
-          : '';
+        const badge = e.health === 'archived'
+          ? '<span class="arch-tag">✓ 已归档</span>'
+          : (gh.last_gate
+            ? `<span class="gate-badge ${gh.last_gate.result}">${gh.last_gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
+            : '');
         const hint = e.blocker_hint && e.current_stage !== 'done'
           ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
         return `
@@ -467,7 +484,13 @@
             <div><h1 style="font-size:clamp(16px,1.5vw,20px)">${esc(e.name)}</h1>
             <div class="ver">阶段 ${zhStage(e.current_stage)} · ${e.slices_done}/${e.slices_total} 切片 · ${esc(e.repo || '')} / ${esc(e.branch || '')}</div></div>
           </div>
-          <div class="actions"><button class="primary" id="triggerBtn">复制续做命令</button></div>
+          <div class="actions">
+            <button class="primary" id="triggerBtn">复制续做命令</button>
+            ${e.health === 'archived'
+              ? '<button class="ghost" id="reactivateBtn">↻ 重新激活</button>'
+              : '<button class="ghost" id="archiveBtn">✓ 结束归档</button>'}
+            <button class="danger" id="deleteBtn">🗑 删除 Epic</button>
+          </div>
         </div>
         <div class="stage">
           <div>
@@ -503,6 +526,49 @@
         toast(`WBS ${s.n} · 验收：${s.acceptance || '—'} · skill：${s.skill || '—'}`);
       });
       document.querySelectorAll('.statusSel').forEach(sel => sel.onchange = () => setStatus(sel.dataset.plan, sel.value, e.file));
+      const archiveBtn = $('archiveBtn'), reactivateBtn = $('reactivateBtn'), deleteBtn = $('deleteBtn');
+      if (archiveBtn) archiveBtn.onclick = () => archiveEpic(e.file, true);
+      if (reactivateBtn) reactivateBtn.onclick = () => archiveEpic(e.file, false);
+      if (deleteBtn) deleteBtn.onclick = () => confirmDelete(e);
+    }
+
+    /* ============ 结束 / 删除 ============ */
+    async function archiveEpic(file, archived) {
+      await fetch('/api/epic-archive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file, archived }) });
+      toast(archived ? '已结束归档' : '已重新激活');
+      if (archived) { view = 'overview'; currentFile = null; }
+      await loadBoard();
+    }
+
+    function confirmDelete(e) {
+      const kids = (e.plans || []).map(p => p.path).filter(Boolean);
+      const kidsNote = kids.length
+        ? `<div class="cd-keep">保留 ${kids.length} 个子 Plan（需求/方案/开发/测试），不会删除。</div>`
+        : '';
+      const html = `
+        <div class="modal-backdrop show" id="cdModal">
+          <div class="modal">
+            <h3 style="margin:0 0 0.6rem;color:var(--red)">⚠ 确认删除 Epic</h3>
+            <p class="lead">将永久删除主文件：</p>
+            <div class="cd-file"><code>${esc(e.file)}</code></div>
+            ${kidsNote}
+            <div class="modal-actions">
+              <button class="ghost" id="cdCancel">取消</button>
+              <button class="danger" id="cdOk">确认删除</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.insertAdjacentHTML('beforeend', html);
+      const close = () => document.getElementById('cdModal')?.remove();
+      document.getElementById('cdCancel').onclick = close;
+      document.getElementById('cdModal').onclick = ev => { if (ev.target.id === 'cdModal') close(); };
+      document.getElementById('cdOk').onclick = async () => {
+        close();
+        const r = await fetch('/api/epic-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: e.file }) });
+        const d = await r.json();
+        if (d.ok) { toast('已删除 Epic 主文件'); view = 'overview'; currentFile = null; await loadBoard(); }
+        else { toast('删除失败：' + (d.error || '未知')); }
+      };
     }
 
     /* ============ actions ============ */

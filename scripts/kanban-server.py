@@ -95,7 +95,7 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
     }
 
 
-PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change"}
+PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change", "已归档"}
 SLICE_RE = re.compile(r"^(\[[ xX~]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
 WBS_TABLE_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
 
@@ -220,7 +220,8 @@ def write_frontmatter_field(path: Path, key: str, value: str) -> None:
         raise ValueError("no frontmatter")
     fm_raw = text[3:end]
     body = text[end + 4 :]
-    lines = fm_raw.splitlines()
+    # strip 掉 frontmatter 前后空白，避免每次写入在 --- 后累积空行。
+    lines = fm_raw.strip("\n").splitlines()
     pat = re.compile(rf"^{re.escape(key)}:")
     replaced = False
     out: list[str] = []
@@ -385,8 +386,11 @@ def scan_epic(path: Path) -> dict[str, Any]:
     cur_stage = next((e["stage_key"] for e in enriched if not e["done"]), "done")
     consec = (gh or {}).get("consecutive_fails", 0)
     p0 = int(fm.get("p0_open", "0") or "0")
-    # 健康等级（指挥官排序依据）：red 连续fail≥2 或 P0未闭环；amber 有未完成或最近fail；green 全通过。
-    if consec >= 2 or p0 > 0:
+    # 健康等级（指挥官排序依据）：archived 已归档（置灰，排最后）；
+    # red 连续fail≥2 或 P0未闭环；amber 有未完成或最近fail；green 全通过。
+    if fm.get("status") == "已归档":
+        health = "archived"
+    elif consec >= 2 or p0 > 0:
         health = "red"
     elif cur_stage == "done":
         health = "green"
@@ -877,6 +881,34 @@ class Handler(BaseHTTPRequestHandler):
                 rel = body.get("file") or body.get("epic", "")
                 result = suggest_trigger(rel)
                 self._json(200, result)
+                return
+            if path == "/api/epic-archive":
+                # 手动结束/重激活：改 Epic frontmatter status（可逆，文件保留）。
+                rel = body.get("file", "")
+                archived = bool(body.get("archived", True))
+                operator = body.get("operator", "web")
+                epic = resolve_plan(rel)
+                if "Epic" not in epic.parts:
+                    self._json(400, {"error": "not an epic path"})
+                    return
+                new_status = "已归档" if archived else "进行中"
+                write_frontmatter_field(epic, "status", new_status)
+                append_change_log(epic, "归档" if archived else "重激活", "—", "—", operator,
+                                   f"status → {new_status}")
+                self._json(200, {"ok": True, "file": rel, "status": new_status})
+                return
+            if path == "/api/epic-delete":
+                # 只删 Epic 主文件，保留子 plan。严格校验：必须 Plans/Epic/ 下的 .md。
+                rel = body.get("file", "")
+                epic = resolve_plan(rel)
+                if "Epic" not in epic.parts or epic.suffix != ".md":
+                    self._json(400, {"error": "refuse: not an Epic .md file"})
+                    return
+                if not epic.is_file():
+                    self._json(404, {"error": "epic not found"})
+                    return
+                epic.unlink()
+                self._json(200, {"ok": True, "deleted": rel})
                 return
             self._json(404, {"error": "not found"})
         except (ValueError, KeyError, json.JSONDecodeError) as e:
