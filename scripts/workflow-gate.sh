@@ -15,6 +15,7 @@ WORKFLOW=""
 EPIC=""
 PROJECT=""
 JSON=0
+PROBE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -22,8 +23,10 @@ while [[ $# -gt 0 ]]; do
     --epic) EPIC="${2:-}"; shift 2 ;;
     --project) PROJECT="${2:-}"; shift 2 ;;
     --json) JSON=1; shift ;;
+    --probe) PROBE=1; shift ;;
     -h|--help)
-      echo "Usage: workflow-gate.sh --workflow <name> [--epic Plans/Epic/xxx.md] [--project 模块名] [--json]"
+      echo "Usage: workflow-gate.sh --workflow <name> [--epic Plans/Epic/xxx.md] [--project 模块名] [--json] [--probe]"
+      echo "  --probe  只读探测：不写审计事件（供 render-epic-board.py / pre-commit 派生用）"
       exit 0
       ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
@@ -439,7 +442,8 @@ PY
     return 0
   ) 2>/dev/null || true
 }
-emit_gate_event
+# --probe（只读派生）时跳过审计写入：render/pre-commit 高频探测不应污染时间账本。
+[[ "$PROBE" == "1" ]] || emit_gate_event
 
 lc_hint=""
 if [[ "$USES_EPIC" == "1" && -n "$EPIC_FILE" ]]; then

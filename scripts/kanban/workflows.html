@@ -118,6 +118,8 @@
     .evo-card { background: var(--panel-solid); border: 1px solid var(--stroke); border-left: 4px solid var(--neon-b); border-radius: 12px; padding: 0.9rem 1rem; }
     .evo-card .e-title { font-weight: 600; font-size: 0.86rem; }
     .evo-card .e-sum { color: var(--muted); font-size: 0.76rem; margin-top: 5px; }
+    .evo-card.done { border-left-color: var(--green); opacity: 0.9; }
+    .evo-card.done .e-date { color: var(--green); font-variant-numeric: tabular-nums; }
 
     .empty { text-align: center; color: var(--faint); padding: 1.5rem; font-size: 0.82rem; }
     .fade-in { opacity: 0; transform: translateY(14px); }
@@ -220,10 +222,22 @@
           <div class="w-reason">${esc(w.reason || '')}</div>
         </div>`).join('') || '<div class="empty">🎉 无连续 fail，工作流运转顺畅</div>';
 
-      // 4. 进化
-      const evo = (d.evolution || []).map(e => `
+      // 4. 进化（未归位待办 + 已归位历史，分开展示）
+      const evoData = d.evolution || {};
+      const pend = (evoData.pending || []).map(e => `
         <div class="evo-card fade-in"><div class="e-title">🧬 ${esc(e.title)}</div><div class="e-sum">${esc(e.summary || '')}</div></div>`).join('')
-        || '<div class="empty">待蒸馏区暂无进化候选</div>';
+        || '<div class="empty">暂无未归位候选</div>';
+      const resolved = (evoData.resolved || []).map(e => `
+        <div class="evo-card done fade-in"><div class="e-title">✅ <span class="e-date">${esc(e.date)}</span></div><div class="e-sum">${esc(e.summary || '')}</div></div>`).join('')
+        || '<div class="empty">暂无已归位记录</div>';
+      const evoSection = `
+        <div class="section">
+          <h2>🧬 工作流进化 <span class="tag">孤立反馈记录 · 反馈驱动的自我进化</span></h2>
+          <h3 style="color:var(--neon-b)">待办候选（未归位）</h3>
+          <div class="evo-grid">${pend}</div>
+          <h3 style="margin-top:1.4rem;color:var(--green)">已落地（已归位·保留演进史）</h3>
+          <div class="evo-grid">${resolved}</div>
+        </div>`;
 
       $('app').innerHTML = `
         ${kpi}
@@ -231,6 +245,7 @@
           <h2>🗂 工作流蓝图图谱 <span class="tag">.workflows/blueprints/ · 阶段链 + 门禁退出条件</span></h2>
           ${bps}
         </div>
+        ${evoSection}
         <div class="section">
           <div class="split">
             <div class="panel fade-in">
@@ -248,10 +263,6 @@
         <div class="section">
           <h2>📡 运行态门禁事件流 <span class="tag">跨全部 Epic · 时间倒序</span></h2>
           <div class="panel fade-in"><ul class="timeline">${tl}</ul></div>
-        </div>
-        <div class="section">
-          <h2>🧬 工作流进化候选 <span class="tag">孤立反馈记录 · 待蒸馏区</span></h2>
-          <div class="evo-grid">${evo}</div>
         </div>`;
 
       requestAnimationFrame(() => document.querySelectorAll('.k-num[data-count]').forEach(countUp));

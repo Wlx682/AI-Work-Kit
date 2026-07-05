@@ -40,9 +40,9 @@
     },
     {
       "id": "wbs_single_truth",
-      "rule": "子 plan 是 WBS 唯一真理源，Epic 看板只是只读投影。",
+      "rule": "子 plan 是 WBS 唯一真理源，Epic 看板只是从子 Plan 事实单向派生的只读投影。",
       "severity": "block",
-      "checkedBy": "plan-gate-check:validate-epic-projection",
+      "checkedBy": "pre-commit:render-epic-board.py --check",
       "source": "Contexts/决策/母子plan投影规则.md"
     }
   ]

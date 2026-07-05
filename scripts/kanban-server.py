@@ -610,27 +610,46 @@ def all_gate_events() -> list[dict[str, Any]]:
     return events
 
 
-def read_evolution_candidates() -> list[dict[str, Any]]:
-    """从孤立反馈记录抽『待蒸馏』区的进化候选（### 三级标题为一条）。"""
+def read_evolution_candidates() -> dict[str, list[dict[str, Any]]]:
+    """从孤立反馈记录抽两组供看板展示：
+    - pending：『待蒸馏』区标题含「进化候选」的未归位待办（跳过 skill_run 留痕）。
+    - resolved：『已归位』区的已落地条目摘要（保留完整演进史，不删）。"""
+    empty = {"pending": [], "resolved": []}
     if not ORPHAN_FEEDBACK.is_file():
-        return []
+        return empty
     text = ORPHAN_FEEDBACK.read_text(encoding="utf-8")
+
+    pending: list[dict[str, Any]] = []
     m = re.search(r"##\s*待蒸馏\s*\n(.*?)(?=\n##\s|\Z)", text, re.S)
-    if not m:
-        return []
-    block = m.group(1)
-    out = []
-    for mm in re.finditer(r"###\s+(.+?)\n(.*?)(?=\n###\s|\Z)", block, re.S):
-        title = mm.group(1).strip()
-        body = mm.group(2).strip()
-        summary = ""
-        for ln in body.splitlines():
-            s = ln.strip().lstrip("-* ").strip()
-            if s and not s.startswith("```") and not s.startswith("skill_run"):
-                summary = re.sub(r"[*`]", "", s)[:120]
-                break
-        out.append({"title": title, "summary": summary})
-    return out
+    if m:
+        for mm in re.finditer(r"###\s+(.+?)\n(.*?)(?=\n###\s|\Z)", m.group(1), re.S):
+            title = mm.group(1).strip()
+            if title.startswith("〔") or "进化候选" not in title:
+                continue  # 跳过分区标题（〔…〕）、skill_run 留痕，只收进化候选
+            title = re.sub(r"^进化候选[:：]\s*", "", title)
+            body = mm.group(2).strip()
+            summary = ""
+            for ln in body.splitlines():
+                s = ln.strip().lstrip("-* ").strip()
+                if s and not s.startswith("```") and not s.startswith("skill_run"):
+                    summary = re.sub(r"[*`]", "", s)[:120]
+                    break
+            pending.append({"title": title, "summary": summary})
+
+    resolved: list[dict[str, Any]] = []
+    r = re.search(r"##\s*已归位[^\n]*\n(.*?)(?=\n##\s|\Z)", text, re.S)
+    if r:
+        for mm in re.finditer(r"^-\s+\*\*(.+?)\*\*\s*(.+?)(?=\n-\s+\*\*|\Z)", r.group(1), re.S | re.M):
+            date = mm.group(1).strip()
+            body = re.sub(r"[*`]", "", mm.group(2).strip().replace("\n", " "))
+            resolved.append({"date": date, "summary": body[:140]})
+
+    return {"pending": pending, "resolved": resolved}
+
+
+def read_evolution_pending() -> list[dict[str, Any]]:
+    """向后兼容：仅未归位候选（旧调用点用）。"""
+    return read_evolution_candidates()["pending"]
 
 
 def workflows_envelope() -> dict[str, Any]:

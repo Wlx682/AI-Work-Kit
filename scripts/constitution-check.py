@@ -80,7 +80,7 @@ def rule_status(rule: dict[str, Any], gate: dict[str, Any]) -> str:
         "skill_run_required": ["skill_run"],
         "epic_required": ["无 Epic"],
         "traceability": ["testTraceability", "devTraceability", "traceability"],
-        "wbs_single_truth": ["母子 plan 投影", "epic-projection"],
+        "wbs_single_truth": ["母子 plan 投影", "看板与子 Plan 事实漂移", "render-epic-board"],
     }.get(rule_id, [rule_id])
     return "blocked" if any(any(needle in item for needle in needles) for item in blockers) else "delegated"
 

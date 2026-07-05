@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# pre-commit-relations.sh — 枢纽文件依赖提醒
+# pre-commit-relations.sh — 提交前门禁（两职责）：
+#   1) Epic 看板新鲜度：暂存区含 Epic / 带 epic: 子 Plan 时，跑 render-epic-board.py --check，
+#      §三 看板与子 Plan 事实漂移即拦截（协议：Contexts/决策/母子plan投影规则.md）。
+#   2) 枢纽文件依赖提醒：暂存区含枢纽文件时列出 dependents 让用户确认。
 #
 # 安装：
 #   cp scripts/pre-commit-relations.sh .git/hooks/pre-commit
 #   chmod +x .git/hooks/pre-commit
 #
-# 用法：commit 时自动触发；非交互模式（CI / commit --no-verify）跳过。
-#
-# 触发条件：暂存区包含下列枢纽文件之一。
-# 输出：列出每个枢纽文件的 dependents，让用户确认。
-#
+# 用法：commit 时自动触发；非交互模式（CI / commit --no-verify）跳过交互确认。
 # 跳过：git commit --no-verify
 
 set -euo pipefail
@@ -28,8 +27,59 @@ HUB_FILES=(
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
-# 暂存区文件
-STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+# 暂存区文件（core.quotepath=false：中文路径不转义八进制，否则 case 匹配失效）
+STAGED=$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+
+# ── Epic 看板新鲜度门禁（派生渲染规则）─────────────────────────────────
+# 三层架构：Epic §三 看板是子 Plan 事实的只读投影，禁止手写漂移。
+# 暂存区含 Epic 或带 epic: 的子 Plan 时，回扫其 Epic 跑 render --check：
+#   退出 1（漂移）→ 拦截 commit，提示跑 --write 刷新；
+#   退出 2（基础设施失败）→ 仅告警放行，不阻断日常提交。
+# 协议：Contexts/决策/母子plan投影规则.md
+if [ -n "$STAGED" ] && command -v python3 >/dev/null 2>&1; then
+  epics_to_check=()
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    case "$f" in
+      *.md) ;;
+      *) continue ;;
+    esac
+    epic_target=""
+    case "$f" in
+      Plans/Epic/*.md)
+        epic_target="$f" ;;
+      Plans/*.md)
+        if [ -f "$f" ]; then
+          ev="$(python3 "$ROOT/scripts/gate_parse.py" read-frontmatter-key "$f" epic 2>/dev/null || true)"
+          [ -n "$ev" ] && epic_target="$ev"
+        fi ;;
+    esac
+    [ -z "$epic_target" ] && continue
+    [[ "$epic_target" == *.md ]] || epic_target="${epic_target}.md"
+    dup=0
+    for e in "${epics_to_check[@]:-}"; do [ "$e" = "$epic_target" ] && dup=1; done
+    [ "$dup" = "0" ] && epics_to_check+=("$epic_target")
+  done <<< "$STAGED"
+
+  board_blocked=0
+  for epic in "${epics_to_check[@]:-}"; do
+    [ -z "$epic" ] && continue
+    [ -f "$epic" ] || continue
+    # 用 if/else 捕获真实退出码：`if ! cmd` 会把 1 反转成 0，丢失「漂移」信号。
+    if python3 "$ROOT/scripts/render-epic-board.py" "$epic" --check >&2; then
+      :
+    else
+      [ "$?" = "1" ] && board_blocked=1
+    fi
+  done
+  if [ "$board_blocked" = "1" ]; then
+    echo "" >&2
+    echo "❌ Epic 看板与子 Plan 事实漂移，已拦截 commit。" >&2
+    echo "   刷新：python3 scripts/render-epic-board.py <epic> --write" >&2
+    echo "   跳过（不推荐）：git commit --no-verify" >&2
+    exit 1
+  fi
+fi
 
 # 找暂存区里的枢纽文件
 touched_hubs=()

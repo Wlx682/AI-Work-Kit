@@ -77,6 +77,7 @@
    - 告知已改文件与验证结果。
    - 把本次执行写入 `skill_run`。
    - 若无 plan，追加到 `Contexts/决策/孤立反馈记录.md` 顶部；若是专门的进化 plan，追加到该 plan 末尾。
+   - 机械字段照实填：无 plan 填 `orphan`、`date` 填当天。判断字段（`skill`/`contexts_used`/`utility`/`discovered`）只有当场知道，必须手写。
 
 ## 输出模板
 

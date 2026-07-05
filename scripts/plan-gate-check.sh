@@ -114,20 +114,12 @@ PY
     ;;
 esac
 
-# 9. 母子 plan 投影校验（Epic 看板 ↔ 子 plan WBS 表 一致性）
+# 9. Epic 看板新鲜度：不在此校验。
+#    §三 看板是子 Plan 事实的只读派生，由 pre-commit（scripts/pre-commit-relations.sh
+#    → render-epic-board.py --check）在提交时统一把关。
+#    ⚠️ 不得在此调用 render-epic-board.py：它会跑 workflow-gate.sh，而 development 阶段
+#       的 planGateCheck 又回调本脚本，形成无限递归。派生渲染的唯一门禁入口是 pre-commit。
 #    协议：Contexts/决策/母子plan投影规则.md
-#    触发：Plans/Epic/* 强制校验；带 epic: 字段的子 plan 也校验；其它 plan 跳过
-if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/validate-epic-projection.py" ]]; then
-  PROJ_FLAG=""
-  case "$PLAN" in
-    */Plans/Epic/*|*Plans/Epic/*) PROJ_FLAG="--require" ;;
-  esac
-  if [[ -n "$PROJ_FLAG" || -n "$(read_fm epic)" ]]; then
-    if ! python3 "$ROOT/scripts/validate-epic-projection.py" $PROJ_FLAG "$PLAN" >&2; then
-      fail "母子 plan 投影校验未通过（见上方日志）"
-    fi
-  fi
-fi
 
 # 仅对功能开发 plan 做完整门禁（路径在 Plans/功能开发/）
 case "$PLAN" in
