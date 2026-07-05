@@ -194,6 +194,11 @@ def parse_dev_ac_coverage(path: str | Path) -> dict[str, list[dict[str, str]]]:
 
 
 def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
+    """WBS 切片状态的唯一权威源 = fenced `[x] N.` checklist（模板约定形态）。
+    只认 fenced 内 `[标记] N. 描述` 行，不再匹配任何表格——表格首列同为数字，
+    既有同一 plan 多张表的歧义（输入输出表 vs 状态表），也有跨子 Plan 同号误匹配，
+    均由「切片号无法可靠定位唯一正确行」引起。统一到 fenced checklist 根治。
+    返回 'x' / '~' / ' '，无匹配返回 None。"""
     p = Path(path)
     target = str(n)
     lines = p.read_text(encoding="utf-8").splitlines()
@@ -209,19 +214,6 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
         if m:
             mark = m.group(1)
             return "x" if mark in {"x", "X"} else mark
-
-    for line in lines:
-        cells = split_table_row(line)
-        if len(cells) < 2 or is_separator_row(cells):
-            continue
-        if cells[0] != target:
-            continue
-        joined = "|".join(cells[1:])
-        if "✅" in joined or "[x]" in joined or "[X]" in joined:
-            return "x"
-        if "[~]" in joined:
-            return "~"
-        return " "
     return None
 
 

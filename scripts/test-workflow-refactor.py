@@ -48,18 +48,9 @@ def skill_run(skill: str, plan: str) -> str:
 
 
 def wbs_table(rows: list[int]) -> str:
-    body = "\n".join(f"| {n} | fixture | ✅ |" for n in rows)
-    return textwrap.dedent(
-        f"""
-        ## 三、WBS
-
-        | 编号 | 任务 | 完成 |
-        | --- | --- | --- |
-        {body}
-
-        ## 四、记录
-        """
-    ).strip()
+    # WBS 状态权威源 = fenced `[x] N.` checklist（与 gate_parse.wbs_slice_status 一致）。
+    lines = "\n".join(f"[x] {n}. fixture" for n in rows)
+    return "## 三、WBS\n\n```\n" + lines + "\n```\n\n## 四、记录"
 
 
 class WorkflowRefactorTests(unittest.TestCase):
@@ -682,8 +673,9 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertEqual(mod.wbs_slice_status(plan, 1), "x")
             self.assertEqual(mod.wbs_slice_status(plan, 2), "~")
             self.assertEqual(mod.wbs_slice_status(plan, 3), " ")
-            self.assertEqual(mod.wbs_slice_status(plan, 4), "x")
-            self.assertEqual(mod.wbs_slice_status(plan, 5), " ")
+            # WBS 状态只认 fenced checklist；表格行（4/5）不再被识别，避免多表/同号歧义。
+            self.assertIsNone(mod.wbs_slice_status(plan, 4))
+            self.assertIsNone(mod.wbs_slice_status(plan, 5))
             self.assertIsNone(mod.wbs_slice_status(plan, 6))
 
     def test_traceability_blocks_missing_p0_and_negative_test_coverage(self) -> None:

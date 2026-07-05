@@ -22,6 +22,53 @@ try:
 except Exception:  # pragma: no cover - gate_parse 不可用时降级读 Epic 字面量
     _wbs_slice_status = None
 
+RUN_DIR = ROOT / ".workflows" / "runs"
+EVENT_DIR = ROOT / ".workflows" / "events"
+
+
+def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
+    """回放该 Epic 最新 run 的门禁事件流，供看板卡片展示时间账本摘要。
+    返回 {last_gate: {result, stage, at, reason}, consecutive_fails}；无事件流返回 None。"""
+    if not RUN_DIR.is_dir():
+        return None
+    epic_stem = Path(epic_rel).stem
+    runs = sorted((f for f in RUN_DIR.glob("*.run.yaml") if epic_stem in f.name), key=lambda f: f.name)
+    if not runs:
+        return None
+    run_id = runs[-1].name[: -len(".run.yaml")]
+    event_file = EVENT_DIR / f"{run_id}.events.jsonl"
+    if not event_file.is_file():
+        return None
+    gate_events: list[dict[str, Any]] = []
+    for line in event_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if ev.get("type") in ("gate_pass", "gate_fail"):
+            gate_events.append(ev)
+    if not gate_events:
+        return None
+    last = gate_events[-1]
+    last_stage = last.get("stage")
+    consecutive_fails = 0
+    for ev in reversed(gate_events):
+        if ev.get("stage") != last_stage or ev.get("type") != "gate_fail":
+            break
+        consecutive_fails += 1
+    return {
+        "last_gate": {
+            "result": "pass" if last.get("type") == "gate_pass" else "fail",
+            "stage": last_stage,
+            "at": (last.get("created_at") or "")[:10],
+            "reason": (last.get("reason") or "").split(";")[0].strip(),
+        },
+        "consecutive_fails": consecutive_fails,
+    }
+
+
 PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change"}
 SLICE_RE = re.compile(r"^(\[[ xX~]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
 WBS_TABLE_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
@@ -259,19 +306,16 @@ def _slice_status_in(child: str | None, n: int) -> str | None:
 
 
 def _derive_slice_done(
-    epic_literal_done: bool, preferred_child: str | None, n: int, all_children: list[str]
+    epic_literal_done: bool, preferred_child: str | None, n: int, stage_key: str
 ) -> tuple[bool, str]:
-    """切片完成态以子 Plan（事实源）为准：先查 SLICE_PLAN_STAGE 映射的优选子 Plan（快路径），
-    查无该切片号则遍历所有子 Plan 找真正承载它的那个（兜底，根治映射错位）；
-    仍找不到才回退 Epic 字面量。返回 (done, derived_from)，
-    derived_from ∈ {"child-plan", "epic-literal"}。"""
-    status = _slice_status_in(preferred_child, n)
-    if status is not None:
-        return status == "x", "child-plan"
-    for child in all_children:
-        if child == preferred_child:
-            continue
-        status = _slice_status_in(child, n)
+    """切片完成态派生策略（防撒谎优先）：
+    只有当该切片映射到 development 阶段（功能开发主 plan 按约定沿用 Epic 全局切片号）、
+    且功能开发子 Plan 明确查到该号状态时，才从子 Plan 派生；
+    其余阶段（需求/方案/测试/部署等，子 Plan 用局部编号，与 Epic 切片号无对应关系）
+    以及查无该号时，一律回退 Epic 字面量——避免把「恰好同号但语义无关」的行误当切片状态。
+    返回 (done, derived_from)，derived_from ∈ {"child-plan", "epic-literal"}。"""
+    if stage_key == "development":
+        status = _slice_status_in(preferred_child, n)
         if status is not None:
             return status == "x", "child-plan"
     return epic_literal_done, "epic-literal"
@@ -284,14 +328,13 @@ def scan_epic(path: Path) -> dict[str, Any]:
     wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
     plan_by_stage = {p["stage_key"]: p.get("path") for p in plans if p.get("path")}
-    all_children = [p["path"] for p in plans if p.get("path")]
     enriched: list[dict[str, Any]] = []
     for s in slices:
         n = s["n"]
         tbl = wbs_table.get(n, {})
         stage_key = SLICE_PLAN_STAGE.get(n, "development")
         child = plan_by_stage.get(stage_key)
-        done, derived_from = _derive_slice_done(s["done"], child, n, all_children)
+        done, derived_from = _derive_slice_done(s["done"], child, n, stage_key)
         enriched.append(
             {
                 "n": n,
@@ -321,6 +364,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "slices": enriched,
         "plans": plans,
         "next_slice": first_open,
+        "gate_history": gate_history_for(rel),
     }
 
 

@@ -283,6 +283,20 @@
     function render(epic) {
       current = epic;
       const nextN = epic.next_slice;
+      const gh = epic.gate_history;
+      let gateHtml = '';
+      if (gh && gh.last_gate) {
+        const lg = gh.last_gate;
+        const pass = lg.result === 'pass';
+        const icon = pass ? '✅' : '⚠️';
+        const verb = pass ? '通过' : '未过';
+        const reason = (!pass && lg.reason) ? ` — ${lg.reason}` : '';
+        const warn = (gh.consecutive_fails >= 2)
+          ? ` <b style="color:var(--blocked)">·连续${gh.consecutive_fails}次未过</b>` : '';
+        gateHtml = `<div class="meta gate-history" title="门禁事件账本回放${lg.reason ? '：' + lg.reason.replace(/"/g,'') : ''}">
+          <span>${icon} <b>最近门禁</b> ${lg.at || '—'} ${verb}（${lg.stage || '—'}）${reason}${warn}</span>
+        </div>`;
+      }
       const cols = { done: [], active: [], todo: [], blocked: [] };
       (epic.slices || []).forEach(s => {
         cols[sliceColumn(s, nextN, epic.p0_open || 0)].push(s);
@@ -328,6 +342,7 @@
           <span><b>仓库</b> ${epic.repo || '—'} / ${epic.branch || '—'}</span>
           <span><b>下一切片</b> WBS ${nextN || '—'}</span>
         </div>
+        ${gateHtml}
         <div class="grid">${colHtml}</div>
         <section>
           <h2>子 Plan 状态</h2>

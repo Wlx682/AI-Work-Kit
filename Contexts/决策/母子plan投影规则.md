@@ -66,6 +66,24 @@ Epic 母 plan 内的 WBS 看板与子 plan 的详细切片各自维护、各自�
 
 ---
 
+## 三·补 规则 02b · 子 plan WBS 状态的唯一格式 = fenced checklist
+
+子 plan §三 的 WBS 切片状态**必须**写成 fenced 代码块内的 `[x] N. 描述`（与 Epic 全局切片号一致），**禁止用表格承载切片状态**。
+
+| | 合法 | 非法 |
+|---|------|------|
+| 形态 | ` ``` ` 内 `[x] 6. Domain 实现` | `\| 6 \| Domain \| ✅ \|` |
+
+**为什么**（2026-07-05 踩坑）：`gate_parse.wbs_slice_status`（门禁）与 `kanban-server`（看板）、`validate-epic-projection`（投影校验）三处都要按切片号定位状态行。表格首列同为数字，会产生两类歧义：（a）同一子 plan 多张表（输入输出表 vs 状态表）首列都有 `5`，解析器撞上错的一张；（b）跨子 plan 同号（技术方案的"实施阶段 1-6"、测试的用例号）被误当 Epic 切片。fenced `[x] N.` 是模板既定形态、无歧义，故立为**唯一权威源**。
+
+**硬规则**：
+
+- 三处解析器（`gate_parse` / `kanban-server` / `validate-epic-projection`）均**只认 fenced checklist**，不再读表格。旧 plan 用表格的须迁移为 fenced。
+- 输入输出/拆分说明等**非状态**表可保留，但不得作为状态判定来源。
+- 看板派生仅对 development 阶段切片从功能开发子 plan 取值（该阶段按约定沿用 Epic 全局切片号）；其余阶段与查无该号时回退 Epic 字面量，避免误匹配。
+
+---
+
 ## 四、规则 03 · 粒度对齐
 
 当子 plan 把母 plan 的某一切片拆成更细分项（如 `#5 → 5a Mock / 5b Http`、`#6 → 6a 首页 / 6b 视频生成 / 6c 特效`），母 plan **必须**二选一同步：

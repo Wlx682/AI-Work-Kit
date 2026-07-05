@@ -126,11 +126,34 @@ def parse_epic_board(content: str) -> list[tuple[str, str, str, str]]:
     return rows
 
 
+FENCED_WBS_RE = re.compile(r"^\[([ xX~])\]\s*(\d+)([a-z]?)\.\s+")
+
+
 def parse_subplan_wbs(content: str) -> dict[str, list[tuple[str, str]]]:
     sec = section_three(content)
     if not sec:
         return {}
     agg: dict[str, list[tuple[str, str]]] = {}
+
+    # 权威源：fenced `[x] N.` checklist（与 gate_parse.wbs_slice_status 同一格式）。
+    # 有 fenced checklist 就只信它，不再看表格——表格首列同为数字，会误读
+    # 「输入输出表」等非状态表（曾导致切片 5 聚合成 partial 的假冲突）。
+    in_fence = False
+    for line in sec.splitlines():
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            continue
+        m = FENCED_WBS_RE.match(line)
+        if m:
+            mark = m.group(1).lower()
+            state = {"x": "done", " ": "todo", "~": "partial"}.get(mark, "partial")
+            agg.setdefault(m.group(2), []).append((m.group(3), state))
+    if agg:
+        return agg
+
+    # 兼容 fallback：无 fenced checklist 的旧 plan 才读表格。
     for line in sec.splitlines():
         if not line.startswith("|"):
             continue
