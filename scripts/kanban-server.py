@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections import Counter
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -26,18 +27,28 @@ RUN_DIR = ROOT / ".workflows" / "runs"
 EVENT_DIR = ROOT / ".workflows" / "events"
 
 
-def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
-    """回放该 Epic 最新 run 的门禁事件流，供看板卡片展示时间账本摘要。
-    返回 {last_gate: {result, stage, at, reason}, consecutive_fails}；无事件流返回 None。"""
-    if not RUN_DIR.is_dir():
-        return None
+def _event_file_for(epic_rel: str) -> Path | None:
+    """定位该 Epic 的事件流文件。两条路径，任一命中即用：
+    1. 显式 run（workflow-run.py start 建的）：.workflows/runs/*.run.yaml → <run_id>.events.jsonl
+    2. 审计旁路（workflow-gate.sh 被动落盘，无需 run）：.workflows/events/<epic-stem>.events.jsonl
+    路径 2 对应 auditd 哲学——事件是门禁执行的副作用，不依赖有状态的 run。"""
     epic_stem = Path(epic_rel).stem
-    runs = sorted((f for f in RUN_DIR.glob("*.run.yaml") if epic_stem in f.name), key=lambda f: f.name)
-    if not runs:
-        return None
-    run_id = runs[-1].name[: -len(".run.yaml")]
-    event_file = EVENT_DIR / f"{run_id}.events.jsonl"
-    if not event_file.is_file():
+    if RUN_DIR.is_dir():
+        runs = sorted((f for f in RUN_DIR.glob("*.run.yaml") if epic_stem in f.name), key=lambda f: f.name)
+        if runs:
+            run_id = runs[-1].name[: -len(".run.yaml")]
+            candidate = EVENT_DIR / f"{run_id}.events.jsonl"
+            if candidate.is_file():
+                return candidate
+    direct = EVENT_DIR / f"{epic_stem}.events.jsonl"
+    return direct if direct.is_file() else None
+
+
+def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
+    """回放该 Epic 的门禁事件流，供看板卡片展示时间账本摘要。
+    返回 {last_gate: {result, stage, at, reason}, consecutive_fails}；无事件流返回 None。"""
+    event_file = _event_file_for(epic_rel)
+    if event_file is None:
         return None
     gate_events: list[dict[str, Any]] = []
     for line in event_file.read_text(encoding="utf-8").splitlines():
@@ -58,6 +69,18 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
         if ev.get("stage") != last_stage or ev.get("type") != "gate_fail":
             break
         consecutive_fails += 1
+    # recent：最近若干条完整事件（时间倒序），供前端渲染门禁时间线。
+    recent = [
+        {
+            "result": "pass" if e.get("type") == "gate_pass" else "fail",
+            "stage": e.get("stage"),
+            "at": (e.get("created_at") or "")[:19].replace("T", " "),
+            "reason": (e.get("reason") or "").split(";")[0].strip(),
+            "git_commit": (e.get("git_commit") or "")[:7],
+        }
+        for e in reversed(gate_events)
+    ][:12]
+    passes = sum(1 for e in gate_events if e.get("type") == "gate_pass")
     return {
         "last_gate": {
             "result": "pass" if last.get("type") == "gate_pass" else "fail",
@@ -66,6 +89,9 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
             "reason": (last.get("reason") or "").split(";")[0].strip(),
         },
         "consecutive_fails": consecutive_fails,
+        "recent": recent,
+        "total": len(gate_events),
+        "passes": passes,
     }
 
 
@@ -352,19 +378,43 @@ def scan_epic(path: Path) -> dict[str, Any]:
             }
         )
     first_open = next((e["n"] for e in enriched if not e["done"]), None)
+    gh = gate_history_for(rel)
+    done_cnt = sum(1 for e in enriched if e["done"])
+    total_cnt = len(enriched)
+    # 当前阶段：第一个未完成切片所属 stage_key；全完成则 done。
+    cur_stage = next((e["stage_key"] for e in enriched if not e["done"]), "done")
+    consec = (gh or {}).get("consecutive_fails", 0)
+    p0 = int(fm.get("p0_open", "0") or "0")
+    # 健康等级（指挥官排序依据）：red 连续fail≥2 或 P0未闭环；amber 有未完成或最近fail；green 全通过。
+    if consec >= 2 or p0 > 0:
+        health = "red"
+    elif cur_stage == "done":
+        health = "green"
+    elif (gh and gh["last_gate"]["result"] == "fail") or total_cnt > done_cnt:
+        health = "amber"
+    else:
+        health = "blue"
+    blocker = ""
+    if first_open is not None:
+        blocker = next((e["title"] for e in enriched if e["n"] == first_open), f"WBS {first_open}")
     return {
         "file": rel,
         "name": path.stem,
         "epic_id": fm.get("epic_id", ""),
         "status": fm.get("status", ""),
         "lifecycle_state": fm.get("lifecycle_state", ""),
-        "p0_open": int(fm.get("p0_open", "0") or "0"),
+        "p0_open": p0,
         "repo": fm.get("repo", ""),
         "branch": fm.get("branch", ""),
         "slices": enriched,
         "plans": plans,
         "next_slice": first_open,
-        "gate_history": gate_history_for(rel),
+        "gate_history": gh,
+        "health": health,
+        "current_stage": cur_stage,
+        "slices_done": done_cnt,
+        "slices_total": total_cnt,
+        "blocker_hint": blocker,
     }
 
 
@@ -392,6 +442,17 @@ def board_revision() -> str:
             if pf.is_file():
                 st = pf.stat()
                 parts.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
+    # 工作流页数据源在 .workflows/ 与反馈文件，也须纳入 revision，否则事件/蓝图更新页面不刷新。
+    wf_globs = [
+        BLUEPRINT_DIR.glob("*.json"),
+        EVENT_DIR.glob("*.events.jsonl"),
+        [CONSTITUTION_FILE, ORPHAN_FEEDBACK],
+    ]
+    for g in wf_globs:
+        for f in sorted(g, key=lambda p: p.name):
+            if f.is_file():
+                st = f.stat()
+                parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
     return str(hash(tuple(parts)))
 
 
@@ -407,11 +468,215 @@ def board_payload() -> list[dict[str, Any]]:
     return out
 
 
+def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
+    """全局 KPI —— 全部真实数据驱动，数据不足处带 sample 计数供前端标注。
+    语义映射：任务管道指标 → Epic 工作流指标（详见交互设计对齐表）。"""
+    total_events = 0
+    passes = 0
+    stage_fail = Counter()
+    for e in epics:
+        gh = e.get("gate_history") or {}
+        total_events += gh.get("total", 0)
+        passes += gh.get("passes", 0)
+        for ev in gh.get("recent", []):
+            if ev.get("result") == "fail" and ev.get("stage"):
+                stage_fail[ev["stage"]] += 1
+    n_epics = len(epics)
+    blocked = sum(1 for e in epics if e.get("health") in ("red", "amber"))
+    healthy = sum(1 for e in epics if e.get("health") == "green")
+    running = sum(1 for e in epics if e.get("health") == "blue")
+    pass_rate = round(passes / total_events * 100) if total_events else None
+    top_blockers = [{"stage": s, "count": c} for s, c in stage_fail.most_common(3)]
+    # 整体健康灯：任一 red→red；有 amber→amber；否则 green。
+    lights = [e.get("health") for e in epics]
+    overall = "red" if "red" in lights else ("amber" if "amber" in lights else "green")
+    return {
+        "n_epics": n_epics,
+        "blocked": blocked,
+        "healthy": healthy,
+        "running": running,
+        "pass_rate": pass_rate,
+        "gate_events": total_events,
+        "top_blockers": top_blockers,
+        "overall_light": overall,
+        "sample_low": total_events < 10,
+    }
+
+
+BLUEPRINT_DIR = ROOT / ".workflows" / "blueprints"
+CONSTITUTION_FILE = ROOT / ".workflows" / "constitution.json"
+ORPHAN_FEEDBACK = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+
+_RULE_ZH = {
+    "tdd_first": "验收测试先行（外层 TDD 先红）",
+    "skill_run_required": "阶段完成须输出 skill_run 反馈",
+    "epic_required": "功能开发须先有 Epic",
+    "traceability": "需求 AC → 测试/开发任务可追溯",
+    "figma_forced": "含界面/对稿 → 强制 figma-ui skill",
+    "wbs_single_truth": "WBS 单一权威源（子 Plan fenced checklist）",
+}
+
+
+def read_blueprints() -> list[dict[str, Any]]:
+    """读全部工作流蓝图定义，输出阶段链（供图谱渲染）。"""
+    out: list[dict[str, Any]] = []
+    if not BLUEPRINT_DIR.is_dir():
+        return out
+    for f in sorted(BLUEPRINT_DIR.glob("*.json")):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        stages = []
+        for s in d.get("stages", []):
+            crit = s.get("exitCriteria", {}) or {}
+            stages.append(
+                {
+                    "key": s.get("key", ""),
+                    "label": s.get("label", s.get("key", "")),
+                    "skill": (s.get("skills") or [""])[0],
+                    "exit": [k for k, v in crit.items() if v],
+                    "onlyIf": s.get("onlyIf") or {},
+                }
+            )
+        out.append(
+            {
+                "name": d.get("name", f.stem),
+                "version": d.get("version", ""),
+                "uses_epic": bool(d.get("usesEpic")),
+                "description": d.get("description", ""),
+                "stages": stages,
+            }
+        )
+    return out
+
+
+def read_constitution() -> list[dict[str, Any]]:
+    """读工作流宪法规则 + 判定其执行形态（enforced 硬门禁 / indexed 延迟索引）。"""
+    if not CONSTITUTION_FILE.is_file():
+        return []
+    try:
+        d = json.loads(CONSTITUTION_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    rules = []
+    for r in d.get("rules", []):
+        rid = str(r.get("id", ""))
+        checked_by = str(r.get("checkedBy", ""))
+        status = "indexed" if checked_by.startswith("deferred:") else "enforced"
+        rules.append(
+            {
+                "id": rid,
+                "title": _RULE_ZH.get(rid, rid),
+                "checked_by": checked_by,
+                "status": status,
+                "severity": r.get("severity", ""),
+            }
+        )
+    return rules
+
+
+def all_gate_events() -> list[dict[str, Any]]:
+    """跨全部 Epic 的门禁事件流，时间倒序，供运行态监控。"""
+    events: list[dict[str, Any]] = []
+    if not EVENT_DIR.is_dir():
+        return events
+    for f in EVENT_DIR.glob("*.events.jsonl"):
+        epic_stem = f.name[: -len(".events.jsonl")]
+        for line in f.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if ev.get("type") not in ("gate_pass", "gate_fail"):
+                continue
+            events.append(
+                {
+                    "epic": epic_stem,
+                    "result": "pass" if ev.get("type") == "gate_pass" else "fail",
+                    "stage": ev.get("stage"),
+                    "at": (ev.get("created_at") or "")[:19].replace("T", " "),
+                    "reason": (ev.get("reason") or "").split(";")[0].strip(),
+                    "git_commit": (ev.get("git_commit") or "")[:7],
+                }
+            )
+    events.sort(key=lambda e: e.get("at", ""), reverse=True)
+    return events
+
+
+def read_evolution_candidates() -> list[dict[str, Any]]:
+    """从孤立反馈记录抽『待蒸馏』区的进化候选（### 三级标题为一条）。"""
+    if not ORPHAN_FEEDBACK.is_file():
+        return []
+    text = ORPHAN_FEEDBACK.read_text(encoding="utf-8")
+    m = re.search(r"##\s*待蒸馏\s*\n(.*?)(?=\n##\s|\Z)", text, re.S)
+    if not m:
+        return []
+    block = m.group(1)
+    out = []
+    for mm in re.finditer(r"###\s+(.+?)\n(.*?)(?=\n###\s|\Z)", block, re.S):
+        title = mm.group(1).strip()
+        body = mm.group(2).strip()
+        summary = ""
+        for ln in body.splitlines():
+            s = ln.strip().lstrip("-* ").strip()
+            if s and not s.startswith("```") and not s.startswith("skill_run"):
+                summary = re.sub(r"[*`]", "", s)[:120]
+                break
+        out.append({"title": title, "summary": summary})
+    return out
+
+
+def workflows_envelope() -> dict[str, Any]:
+    events = all_gate_events()
+    stage_fail = Counter(e["stage"] for e in events if e["result"] == "fail" and e.get("stage"))
+    warn: list[dict[str, Any]] = []
+    by_epic: dict[str, list[dict[str, Any]]] = {}
+    for e in events:
+        by_epic.setdefault(e["epic"], []).append(e)
+    for epic, evs in by_epic.items():
+        evs_sorted = sorted(evs, key=lambda x: x.get("at", ""))
+        if not evs_sorted:
+            continue
+        last = evs_sorted[-1]
+        if last["result"] != "fail":
+            continue
+        consec = 0
+        for e in reversed(evs_sorted):
+            if e["stage"] == last["stage"] and e["result"] == "fail":
+                consec += 1
+            else:
+                break
+        if consec >= 2:
+            warn.append({"epic": epic, "stage": last["stage"], "consecutive": consec, "reason": last["reason"]})
+    blueprints = read_blueprints()
+    pass_n = sum(1 for e in events if e["result"] == "pass")
+    return {
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        "blueprints": blueprints,
+        "constitution": read_constitution(),
+        "events": events[:40],
+        "top_blockers": [{"stage": s, "count": c} for s, c in stage_fail.most_common(5)],
+        "warnings": warn,
+        "evolution": read_evolution_candidates(),
+        "stats": {
+            "blueprint_count": len(blueprints),
+            "event_count": len(events),
+            "pass_rate": round(pass_n / len(events) * 100) if events else None,
+            "sample_low": len(events) < 10,
+        },
+    }
+
+
 def board_envelope() -> dict[str, Any]:
+    epics = board_payload()
     return {
         "revision": board_revision(),
         "updated_at": datetime.now().isoformat(timespec="seconds"),
-        "epics": board_payload(),
+        "epics": epics,
+        "kpi": aggregate_kpi(epics),
     }
 
 
@@ -518,20 +783,21 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         if path in ("/", "/index.html"):
-            idx = KANBAN_DIR / "index.html"
-            if not idx.is_file():
-                self._json(404, {"error": "index.html missing"})
-                return
-            data = idx.read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
+            self._send_static("index.html", "text/html; charset=utf-8")
+            return
+        if path == "/workflows" or path == "/workflows.html":
+            self._send_static("workflows.html", "text/html; charset=utf-8")
+            return
+        if path == "/favicon.ico":
+            self.send_response(204)
             self.end_headers()
-            self.wfile.write(data)
             return
         if path == "/api/board":
             env = board_envelope()
             self._json(200, env)
+            return
+        if path == "/api/workflows":
+            self._json(200, workflows_envelope())
             return
         if path == "/api/revision":
             self._json(
@@ -540,6 +806,18 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         self._json(404, {"error": "not found"})
+
+    def _send_static(self, name: str, content_type: str) -> None:
+        f = KANBAN_DIR / name
+        if not f.is_file():
+            self._json(404, {"error": f"{name} missing"})
+            return
+        data = f.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path

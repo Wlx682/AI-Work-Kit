@@ -373,6 +373,74 @@ PY
   fi
 fi
 
+# --- 审计旁路（auditd 哲学）：判定完成后被动追加一条事件到时间账本。 ---
+# 铁律：只读现场、只 append、写失败绝不影响门禁退出码，也不参与任何路由判定。
+# 信号源是 blockers 数组（空=pass），不是 $?——本门禁 pass/fail 都 exit 0。
+# 事件按 Epic 聚合：.workflows/events/<epic-stem>.events.jsonl（无 Epic 用 workflow 名）。
+emit_gate_event() {
+  # 整个函数包在子 shell + || true 里，任何失败都被吞掉，绝不冒泡到门禁主流程。
+  (
+    set +e
+    local event_dir="$ROOT/.workflows/events"
+    mkdir -p "$event_dir" 2>/dev/null || return 0
+
+    local stem
+    if [[ -n "${epic_rel:-}" ]]; then
+      stem="$(basename "${epic_rel%.md}")"
+    else
+      stem="$WORKFLOW"
+    fi
+    local event_file="$event_dir/${stem}.events.jsonl"
+
+    # 判定结果：blockers 空即 pass。
+    local result reason=""
+    if [[ ${#blockers[@]} -eq 0 ]]; then
+      result="gate_pass"
+    else
+      result="gate_fail"
+      reason="${blockers[0]}"
+    fi
+
+    # 恢复密钥（回溯用）：代码版本 + 当前卡住 stage 的子 Plan 内容指纹。
+    local git_commit plan_snapshot=""
+    git_commit="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo "")"
+    local cur_child=""
+    local p
+    for p in "${plans_found[@]:-}"; do
+      if [[ "$p" == "${current_state}:"* ]]; then
+        cur_child="${p#*:}"
+        break
+      fi
+    done
+    if [[ -n "$cur_child" ]]; then
+      local cf
+      cf="$(resolve_path "$cur_child")"
+      [[ -f "$cf" ]] && plan_snapshot="$(shasum -a 256 "$cf" 2>/dev/null | awk '{print $1}')"
+    fi
+
+    # 时间戳来自执行现场（date），不伪造。JSONL 由 python 安全序列化。
+    python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" <<'PY' 2>/dev/null || true
+import json, sys, datetime
+event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child = sys.argv[1:10]
+ev = {
+    "type": etype,
+    "stage": stage,
+    "workflow": workflow,
+    "epic": epic or None,
+    "child_plan": child or None,
+    "reason": reason,
+    "git_commit": git_commit or None,
+    "plan_snapshot": plan_snapshot or None,
+    "created_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+}
+with open(event_file, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(ev, ensure_ascii=False) + "\n")
+PY
+    return 0
+  ) 2>/dev/null || true
+}
+emit_gate_event
+
 lc_hint=""
 if [[ "$USES_EPIC" == "1" && -n "$EPIC_FILE" ]]; then
   # 仅对照展示，门禁不采用

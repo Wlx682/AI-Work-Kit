@@ -26,6 +26,13 @@ scripts/.kanban-server.log
 scripts/.kanban-server.pid
 scripts/__pycache__/
 
+# 工作流运行态产物（门禁事件流、run 实例；由 workflow-gate/workflow-run 本地生成，不入库）
+.workflows/events/
+.workflows/runs/
+
+# Playwright MCP 临时产物（实测截图、快照、控制台日志）
+.playwright-mcp/
+
 # ai-usage-stats 报告产物
 ai-usage-report-*.md
 

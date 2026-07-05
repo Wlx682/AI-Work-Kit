@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 工作流管理 · AI-Work-Kit</title>
+  <style>
+    :root {
+      --bg: #0A0C14; --bg-2: #0e1120;
+      --panel: rgba(22, 27, 45, 0.55); --panel-solid: #141a2e;
+      --stroke: rgba(120, 140, 200, 0.16); --stroke-strong: rgba(130, 150, 220, 0.32);
+      --text: #e8ecf6; --muted: #8b93ad; --faint: #5a6178;
+      --neon-a: #4d7cff; --neon-b: #9a5cff; --neon-c: #35e0d6;
+      --red: #ff5470; --amber: #ffb547; --green: #35e08a; --blue: #4d9cff;
+      --grad: linear-gradient(135deg, var(--neon-a), var(--neon-b));
+      --radius: 16px; --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background:
+        radial-gradient(1200px 700px at 80% -10%, rgba(77,124,255,0.10), transparent 60%),
+        radial-gradient(900px 600px at 0% 10%, rgba(154,92,255,0.08), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      background-attachment: fixed; color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: clamp(13px, 1vw + 9px, 15px); line-height: 1.5; min-height: 100vh;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(120,140,200,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120,140,200,0.035) 1px, transparent 1px);
+      background-size: 44px 44px; mask-image: radial-gradient(circle at 50% 0%, #000 40%, transparent 90%);
+    }
+    .wrap { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: clamp(16px,3vw,34px); }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      padding: clamp(14px,2vw,20px) clamp(16px,2.4vw,26px);
+      background: var(--panel); backdrop-filter: blur(14px);
+      border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 0.9rem; }
+    .brand h1 { margin: 0; font-size: clamp(17px,1.6vw,22px); }
+    .brand .ver { color: var(--muted); font-size: 0.78rem; }
+    .icon { width: 34px; height: 34px; border-radius: 9px; background: var(--grad); display: grid; place-items: center; font-size: 18px; box-shadow: 0 4px 16px rgba(90,110,255,0.4); }
+    .nav { display: flex; gap: 0.5rem; }
+    a.navlink { text-decoration: none; color: var(--text); background: rgba(255,255,255,0.04); border: 1px solid var(--stroke-strong); padding: 0.5rem 0.9rem; border-radius: 10px; font-size: 0.86rem; transition: 0.16s; }
+    a.navlink:hover { background: rgba(255,255,255,0.09); }
+    a.navlink.active { background: var(--grad); border: none; color: #fff; }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,220px),1fr)); gap: clamp(12px,1.6vw,18px); margin-top: clamp(16px,2.4vw,24px); }
+    .kpi { position: relative; overflow: hidden; padding: clamp(18px,2.4vw,26px); background: var(--panel); backdrop-filter: blur(14px); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); min-height: clamp(120px,15vw,150px); display: flex; flex-direction: column; justify-content: space-between; }
+    .kpi::after { content: ""; position: absolute; inset: 0; background: var(--grad); opacity: 0.04; }
+    .kpi .k-label { color: var(--muted); font-size: 0.82rem; display: flex; gap: 0.4rem; align-items: center; }
+    .kpi .k-num { font-size: clamp(34px,5.5vw,50px); font-weight: 800; line-height: 1; background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-variant-numeric: tabular-nums; }
+    .kpi .k-num.plain { -webkit-text-fill-color: initial; background: none; color: var(--text); font-size: clamp(24px,3.4vw,34px); }
+    .kpi .k-sub { color: var(--faint); font-size: 0.74rem; }
+    .badge-low { font-size: 0.62rem; padding: 1px 6px; border-radius: 999px; background: rgba(255,181,71,0.14); color: var(--amber); border: 1px solid rgba(255,181,71,0.3); }
+
+    .section { margin-top: clamp(20px,3vw,32px); }
+    .section > h2 { font-size: clamp(15px,1.4vw,19px); margin: 0 0 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+    .section > h2 .tag { font-size: 0.7rem; color: var(--faint); font-weight: 400; }
+
+    /* blueprint flow */
+    .bp { padding: clamp(14px,1.8vw,20px); background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: clamp(12px,1.6vw,16px); }
+    .bp-head { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .bp-head .name { font-weight: 700; font-size: clamp(14px,1.3vw,16px); }
+    .bp-head .v { color: var(--neon-c); font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+    .bp-head .epic-tag { font-size: 0.68rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--stroke-strong); color: var(--muted); }
+    .bp-head .desc { color: var(--faint); font-size: 0.76rem; flex: 1 1 100%; }
+    .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.4rem; }
+    .stage-node { flex: 1 1 150px; min-width: 140px; background: var(--panel-solid); border: 1px solid var(--stroke); border-radius: 12px; padding: 0.6rem 0.7rem; position: relative; }
+    .stage-node .s-key { font-size: 0.66rem; color: var(--neon-c); font-family: ui-monospace, monospace; }
+    .stage-node .s-label { font-size: 0.82rem; font-weight: 600; margin: 2px 0; }
+    .stage-node .s-skill { font-size: 0.68rem; color: var(--muted); }
+    .stage-node .s-exit { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
+    .stage-node .s-exit span { font-size: 0.6rem; padding: 1px 5px; border-radius: 5px; background: rgba(77,124,255,0.12); color: var(--blue); }
+    .arrow { align-self: center; color: var(--faint); font-size: 1rem; }
+    .flow.empty-flow { color: var(--faint); font-size: 0.8rem; }
+
+    /* constitution + monitor split */
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,320px),1fr)); gap: clamp(14px,2vw,20px); }
+    .panel { padding: clamp(14px,1.8vw,20px); background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .panel h3 { margin: 0 0 0.9rem; font-size: 0.9rem; color: var(--muted); }
+    .rule { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px dashed var(--stroke); }
+    .rule:last-child { border: none; }
+    .rule .r-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .rule .r-dot.enforced { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .rule .r-dot.indexed { background: var(--amber); }
+    .rule .r-body { flex: 1; }
+    .rule .r-title { font-size: 0.84rem; }
+    .rule .r-meta { font-size: 0.68rem; color: var(--faint); font-family: ui-monospace, monospace; }
+    .rule .r-badge { font-size: 0.62rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--muted); }
+
+    .timeline { list-style: none; margin: 0; padding: 0 0 0 1.1rem; position: relative; }
+    .timeline::before { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(var(--stroke-strong), transparent); }
+    .timeline li { position: relative; padding: 0 0 0.9rem 0.4rem; font-size: 0.78rem; }
+    .timeline li::before { content: ""; position: absolute; left: -1.1rem; top: 5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--bg-2); }
+    .timeline li.fail::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .timeline li.pass::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .timeline .tl-top { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+    .timeline .tl-at { color: var(--faint); font-variant-numeric: tabular-nums; }
+    .timeline .tl-stage code { color: var(--neon-c); }
+    .timeline .tl-reason { color: var(--muted); margin-top: 2px; }
+    .timeline .tl-epic { color: var(--faint); font-size: 0.7rem; }
+
+    .topfail li { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px dashed var(--stroke); font-size: 0.8rem; }
+    .topfail li:last-child { border: none; }
+    .topfail code { color: var(--red); }
+    .topfail .cnt { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .warn-card { border-left: 4px solid var(--red); background: rgba(255,84,112,0.06); border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.6rem; }
+    .warn-card b { color: var(--red); }
+    .warn-card .w-reason { color: var(--muted); font-size: 0.76rem; margin-top: 3px; }
+
+    .evo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,280px),1fr)); gap: clamp(12px,1.6vw,16px); }
+    .evo-card { background: var(--panel-solid); border: 1px solid var(--stroke); border-left: 4px solid var(--neon-b); border-radius: 12px; padding: 0.9rem 1rem; }
+    .evo-card .e-title { font-weight: 600; font-size: 0.86rem; }
+    .evo-card .e-sum { color: var(--muted); font-size: 0.76rem; margin-top: 5px; }
+
+    .empty { text-align: center; color: var(--faint); padding: 1.5rem; font-size: 0.82rem; }
+    .fade-in { opacity: 0; transform: translateY(14px); }
+    .fade-in.seen { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1); }
+    @media (prefers-reduced-motion: reduce) { .fade-in { opacity: 1 !important; transform: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <span class="icon">⚙</span>
+        <div><h1>AI 工作流管理</h1><div class="ver" id="verLine">工具中性蓝图 · 门禁 · 事件 · 进化 · —</div></div>
+      </div>
+      <nav class="nav">
+        <a class="navlink" href="/">Epic 看板</a>
+        <a class="navlink active" href="/workflows">工作流管理</a>
+      </nav>
+    </div>
+    <main id="app"><div class="empty">加载中…</div></main>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    function esc(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+    const STAGE_ZH = { requirement: '需求分析', design: '架构设计', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '完成', diagnose: '复现定位', fix: '修复', regress: '回归', 'ui-impl': 'UI 还原', verify: '验收', locate: '定位' };
+    const zh = k => STAGE_ZH[k] || k || '—';
+    const EXIT_ZH = { childPlanExists: '子Plan存在', status: '状态达标', wbsDone: 'WBS完成', p0Open: 'P0闭环', planGateCheck: '开发门禁', skillRun: 'skill_run', verdictPass: '视觉裁决', sectionsPresent: '交接章节', testTraceability: '测试追溯', devTraceability: '开发追溯' };
+    const ex = k => EXIT_ZH[k] || k;
+
+    function countUp(el) {
+      const t = +el.dataset.count || 0, sfx = el.dataset.suffix || '', dur = 800, t0 = performance.now();
+      function step(now) { const p = Math.min(1, (now - t0) / dur); el.textContent = Math.round(t * (1 - Math.pow(1 - p, 3))) + sfx; if (p < 1) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    }
+
+    async function load() {
+      let d;
+      try { d = await (await fetch('/api/workflows')).json(); }
+      catch (e) { $('app').innerHTML = `<div class="empty">加载失败：${e.message}</div>`; return; }
+      $('verLine').textContent = `工具中性蓝图 · 门禁 · 事件 · 进化 · 同步 ${(d.updated_at || '').replace('T', ' ').slice(0, 19)}`;
+      render(d);
+    }
+
+    function render(d) {
+      const st = d.stats || {};
+      const low = st.sample_low ? '<span class="badge-low">样本不足</span>' : '';
+      const passRate = st.pass_rate == null ? 0 : st.pass_rate;
+
+      const kpi = `
+        <div class="kpi-row">
+          <div class="kpi fade-in"><div class="k-label">🗂 工作流蓝图</div><div class="k-num" data-count="${st.blueprint_count || 0}">0</div><div class="k-sub">工具中性 · JSON 定义</div></div>
+          <div class="kpi fade-in"><div class="k-label">📡 门禁事件累积</div><div class="k-num" data-count="${st.event_count || 0}">0</div><div class="k-sub">跨全部 Epic 判定留痕</div></div>
+          <div class="kpi fade-in"><div class="k-label">✅ 门禁通过率 ${low}</div><div class="k-num" data-count="${passRate}" data-suffix="%">0</div><div class="k-sub">${st.event_count || 0} 次判定</div></div>
+          <div class="kpi fade-in"><div class="k-label">⚠ 连续 fail 告警</div><div class="k-num ${(d.warnings || []).length ? '' : 'plain'}" data-count="${(d.warnings || []).length}">0</div><div class="k-sub">需优先救火的阶段</div></div>
+        </div>`;
+
+      // 1. 蓝图图谱
+      const bps = (d.blueprints || []).map(b => {
+        const flow = b.stages.length ? b.stages.map((s, i) => `
+          ${i ? '<span class="arrow">→</span>' : ''}
+          <div class="stage-node">
+            <div class="s-key">${esc(s.key)}</div>
+            <div class="s-label">${esc(zh(s.key))}</div>
+            ${s.skill ? `<div class="s-skill">🛠 ${esc(s.skill)}</div>` : ''}
+            <div class="s-exit">${(s.exit || []).map(e => `<span>${esc(ex(e))}</span>`).join('')}</div>
+          </div>`).join('')
+          : '<div class="flow empty-flow">通用引擎索引（读 manifest 决定阶段链，本身无固定阶段）</div>';
+        return `
+          <div class="bp fade-in">
+            <div class="bp-head">
+              <span class="name">${esc(b.name)}</span>
+              <span class="v">v${esc(b.version)}</span>
+              <span class="epic-tag">${b.uses_epic ? '有 Epic' : '无 Epic 轻量'}</span>
+              <span class="desc">${esc(b.description)}</span>
+            </div>
+            <div class="flow">${flow}</div>
+          </div>`;
+      }).join('');
+
+      // 2. 宪法
+      const rules = (d.constitution || []).map(r => `
+        <div class="rule">
+          <span class="r-dot ${r.status}"></span>
+          <div class="r-body"><div class="r-title">${esc(r.title)}</div><div class="r-meta">${esc(r.id)} · ${esc(r.checked_by || '—')}</div></div>
+          <span class="r-badge">${r.status === 'enforced' ? '硬门禁' : '延迟索引'}</span>
+        </div>`).join('') || '<div class="empty">未配置宪法</div>';
+
+      // 3. 运行态
+      const tl = (d.events || []).slice(0, 12).map(ev => `
+        <li class="${ev.result}">
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${esc(zh(ev.stage))}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}</div>
+          <div class="tl-epic">${esc(ev.epic)} ${ev.git_commit ? '· ' + esc(ev.git_commit) : ''}</div>
+        </li>`).join('') || '<li>暂无门禁事件</li>';
+      const topfail = (d.top_blockers || []).map(t => `<li><code>${esc(zh(t.stage))}</code><span class="cnt">×${t.count}</span></li>`).join('') || '<li>暂无失败记录</li>';
+      const warns = (d.warnings || []).map(w => `
+        <div class="warn-card">
+          <b>⚠ ${esc(w.epic)}</b> 卡在 <code>${esc(zh(w.stage))}</code> · 连续 ${w.consecutive} 次未过
+          <div class="w-reason">${esc(w.reason || '')}</div>
+        </div>`).join('') || '<div class="empty">🎉 无连续 fail，工作流运转顺畅</div>';
+
+      // 4. 进化
+      const evo = (d.evolution || []).map(e => `
+        <div class="evo-card fade-in"><div class="e-title">🧬 ${esc(e.title)}</div><div class="e-sum">${esc(e.summary || '')}</div></div>`).join('')
+        || '<div class="empty">待蒸馏区暂无进化候选</div>';
+
+      $('app').innerHTML = `
+        ${kpi}
+        <div class="section">
+          <h2>🗂 工作流蓝图图谱 <span class="tag">.workflows/blueprints/ · 阶段链 + 门禁退出条件</span></h2>
+          ${bps}
+        </div>
+        <div class="section">
+          <div class="split">
+            <div class="panel fade-in">
+              <h3>📜 门禁宪法（constitution）</h3>
+              ${rules}
+            </div>
+            <div class="panel fade-in">
+              <h3>🚨 连续 fail 告警</h3>
+              ${warns}
+              <h3 style="margin-top:1.2rem">🎯 门禁卡点 Top 5</h3>
+              <ul class="topfail" style="list-style:none;margin:0;padding:0">${topfail}</ul>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>📡 运行态门禁事件流 <span class="tag">跨全部 Epic · 时间倒序</span></h2>
+          <div class="panel fade-in"><ul class="timeline">${tl}</ul></div>
+        </div>
+        <div class="section">
+          <h2>🧬 工作流进化候选 <span class="tag">孤立反馈记录 · 待蒸馏区</span></h2>
+          <div class="evo-grid">${evo}</div>
+        </div>`;
+
+      requestAnimationFrame(() => document.querySelectorAll('.k-num[data-count]').forEach(countUp));
+      const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('seen'); io.unobserve(x.target); } }), { threshold: 0.06 });
+      document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+    }
+
+    // revision 轮询：只 stat 文件算 hash，没变化不重拉完整数据（与 Epic 看板同机制）。
+    let lastRev = null;
+    async function pollRevision() {
+      try {
+        const { revision } = await (await fetch('/api/revision')).json();
+        if (lastRev !== null && revision !== lastRev) await load();
+        lastRev = revision;
+      } catch (_) {}
+    }
+
+    load().then(() => pollRevision());
+    setInterval(pollRevision, 5000);
+  </script>
+</body>
+</html>

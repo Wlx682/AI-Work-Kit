@@ -1,414 +1,565 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!doctype html>
+<html lang="zh">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Epic 看板 · AI-Work-Kit</title>
+  <title>AI 工作流指挥中心 · AI-Work-Kit</title>
   <style>
     :root {
-      --bg: #0f1419;
-      --surface: #1a2332;
-      --border: #2d3a4f;
-      --text: #e7ecf3;
-      --muted: #8b9cb3;
-      --accent: #3b82f6;
-      --done: #22c55e;
-      --todo: #64748b;
-      --active: #f59e0b;
-      --blocked: #ef4444;
+      --bg: #0A0C14;
+      --bg-2: #0e1120;
+      --panel: rgba(22, 27, 45, 0.55);
+      --panel-solid: #141a2e;
+      --stroke: rgba(120, 140, 200, 0.16);
+      --stroke-strong: rgba(130, 150, 220, 0.32);
+      --text: #e8ecf6;
+      --muted: #8b93ad;
+      --faint: #5a6178;
+      --neon-a: #4d7cff;
+      --neon-b: #9a5cff;
+      --neon-c: #35e0d6;
+      --red: #ff5470;
+      --amber: #ffb547;
+      --green: #35e08a;
+      --blue: #4d9cff;
+      --grad: linear-gradient(135deg, var(--neon-a), var(--neon-b));
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
     * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
     body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(1200px 700px at 80% -10%, rgba(77, 124, 255, 0.10), transparent 60%),
+        radial-gradient(900px 600px at 0% 10%, rgba(154, 92, 255, 0.08), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg-2));
+      background-attachment: fixed;
       color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: clamp(13px, 1vw + 9px, 15px);
+      line-height: 1.5;
       min-height: 100vh;
     }
-    header {
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(120, 140, 200, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 140, 200, 0.035) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at 50% 0%, #000 40%, transparent 90%);
     }
-    h1 { margin: 0; font-size: 1.15rem; font-weight: 600; }
-    .sub { color: var(--muted); font-size: 0.85rem; }
-    button, select {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.45rem 0.75rem;
-      cursor: pointer;
-      font-size: 0.85rem;
+    .wrap { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: clamp(16px, 3vw, 34px); }
+
+    /* ---- top bar ---- */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      padding: clamp(14px, 2vw, 20px) clamp(16px, 2.4vw, 26px);
+      background: var(--panel); backdrop-filter: blur(14px);
+      border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow);
     }
-    button:hover { border-color: var(--accent); }
-    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    main { padding: 1rem 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
-    .meta {
-      display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
-      margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
+    .brand { display: flex; align-items: center; gap: 0.9rem; }
+    .brand h1 { margin: 0; font-size: clamp(17px, 1.6vw, 22px); letter-spacing: 0.3px; }
+    .brand .ver { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+    .light { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,255,255,0.03); }
+    .light.red { background: var(--red); box-shadow: 0 0 14px var(--red), 0 0 0 4px rgba(255,84,112,0.12); animation: breathe 2.2s ease-in-out infinite; }
+    .light.amber { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+    .light.green { background: var(--green); box-shadow: 0 0 12px var(--green); }
+    @keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    button {
+      font: inherit; cursor: pointer; color: var(--text);
+      background: rgba(255,255,255,0.04); border: 1px solid var(--stroke-strong);
+      padding: 0.5rem 0.9rem; border-radius: 10px; transition: 0.16s;
     }
-    .meta span b { color: var(--text); }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.75rem;
+    button:hover { background: rgba(255,255,255,0.09); transform: translateY(-1px); }
+    button.primary { background: var(--grad); border: none; color: #fff; box-shadow: 0 4px 18px rgba(90,110,255,0.4); }
+    button.ghost { background: transparent; }
+    .search { position: relative; }
+    .search input {
+      font: inherit; color: var(--text); background: rgba(0,0,0,0.25);
+      border: 1px solid var(--stroke); border-radius: 10px; padding: 0.5rem 0.8rem 0.5rem 2rem;
+      width: clamp(140px, 20vw, 260px); outline: none;
     }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
-    .col h2 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin: 0 0 0.5rem;
+    .search input:focus { border-color: var(--neon-a); }
+    .search::before { content: "🔍"; position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); opacity: 0.5; font-size: 0.8rem; }
+
+    /* ---- KPI row ---- */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      gap: clamp(12px, 1.6vw, 18px); margin-top: clamp(16px, 2.4vw, 24px);
     }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
+    .kpi {
+      position: relative; overflow: hidden; padding: clamp(18px, 2.4vw, 28px);
+      background: var(--panel); backdrop-filter: blur(14px);
+      border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow);
+      min-height: clamp(130px, 16vw, 160px); display: flex; flex-direction: column; justify-content: space-between;
     }
-    .card.done { border-left: 3px solid var(--done); }
-    .card.active { border-left: 3px solid var(--active); }
-    .card.todo { border-left: 3px solid var(--todo); }
-    .card.blocked { border-left: 3px solid var(--blocked); }
-    .card h3 { margin: 0 0 0.35rem; font-size: 0.9rem; }
-    .card p { margin: 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
-    .card-actions { margin-top: 0.5rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
-    .card-actions button { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
-    section { margin-top: 1.5rem; }
-    section > h2 { font-size: 1rem; margin-bottom: 0.75rem; }
-    table {
-      width: 100%; border-collapse: collapse; font-size: 0.85rem;
+    .kpi::after { content: ""; position: absolute; inset: 0; background: var(--grad); opacity: 0.04; pointer-events: none; }
+    .kpi .k-label { color: var(--muted); font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem; }
+    .kpi .k-num {
+      font-size: clamp(36px, 6vw, 52px); font-weight: 800; line-height: 1;
+      background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      font-variant-numeric: tabular-nums; letter-spacing: -1px;
     }
-    th, td {
-      text-align: left; padding: 0.5rem 0.65rem;
-      border-bottom: 1px solid var(--border);
+    .kpi .k-num.plain { -webkit-text-fill-color: initial; background: none; color: var(--text); }
+    .kpi .k-sub { color: var(--faint); font-size: 0.74rem; }
+    .kpi .k-sub.up { color: var(--green); } .kpi .k-sub.down { color: var(--red); }
+    .kpi.axiom .k-num { font-size: clamp(26px, 3.6vw, 38px); }
+    .badge-low { font-size: 0.62rem; padding: 1px 6px; border-radius: 999px; background: rgba(255,181,71,0.14); color: var(--amber); border: 1px solid rgba(255,181,71,0.3); }
+    .p-tiles { display: flex; gap: 0.5rem; }
+    .p-tile { flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--stroke); border-radius: 9px; padding: 0.4rem 0.5rem; text-align: center; }
+    .p-tile b { display: block; font-size: clamp(15px, 1.8vw, 19px); color: var(--neon-c); font-variant-numeric: tabular-nums; }
+    .p-tile span { font-size: 0.64rem; color: var(--faint); }
+
+    /* ---- layout: main + sidebar ---- */
+    .stage { display: grid; grid-template-columns: minmax(0, 1fr) clamp(240px, 24vw, 320px); gap: clamp(14px, 2vw, 22px); margin-top: clamp(16px, 2.4vw, 24px); align-items: start; }
+    @media (max-width: 1024px) { .stage { grid-template-columns: 1fr; } }
+
+    .section-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 0.8rem; font-size: clamp(14px, 1.3vw, 17px); }
+    .section-title .filters { display: flex; gap: 0.4rem; }
+    .chip { font-size: 0.72rem; padding: 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--stroke); background: rgba(255,255,255,0.03); cursor: pointer; color: var(--muted); }
+    .chip.on { background: var(--grad); color: #fff; border: none; }
+
+    /* ---- epic health wall ---- */
+    .wall { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: clamp(12px, 1.6vw, 18px); }
+    .ecard {
+      position: relative; text-align: left; display: block; width: 100%;
+      padding: clamp(16px, 2vw, 22px); padding-left: calc(clamp(16px,2vw,22px) + 6px);
+      background: var(--panel); backdrop-filter: blur(12px);
+      border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow);
+      transition: 0.18s; cursor: pointer; overflow: hidden;
     }
-    th { color: var(--muted); font-weight: 500; }
-    .toast {
-      position: fixed; bottom: 1rem; right: 1rem;
-      background: var(--surface); border: 1px solid var(--done);
-      padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem;
-      opacity: 0; transition: opacity 0.2s; pointer-events: none;
-    }
-    .toast.show { opacity: 1; }
-    .empty { color: var(--muted); padding: 2rem; text-align: center; }
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-      display: none; align-items: center; justify-content: center;
-      padding: 1rem; z-index: 100;
-    }
-    .modal-backdrop.open { display: flex; }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; max-width: 520px; width: 100%;
-      max-height: 85vh; overflow: auto; padding: 1.25rem;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
-    }
-    .modal h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
-    .modal .lead { color: var(--muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1rem; }
-    .detail-grid { display: grid; gap: 0.65rem; font-size: 0.85rem; }
-    .detail-row { display: grid; grid-template-columns: 4.5rem 1fr; gap: 0.5rem; }
-    .detail-row dt { color: var(--muted); margin: 0; }
-    .detail-row dd { margin: 0; line-height: 1.45; }
-    .modal code { font-size: 0.8rem; word-break: break-all; }
-    .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
-    .btn-link {
-      background: transparent; border: none; color: var(--accent);
-      padding: 0; font-size: 0.78rem; cursor: pointer; text-decoration: underline;
-    }
-    .btn-link:hover { color: #60a5fa; }
+    .ecard:hover { transform: translateY(-3px); border-color: var(--stroke-strong); }
+    .ecard::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+    .ecard.red::before { background: var(--red); box-shadow: 0 0 16px var(--red); }
+    .ecard.amber::before { background: var(--amber); }
+    .ecard.green::before { background: var(--green); }
+    .ecard.blue::before { background: var(--blue); }
+    .ecard .e-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
+    .ecard .e-name { font-weight: 700; font-size: clamp(14px, 1.3vw, 16px); }
+    .ecard .e-stage { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+    .ecard .e-stage code { color: var(--neon-c); background: rgba(53,224,214,0.1); padding: 1px 6px; border-radius: 5px; }
+    .gate-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .gate-badge.fail { background: rgba(255,84,112,0.16); color: var(--red); border: 1px solid rgba(255,84,112,0.35); }
+    .gate-badge.pass { background: rgba(53,224,138,0.16); color: var(--green); border: 1px solid rgba(53,224,138,0.35); }
+    .progress { margin-top: 0.9rem; }
+    .progress .bar { height: 8px; border-radius: 999px; background: rgba(0,0,0,0.35); overflow: hidden; }
+    .progress .bar i { display: block; height: 100%; border-radius: 999px; background: var(--grad); width: 0; transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
+    .progress .meta { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--faint); margin-top: 5px; }
+    .blocker-hint { margin-top: 0.7rem; font-size: 0.76rem; color: var(--muted); display: flex; gap: 0.35rem; align-items: baseline; }
+    .blocker-hint b { color: var(--amber); }
+
+    /* ---- sidebar ---- */
+    .side { display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 18px); position: sticky; top: 20px; }
+    @media (max-width: 1024px) { .side { position: static; } }
+    .spanel { padding: clamp(14px, 1.8vw, 20px); background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .spanel h3 { margin: 0 0 0.8rem; font-size: 0.86rem; color: var(--muted); font-weight: 600; letter-spacing: 0.4px; }
+    /* donut */
+    .donut-wrap { display: flex; align-items: center; gap: 1rem; }
+    .donut { --p: 0; width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0;
+      background: conic-gradient(var(--red) 0 calc(var(--p1)*1%), var(--amber) 0 calc((var(--p1)+var(--p2))*1%), var(--green) 0 100%);
+      -webkit-mask: radial-gradient(farthest-side, transparent 58%, #000 59%); mask: radial-gradient(farthest-side, transparent 58%, #000 59%);
+      position: relative; }
+    .donut-legend { font-size: 0.76rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .donut-legend span { display: flex; align-items: center; gap: 0.4rem; color: var(--muted); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; }
+    .dot.red { background: var(--red); } .dot.amber { background: var(--amber); } .dot.green { background: var(--green); } .dot.blue { background: var(--blue); }
+    .topfail li { display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px dashed var(--stroke); font-size: 0.8rem; }
+    .topfail li:last-child { border: none; }
+    .topfail code { color: var(--red); }
+    .topfail .cnt { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+    /* ---- timeline ---- */
+    .timeline { list-style: none; margin: 0; padding: 0 0 0 1.1rem; position: relative; }
+    .timeline::before { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(var(--stroke-strong), transparent); }
+    .timeline li { position: relative; padding: 0 0 0.9rem 0.4rem; font-size: 0.78rem; }
+    .timeline li::before { content: ""; position: absolute; left: -1.1rem; top: 5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--bg-2); }
+    .timeline li.fail::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .timeline li.pass::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .timeline .tl-top { display: flex; gap: 0.5rem; align-items: baseline; }
+    .timeline .tl-at { color: var(--faint); font-variant-numeric: tabular-nums; }
+    .timeline .tl-stage code { color: var(--neon-c); }
+    .timeline .tl-reason { color: var(--muted); margin-top: 2px; }
+    .timeline .tl-commit { color: var(--faint); font-family: ui-monospace, monospace; font-size: 0.7rem; }
+
+    /* ---- detail (level 2) ---- */
+    .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: clamp(10px, 1.4vw, 16px); }
+    .col { background: rgba(0,0,0,0.2); border: 1px solid var(--stroke); border-radius: 14px; padding: 0.7rem; }
+    .col h4 { margin: 0.2rem 0 0.7rem; font-size: 0.82rem; display: flex; justify-content: space-between; }
+    .col h4 .n { color: var(--faint); }
+    .card { background: var(--panel-solid); border: 1px solid var(--stroke); border-radius: 11px; padding: 0.7rem 0.8rem; margin-bottom: 0.6rem; }
+    .card.done { opacity: 0.6; } .card.running { border-color: var(--blue); box-shadow: 0 0 0 1px rgba(77,156,255,0.2); }
+    .card h5 { margin: 0 0 0.3rem; font-size: 0.82rem; }
+    .card .sub { color: var(--muted); font-size: 0.72rem; margin: 0.2rem 0 0; }
+    .card .row-actions { margin-top: 0.5rem; display: flex; gap: 0.4rem; }
+    .card .row-actions button { padding: 0.3rem 0.6rem; font-size: 0.72rem; min-height: 30px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--stroke); }
+    th { color: var(--muted); font-weight: 600; }
+    td code { font-size: 0.72rem; color: var(--neon-c); word-break: break-all; }
+    select { font: inherit; color: var(--text); background: var(--panel-solid); border: 1px solid var(--stroke); border-radius: 8px; padding: 0.3rem; }
+    .back { display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem; }
+
+    .empty { text-align: center; color: var(--muted); padding: 4rem 1rem; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%); background: var(--panel-solid); border: 1px solid var(--stroke-strong); padding: 0.7rem 1.2rem; border-radius: 12px; box-shadow: var(--shadow); transition: 0.3s; z-index: 50; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .to-top { position: fixed; right: 22px; bottom: 22px; width: 42px; height: 42px; border-radius: 50%; display: none; align-items: center; justify-content: center; z-index: 40; }
+    .to-top.show { display: flex; }
+
+    .fade-in { opacity: 0; transform: translateY(14px); }
+    .fade-in.seen { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1); }
+    @media (prefers-reduced-motion: reduce) { .fade-in { opacity: 1 !important; transform: none !important; } .light.red { animation: none; } }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Epic 看板</h1>
-      <div class="sub">markdown 为唯一真相 · 写回 Obsidian 即时同步</div>
-    </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
-      <select id="epicSelect"></select>
-      <button id="refreshBtn">刷新</button>
-      <button class="primary" id="triggerBtn">复制续做命令</button>
-    </div>
-  </header>
-  <main id="app"><div class="empty">加载中…</div></main>
-  <div class="toast" id="toast"></div>
-  <div class="modal-backdrop" id="detailModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-labelledby="detailTitle">
-      <h2 id="detailTitle"></h2>
-      <p class="lead" id="detailLead"></p>
-      <dl class="detail-grid" id="detailBody"></dl>
-      <div class="modal-actions">
-        <button type="button" id="detailCopyPlan">复制 plan 路径</button>
-        <button type="button" class="primary" id="detailClose">关闭</button>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <span class="light" id="healthLight"></span>
+        <div>
+          <h1>AI 工作流指挥中心</h1>
+          <div class="ver" id="verLine">markdown 为唯一真相 · —</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="search"><input id="searchBox" placeholder="搜索 Epic / 阶段 / 卡点…" /></div>
+        <a class="navlink" href="/workflows" style="text-decoration:none;color:var(--text);background:rgba(255,255,255,0.04);border:1px solid var(--stroke-strong);padding:0.5rem 0.9rem;border-radius:10px;">⚙ 工作流管理</a>
+        <button class="ghost" id="refreshBtn">刷新</button>
+        <button class="primary" id="evolveBtn">⚡ 进化分析</button>
       </div>
     </div>
+    <main id="app"><div class="empty">加载中…</div></main>
   </div>
+  <div class="toast" id="toast"></div>
+  <button class="to-top" id="toTop" title="返回顶部">↑</button>
+
   <script>
-    let board = [];
-    let current = null;
-    let revision = null;
-    let pollTimer = null;
-    const POLL_MS = 2500;
+    let envelope = null;      // {epics, kpi, revision, updated_at}
+    let view = 'overview';    // 'overview' | 'detail'
+    let currentFile = null;   // epic.file in detail view
+    let filter = 'all';       // all | attention | healthy
+    let searchQ = '';
 
-    function toast(msg) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 2200);
-    }
+    const $ = id => document.getElementById(id);
+    function esc(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+    let toastT;
+    function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
-    function escapeHtml(t) {
-      return String(t ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
+    const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3 };
+    const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成' };
+    const zhStage = k => STAGE_ZH[k] || k || '—';
 
-    let detailPlanPath = '';
-
-    function openDetail(slice) {
-      const modal = document.getElementById('detailModal');
-      document.getElementById('detailTitle').textContent =
-        `WBS ${slice.n} · ${slice.title || slice.label}`;
-      document.getElementById('detailLead').textContent =
-        slice.summary || '（暂无白话说明）';
-      detailPlanPath = slice.related_plan || '';
-      const rows = [
-        ['Skill', slice.skill || '—'],
-        ['输入', slice.input || '—'],
-        ['输出', slice.output || '—'],
-        ['验收', slice.acceptance || '—'],
-        ['勾选文案', slice.label || '—'],
-      ];
-      if (detailPlanPath) rows.push(['关联 plan', detailPlanPath]);
-      document.getElementById('detailBody').innerHTML = rows.map(([k, v]) =>
-        `<div class="detail-row"><dt>${escapeHtml(k)}</dt><dd>${k === '关联 plan'
-          ? `<code>${escapeHtml(v)}</code>`
-          : escapeHtml(v)}</dd></div>`
-      ).join('');
-      document.getElementById('detailCopyPlan').style.display =
-        detailPlanPath ? '' : 'none';
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeDetail() {
-      const modal = document.getElementById('detailModal');
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-    }
-
-    document.getElementById('detailClose').onclick = closeDetail;
-    document.getElementById('detailModal').onclick = e => {
-      if (e.target.id === 'detailModal') closeDetail();
-    };
-    document.getElementById('detailCopyPlan').onclick = async () => {
-      if (!detailPlanPath) return;
-      await navigator.clipboard.writeText(detailPlanPath);
-      toast(`已复制 ${detailPlanPath}`);
-    };
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeDetail();
-    });
-
-    async function loadBoard(quiet) {
+    async function loadBoard() {
       const res = await fetch('/api/board');
-      const payload = await res.json();
-      const epics = Array.isArray(payload) ? payload : (payload.epics || []);
-      revision = payload.revision ?? revision;
-      board = epics;
-      const sel = document.getElementById('epicSelect');
-      const prev = current ? current.file : sel.value;
-      sel.innerHTML = board.map(e => `<option value="${e.file}">${e.name}</option>`).join('');
-      if (!board.length) {
-        document.getElementById('app').innerHTML = '<div class="empty">Plans/Epic/ 下暂无 Epic。先实例化 Epic 母版。</div>';
+      envelope = await res.json();
+      $('verLine').textContent = `markdown 为唯一真相 · 同步 ${(envelope.updated_at || '').replace('T', ' ').slice(0, 19)}`;
+      const light = envelope.kpi?.overall_light || 'green';
+      $('healthLight').className = 'light ' + light;
+      draw();
+    }
+
+    function draw() {
+      if (!envelope || !envelope.epics?.length) {
+        $('app').innerHTML = '<div class="empty">Plans/Epic/ 下暂无 Epic。先实例化 Epic 母版。</div>';
         return;
       }
-      const epicParam = new URLSearchParams(location.search).get('epic');
-      if (epicParam && board.find(e => e.file === epicParam)) {
-        current = board.find(e => e.file === epicParam);
-      } else if (prev && board.find(e => e.file === prev)) {
-        current = board.find(e => e.file === prev);
-      } else if (!current || !board.find(e => e.file === current.file)) {
-        current = board[0];
-      }
-      sel.value = current.file;
-      render(current);
-      const sub = document.querySelector('header .sub');
-      if (sub && payload.updated_at) {
-        sub.textContent = `markdown 为唯一真相 · 自动同步 ${payload.updated_at}${quiet ? '' : ''}`;
-      }
+      if (view === 'detail') { renderDetail(); }
+      else { renderOverview(); }
+      observeFades();
     }
 
-    async function pollRevision() {
-      try {
-        const res = await fetch('/api/revision');
-        const data = await res.json();
-        if (revision !== null && data.revision !== revision) {
-          await loadBoard(true);
-          toast('看板已同步 markdown 变更');
-        } else if (revision === null) {
-          revision = data.revision;
-        }
-      } catch (_) { /* server restarting */ }
-    }
+    /* ============ Level 1: Overview ============ */
+    function renderOverview() {
+      const k = envelope.kpi || {};
+      const epics = envelope.epics.slice().sort((a, b) => (HEALTH_ORDER[a.health] ?? 9) - (HEALTH_ORDER[b.health] ?? 9));
 
-    function startPolling() {
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(pollRevision, POLL_MS);
-    }
+      const low = k.sample_low ? '<span class="badge-low">样本不足</span>' : '';
+      const passRate = k.pass_rate == null ? '—' : k.pass_rate;
 
-    function sliceColumn(s, nextN, p0) {
-      if (p0 > 0 && !s.done && s.n <= 2) return 'blocked';
-      if (s.done) return 'done';
-      if (s.n === nextN) return 'active';
-      if (nextN && s.n > nextN) return 'todo';
-      if (!nextN) return 'done';
-      return 'todo';
-    }
+      // 环形图三段占比（red/amber/green）
+      const total = k.n_epics || 1;
+      const p1 = Math.round((k.blocked && epics.filter(e => e.health === 'red').length || 0) / total * 100);
+      const redN = epics.filter(e => e.health === 'red').length;
+      const amberN = epics.filter(e => e.health === 'amber').length;
+      const greenN = epics.filter(e => e.health === 'green' || e.health === 'blue').length;
+      const dp1 = Math.round(redN / total * 100);
+      const dp2 = Math.round(amberN / total * 100);
 
-    function colTitle(key) {
-      return { done: '已完成', active: '进行中', todo: '待开始', blocked: '阻塞' }[key];
-    }
-
-    function render(epic) {
-      current = epic;
-      const nextN = epic.next_slice;
-      const gh = epic.gate_history;
-      let gateHtml = '';
-      if (gh && gh.last_gate) {
-        const lg = gh.last_gate;
-        const pass = lg.result === 'pass';
-        const icon = pass ? '✅' : '⚠️';
-        const verb = pass ? '通过' : '未过';
-        const reason = (!pass && lg.reason) ? ` — ${lg.reason}` : '';
-        const warn = (gh.consecutive_fails >= 2)
-          ? ` <b style="color:var(--blocked)">·连续${gh.consecutive_fails}次未过</b>` : '';
-        gateHtml = `<div class="meta gate-history" title="门禁事件账本回放${lg.reason ? '：' + lg.reason.replace(/"/g,'') : ''}">
-          <span>${icon} <b>最近门禁</b> ${lg.at || '—'} ${verb}（${lg.stage || '—'}）${reason}${warn}</span>
+      const kpiRow = `
+        <div class="kpi-row">
+          <div class="kpi fade-in">
+            <div class="k-label">📥 待推进 Epic</div>
+            <div class="k-num" data-count="${k.blocked || 0}">0</div>
+            <div class="k-sub">共 ${k.n_epics || 0} 个 · 其中 ${redN} 个亟需救火</div>
+          </div>
+          <div class="kpi fade-in">
+            <div class="k-label">✅ 门禁通过率 ${low}</div>
+            <div class="k-num" data-count="${passRate === '—' ? 0 : passRate}" data-suffix="%">0</div>
+            <div class="k-sub">${k.gate_events || 0} 次判定累积</div>
+          </div>
+          <div class="kpi fade-in">
+            <div class="k-label">⏱ 阶段停留（分位）<span class="badge-low">样本不足</span></div>
+            <div class="p-tiles">
+              <div class="p-tile"><b>—</b><span>P50</span></div>
+              <div class="p-tile"><b>—</b><span>P90</span></div>
+              <div class="p-tile"><b>—</b><span>P99</span></div>
+            </div>
+            <div class="k-sub">需累积 ≥10 条 pass/fail 后自动计算</div>
+          </div>
+          <div class="kpi axiom fade-in">
+            <div class="k-label">🧭 核心法则</div>
+            <div class="k-num plain">接口 &gt; 实现</div>
+            <div class="k-sub">门禁只读文件事实 · 无状态不撒谎</div>
+          </div>
         </div>`;
-      }
-      const cols = { done: [], active: [], todo: [], blocked: [] };
-      (epic.slices || []).forEach(s => {
-        cols[sliceColumn(s, nextN, epic.p0_open || 0)].push(s);
-      });
 
-      const plansRows = (epic.plans || []).map(p => {
-        const st = p.status || '—';
-        return `<tr>
-          <td>${p.stage}</td>
-          <td>${p.path ? `<code>${p.path}</code>` : '—'}</td>
-          <td>${st}</td>
-          <td>
-            ${p.path ? `<select data-plan="${p.path}" class="statusSel">
-              ${['草稿','进行中','评审中','已采纳','搁置'].map(x =>
-                `<option ${x===st?'selected':''}>${x}</option>`).join('')}
-            </select>` : '—'}
-          </td>
-        </tr>`;
+      const wall = epics.map(e => {
+        const gh = e.gate_history || {};
+        const pct = e.slices_total ? Math.round(e.slices_done / e.slices_total * 100) : 0;
+        const consec = gh.consecutive_fails || 0;
+        const badge = gh.last_gate
+          ? `<span class="gate-badge ${gh.last_gate.result}">${gh.last_gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
+          : '';
+        const hint = e.blocker_hint && e.current_stage !== 'done'
+          ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
+        return `
+          <button class="ecard ${e.health} fade-in" data-file="${esc(e.file)}">
+            <div class="e-head">
+              <div>
+                <div class="e-name">${esc(e.name)}</div>
+                <div class="e-stage">阶段 <code>${zhStage(e.current_stage)}</code></div>
+              </div>
+              ${badge}
+            </div>
+            <div class="progress">
+              <div class="bar"><i data-w="${pct}"></i></div>
+              <div class="meta"><span>${e.slices_done}/${e.slices_total} 切片</span><span>${pct}%</span></div>
+            </div>
+            ${hint}
+          </button>`;
       }).join('');
 
-      const colHtml = ['todo','active','blocked','done'].map(key => `
+      // 全局门禁时间线（所有 Epic 最近事件合并，倒序）
+      const allEvents = [];
+      envelope.epics.forEach(e => (e.gate_history?.recent || []).forEach(ev => allEvents.push({ ...ev, epic: e.name })));
+      allEvents.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+      const tl = allEvents.slice(0, 10).map(ev => `
+        <li class="${ev.result}">
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span></div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}</div>
+          <div class="tl-commit">${esc(ev.epic)} · ${esc(ev.git_commit || '')}</div>
+        </li>`).join('') || '<li>暂无门禁事件</li>';
+
+      const topfail = (k.top_blockers || []).map(b => `
+        <li><code>${zhStage(b.stage)}</code><span class="cnt">×${b.count}</span></li>`).join('') || '<li>暂无失败记录</li>';
+
+      $('app').innerHTML = `
+        ${kpiRow}
+        <div class="stage">
+          <div>
+            <div class="section-title">
+              <span>Epic 健康度纵览</span>
+              <span class="filters">
+                <span class="chip ${filter === 'all' ? 'on' : ''}" data-f="all">全部</span>
+                <span class="chip ${filter === 'attention' ? 'on' : ''}" data-f="attention">⚠ 需关注</span>
+                <span class="chip ${filter === 'healthy' ? 'on' : ''}" data-f="healthy">✅ 健康</span>
+              </span>
+            </div>
+            <div class="wall" id="wall">${wall}</div>
+          </div>
+          <aside class="side">
+            <div class="spanel fade-in">
+              <h3>状态分布</h3>
+              <div class="donut-wrap">
+                <div class="donut" style="--p1:${dp1};--p2:${dp2}"></div>
+                <div class="donut-legend">
+                  <span><i class="dot red"></i> 亟需救火 ${redN}</span>
+                  <span><i class="dot amber"></i> 有阻塞 ${amberN}</span>
+                  <span><i class="dot green"></i> 健康 ${greenN}</span>
+                </div>
+              </div>
+            </div>
+            <div class="spanel fade-in">
+              <h3>门禁卡点 Top 3</h3>
+              <ul class="topfail" style="list-style:none;margin:0;padding:0">${topfail}</ul>
+            </div>
+            <div class="spanel fade-in">
+              <h3>门禁事件时间线</h3>
+              <ul class="timeline">${tl}</ul>
+            </div>
+          </aside>
+        </div>`;
+
+      applyFilterAndSearch();
+      // 交互绑定
+      document.querySelectorAll('.ecard').forEach(c => c.onclick = () => { currentFile = c.dataset.file; view = 'detail'; window.scrollTo(0, 0); draw(); });
+      document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filter = c.dataset.f; draw(); });
+      // 动画：进度条 + count-up
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%');
+        document.querySelectorAll('.k-num[data-count]').forEach(countUp);
+      });
+    }
+
+    function applyFilterAndSearch() {
+      document.querySelectorAll('.ecard').forEach(c => {
+        const e = envelope.epics.find(x => x.file === c.dataset.file);
+        let ok = true;
+        if (filter === 'attention') ok = e.health === 'red' || e.health === 'amber';
+        if (filter === 'healthy') ok = e.health === 'green' || e.health === 'blue';
+        if (ok && searchQ) {
+          const hay = `${e.name} ${zhStage(e.current_stage)} ${e.blocker_hint}`.toLowerCase();
+          ok = hay.includes(searchQ.toLowerCase());
+        }
+        c.style.display = ok ? '' : 'none';
+      });
+    }
+
+    /* ============ Level 2: Detail ============ */
+    function renderDetail() {
+      const e = envelope.epics.find(x => x.file === currentFile);
+      if (!e) { view = 'overview'; return renderOverview(); }
+      const nextN = e.next_slice;
+      const cols = { todo: [], running: [], done: [] };
+      (e.slices || []).forEach(s => {
+        if (s.done) cols.done.push(s);
+        else if (s.n === nextN) cols.running.push(s);
+        else cols.todo.push(s);
+      });
+      const colHtml = (title, arr, cls) => `
         <div class="col">
-          <h2>${colTitle(key)}</h2>
-          ${cols[key].map(s => `
-            <div class="card ${key}">
-              <h3>WBS ${s.n}</h3>
-              <p>${escapeHtml(s.title || s.label)}</p>
-              ${s.summary ? `<p class="sub" style="margin-top:0.35rem;font-size:0.72rem">${escapeHtml(s.summary)}</p>` : ''}
-              <div class="card-actions">
-                <button type="button" data-detail="${s.n}">查看细节</button>
-                ${!s.done ? `<button data-slice="${s.n}" data-done="1">完成</button>` : ''}
-                ${s.done ? `<button data-slice="${s.n}" data-done="0">重开</button>` : ''}
+          <h4>${title} <span class="n">${arr.length}</span></h4>
+          ${arr.map(s => `
+            <div class="card ${cls}">
+              <h5>WBS ${s.n} · ${esc(s.title)}</h5>
+              ${s.summary ? `<p class="sub">${esc(s.summary)}</p>` : ''}
+              <div class="row-actions">
+                <button data-detail="${s.n}">细节</button>
+                <button data-slice="${s.n}" data-done="${s.done ? 1 : 0}">${s.done ? '重开' : '完成'}</button>
               </div>
             </div>`).join('') || '<p class="sub">无</p>'}
-        </div>`).join('');
+        </div>`;
 
-      document.getElementById('app').innerHTML = `
-        <div class="meta">
-          <span><b>epic_id</b> ${epic.epic_id || '—'}</span>
-          <span><b>阶段</b> ${epic.lifecycle_state}</span>
-          <span><b>status</b> ${epic.status}</span>
-          <span><b>p0_open</b> ${epic.p0_open}</span>
-          <span><b>仓库</b> ${epic.repo || '—'} / ${epic.branch || '—'}</span>
-          <span><b>下一切片</b> WBS ${nextN || '—'}</span>
+      const plansRows = (e.plans || []).map(p => `
+        <tr>
+          <td>${esc(p.stage)}</td>
+          <td>${p.path ? `<code>${esc(p.path)}</code>` : '—'}</td>
+          <td>
+            <select class="statusSel" data-plan="${esc(p.path || '')}">
+              ${['草稿', '进行中', '评审中', '已采纳', '搁置'].map(o => `<option ${o === p.status ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+          </td>
+        </tr>`).join('');
+
+      const gh = e.gate_history || {};
+      const tl = (gh.recent || []).map(ev => `
+        <li class="${ev.result}">
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}</div>
+          ${ev.git_commit ? `<div class="tl-commit">commit ${esc(ev.git_commit)}</div>` : ''}
+        </li>`).join('') || '<li>暂无门禁事件</li>';
+
+      $('app').innerHTML = `
+        <button class="ghost back" id="backBtn">← 返回纵览</button>
+        <div class="topbar" style="margin-bottom:1.2rem">
+          <div class="brand">
+            <span class="light ${e.health}"></span>
+            <div><h1 style="font-size:clamp(16px,1.5vw,20px)">${esc(e.name)}</h1>
+            <div class="ver">阶段 ${zhStage(e.current_stage)} · ${e.slices_done}/${e.slices_total} 切片 · ${esc(e.repo || '')} / ${esc(e.branch || '')}</div></div>
+          </div>
+          <div class="actions"><button class="primary" id="triggerBtn">复制续做命令</button></div>
         </div>
-        ${gateHtml}
-        <div class="grid">${colHtml}</div>
-        <section>
-          <h2>子 Plan 状态</h2>
-          <table>
-            <thead><tr><th>阶段</th><th>路径</th><th>status</th><th>改状态</th></tr></thead>
-            <tbody>${plansRows}</tbody>
-          </table>
-        </section>`;
+        <div class="stage">
+          <div>
+            <div class="section-title"><span>WBS 作战看板</span></div>
+            <div class="grid4">
+              ${colHtml('待开始', cols.todo, 'todo')}
+              ${colHtml('进行中', cols.running, 'running')}
+              ${colHtml('已完成', cols.done, 'done')}
+            </div>
+            <div class="spanel fade-in" style="margin-top:1.2rem">
+              <h3>子 Plan 状态</h3>
+              <table><thead><tr><th>阶段</th><th>路径</th><th>status</th></tr></thead><tbody>${plansRows}</tbody></table>
+            </div>
+          </div>
+          <aside class="side">
+            <div class="spanel fade-in">
+              <h3>门禁事件时间线（本 Epic）</h3>
+              <ul class="timeline">${tl}</ul>
+            </div>
+          </aside>
+        </div>`;
 
-      document.querySelectorAll('[data-slice]').forEach(btn => {
-        btn.onclick = () => toggleSlice(+btn.dataset.slice, btn.dataset.done === '1');
+      $('backBtn').onclick = () => { view = 'overview'; currentFile = null; window.scrollTo(0, 0); draw(); };
+      $('triggerBtn').onclick = async () => {
+        const r = await fetch('/api/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: e.file }) });
+        const d = await r.json();
+        try { await navigator.clipboard.writeText(d.command); } catch (_) {}
+        toast(`已复制：${d.command}`);
+      };
+      document.querySelectorAll('[data-slice]').forEach(b => b.onclick = () => toggleSlice(e.file, +b.dataset.slice, b.dataset.done === '1'));
+      document.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => {
+        const s = e.slices.find(x => x.n === +b.dataset.detail);
+        toast(`WBS ${s.n} · 验收：${s.acceptance || '—'} · skill：${s.skill || '—'}`);
       });
-      const sliceByN = Object.fromEntries((epic.slices || []).map(s => [s.n, s]));
-      document.querySelectorAll('[data-detail]').forEach(btn => {
-        btn.onclick = () => openDetail(sliceByN[+btn.dataset.detail]);
-      });
-      document.querySelectorAll('.statusSel').forEach(sel => {
-        sel.onchange = () => setStatus(sel.dataset.plan, sel.value);
-      });
+      document.querySelectorAll('.statusSel').forEach(sel => sel.onchange = () => setStatus(sel.dataset.plan, sel.value, e.file));
     }
 
-    async function toggleSlice(n, done) {
-      await fetch('/api/slice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: current.file, slice: n, done, operator: 'web' })
-      });
-      toast(`WBS ${n} ${done ? '已完成' : '已重开'}`);
+    /* ============ actions ============ */
+    async function toggleSlice(file, n, done) {
+      await fetch('/api/slice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file, slice: n, done, operator: 'web' }) });
+      toast(`WBS ${n} ${done ? '已重开' : '已完成'}`);
       await loadBoard();
-      current = board.find(e => e.file === current.file);
-      render(current);
     }
-
-    async function setStatus(planPath, status) {
-      await fetch('/api/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: planPath, status, epic: current.file, stage: '—', operator: 'web' })
-      });
+    async function setStatus(planPath, status, epicFile) {
+      await fetch('/api/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: planPath, status, epic: epicFile, stage: '—', operator: 'web' }) });
       toast(`${planPath} → ${status}`);
       await loadBoard();
-      current = board.find(e => e.file === document.getElementById('epicSelect').value);
-      render(current);
     }
 
-    document.getElementById('refreshBtn').onclick = loadBoard;
-    document.getElementById('epicSelect').onchange = e => {
-      current = board.find(x => x.file === e.target.value);
-      render(current);
-    };
-    document.getElementById('triggerBtn').onclick = async () => {
-      const res = await fetch('/api/trigger', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: current.file })
-      });
-      const data = await res.json();
-      await navigator.clipboard.writeText(data.command);
-      toast(`已复制：${data.command}`);
-    };
+    /* ============ count-up ============ */
+    function countUp(el) {
+      const target = +el.dataset.count || 0;
+      const suffix = el.dataset.suffix || '';
+      const dur = 900; const t0 = performance.now();
+      function step(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
 
-    loadBoard().then(() => {
-      startPolling();
-    }).catch(err => {
-      document.getElementById('app').innerHTML = `<div class="empty">加载失败：${err.message}<br>请先运行 ./scripts/kanban-server.sh</div>`;
-    });
+    /* ============ scroll fade + to-top ============ */
+    let io;
+    function observeFades() {
+      if (io) io.disconnect();
+      io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('seen'); io.unobserve(x.target); } }), { threshold: 0.08 });
+      document.querySelectorAll('.fade-in:not(.seen)').forEach(el => io.observe(el));
+    }
+    window.addEventListener('scroll', () => $('toTop').classList.toggle('show', window.scrollY > 300));
+    $('toTop').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    /* ============ polling ============ */
+    let lastRev = null;
+    async function pollRevision() {
+      try {
+        const r = await fetch('/api/revision');
+        const { revision } = await r.json();
+        if (lastRev !== null && revision !== lastRev) await loadBoard();
+        lastRev = revision;
+      } catch (_) {}
+    }
+    setInterval(pollRevision, 4000);
+
+    /* ============ wiring ============ */
+    $('refreshBtn').onclick = loadBoard;
+    $('evolveBtn').onclick = () => toast('进化分析：门禁卡点 Top1 = 功能开发（development）× 最多失败，建议优先补齐该阶段 WBS 切片');
+    $('searchBox').addEventListener('input', e => { searchQ = e.target.value.trim(); if (view === 'overview') applyFilterAndSearch(); });
+
+    loadBoard().then(() => { lastRev = envelope?.revision ?? null; })
+      .catch(err => { $('app').innerHTML = `<div class="empty">加载失败：${err.message}<br>请先运行 ./scripts/kanban-server.sh</div>`; });
   </script>
 </body>
 </html>
