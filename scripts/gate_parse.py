@@ -200,7 +200,7 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
 
     in_fence = False
     for line in lines:
-        if line.strip() == "```":
+        if line.strip().startswith("```"):
             in_fence = not in_fence
             continue
         if not in_fence:

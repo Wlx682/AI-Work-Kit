@@ -163,6 +163,27 @@ def scan_all_skill_runs() -> list[dict]:
     return runs
 
 
+def scan_open_evolution_candidates() -> list[str]:
+    """扫孤立反馈记录『待蒸馏』区里标题含『进化候选』的条目标题。
+    这些候选写在正文散文里、不进任何可聚合字段，故本函数单独捞出，
+    避免『统计表全空』被误读为『无待办』。归档区（已蒸馏）不计。"""
+    orphan = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+    if not orphan.exists():
+        return []
+    titles: list[str] = []
+    in_archive = False
+    for line in orphan.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## 归档"):
+            in_archive = True
+            continue
+        if in_archive:
+            continue
+        m = re.match(r"^##\s+(.*进化候选.*)$", line)
+        if m:
+            titles.append(m.group(1).strip())
+    return titles
+
+
 def parse_date(s: str) -> date | None:
     try:
         return datetime.strptime(str(s).strip(), "%Y-%m-%d").date()
@@ -270,6 +291,17 @@ def render(agg: dict) -> str:
     L += [f"# Skill 反馈聚合报告 — {agg['month']}", ""]
     L += [f"> 由 `scripts/feedback-aggregate.py` 自动生成。本月 skill_run 执行 **{agg['n_runs_month']}** 次（全库累计 **{agg['n_runs_total']}**）。"]
     L += [f"> 协议：[[Contexts/决策/Skill反馈协议]] · 消费：月度复盘"]
+    L += [""]
+
+    candidates = scan_open_evolution_candidates()
+    L += ["## 〇、未归位进化候选（正文散文，本表不计数，须人读）", ""]
+    L += ["> 下列候选写在孤立反馈记录『待蒸馏』区正文里，不进任何可聚合字段。",
+          "> **统计表全空 ≠ 无待办**——先过一遍这些候选再判断。", ""]
+    if candidates:
+        for t in candidates:
+            L += [f"- [ ] {t}"]
+    else:
+        L += ["（无 — 待蒸馏区无标题含『进化候选』的条目）"]
     L += [""]
 
     L += ["## 一、本月热点 Contexts（utility=high 累计 ≥ 3 次）", ""]

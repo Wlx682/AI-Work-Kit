@@ -11,6 +11,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent.parent
+RUN_DIR = ROOT / ".workflows" / "runs"
+EVENT_DIR = ROOT / ".workflows" / "events"
 
 STATE_LABELS = {
     "requirement": "需求分析",
@@ -158,9 +160,71 @@ def resume_hint(gate: dict[str, Any]) -> str:
     return "/status 查看最新状态"
 
 
-def summarize(gate: dict[str, Any]) -> dict[str, Any]:
-    blockers = merge_blockers([simplify_blocker(item) for item in gate.get("blockers", []) or []])
+def _find_run_id(explicit_run: str | None, epic: str | None) -> str | None:
+    """定位要回放的 run：显式 --run 优先；否则按 Epic stem 匹配最新 run 文件名。"""
+    if explicit_run:
+        stem = Path(explicit_run).name
+        for suffix in (".run.yaml", ""):
+            if stem.endswith(suffix) and suffix:
+                stem = stem[: -len(suffix)]
+        return stem
+    if not epic or not RUN_DIR.is_dir():
+        return None
+    epic_stem = Path(epic).stem
+    candidates = sorted(
+        (f for f in RUN_DIR.glob("*.run.yaml") if epic_stem in f.name),
+        key=lambda f: f.name,
+    )
+    if not candidates:
+        return None
+    return candidates[-1].name[: -len(".run.yaml")]
+
+
+def replay_events(run_id: str | None) -> dict[str, Any] | None:
+    """回放某 run 的事件流，提取门禁历史信号（会话层）：最近一次门禁 pass/fail + 原因，
+    以及当前阶段连续 fail 次数（供『同一阶段反复判不过』告警）。事件流缺失返回 None。"""
+    if not run_id:
+        return None
+    event_file = EVENT_DIR / f"{run_id}.events.jsonl"
+    if not event_file.is_file():
+        return None
+    gate_events: list[dict[str, Any]] = []
+    for line in event_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if ev.get("type") in ("gate_pass", "gate_fail"):
+            gate_events.append(ev)
+    if not gate_events:
+        return {"run_id": run_id, "last_gate": None, "consecutive_fails": 0}
+    last = gate_events[-1]
+    last_stage = last.get("stage")
+    consecutive_fails = 0
+    for ev in reversed(gate_events):
+        if ev.get("stage") != last_stage:
+            break
+        if ev.get("type") == "gate_fail":
+            consecutive_fails += 1
+        else:
+            break
     return {
+        "run_id": run_id,
+        "last_gate": {
+            "result": "pass" if last.get("type") == "gate_pass" else "fail",
+            "stage": last_stage,
+            "at": last.get("created_at"),
+            "reason": last.get("reason", ""),
+        },
+        "consecutive_fails": consecutive_fails,
+    }
+
+
+def summarize(gate: dict[str, Any], replay: dict[str, Any] | None = None) -> dict[str, Any]:
+    blockers = merge_blockers([simplify_blocker(item) for item in gate.get("blockers", []) or []])
+    summary = {
         "workflow": gate.get("workflow"),
         "current": label_state(gate.get("current_state", "")),
         "current_state": gate.get("current_state"),
@@ -176,6 +240,9 @@ def summarize(gate: dict[str, Any]) -> dict[str, Any]:
             "raw_next": gate.get("next_state"),
         },
     }
+    if replay:
+        summary["history"] = replay
+    return summary
 
 
 def print_human(summary: dict[str, Any]) -> None:
@@ -190,6 +257,17 @@ def print_human(summary: dict[str, Any]) -> None:
     print(f"继续：{summary['resume']}")
     if summary.get("constitution"):
         print(f"规则：constitution {summary['constitution']}")
+    hist = summary.get("history")
+    if hist and hist.get("last_gate"):
+        lg = hist["last_gate"]
+        day = (lg.get("at") or "")[:10]
+        if lg["result"] == "pass":
+            print(f"最近门禁：{day} 通过（{label_state(lg.get('stage',''))}）")
+        else:
+            reason = (lg.get("reason") or "").split(";")[0].strip()
+            print(f"最近门禁：{day} 未过（{label_state(lg.get('stage',''))}）— {reason}")
+        if hist.get("consecutive_fails", 0) >= 2:
+            print(f"⚠️ 告警：当前阶段门禁已连续 {hist['consecutive_fails']} 次判不过，建议排查根因或调整方案")
 
 
 def main() -> int:
@@ -197,6 +275,7 @@ def main() -> int:
     parser.add_argument("--workflow", help="Workflow name, e.g. client-dev or computer-mgmt")
     parser.add_argument("--epic", help="Epic plan path")
     parser.add_argument("--project", help="Project name for workflow-gate lookup")
+    parser.add_argument("--run", help="Run id or run file path for event-stream replay (会话层历史)")
     parser.add_argument("--json", action="store_true", help="Output simplified JSON")
     args = parser.parse_args()
 
@@ -205,7 +284,8 @@ def main() -> int:
     except (RuntimeError, json.JSONDecodeError) as exc:
         print(f"BLOCKED:workflow-status:{exc}", file=sys.stderr)
         return 1
-    summary = summarize(gate)
+    replay = replay_events(_find_run_id(args.run, args.epic))
+    summary = summarize(gate, replay)
     if args.json:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     else:

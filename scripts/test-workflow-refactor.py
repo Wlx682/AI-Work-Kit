@@ -527,6 +527,29 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK", data["gate_development"])
         self.assertTrue(any(item.startswith("development:Plans/功能开发/") for item in data["plans_found"]))
 
+    def test_workflow_run_gate_records_pass_event_and_check_trail(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            proc = subprocess.run(
+                ["python3", "scripts/workflow-run.py", "start",
+                 "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md"],
+                cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+            )
+            run_rel = proc.stdout.strip()
+            run_file = tmp / run_rel
+            subprocess.run(
+                ["python3", "scripts/workflow-run.py", "gate", "--run", run_rel],
+                cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+            )
+            run_text = run_file.read_text(encoding="utf-8")
+            self.assertIn("gate_checks:", run_text)
+            self.assertIn('result: "pass"', run_text)
+            event_rel = run_text.split('events: "')[1].split('"')[0]
+            events = [json.loads(l) for l in (tmp / event_rel).read_text(encoding="utf-8").splitlines() if l.strip()]
+            types = [e["type"] for e in events]
+            self.assertIn("gate_pass", types)
+            self.assertNotIn("gate_fail", types)
+
     def test_workflow_gate_json_output_handles_multiline_gate_result(self) -> None:
         with self.fixture_repo() as tmp:
             self.create_complete_client_dev_fixture(tmp)
@@ -686,6 +709,29 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertFalse(any("devTraceability" in item for item in data["blockers"]))
         rules = {item["id"]: item["status"] for item in data["constitution"]["rules"]}
         self.assertEqual(rules["traceability"], "blocked")
+
+    def test_workflow_status_replays_gate_history_from_events(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            proc = subprocess.run(
+                ["python3", "scripts/workflow-run.py", "start",
+                 "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md"],
+                cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+            )
+            run_rel = proc.stdout.strip()
+            subprocess.run(
+                ["python3", "scripts/workflow-run.py", "gate", "--run", run_rel],
+                cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+            )
+            proc = subprocess.run(
+                ["python3", "scripts/workflow-status.py", "--workflow", "client-dev",
+                 "--epic", "Plans/Epic/fixture.md", "--run", run_rel, "--json"],
+                cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+            )
+            data = json.loads(proc.stdout)
+        self.assertIn("history", data)
+        self.assertIsNotNone(data["history"]["last_gate"])
+        self.assertEqual(data["history"]["last_gate"]["result"], "pass")
 
     def test_workflow_status_summarizes_done_state_for_humans(self) -> None:
         with self.fixture_repo() as tmp:

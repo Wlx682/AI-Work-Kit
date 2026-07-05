@@ -16,6 +16,12 @@ KANBAN_DIR = ROOT / "scripts" / "kanban"
 HOST = "127.0.0.1"
 PORT = 7777
 
+sys.path.insert(0, str(ROOT / "scripts"))
+try:
+    from gate_parse import wbs_slice_status as _wbs_slice_status  # 子 Plan = 事实源
+except Exception:  # pragma: no cover - gate_parse 不可用时降级读 Epic 字面量
+    _wbs_slice_status = None
+
 PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change"}
 SLICE_RE = re.compile(r"^(\[[ xX~]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
 WBS_TABLE_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
@@ -239,6 +245,38 @@ def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
     return slices
 
 
+def _slice_status_in(child: str | None, n: int) -> str | None:
+    """在单个子 Plan 里查切片 n 的状态；查不到 / 不可用返回 None。"""
+    if _wbs_slice_status is None or not child:
+        return None
+    cp = ROOT / child if not Path(child).is_absolute() else Path(child)
+    if not cp.is_file():
+        return None
+    try:
+        return _wbs_slice_status(cp, n)
+    except Exception:
+        return None
+
+
+def _derive_slice_done(
+    epic_literal_done: bool, preferred_child: str | None, n: int, all_children: list[str]
+) -> tuple[bool, str]:
+    """切片完成态以子 Plan（事实源）为准：先查 SLICE_PLAN_STAGE 映射的优选子 Plan（快路径），
+    查无该切片号则遍历所有子 Plan 找真正承载它的那个（兜底，根治映射错位）；
+    仍找不到才回退 Epic 字面量。返回 (done, derived_from)，
+    derived_from ∈ {"child-plan", "epic-literal"}。"""
+    status = _slice_status_in(preferred_child, n)
+    if status is not None:
+        return status == "x", "child-plan"
+    for child in all_children:
+        if child == preferred_child:
+            continue
+        status = _slice_status_in(child, n)
+        if status is not None:
+            return status == "x", "child-plan"
+    return epic_literal_done, "epic-literal"
+
+
 def scan_epic(path: Path) -> dict[str, Any]:
     fm, _, _ = read_frontmatter(path)
     rel = str(path.relative_to(ROOT))
@@ -246,16 +284,19 @@ def scan_epic(path: Path) -> dict[str, Any]:
     wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
     plan_by_stage = {p["stage_key"]: p.get("path") for p in plans if p.get("path")}
-    first_open = next((s["n"] for s in slices if not s["done"]), None)
+    all_children = [p["path"] for p in plans if p.get("path")]
     enriched: list[dict[str, Any]] = []
     for s in slices:
         n = s["n"]
         tbl = wbs_table.get(n, {})
         stage_key = SLICE_PLAN_STAGE.get(n, "development")
+        child = plan_by_stage.get(stage_key)
+        done, derived_from = _derive_slice_done(s["done"], child, n, all_children)
         enriched.append(
             {
                 "n": n,
-                "done": s["done"],
+                "done": done,
+                "derived_from": derived_from,
                 "label": s["label"],
                 "title": tbl.get("title") or s["label"],
                 "summary": SLICE_SUMMARY.get(n, ""),
@@ -267,6 +308,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
                 "stage_key": stage_key,
             }
         )
+    first_open = next((e["n"] for e in enriched if not e["done"]), None)
     return {
         "file": rel,
         "name": path.stem,
@@ -292,6 +334,20 @@ def board_revision() -> str:
             continue
         st = f.stat()
         parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
+    # 看板切片状态派生自子 Plan（事实源），故子 Plan 变更也须触发前端刷新。
+    child_seen: set[str] = set()
+    for f in sorted(epic_dir.glob("*.md")):
+        if f.name.startswith("."):
+            continue
+        for p in parse_plans_block(f):
+            rel = p.get("path")
+            if not rel or rel in child_seen:
+                continue
+            child_seen.add(rel)
+            pf = ROOT / rel if not Path(rel).is_absolute() else Path(rel)
+            if pf.is_file():
+                st = pf.stat()
+                parts.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
     return str(hash(tuple(parts)))
 
 

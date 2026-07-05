@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -56,7 +57,7 @@ def write_run_file(path: Path, payload: dict[str, Any]) -> None:
         f"updated_at: {yaml_scalar(payload['updated_at'])}",
         f"events: {yaml_scalar(payload['events'])}",
     ]
-    for key in ("stage_history", "decisions"):
+    for key in ("stage_history", "decisions", "gate_checks"):
         items = payload.get(key) or []
         if not items:
             lines.append(f"{key}: []")
@@ -194,6 +195,7 @@ def start_run(args: argparse.Namespace) -> int:
         "events": event_rel,
         "stage_history": [],
         "decisions": [],
+        "gate_checks": [],
     }
     write_run_file(ROOT / run_rel, payload)
 
@@ -296,6 +298,38 @@ def done_run(args: argparse.Namespace) -> int:
     return update_run(path, payload, "workflow_run_done", from_stage=from_stage, reason=args.reason)
 
 
+def gate_run(args: argparse.Namespace) -> int:
+    """对指定 run 跑一次门禁判定，把 pass/fail + reason 追加成事件与 gate_checks 轨迹。
+    只读门禁（调 workflow-gate.sh --json），不改门禁逻辑；给『现看现判』的判定留痕，
+    使『某阶段门禁历史上判过几次、为何不过』可回放。"""
+    path = resolve_run_path(args.run)
+    payload = load_run_file(path)
+    stage = str(payload["current_stage"])
+
+    gate_cmd = ["bash", str(ROOT / "scripts" / "workflow-gate.sh"),
+                "--workflow", str(payload["workflow_id"]), "--json"]
+    epic = payload.get("epic")
+    if epic:
+        gate_cmd += ["--epic", str(epic)]
+    proc = subprocess.run(gate_cmd, capture_output=True, text=True)
+    try:
+        gate = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        raise SystemExit(f"BLOCKED:workflow-run: 门禁无有效 JSON 输出：{proc.stderr.strip() or proc.stdout.strip()}")
+
+    blockers = gate.get("blockers") or []
+    passed = not blockers
+    gate_stage = gate.get("current_state", stage)
+    payload.setdefault("gate_checks", []).append(
+        {"at": now_iso(), "stage": gate_stage, "result": "pass" if passed else "fail",
+         "blocker_count": len(blockers)}
+    )
+    if passed:
+        return update_run(path, payload, "gate_pass", stage=gate_stage)
+    return update_run(path, payload, "gate_fail", stage=gate_stage,
+                      reason="; ".join(str(b) for b in blockers))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="创建或维护 AI-Work-Kit workflow run 实例。")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -331,6 +365,10 @@ def main() -> int:
     done.add_argument("--run", required=True, help="run 文件路径或 run_id")
     done.add_argument("--reason", default="", help="完成原因")
     done.set_defaults(func=done_run)
+
+    gate = sub.add_parser("gate", help="对 run 跑一次门禁判定并留痕（gate_pass/gate_fail 事件）")
+    gate.add_argument("--run", required=True, help="run 文件路径或 run_id")
+    gate.set_defaults(func=gate_run)
 
     args = parser.parse_args()
     return args.func(args)

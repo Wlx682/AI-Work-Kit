@@ -14,9 +14,10 @@
 
 1. 读取 `Plans/[plan路径]`；若含 `[[Contexts/]]` 链接一并读取。
 2. **Epic 感知**：若 frontmatter 含 `epic:`，读取 Epic 母 plan 的 `workflow`、WBS 复选框、子 Plan 索引表，并运行 `scripts/workflow-gate.sh --workflow <name> --epic <epic>` 派生当前阶段。
-3. **门禁（开发阶段）**：对 `Plans/功能开发/` 下 plan，先跑 `bash scripts/plan-gate-check.sh <plan> --stage development`；若 `BLOCKED:` → **只输出补文档任务，不建议写代码**。
-4. 根据进度判断下一步（对照 plan / Epic WBS 勾选切片）。
-5. **推荐 Skill**：优先采用 `workflow-gate.sh` 输出的 `recommended_skill`；development 仍须读 WBS/子 plan **Skill 列**。
+3. **事件流回放（会话层，优先于凭空猜测）**：跑 `python3 scripts/workflow-status.py --workflow <name> --epic <epic>`——它除派生当前阶段外，还会从 `.workflows/events/<run-id>.events.jsonl` 回放门禁历史，输出「最近门禁：<日期> 通过/未过 — <原因>」与「连续判不过」告警。**答「上次为何卡住 / 门禁为何判不过」时先读这里的历史，不要只凭当前快照重新推断**；有 run_id 时可加 `--run <run-id>` 精确定位。
+4. **门禁（开发阶段）**：对 `Plans/功能开发/` 下 plan，先跑 `bash scripts/plan-gate-check.sh <plan> --stage development`；若 `BLOCKED:` → **只输出补文档任务，不建议写代码**。
+5. 根据进度判断下一步（对照 plan / Epic WBS 勾选切片）。
+6. **推荐 Skill**：优先采用 `workflow-gate.sh` 输出的 `recommended_skill`；development 仍须读 WBS/子 plan **Skill 列**。
 
 
 | workflow-gate current_state | 推荐 Skill | 典型切片 |
@@ -50,7 +51,7 @@
 1. ...
 
 ### 可能原因（排查类）
-- ...
+- ...（如 workflow-status 回放出「最近门禁未过」，直接引用其原因，而非重新猜）
 
 ### 验证方法
 - ...
