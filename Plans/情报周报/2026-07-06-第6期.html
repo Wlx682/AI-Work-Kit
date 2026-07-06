@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070910'/%3E%3Ccircle cx='16' cy='16' r='9' fill='%2344f0d2'/%3E%3C/svg%3E">
+<title>工作单位变了：从问答到并行委托，Codex 正在把每个人变成小型调度者</title>
+<style>
+:root{
+  --bg:#070910;--bg2:#0b1020;--panel:#101827;--panel2:#0d1424;--ink:#eef5ff;--dim:#a8b8d6;--muted:#6f7f9d;
+  --line:#22304d;--line2:#314263;--cyan:#44f0d2;--blue:#6aa7ff;--violet:#b59aff;--amber:#ffd166;--green:#56d69b;
+  --max:1160px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.85;font-size:clamp(15.5px,1.05vw,17px);letter-spacing:0;overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+code,.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+#mesh{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.52}
+.hero{position:relative;z-index:1;min-height:86vh;display:grid;align-items:center;padding:clamp(54px,8vw,96px) clamp(20px,4vw,44px);border-bottom:1px solid var(--line);overflow:hidden;background:radial-gradient(900px 420px at 80% 0,rgba(68,240,210,.16),transparent 62%),radial-gradient(820px 480px at 12% 20%,rgba(106,167,255,.18),transparent 64%),linear-gradient(180deg,#090d17,#070910)}
+.hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 54% 25%,#000,transparent 78%);opacity:.38}
+.hero-wrap{position:relative;z-index:2;max-width:var(--max);margin:auto;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr);gap:clamp(28px,5vw,60px);align-items:center;width:100%}
+.eyebrow{display:inline-flex;gap:9px;align-items:center;border:1px solid rgba(68,240,210,.35);background:rgba(68,240,210,.08);border-radius:999px;color:#bdfdf0;padding:5px 13px;font-size:12px;letter-spacing:1px;margin-bottom:18px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.28}}
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}.chip{border:1px solid rgba(106,167,255,.34);background:rgba(106,167,255,.1);border-radius:999px;padding:4px 11px;color:#d8e7ff;font-size:12.5px}
+h1{font-size:clamp(29px,4.8vw,55px);line-height:1.15;margin:0 0 20px;font-weight:850;background:linear-gradient(120deg,#fff 12%,#b9d4ff 52%,#80ffe8 88%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--dim);font-size:clamp(16px,1.5vw,18px);max-width:760px;margin:0 0 26px}.meta{display:flex;flex-wrap:wrap;gap:12px 24px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:19px}.meta b{color:#cedcf4}
+.visual{min-width:0}.visual-card{border:1px solid var(--line2);background:linear-gradient(180deg,rgba(16,24,39,.88),rgba(8,13,24,.92));border-radius:22px;padding:clamp(16px,3vw,26px);box-shadow:0 28px 80px -42px #000}
+.agent-grid{display:grid;grid-template-columns:repeat(3,minmax(70px,1fr));gap:12px;margin-bottom:16px}.agent{min-height:74px;border:1px solid rgba(68,240,210,.32);background:rgba(68,240,210,.06);border-radius:16px;padding:12px;display:grid;align-content:center;text-align:center;color:#dffff8;font-size:13px}.agent:nth-child(2n){border-color:rgba(106,167,255,.36);background:rgba(106,167,255,.08)}
+.terminal{border:1px solid var(--line);background:#070b14;border-radius:16px;padding:16px;color:#9ff8e9;min-height:152px;font-size:13px;overflow:hidden}.terminal p{margin:0 0 8px;color:#9ff8e9}.terminal .dim{color:#7789a9}
+.nav{position:sticky;top:0;z-index:20;background:rgba(7,9,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.nav-inner{max-width:var(--max);margin:auto;display:flex;gap:6px;overflow:auto;padding:10px clamp(20px,4vw,44px)}.nav a{white-space:nowrap;color:var(--dim);border:1px solid transparent;border-radius:8px;padding:5px 12px;font-size:14px}.nav a.active,.nav a:hover{background:rgba(106,167,255,.12);border-color:var(--line2);color:#fff;text-decoration:none}
+.wrap{position:relative;z-index:1;max-width:var(--max);margin:auto;padding:24px clamp(20px,4vw,44px) 80px;display:grid;grid-template-columns:minmax(0,1fr) 278px;gap:clamp(26px,4vw,48px)}
+main{min-width:0}.side{position:sticky;top:68px;display:flex;flex-direction:column;gap:16px}.card{border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel),var(--panel2));border-radius:16px;padding:17px}.card h4{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:0 0 11px}.card p{font-size:13.5px;color:var(--dim);margin:0 0 10px}.side .formula{font-size:clamp(22px,2.4vw,28px);font-weight:800;color:#fff;line-height:1.25}.side .formula span{color:var(--cyan)}
+section{border-bottom:1px solid var(--line);padding:clamp(34px,5vw,52px) 0}.js section{opacity:0;transform:translateY(20px);transition:.65s ease}.js section.in{opacity:1;transform:none}
+.sec-title{display:flex;align-items:center;gap:12px;margin-bottom:12px}.idx{font-family:"SF Mono",monospace;color:#061018;background:linear-gradient(135deg,var(--cyan),#9fffea);font-weight:800;border-radius:8px;padding:3px 9px;font-size:12px}.sec-title h2{margin:0;font-size:clamp(21px,3vw,28px)}
+p{color:#d9e3f4;margin:14px 0}strong{color:#fff}.note{border-left:3px solid var(--amber);background:rgba(255,209,102,.07);border-radius:0 12px 12px 0;padding:14px 18px;color:#f2dfb5}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:28px 0}.metric{border:1px solid var(--line2);background:linear-gradient(150deg,rgba(68,240,210,.12),rgba(106,167,255,.07));border-radius:18px;padding:26px 23px;min-height:170px}.metric .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}.metric .v{font-family:"SF Mono",monospace;font-size:clamp(38px,6vw,56px);line-height:1;font-weight:900;color:var(--cyan);margin:12px 0}.metric.blue .v{color:var(--blue)}.metric.violet .v{color:var(--violet)}.metric .d{color:var(--dim);font-size:13.5px}
+figure{margin:28px 0;border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel),var(--panel2));border-radius:18px;overflow:hidden}.figbar{display:flex;gap:7px;align-items:center;border-bottom:1px solid var(--line);padding:12px 15px;background:rgba(255,255,255,.025)}.lamp{width:10px;height:10px;border-radius:50%;background:var(--green)}.lamp:nth-child(1){background:#ff5b67}.lamp:nth-child(2){background:var(--amber)}.figbar span{font-family:"SF Mono",monospace;color:var(--dim);font-size:12px;margin-left:6px}.mermaid{padding:24px 12px;text-align:center;overflow:auto}figcaption{color:var(--muted);font-size:13px;text-align:center;padding:0 16px 16px}
+ul{padding-left:20px}li{margin:10px 0;color:#d8e3f4}.source{margin-top:28px;border:1px solid var(--line2);background:rgba(16,24,39,.65);border-radius:14px;padding:16px;color:var(--dim)}
+footer{position:relative;z-index:1;max-width:var(--max);margin:auto;padding:0 clamp(20px,4vw,44px) 80px;color:var(--muted);font-size:13px}
+#toTop{position:fixed;right:20px;bottom:22px;width:44px;height:44px;border:1px solid rgba(68,240,210,.38);background:rgba(13,20,36,.78);color:#dffff8;border-radius:13px;opacity:0;pointer-events:none;transition:.25s;z-index:40}#toTop.show{opacity:1;pointer-events:auto}
+@media(max-width:900px){.hero-wrap,.wrap{grid-template-columns:1fr}.side{position:static}.visual{max-width:520px}.hero{min-height:auto}.agent-grid{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="mesh"></canvas>
+<header class="hero">
+  <div class="hero-wrap">
+    <div>
+      <div class="eyebrow"><span class="dot"></span>WEEKLY INTEL · 第 6 期</div>
+      <div class="chips"><span class="chip">Codex</span><span class="chip">并行 agent</span><span class="chip">跨角色工作流</span><span class="chip">任务调度</span></div>
+      <h1>工作单位变了：从问答到并行委托，Codex 正在把每个人变成小型调度者</h1>
+      <p class="lede">OpenAI 的最新使用数据说明：agent 不只是更会聊天，而是把工作拆成可等待、可验证、可并行的长任务。真正变化的不是工具栏，而是每个人如何分发和验收工作。</p>
+      <div class="meta">
+        <span><b>来源</b> OpenAI Economic Research</span>
+        <span><b>发布日期</b> 2026-06-25</span>
+        <span><b>原文</b> <a href="https://openai.com/index/how-agents-are-transforming-work/" target="_blank" rel="noopener">How agents are transforming work</a></span>
+      </div>
+    </div>
+    <div class="visual">
+      <div class="visual-card">
+        <div class="agent-grid">
+          <div class="agent">Agent 01<br><span class="mono">refactor</span></div>
+          <div class="agent">Agent 02<br><span class="mono">analysis</span></div>
+          <div class="agent">Agent 03<br><span class="mono">tooling</span></div>
+          <div class="agent">Agent 04<br><span class="mono">debug</span></div>
+          <div class="agent">Agent 05<br><span class="mono">report</span></div>
+          <div class="agent">Agent 06<br><span class="mono">verify</span></div>
+        </div>
+        <div class="terminal mono">
+          <p>&gt; delegate --goal "finish workflow slice"</p>
+          <p class="dim">spawning parallel agents...</p>
+          <p>&gt; monitor --human-time "&gt; 1h"</p>
+          <p class="dim">route to board · add gate · collect result</p>
+          <p>&gt; user role changed: executor → scheduler</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+<nav class="nav"><div class="nav-inner">
+  <a href="#theme">主题</a><a href="#idea">想法</a><a href="#conclusion">结论</a><a href="#reuse">复用</a>
+</div></nav>
+<div class="wrap">
+<main>
+<section id="theme">
+  <div class="sec-title"><span class="idx">01</span><h2>主题</h2></div>
+  <p>OpenAI 这篇报告真正值得看的是一个基础变化：AI 在工作里的基本单位，正在从「一次聊天」变成「一段可委托、可等待、可并行的任务」。以前我们问模型一个问题，等一个答案；现在我们把一个需要跑工具、查代码、改文件、验证结果的任务交出去，让 agent 自己迭代几分钟到几小时。</p>
+  <div class="metrics">
+    <div class="metric"><div class="k">超过30分钟任务</div><div class="v count" data-target="80.6" data-suffix="%">80.6%</div><div class="d">样本个人用户到 2026 年 5 月至少发起过一次此类 Codex 请求。</div></div>
+    <div class="metric blue"><div class="k">超过1小时任务</div><div class="v count" data-target="70.2" data-suffix="%">70.2%</div><div class="d">用户已经把越来越长的工作交给 agent，而不是只问一个答案。</div></div>
+    <div class="metric violet"><div class="k">并行 agent turns</div><div class="v"><span class="count" data-target="60" data-suffix="+">60+</span></div><div class="d">OpenAI 内部 Codex 日活 99 分位，一天里超过 60 小时，分散在多个并行 agent。</div></div>
+  </div>
+  <p>这篇不是产品更新帖，而是经济研究口径的用法观察。它给了一个更基础的判断：当 agent 可以长期运行、可以并行、可以跨工具做事时，工作流设计的核心不再是「如何把提示词写好」，而是「如何拆任务、定边界、给验证、看进度、收结果」。</p>
+</section>
+<section id="idea">
+  <div class="sec-title"><span class="idx">02</span><h2>想法</h2></div>
+  <p>报告先把 agent 和 chatbot 的边界划开。chatbot 交互通常短、单轮、自包含；agent 交互则是长上下文、带工具、能在环境里多步迭代。这个差异听起来像产品形态变化，但落到工作里就是管理方式变化：聊天适合问答，agent 适合委托。</p>
+  <figure><div class="figbar"><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i><span>问答到委托</span></div>
+  <pre class="mermaid">flowchart TB
+    subgraph OLD["旧做法·问答"]
+        A1["人提出一个问题"] --&gt; A2["模型给一个答案"]
+        A2 --&gt; A3["人自己继续拆、改、验证"]
+        A3 --&gt; A4["结果：人仍是主执行者"]
+    end
+    subgraph NEW["新做法·委托"]
+        B1["人定义目标和边界"] --&gt; B2["Agent 自己跑工具和环境"]
+        B2 --&gt; B3["Agent 迭代、验证、交结果"]
+        B3 --&gt; B4["结果：人成为调度者和验收者"]
+    end
+    OLD ~~~ NEW</pre><figcaption>同样是用 AI，工作重心从「拿答案」迁移到「分发任务、验收结果」。</figcaption></figure>
+  <p>最有意思的是「任务时长」这条线。OpenAI 用 LLM-as-judge 读 Codex transcript，估计一个请求大概对应多少人类工作时间。这个口径不是精确工时，报告脚注也提醒它只是方向性估计，但趋势很清楚：用户正在把越来越长、越来越难、越来越需要独立执行的工作交给 Codex。</p>
+  <p>报告第二条线，是 Codex 从工程部门扩散到非技术部门。到 2026 年 4 月左右，法务、财务、招聘也跨过了「Codex 成为主要 AI 工具」的线。从 2025 年 8 月到 2026 年 6 月，非开发者个人用户增长 137 倍，组织里的非开发者用户增长 189 倍，OpenAI 内部非开发者用户增长 12 倍。</p>
+  <figure><div class="figbar"><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i><span>跨角色工作流</span></div>
+  <pre class="mermaid">flowchart TB
+    subgraph BEFORE["过去·技术执行被专业边界卡住"]
+        P1["法务/财务/运营"] --&gt;|"提需求"| E1["工程团队排期"]
+        E1 --&gt;|"等待交付"| P2["业务继续等"]
+    end
+    subgraph AFTER["现在·相邻技术任务可被委托"]
+        Q1["法务/财务/运营"] --&gt;|"定义目标"| A1["Codex Agent"]
+        A1 --&gt;|"自动化/数据处理/小工具/分析"| Q2["业务直接拿到可验证产物"]
+        Q2 --&gt;|"复杂或高风险再升级"| E2["工程团队"]
+    end
+    BEFORE ~~~ AFTER</pre><figcaption>非技术角色不是变成工程师，而是能把相邻技术任务委托出去。</figcaption></figure>
+  <p>第三条线，是并行。随着 Codex 更强、更可并行，用户从「一次只要一个答案」转向「一天里编排多个 agent 任务」。并行不是简单地多开几个窗口，它会带来新的管理问题：任务之间有没有依赖？哪个任务可以先跳过？多个 agent 会不会改同一块代码？验证结果怎么汇总？谁来判断一个长任务已经完成？</p>
+  <figure><div class="figbar"><i class="lamp"></i><i class="lamp"></i><i class="lamp"></i><span>一个 agent 任务的真实组成</span></div>
+  <pre class="mermaid">flowchart LR
+    G["目标&lt;br/&gt;要完成什么"] --&gt; C["约束&lt;br/&gt;不能碰哪里"]
+    C --&gt; X["上下文&lt;br/&gt;需要读什么"]
+    X --&gt; T["工具&lt;br/&gt;怎么执行"]
+    T --&gt; V["验证&lt;br/&gt;怎么判断做对"]
+    V --&gt; R["结果&lt;br/&gt;怎么交付和复盘"]</pre><figcaption>长任务 agent 需要的是任务操作系统，而不是一条更漂亮的提示词。</figcaption></figure>
+</section>
+<section id="conclusion">
+  <div class="sec-title"><span class="idx">03</span><h2>结论</h2></div>
+  <p>这篇最该记住的一句话是：<strong>agent 的出现，把人的工作重心从执行迁到调度和验收。</strong>越强的 agent，越不只是回答问题，而是在替你跑一段工作。人的核心能力随之变化：不是每一步都自己做，而是把目标说清、把边界画清、把验证器建好、把多个任务排好顺序。</p>
+  <div class="note">报告里的任务时长是模型估计，不是精确工时；OpenAI 内部数据也代表高密度前沿用户。但方向足够清楚：一旦 agent 有低摩擦入口、真实工具权限和可等待的执行环境，用户会自然把它推向更长、更复杂、更跨职能的任务。</div>
+  <p>所以，AI 原生工作流不该只问「模型能不能更聪明」，更应该问「我们的任务系统能不能承接更聪明的模型」。没有任务拆分、状态看板、权限边界、验证门禁和反馈归档，再强的 agent 也只会变成一堆难追踪的长跑进程。</p>
+</section>
+<section id="reuse">
+  <div class="sec-title"><span class="idx">04</span><h2>复用</h2></div>
+  <ul>
+    <li><strong>把 WBS 并行/DAG 从候选升级为高优先级设计。</strong> OpenAI 的数据说明，重度用户已经在一天里并行调度多个 agent。我们的 WBS 不能长期停留在线性 1→2→3；至少要能表达 dependsOn、可并行切片、可选/跳过切片，以及看板上的并行泳道。</li>
+    <li><strong>给每个 agent 任务加「人类工时估计」字段。</strong> 30 分钟、1 小时、4 小时、8 小时这样的阈值，可以帮助判断任务是否该拆小、是否适合并行、是否需要更强门禁。</li>
+    <li><strong>把非技术角色纳入 workflow 设计。</strong> Epic 或子 plan 里可以增加「发起角色」「验收角色」「技术升级条件」三类字段，让非技术同事能发起任务，但高风险变更仍能回到工程审查。</li>
+    <li><strong>把“调度者能力”写进 Skill 训练方向。</strong> 后续 Skill 不应只教 agent 怎么写代码，也要教用户怎么拆任务、怎么设边界、怎么验收、怎么并行看板管理。</li>
+  </ul>
+  <div class="source">原文：<a href="https://openai.com/index/how-agents-are-transforming-work/" target="_blank" rel="noopener">How agents are transforming work · OpenAI</a></div>
+</section>
+</main>
+<aside class="side">
+  <div class="card"><h4>核心公式</h4><div class="formula">问答工具 <span>→</span><br>任务操作系统</div><p>模型越能独立执行，越需要任务拆分、权限、验证、回放和看板。</p></div>
+  <div class="card"><h4>本期锚点</h4><p>80.6%：超过30分钟任务</p><p>70.2%：超过1小时任务</p><p>60+：99分位日 agent turn 小时</p></div>
+  <div class="card"><h4>Kit 落点</h4><p>WBS DAG</p><p>human_time_estimate</p><p>role_owner / 验收角色</p></div>
+</aside>
+</div>
+<footer>交纳米Work：把这个 HTML 上传到 CDN，返回短链，不改内容。</footer>
+<button id="toTop" aria-label="返回顶部">↑</button>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+document.documentElement.classList.add('js');
+mermaid.initialize({startOnLoad:true,theme:'dark',securityLevel:'loose',flowchart:{htmlLabels:true}});
+const canvas=document.getElementById('mesh'),ctx=canvas.getContext('2d');let pts=[];
+function resizeMesh(){const d=window.devicePixelRatio||1;canvas.width=innerWidth*d;canvas.height=innerHeight*d;canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(d,0,0,d,0,0);const n=Math.max(28,Math.min(90,Math.floor(innerWidth*innerHeight/18000)));pts=Array.from({length:n},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22}));}
+function drawMesh(){ctx.clearRect(0,0,innerWidth,innerHeight);ctx.fillStyle='rgba(68,240,210,.55)';ctx.strokeStyle='rgba(106,167,255,.16)';for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,1.3,0,Math.PI*2);ctx.fill()}for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const a=pts[i],b=pts[j],dx=a.x-b.x,dy=a.y-b.y,dist=Math.hypot(dx,dy);if(dist<130){ctx.globalAlpha=1-dist/130;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1}}requestAnimationFrame(drawMesh)}
+resizeMesh();drawMesh();addEventListener('resize',resizeMesh);
+const sections=[...document.querySelectorAll('section')],links=[...document.querySelectorAll('.nav a')],topBtn=document.getElementById('toTop');
+const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')})},{threshold:.12});sections.forEach(s=>io.observe(s));setTimeout(()=>sections.forEach(s=>s.classList.add('in')),1200);
+const navObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id))}})},{rootMargin:'-42% 0px -52% 0px'});sections.forEach(s=>navObs.observe(s));
+addEventListener('scroll',()=>topBtn.classList.toggle('show',scrollY>700));topBtn.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+function animateCount(el){if(el.dataset.done)return;el.dataset.done='1';const target=parseFloat(el.dataset.target||'0'),suffix=el.dataset.suffix||'',dec=String(target).includes('.')?1:0,start=performance.now(),dur=900;function step(t){const p=Math.min(1,(t-start)/dur),v=target*(1-Math.pow(1-p,3));el.textContent=v.toFixed(dec)+suffix;if(p<1)requestAnimationFrame(step);else el.textContent=target.toFixed(dec)+suffix}requestAnimationFrame(step)}
+const countObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)animateCount(e.target)}),{threshold:.4});document.querySelectorAll('.count').forEach(e=>countObs.observe(e));
+</script>
+</body>
+</html>
