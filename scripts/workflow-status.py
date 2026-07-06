@@ -52,7 +52,7 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
         cmd.extend(["--epic", args.epic])
     if args.project:
         cmd.extend(["--project", args.project])
-    cmd.append("--json")
+    cmd.extend(["--probe", "--json"])
     proc = subprocess.run(
         cmd,
         cwd=ROOT,

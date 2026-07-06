@@ -188,6 +188,7 @@ crit_status_list() { python3 -c 'import json,sys; c=json.loads(sys.argv[1]); pri
 
 blockers=()
 plans_found=()
+passed_stage_records=()
 current_state=""
 current_label=""
 recommended_skill=""
@@ -388,6 +389,7 @@ PY
       found_stage="$s_key"
       break
     fi
+    passed_stage_records+=("$s_key:$child_raw")
   done
 
   if [[ -z "$found_stage" ]]; then
@@ -443,11 +445,62 @@ emit_gate_event() {
       [[ -f "$cf" ]] && plan_snapshot="$(shasum -a 256 "$cf" 2>/dev/null | awk '{print $1}')"
     fi
 
+    local passed_json
+    passed_json="$(printf '%s\n' "${passed_stage_records[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))' 2>/dev/null || echo '[]')"
+
     # 时间戳来自执行现场（date），不伪造。JSONL 由 python 安全序列化。
-    python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" <<'PY' 2>/dev/null || true
-import json, sys, datetime
-event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child = sys.argv[1:10]
-ev = {
+    python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" "$passed_json" "$ROOT" <<'PY' 2>/dev/null || true
+import datetime, hashlib, json, pathlib, sys
+
+event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child, passed_json, root = sys.argv[1:12]
+root_path = pathlib.Path(root)
+event_path = pathlib.Path(event_file)
+created_at = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+
+events = []
+if event_path.exists():
+    for line in event_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            events.append(json.loads(line))
+        except json.JSONDecodeError:
+            pass
+
+latest_by_stage = {}
+for ev in events:
+    if ev.get("type") in ("gate_pass", "gate_fail") and ev.get("stage"):
+        latest_by_stage[ev["stage"]] = ev.get("type")
+
+def snapshot(rel):
+    if not rel:
+        return None
+    p = pathlib.Path(rel)
+    if not p.is_absolute():
+        p = root_path / p
+    if not p.is_file():
+        return None
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+to_write = []
+for item in json.loads(passed_json):
+    passed_stage, _, passed_child = item.partition(":")
+    if not passed_stage or latest_by_stage.get(passed_stage) == "gate_pass":
+        continue
+    to_write.append({
+        "type": "gate_pass",
+        "stage": passed_stage,
+        "workflow": workflow,
+        "epic": epic or None,
+        "child_plan": passed_child or None,
+        "reason": "阶段门禁已通过；历史阻塞已解除" if latest_by_stage.get(passed_stage) == "gate_fail" else "阶段门禁已通过",
+        "git_commit": git_commit or None,
+        "plan_snapshot": snapshot(passed_child),
+        "created_at": created_at,
+    })
+    latest_by_stage[passed_stage] = "gate_pass"
+
+to_write.append({
     "type": etype,
     "stage": stage,
     "workflow": workflow,
@@ -456,10 +509,11 @@ ev = {
     "reason": reason,
     "git_commit": git_commit or None,
     "plan_snapshot": plan_snapshot or None,
-    "created_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-}
-with open(event_file, "a", encoding="utf-8") as fh:
-    fh.write(json.dumps(ev, ensure_ascii=False) + "\n")
+    "created_at": created_at,
+})
+with event_path.open("a", encoding="utf-8") as fh:
+    for ev in to_write:
+        fh.write(json.dumps(ev, ensure_ascii=False) + "\n")
 PY
     return 0
   ) 2>/dev/null || true

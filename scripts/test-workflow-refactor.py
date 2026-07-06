@@ -278,6 +278,9 @@ class WorkflowRefactorTests(unittest.TestCase):
             result = mod.update_slice_from_epic(epic, 11, "skipped", "test")
             data = mod.scan_epic(epic)
             by_n = {item["n"]: item for item in data["slices"]}
+            event_file = tmp / ".workflows/events/fixture.events.jsonl"
+            events = [json.loads(l) for l in event_file.read_text(encoding="utf-8").splitlines() if l.strip()]
+            progress = data.get("progress_history") or {}
 
             with self.assertRaisesRegex(ValueError, "not optional"):
                 mod.update_slice_from_epic(epic, 10, "skipped", "test")
@@ -289,6 +292,15 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertTrue(by_n[11]["skipped"])
             self.assertTrue(by_n[11]["optional"])
             self.assertEqual(by_n[11]["derived_from"], "child-plan")
+            self.assertEqual(events[-1]["type"], "wbs_progress")
+            self.assertEqual(events[-1]["slice"], 11)
+            self.assertEqual(events[-1]["state"], "skipped")
+            self.assertEqual(events[-1]["previous_state"], "done")
+            self.assertEqual(events[-1]["target_plan"], "Plans/功能开发/fixture.md")
+            self.assertEqual((data.get("gate_history") or {}).get("total", 0), 0)
+            self.assertEqual(progress["total"], 1)
+            self.assertEqual(progress["recent"][0]["slice"], 11)
+            self.assertFalse(any(ev.get("epic") == "fixture" for ev in mod.all_gate_events()))
 
     def test_kanban_sync_script_uses_slice_state_api_for_skip(self) -> None:
         script = (ROOT / "scripts/kanban-sync.sh").read_text(encoding="utf-8")
@@ -464,7 +476,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/client-dev.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/computer-mgmt.json", proc.stdout)
 
-    def test_kanban_shows_lightweight_workflows(self) -> None:
+    def test_kanban_shows_only_created_lightweight_workflows(self) -> None:
         with self.fixture_repo() as tmp:
             spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
             self.assertIsNotNone(spec)
@@ -479,10 +491,24 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
 
             data = mod.board_envelope()
+            write_file(
+                tmp / "Plans/界面开发/2026-07-03-UI范围-卡片.md",
+                f"""
+                ---
+                status: 进行中
+                ---
+                # UI范围
+
+                {skill_run("figma-ui", "Plans/界面开发/2026-07-03-UI范围-卡片.md")}
+                """,
+            )
+            data_with_plan = mod.board_envelope()
 
         lightweight_names = {item["name"] for item in data["lightweight"]}
+        self.assertEqual(lightweight_names, set())
+        lightweight_names = {item["name"] for item in data_with_plan["lightweight"]}
         self.assertIn("ui-change", lightweight_names)
-        self.assertIn("bugfix", lightweight_names)
+        self.assertNotIn("bugfix", lightweight_names)
 
     def test_workflow_run_start_creates_instance_and_event(self) -> None:
         with self.fixture_repo() as tmp:
@@ -999,6 +1025,32 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertIn("gate_pass", types)
             self.assertNotIn("gate_fail", types)
 
+    def test_workflow_gate_records_pass_when_previous_blocker_is_resolved(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            req = tmp / "Plans/需求分析/fixture.md"
+            req.write_text(req.read_text(encoding="utf-8").replace("status: 已采纳", "status: 评审中"), encoding="utf-8")
+
+            first = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+            self.assertEqual(first["current_state"], "requirement")
+
+            req.write_text(req.read_text(encoding="utf-8").replace("status: 评审中", "status: 已采纳"), encoding="utf-8")
+            (tmp / "Plans/自动化测试/fixture.md").unlink()
+            second = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+            self.assertEqual(second["current_state"], "test-first")
+
+            event_file = tmp / ".workflows/events/fixture.events.jsonl"
+            events = [json.loads(l) for l in event_file.read_text(encoding="utf-8").splitlines() if l.strip()]
+            stage_types = [(e["stage"], e["type"]) for e in events if e["type"] in {"gate_pass", "gate_fail"}]
+
+        self.assertEqual(stage_types[-4:], [
+            ("requirement", "gate_fail"),
+            ("requirement", "gate_pass"),
+            ("architecture", "gate_pass"),
+            ("test-first", "gate_fail"),
+        ])
+        self.assertIn("历史阻塞已解除", events[-3]["reason"])
+
     def test_workflow_gate_json_output_handles_multiline_gate_result(self) -> None:
         with self.fixture_repo() as tmp:
             self.create_complete_client_dev_fixture(tmp)
@@ -1215,15 +1267,23 @@ class WorkflowRefactorTests(unittest.TestCase):
                 ["python3", "scripts/workflow-run.py", "gate", "--run", run_rel],
                 cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
             )
+            run_text = (tmp / run_rel).read_text(encoding="utf-8")
+            event_rel = run_text.split('events: "')[1].split('"')[0]
+            event_file = tmp / event_rel
+            before_events = event_file.read_text(encoding="utf-8")
             proc = subprocess.run(
                 ["python3", "scripts/workflow-status.py", "--workflow", "client-dev",
                  "--epic", "Plans/Epic/fixture.md", "--run", run_rel, "--json"],
                 cwd=tmp, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
             )
+            after_events = event_file.read_text(encoding="utf-8")
+            direct_event_file = tmp / ".workflows/events/fixture.events.jsonl"
             data = json.loads(proc.stdout)
         self.assertIn("history", data)
         self.assertIsNotNone(data["history"]["last_gate"])
         self.assertEqual(data["history"]["last_gate"]["result"], "pass")
+        self.assertEqual(after_events, before_events)
+        self.assertFalse(direct_event_file.exists())
 
     def test_workflow_status_summarizes_done_state_for_humans(self) -> None:
         with self.fixture_repo() as tmp:

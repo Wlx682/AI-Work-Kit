@@ -84,6 +84,8 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
             "at": (e.get("created_at") or "")[:19].replace("T", " "),
             "reason": (e.get("reason") or "").split(";")[0].strip(),
             "git_commit": (e.get("git_commit") or "")[:7],
+            "inferred": bool(e.get("inferred")),
+            "passed_stages": e.get("passed_stages") or [],
         }
         for e in reversed(gate_events)
     ][:12]
@@ -100,6 +102,83 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
         "total": len(gate_events),
         "passes": passes,
     }
+
+
+def _event_file_for_write(epic_rel: str) -> Path:
+    """Write workflow-adjacent events to the active stream when one exists.
+
+    Gate events remain the only inputs to gate history/pass rate. WBS events use
+    the same append-only file as a process ledger, but are filtered separately.
+    """
+    event_file = _event_file_for(epic_rel)
+    if event_file is not None:
+        return event_file
+    EVENT_DIR.mkdir(parents=True, exist_ok=True)
+    return EVENT_DIR / f"{Path(epic_rel).stem}.events.jsonl"
+
+
+def append_wbs_progress_event(
+    epic_rel: str,
+    workflow: str | None,
+    slice_n: int,
+    stage: str,
+    state: str,
+    previous_state: str,
+    target: str,
+    operator: str,
+    label: str,
+    optional: bool,
+) -> None:
+    event_file = _event_file_for_write(epic_rel)
+    event = {
+        "type": "wbs_progress",
+        "workflow": workflow or None,
+        "epic": epic_rel,
+        "stage": stage,
+        "slice": slice_n,
+        "state": state,
+        "previous_state": previous_state,
+        "target_plan": target,
+        "operator": operator,
+        "label": label,
+        "optional": optional,
+        "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    with event_file.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+def progress_history_for(epic_rel: str) -> dict[str, Any] | None:
+    event_file = _event_file_for(epic_rel)
+    if event_file is None:
+        return None
+    progress_events: list[dict[str, Any]] = []
+    for line in event_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if ev.get("type") == "wbs_progress":
+            progress_events.append(ev)
+    if not progress_events:
+        return None
+    recent = [
+        {
+            "stage": e.get("stage"),
+            "slice": e.get("slice"),
+            "state": e.get("state"),
+            "previous_state": e.get("previous_state"),
+            "target_plan": e.get("target_plan"),
+            "operator": e.get("operator"),
+            "label": e.get("label"),
+            "optional": bool(e.get("optional")),
+            "at": (e.get("created_at") or "")[:19].replace("T", " "),
+        }
+        for e in reversed(progress_events)
+    ][:12]
+    return {"recent": recent, "total": len(progress_events)}
 
 
 PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change", "已归档"}
@@ -502,6 +581,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         )
     first_open = next((e["n"] for e in enriched if not e["done"]), None)
     gh = gate_history_for(rel)
+    ph = progress_history_for(rel)
     done_cnt = sum(1 for e in enriched if e["done"])
     total_cnt = len(enriched)
     # 当前阶段：第一个未完成切片所属 stage_key；全完成则 done。
@@ -538,6 +618,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "test_health": test_health,
         "next_slice": first_open,
         "gate_history": gh,
+        "progress_history": ph,
         "health": health,
         "current_stage": cur_stage,
         "slices_done": done_cnt,
@@ -643,6 +724,8 @@ def lightweight_payload() -> list[dict[str, Any]]:
             )
         total = len(stages)
         done_count = sum(1 for s in stages if s.get("done"))
+        if done_count == 0:
+            continue
         items.append(
             {
                 "name": bp.get("name", ""),
@@ -808,6 +891,8 @@ def all_gate_events() -> list[dict[str, Any]]:
                     "at": (ev.get("created_at") or "")[:19].replace("T", " "),
                     "reason": (ev.get("reason") or "").split(";")[0].strip(),
                     "git_commit": (ev.get("git_commit") or "")[:7],
+                    "inferred": bool(ev.get("inferred")),
+                    "passed_stages": ev.get("passed_stages") or [],
                 }
             )
     events.sort(key=lambda e: e.get("at", ""), reverse=True)
@@ -1302,6 +1387,7 @@ def update_slice_from_epic(epic: Path, slice_n: int, state: str, operator: str =
         raise ValueError(f"slice {slice_n} not found")
     if state == "skipped" and not item.get("optional"):
         raise ValueError(f"slice {slice_n} is not optional")
+    previous_state = "skipped" if item.get("skipped") else ("done" if item.get("done") else "open")
 
     epic_rel = str(epic.relative_to(ROOT)) if epic.is_relative_to(ROOT) else str(epic)
     target_rel = item.get("related_plan") or epic_rel
@@ -1319,6 +1405,18 @@ def update_slice_from_epic(epic: Path, slice_n: int, state: str, operator: str =
         str(slice_n),
         operator,
         f"WBS {slice_n} → {state}（写入 {target_rel}）",
+    )
+    append_wbs_progress_event(
+        epic_rel=epic_rel,
+        workflow=data.get("workflow"),
+        slice_n=slice_n,
+        stage=item.get("stage_key", "development"),
+        state=state,
+        previous_state=previous_state,
+        target=target_rel,
+        operator=operator,
+        label=item.get("title") or item.get("label") or f"WBS {slice_n}",
+        optional=bool(item.get("optional")),
     )
     return {"target": target_rel, "state": state, "optional": bool(item.get("optional"))}
 

@@ -191,6 +191,7 @@
     .timeline li::before { content: ""; position: absolute; left: -1.1rem; top: 5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--bg-2); }
     .timeline li.fail::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
     .timeline li.pass::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .timeline li.progress-event::before { background: var(--neon-c); box-shadow: 0 0 8px var(--neon-c); }
     .timeline .tl-top { display: flex; gap: 0.5rem; align-items: baseline; }
     .timeline .tl-at { color: var(--faint); font-variant-numeric: tabular-nums; }
     .timeline .tl-stage code { color: var(--neon-c); }
@@ -400,8 +401,8 @@
       allEvents.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
       const tl = allEvents.slice(0, 10).map(ev => `
         <li class="${ev.result}">
-          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span></div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}</div>
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span>${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
           <div class="tl-commit">${esc(ev.epic)} · ${esc(ev.git_commit || '')}</div>
         </li>`).join('') || '<li>暂无门禁事件</li>';
 
@@ -511,14 +512,26 @@
             </select>
           </td>
         </tr>`).join('');
+      const planTl = (e.plans || []).map(p => `
+        <li class="${p.status === '已采纳' || p.status === 'done' ? 'pass' : 'fail'}">
+          <div class="tl-top"><span class="tl-at">${esc(p.status || '未创建')}</span> <span class="tl-stage"><code>${esc(p.stage)}</code></span></div>
+          <div class="tl-reason">${p.path ? esc(p.path) : '子 Plan 未创建'}</div>
+        </li>`).join('') || '<li>暂无阶段记录</li>';
 
       const gh = e.gate_history || {};
       const tl = (gh.recent || []).map(ev => `
         <li class="${ev.result}">
-          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}</div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}</div>
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
           ${ev.git_commit ? `<div class="tl-commit">commit ${esc(ev.git_commit)}</div>` : ''}
         </li>`).join('') || '<li>暂无门禁事件</li>';
+      const ph = e.progress_history || {};
+      const ptl = (ph.recent || []).map(ev => `
+        <li class="progress-event">
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span></div>
+          <div class="tl-reason">WBS ${esc(ev.slice)} → ${esc(ev.state)}${ev.previous_state ? `（原 ${esc(ev.previous_state)}）` : ''}</div>
+          <div class="tl-commit">${esc(ev.label || '')}${ev.operator ? ` · ${esc(ev.operator)}` : ''}</div>
+        </li>`).join('') || '<li>暂无 WBS 进度事件</li>';
 
       $('app').innerHTML = `
         <button class="ghost back" id="backBtn">← 返回纵览</button>
@@ -551,8 +564,16 @@
           </div>
           <aside class="side">
             <div class="spanel fade-in">
+              <h3>阶段记录（子 Plan）</h3>
+              <ul class="timeline">${planTl}</ul>
+            </div>
+            <div class="spanel fade-in">
               <h3>门禁事件时间线（本 Epic）</h3>
               <ul class="timeline">${tl}</ul>
+            </div>
+            <div class="spanel fade-in">
+              <h3>WBS 进度事件</h3>
+              <ul class="timeline">${ptl}</ul>
             </div>
           </aside>
         </div>`;
