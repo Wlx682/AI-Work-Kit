@@ -56,6 +56,6 @@ python3 scripts/skill-smoke-test.py code-review tests/fixtures/skills/code-revie
 
 ## 反馈回路（skill_run）
 
-完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
-有调用方 plan 时追加到 plan 末尾；无 plan 时追加到 `Contexts/决策/孤立反馈记录.md` **顶部**（倒序，`plan: orphan`）。
+完成任务的最后一步按 `Contexts/决策/Skill反馈协议.md` 收口：
+有调用方 plan 时追加到 plan 末尾；无 plan 时只写孤立反馈的 `## 待整理` 或 `## 已归位`，不保留完整过程小票。
 `contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: code-review` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。

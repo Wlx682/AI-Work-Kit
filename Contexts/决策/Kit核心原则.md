@@ -158,9 +158,12 @@ Agent 读 Contexts 是为了**补通用上下文**，不是为了记住某个已
 
 > 协议全文：[[Contexts/决策/Skill反馈协议]]。本节只立硬规则，细节不复述。
 
-每个 Skill 完成任务时**必须**输出 `skill_run` YAML 块：
-- 有 plan → 追加到 plan 末尾
-- 无 plan → 追加到 `Contexts/决策/孤立反馈记录.md` 顶部
+有 plan 的 Skill 完成任务时**必须**输出 `skill_run` YAML 块：
+- 追加到 plan 末尾，作为阶段门禁证据
+
+无 plan 的任务不保留完整过程小票：
+- 未归位候选 → 写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`
+- 已当场落地 → 只在 `Contexts/决策/孤立反馈记录.md` 的 `## 已归位` 补一行摘要
 
 `utility` 二选一：`high`（必给一句话理由）/ `not-needed`。
 `scripts/plan-gate-check.sh` 校验存在性与字段合法性；缺则视为任务未完成。

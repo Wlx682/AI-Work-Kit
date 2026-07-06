@@ -12,6 +12,8 @@ description: 将技术方案拆为 5-10 原子任务，主 plan + 子任务 plan
 
 1. 读方案 + 需求真理源  
 2. 5–10 原子任务，主 plan Checklist 双链子任务；§五实施切片表必须保留「覆盖 AC」列  
+   - 生产 WBS 时可用 `7a/7b` 子编号拆同一父切片下的 Mock/真联调、基础态/Variant、静态态/接口态。
+   - AI 可把确定不需要的子切片标 `[-]`，但必须写明跳过理由，并提醒父编号需进入蓝图 `optionalWbsSlices` 或由看板跳过按钮执行；不确定则保留 `[ ]` + 阻塞项。
 3. 子任务 `parent:` 链主 plan；`lifecycle_state: development`  
 4. 实现：`/resume plan=子任务路径`
 

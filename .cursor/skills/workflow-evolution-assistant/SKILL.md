@@ -21,14 +21,14 @@ Vault：AI-Work-Kit 根目录
 ## 输入优先级
 
 1. 用户指定的 plan、Epic、反馈块、聚合报告或脚本输出。
-2. `Contexts/决策/孤立反馈记录.md` 顶部未归位反馈。
+2. `Contexts/决策/孤立反馈记录.md` 的 `## 待整理` 未归位候选。
 3. `Contexts/决策/反馈聚合-YYYY-MM.md` 或 `scripts/feedback-aggregate.py --dry-run --month YYYY-MM`。
 4. `scripts/workflow-status.py` / `scripts/workflow-gate.sh --json` 的卡点。
 5. `.workflows/blueprints/*.json`、`Templates/`、`Skills/` 与 agent skill stub 的漂移证据。
 
 ## 执行流程
 
-1. **定界**：先判断本次是「建议」还是「落地」。未得到用户明确授权前，不写长期 `Contexts/`；但按反馈协议追加 `skill_run` 不需要另行确认。
+1. **定界**：先判断本次是「建议」还是「落地」。未得到用户明确授权前，不写长期 `Contexts/`；无 plan 收口按反馈协议写 `待整理` 或 `已归位`，不保留完整过程小票。
 2. **收集证据**：优先读用户给的材料；没有指定时扫描孤立反馈、最近聚合报告、相关 skill、蓝图和校验脚本。
 3. **归类问题**：
    - 路由问题：触发词冲突、Skill 抢活、入口不清。
@@ -64,6 +64,10 @@ Vault：AI-Work-Kit 根目录
 
 ## 反馈回路（skill_run）
 
-完成任务的最后一步必须输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）。
-本 Skill 通常无独立 plan，故追加到 `Contexts/决策/孤立反馈记录.md` 顶部（倒序，`plan: orphan`）；若本次明确服务某个进化 plan，则追加到该 plan 末尾。
-`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: workflow-evolution-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。
+按 `Contexts/决策/Skill反馈协议.md` 收口：
+
+- 有进化 plan：在 plan 末尾追加 `## 反馈（skill_run）`。
+- 无 plan 且产生未落地候选：写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`，标题用 `### 进化候选：...` 或 `### 待整理：...`。
+- 无 plan 且本次已落地：只在 `## 已归位` 补一行摘要，指向落点与验证方式。
+
+禁止把无 plan 执行过程以完整 `skill_run` YAML 小票写入孤立反馈；过程细节会累计太快，且会污染候选区。

@@ -101,6 +101,85 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(stages["architecture"]["planFolder"], "Plans/技术方案")
         self.assertEqual(stages["development"]["skills"], ["feature-dev-assistant", "figma-ui"])
         self.assertIn("workflow-router", (ROOT / "Skills/README.md").read_text(encoding="utf-8"))
+        epic_template = (ROOT / "Templates/Epic模板-client-dev.md").read_text(encoding="utf-8")
+        for mark in ["[ ]", "[~]", "[-]", "[x]"]:
+            self.assertIn(mark, epic_template)
+        self.assertIn("optionalWbsSlices", epic_template)
+
+    def test_feedback_aggregate_reads_open_candidates_from_pending_section(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            orphan = tmp / "Contexts/决策/孤立反馈记录.md"
+            write_file(
+                orphan,
+                """
+                # 孤立反馈记录
+
+                ## 待整理
+
+                ### 进化候选：候选 A
+
+                - 证据：A
+
+                ### 待整理：普通条目
+
+                - 证据：不应进入进化候选清单
+
+                ### 进化候选：候选 B
+
+                - 证据：B
+
+                ## 已归位
+
+                - **2026-07-06** 进化候选：已完成，不应重复出现
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("feedback_aggregate", ROOT / "scripts/feedback-aggregate.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+
+            titles = mod.scan_open_evolution_candidates()
+
+        self.assertEqual(titles, ["进化候选：候选 A", "进化候选：候选 B"])
+
+    def test_kanban_reads_evolution_candidates_from_pending_section(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            orphan = tmp / "Contexts/决策/孤立反馈记录.md"
+            write_file(
+                orphan,
+                """
+                # 孤立反馈记录
+
+                ## 待整理
+
+                ### 进化候选：候选 A
+
+                - 证据：A 的摘要
+
+                ### 待整理：普通条目
+
+                - 证据：不应进入进化候选清单
+
+                ## 已归位
+
+                - **2026-07-06** 候选 B 已归位：验证通过
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ORPHAN_FEEDBACK = orphan
+
+            data = mod.read_evolution_candidates()
+
+        self.assertEqual(data["pending"], [{"title": "候选 A", "summary": "证据：A 的摘要"}])
+        self.assertEqual(data["resolved"], [{"date": "2026-07-06", "summary": "候选 B 已归位：验证通过"}])
 
     def test_kanban_derives_wbs_stage_from_blueprint(self) -> None:
         with self.fixture_repo() as tmp:
@@ -181,6 +260,91 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["slices_total"], 15)
         # 蓝图未声明的历史切片保留 Epic 字面量回退，不强行推断。
         self.assertEqual(by_n[12]["derived_from"], "epic-literal")
+
+    def test_kanban_slice_action_writes_child_plan_and_enforces_optional_skip(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            bp_file = tmp / ".workflows/blueprints/client-dev.json"
+            bp = json.loads(bp_file.read_text(encoding="utf-8"))
+            for stage in bp["stages"]:
+                if stage["key"] == "development":
+                    stage["optionalWbsSlices"] = [11]
+            bp_file.write_text(json.dumps(bp, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            epic = tmp / "Plans/Epic/fixture.md"
+            result = mod.update_slice_from_epic(epic, 11, "skipped", "test")
+            data = mod.scan_epic(epic)
+            by_n = {item["n"]: item for item in data["slices"]}
+
+            with self.assertRaisesRegex(ValueError, "not optional"):
+                mod.update_slice_from_epic(epic, 10, "skipped", "test")
+
+            self.assertEqual(result["target"], "Plans/功能开发/fixture.md")
+            self.assertIn("[-] 11.  fixture", (tmp / "Plans/功能开发/fixture.md").read_text(encoding="utf-8"))
+            self.assertIn("[x] 11. 非功能验证完成", (tmp / "Plans/Epic/fixture.md").read_text(encoding="utf-8"))
+            self.assertTrue(by_n[11]["done"])
+            self.assertTrue(by_n[11]["skipped"])
+            self.assertTrue(by_n[11]["optional"])
+            self.assertEqual(by_n[11]["derived_from"], "child-plan")
+
+    def test_kanban_sync_script_uses_slice_state_api_for_skip(self) -> None:
+        script = (ROOT / "scripts/kanban-sync.sh").read_text(encoding="utf-8")
+        self.assertIn("--skip|--skipped", script)
+        self.assertIn("--slices-skipped|--slices-skip", script)
+        self.assertIn('"state":"%s"', script)
+        self.assertNotIn('"done":true', script)
+        self.assertNotIn('"done":%s', script)
+        subprocess.run(
+            ["bash", "-n", "scripts/kanban-sync.sh"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+
+    def test_render_epic_board_preserves_skipped_slice_status(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            bp_file = tmp / ".workflows/blueprints/client-dev.json"
+            bp = json.loads(bp_file.read_text(encoding="utf-8"))
+            for stage in bp["stages"]:
+                if stage["key"] == "development":
+                    stage["optionalWbsSlices"] = [11]
+            bp_file.write_text(json.dumps(bp, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace("[x] 11. fixture", "[-] 11. fixture"),
+                encoding="utf-8",
+            )
+            epic = tmp / "Plans/Epic/fixture.md"
+            epic.write_text(
+                epic.read_text(encoding="utf-8").replace("[x] 11. 非功能验证完成", "[ ] 11. 非功能验证完成"),
+                encoding="utf-8",
+            )
+
+            proc = subprocess.run(
+                ["python3", "scripts/render-epic-board.py", "Plans/Epic/fixture.md"],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+        self.assertIn("[-] 11. 非功能验证完成", proc.stdout)
 
     def test_kanban_exposes_test_coverage_health(self) -> None:
         with self.fixture_repo() as tmp:
@@ -757,6 +921,44 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["current_state"], "development", data)
         self.assertTrue(any("缺: 11" in blocker for blocker in data["blockers"]), data["blockers"])
 
+    def test_workflow_gate_aggregates_optional_wbs_sub_slices(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            bp_file = tmp / ".workflows/blueprints/client-dev.json"
+            bp = json.loads(bp_file.read_text(encoding="utf-8"))
+            for stage in bp["stages"]:
+                if stage["key"] == "development":
+                    stage["optionalWbsSlices"] = [7]
+            bp_file.write_text(json.dumps(bp, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace(
+                    "[x] 7. fixture",
+                    "[x] 7a. mock fixture\n[-] 7b. backend integration skipped",
+                ),
+                encoding="utf-8",
+            )
+
+            data = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+        self.assertEqual(data["current_state"], "done", data)
+
+    def test_workflow_gate_blocks_required_wbs_sub_slice_skip(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace(
+                    "[x] 7. fixture",
+                    "[x] 7a. mock fixture\n[-] 7b. backend integration skipped",
+                ),
+                encoding="utf-8",
+            )
+
+            data = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+        self.assertEqual(data["current_state"], "development", data)
+        self.assertTrue(any("缺: 7" in blocker for blocker in data["blockers"]), data["blockers"])
+
     def test_workflow_run_gate_records_pass_event_and_check_trail(self) -> None:
         with self.fixture_repo() as tmp:
             self.create_complete_client_dev_fixture(tmp)
@@ -892,6 +1094,12 @@ class WorkflowRefactorTests(unittest.TestCase):
                 [~] 2. doing
                 [ ] 3. todo
                 [-] 4. skipped
+                [x] 7a. mock
+                [-] 7b. backend integration skipped
+                [ ] 8a. open
+                [x] 8b. done
+                [~] 9a. doing
+                [x] 9b. done
                 ```
 
                 | 5 | table todo | ☐ |
@@ -913,9 +1121,45 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertEqual(mod.wbs_slice_status(plan, 2), "~")
             self.assertEqual(mod.wbs_slice_status(plan, 3), " ")
             self.assertEqual(mod.wbs_slice_status(plan, 4), "-")
+            self.assertEqual(mod.wbs_slice_status(plan, 7), "-")
+            self.assertEqual(mod.wbs_slice_status(plan, 8), " ")
+            self.assertEqual(mod.wbs_slice_status(plan, 9), "~")
             # WBS 状态只认 fenced checklist；表格行（5）不再被识别，避免多表/同号歧义。
             self.assertIsNone(mod.wbs_slice_status(plan, 5))
             self.assertIsNone(mod.wbs_slice_status(plan, 6))
+
+    def test_gate_parse_section_check_strips_skipped_checkboxes(self) -> None:
+        with self.fixture_repo() as tmp:
+            empty = tmp / "Plans/需求分析/empty.md"
+            write_file(
+                empty,
+                """
+                # Section fixture
+
+                ## 验收标准
+
+                - [-] 【】
+                """,
+            )
+            filled = tmp / "Plans/需求分析/filled.md"
+            write_file(
+                filled,
+                """
+                # Section fixture
+
+                ## 验收标准
+
+                - [-] 本需求无空态，已由产品确认不适用
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("gate_parse", ROOT / "scripts/gate_parse.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+
+            self.assertEqual(mod.check_sections(empty, ["验收标准"])["empty"], ["验收标准"])
+            self.assertEqual(mod.check_sections(filled, ["验收标准"])["empty"], [])
 
     def test_traceability_blocks_missing_p0_and_negative_test_coverage(self) -> None:
         with self.fixture_repo() as tmp:

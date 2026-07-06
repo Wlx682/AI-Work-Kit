@@ -168,6 +168,8 @@
         const suite = (data.suites || [])[0];
         return suite ? { kind: 'suite', id: suite.id } : null;
       }
+      const testCase = (data.cases || [])[0];
+      if (testCase) return { kind: 'case', id: caseKey(testCase) };
       const task = (data.task_tests || [])[0];
       return task ? { kind: 'task', id: task.file } : null;
     }
@@ -176,10 +178,23 @@
       return `${module.kind}:${module.id}`;
     }
 
+    function caseKey(item) {
+      return [item.test_plan || '', item.line || '', item.ac || '', item.case_id || ''].join('|');
+    }
+
+    function caseStatusClass(status) {
+      const text = String(status || '');
+      if (text.includes('通过') || text.includes('已实现') || text.includes('✅')) return 'green';
+      if (text.includes('失败') || text.includes('阻塞') || text.includes('❌')) return 'red';
+      if (text.includes('未') || text.includes('☐')) return 'amber';
+      return 'none';
+    }
+
     function getSelectedModule() {
       const data = state.data || {};
       if (!state.selected) return null;
       if (state.selected.kind === 'suite') return (data.suites || []).find(item => item.id === state.selected.id) || null;
+      if (state.selected.kind === 'case') return (data.cases || []).find(item => caseKey(item) === state.selected.id) || null;
       return (data.task_tests || []).find(item => item.file === state.selected.id) || null;
     }
 
@@ -198,13 +213,24 @@
           raw: item
         }));
       }
-      return (data.task_tests || []).map(task => {
+      const caseModules = (data.cases || []).filter(item => item.level === levelId).map(item => ({
+        kind: 'case',
+        id: caseKey(item),
+        name: item.case_id || item.ac || '未命名 Case',
+        meta: `${item.epic || ''} · ${item.ac || ''} · ${item.description || ''}`,
+        status: caseStatusClass(item.status),
+        statusLabel: item.level_label || '测试 Case',
+        runnable: false,
+        raw: item
+      }));
+      if (levelId !== 'acceptance') return caseModules;
+      const taskChecks = (data.task_tests || []).map(task => {
         const level = (task.levels || []).find(item => item.id === levelId);
         if (!level) return null;
         return {
           kind: 'task',
           id: task.file,
-          name: task.epic,
+          name: `${task.epic} · 任务级检查`,
           meta: level.summary,
           status: level.status,
           statusLabel: level.title,
@@ -213,6 +239,7 @@
           raw: task
         };
       }).filter(Boolean);
+      return [...caseModules, ...taskChecks];
     }
 
     function render() {
@@ -237,7 +264,7 @@
                 <h2>${esc(activeObject.title || '')}</h2>
                 <p>${esc(activeObject.description || '')}</p>
               </div>
-              <span class="badge">${state.objectId === 'workflow-engine' ? `${(data.suites || []).length} 个套件` : `${(data.task_tests || []).length} 个任务`}</span>
+              <span class="badge">${state.objectId === 'workflow-engine' ? `${(data.suites || []).length} 个套件` : `${(data.cases || []).length} 个 Case · ${(data.task_tests || []).length} 个任务检查`}</span>
             </div>
             ${renderLevels(activeObject)}
           </div>
@@ -303,6 +330,7 @@
       const module = getSelectedModule();
       if (!module) return `<aside class="drawer"><div class="empty">请选择一个测试模块</div></aside>`;
       if (state.selected.kind === 'suite') return renderSuiteDrawer(module);
+      if (state.selected.kind === 'case') return renderCaseDrawer(module);
       return renderTaskDrawer(module);
     }
 
@@ -361,6 +389,39 @@
               <div class="gap-list">${gaps.length ? gaps.map(item => `<div class="gap"><div class="title">${esc(item)}</div></div>`).join('') : '<div class="empty">暂无缺口</div>'}</div>
             </div>
             <button class="primary" data-run-kind="task" data-run-id="${esc(module.file)}">启动测试</button>
+            <div class="detail-block">
+              <h3>运行输出</h3>
+              <div class="output" id="runOutput">尚未启动测试。</div>
+            </div>
+          </div>
+        </aside>`;
+    }
+
+    function renderCaseDrawer(item) {
+      const data = state.data || {};
+      const task = (data.task_tests || []).find(row => row.epic === item.epic);
+      return `
+        <aside class="drawer">
+          <div class="drawer-head">
+            <h2>${esc(item.case_id || item.ac || '测试 Case')}</h2>
+            <div class="sub">${esc(item.level_label || '测试 Case')} · ${esc(item.ac || '-')} · ${esc(item.epic || '')}</div>
+          </div>
+          <div class="drawer-body">
+            <div class="facts">
+              <div class="fact"><b>${esc(item.type || '-')}</b><span>类型</span></div>
+              <div class="fact"><b>${esc(item.status || '-')}</b><span>状态</span></div>
+              <div class="fact"><b>${esc(item.ac || '-')}</b><span>验收标准</span></div>
+              <div class="fact"><b>${esc(item.line || '-')}</b><span>来源行</span></div>
+            </div>
+            <div class="detail-block">
+              <h3>Case 描述</h3>
+              <div class="case"><div class="desc">${esc(item.description || '-')}</div></div>
+            </div>
+            <div class="detail-block">
+              <h3>来源</h3>
+              <div class="case"><div class="title">${esc(item.epic || '-')}</div><div class="desc"><code>${esc(item.test_plan || '')}${item.line ? ':' + esc(item.line) : ''}</code></div></div>
+            </div>
+            ${task ? `<button class="primary" data-run-kind="task" data-run-id="${esc(task.file)}">启动关联任务测试</button>` : '<button disabled>未接入执行命令</button>'}
             <div class="detail-block">
               <h3>运行输出</h3>
               <div class="output" id="runOutput">尚未启动测试。</div>

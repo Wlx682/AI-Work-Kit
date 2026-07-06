@@ -35,7 +35,7 @@
 
 优先读用户指定材料；若用户只说「进化一下工作流」，按以下顺序找证据：
 
-1. `Contexts/决策/孤立反馈记录.md` 顶部未归位反馈。
+1. `Contexts/决策/孤立反馈记录.md` 的 `## 待整理` 未归位候选。
 2. 最近的 `Contexts/决策/反馈聚合-YYYY-MM.md`。
 3. `python3 scripts/feedback-aggregate.py --dry-run --month YYYY-MM`。
 4. `scripts/workflow-status.py` 或 `scripts/workflow-gate.sh --json` 输出。
@@ -75,9 +75,9 @@
 
 6. **收口**
    - 告知已改文件与验证结果。
-   - 把本次执行写入 `skill_run`。
-   - 若无 plan，追加到 `Contexts/决策/孤立反馈记录.md` 顶部；若是专门的进化 plan，追加到该 plan 末尾。
-   - 机械字段照实填：无 plan 填 `orphan`、`date` 填当天。判断字段（`skill`/`contexts_used`/`utility`/`discovered`）只有当场知道，必须手写。
+   - 若本次服务某个进化 plan，把 `skill_run` 追加到该 plan 末尾。
+   - 若无 plan，不写完整过程小票：未落地的进化项写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`；已落地的只在 `## 已归位` 补一行摘要。
+   - 孤立反馈只保存“以后怎么用/还要做什么”，不保存“这次我是怎么操作的”。
 
 ## 输出模板
 
@@ -113,19 +113,10 @@
 
 ## 反馈回路
 
-完成任务最后一步必须输出：
+按 `Contexts/决策/Skill反馈协议.md` 收口：
 
-```yaml
-skill_run:
-  skill: workflow-evolution-assistant
-  plan: orphan
-  date: YYYY-MM-DD
-  contexts_used:
-    - path: Contexts/决策/Skill反馈协议.md
-      utility: high
-      reason: "用于生成合规 skill_run 并接入反馈闭环"
-  contexts_missing: []
-  contexts_stale: []
-```
+- 有进化 plan：在 plan 末尾追加 `## 反馈（skill_run）`。
+- 无 plan 且产生未落地候选：写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`，标题用 `### 进化候选：...` 或 `### 待整理：...`。
+- 无 plan 且本次已落地：只在 `## 已归位` 补一行摘要，指向落点与验证方式。
 
-若本次直接修复了可归位问题，可以在 `Contexts/决策/孤立反馈记录.md` 顶部写一条「已归位摘要」，避免再留下待蒸馏小票。
+禁止把无 plan 执行过程以完整 `skill_run` YAML 小票写入孤立反馈；过程细节会累计太快，且会污染候选区。

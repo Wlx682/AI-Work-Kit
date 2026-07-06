@@ -203,4 +203,4 @@ skill_run:
 
 ## 反馈回路（遵 CLAUDE.md 规则 5）
 
-任务结束把 `skill_run` 写入**独立 `.meta.yaml`**（人类卷 .md 不含 YAML）——一次输出双处使用：对外交作业，对内喂 `feedback-aggregate → vault-evolve` 进化链。`contexts_missing` 即外部需求证据（学到的先进理念→Kit 缺口）。若为无 plan 的一次性输出，仍追加 `Contexts/决策/孤立反馈记录.md`。
+任务结束把 `skill_run` 写入**独立 `.meta.yaml`**（人类卷 .md 不含 YAML）——一次输出双处使用：对外交作业，对内喂 `feedback-aggregate → vault-evolve` 进化链。`contexts_missing` 即外部需求证据（学到的先进理念→Kit 缺口）。若无独立 plan，不再把完整过程小票追加到孤立反馈；未归位缺口写 `## 待整理`，已归位结论只写 `## 已归位` 摘要。

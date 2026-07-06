@@ -32,6 +32,6 @@ description: >-
 
 ## 反馈回路（skill_run）
 
-完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
-本 Skill 产出影响报告而非独立 plan（无对应 plan 时），故追加到 `Contexts/决策/孤立反馈记录.md` **顶部**（倒序，`plan: orphan`）。
+完成任务的最后一步按 `Contexts/决策/Skill反馈协议.md` 收口：
+本 Skill 产出影响报告而非独立 plan（无对应 plan 时）；未归位候选写入孤立反馈 `## 待整理`，已归位结论只写 `## 已归位` 摘要，不保留完整过程小票。
 `contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: change-impact-analysis` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。喂 `feedback-aggregate → vault-evolve` 进化链。

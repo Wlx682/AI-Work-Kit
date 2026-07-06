@@ -61,4 +61,4 @@
 
 ## 反馈
 
-`utility` 只能是 `high` 或 `not-needed`。产出在 `Contexts/` 而非 plan，追加到 `Contexts/决策/孤立反馈记录.md` 顶部（`plan: orphan`）；协议见 `Contexts/决策/Skill反馈协议.md`。
+`utility` 只能是 `high` 或 `not-needed`。产出在 `Contexts/` 而非 plan；无 plan 收口按 `Contexts/决策/Skill反馈协议.md` 写入孤立反馈的 `## 待整理` 或 `## 已归位`，不保留完整过程小票。

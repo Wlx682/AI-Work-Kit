@@ -204,6 +204,7 @@
     .col h4 .n { color: var(--faint); }
     .card { background: var(--panel-solid); border: 1px solid var(--stroke); border-radius: 11px; padding: 0.7rem 0.8rem; margin-bottom: 0.6rem; }
     .card.done { opacity: 0.6; } .card.running { border-color: var(--blue); box-shadow: 0 0 0 1px rgba(77,156,255,0.2); }
+    .card.skipped { border-style: dashed; }
     .card h5 { margin: 0 0 0.3rem; font-size: 0.82rem; }
     .card .sub { color: var(--muted); font-size: 0.72rem; margin: 0.2rem 0 0; }
     .card .row-actions { margin-top: 0.5rem; display: flex; gap: 0.4rem; }
@@ -464,12 +465,15 @@
         <div class="col">
           <h4>${title} <span class="n">${arr.length}</span></h4>
           ${arr.map(s => `
-            <div class="card ${cls}">
-              <h5>WBS ${s.n} · ${esc(s.title)}</h5>
+            <div class="card ${cls} ${s.skipped ? 'skipped' : ''}">
+              <h5>WBS ${s.n} · ${s.skipped ? '已跳过 · ' : ''}${esc(s.title)}</h5>
               ${s.summary ? `<p class="sub">${esc(s.summary)}</p>` : ''}
               <div class="row-actions">
                 <button data-detail="${s.n}">细节</button>
-                <button data-slice="${s.n}" data-done="${s.done ? 1 : 0}">${s.done ? '重开' : '完成'}</button>
+                ${s.done
+                  ? `<button data-slice="${s.n}" data-state="open">${s.skipped ? '恢复' : '重开'}</button>`
+                  : `<button data-slice="${s.n}" data-state="done">完成</button>`}
+                ${!s.done && s.optional ? `<button data-slice="${s.n}" data-state="skipped">跳过</button>` : ''}
               </div>
             </div>`).join('') || '<p class="sub">无</p>'}
         </div>`;
@@ -537,7 +541,7 @@
         try { await navigator.clipboard.writeText(d.command); } catch (_) {}
         toast(`已复制：${d.command}`);
       };
-      document.querySelectorAll('[data-slice]').forEach(b => b.onclick = () => toggleSlice(e.file, +b.dataset.slice, b.dataset.done === '1'));
+      document.querySelectorAll('[data-slice]').forEach(b => b.onclick = () => setSliceState(e.file, +b.dataset.slice, b.dataset.state));
       document.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => {
         const s = e.slices.find(x => x.n === +b.dataset.detail);
         toast(`WBS ${s.n} · 验收：${s.acceptance || '—'} · skill：${s.skill || '—'}`);
@@ -589,9 +593,12 @@
     }
 
     /* ============ actions ============ */
-    async function toggleSlice(file, n, done) {
-      await fetch('/api/slice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file, slice: n, done, operator: 'web' }) });
-      toast(`WBS ${n} ${done ? '已重开' : '已完成'}`);
+    async function setSliceState(file, n, state) {
+      const r = await fetch('/api/slice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file, slice: n, state, operator: 'web' }) });
+      const d = await r.json();
+      if (!d.ok) { toast(`WBS ${n} 更新失败：${d.error || '未知'}`); return; }
+      const label = state === 'done' ? '已完成' : (state === 'skipped' ? '已跳过' : '已恢复');
+      toast(`WBS ${n} ${label}`);
       await loadBoard();
     }
     async function setStatus(planPath, status, epicFile) {

@@ -196,15 +196,17 @@ def parse_dev_ac_coverage(path: str | Path) -> dict[str, list[dict[str, str]]]:
 
 
 def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
-    """WBS 切片状态的唯一权威源 = fenced `[x] N.` checklist（模板约定形态）。
-    只认 fenced 内 `[标记] N. 描述` 行，不再匹配任何表格——表格首列同为数字，
+    """WBS 切片状态的唯一权威源 = fenced `[x] N.` / `[x] Na.` checklist（模板约定形态）。
+    只认 fenced 内 `[标记] N. 描述` 或 `[标记] Na. 描述` 行，不再匹配任何表格——表格首列同为数字，
     既有同一 plan 多张表的歧义（输入输出表 vs 状态表），也有跨子 Plan 同号误匹配，
     均由「切片号无法可靠定位唯一正确行」引起。统一到 fenced checklist 根治。
+    父编号有子项时聚合同号子项：全 x => x；全 x/- 且至少一个 - => -；有 ~ => ~；否则空格。
     返回 'x' / '~' / ' ' / '-'，无匹配返回 None。"""
     p = Path(path)
     target = str(n)
     lines = p.read_text(encoding="utf-8").splitlines()
 
+    marks: list[str] = []
     in_fence = False
     for line in lines:
         if line.strip().startswith("```"):
@@ -212,11 +214,19 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
             continue
         if not in_fence:
             continue
-        m = re.match(r"^\[([ xX~-])\]\s*" + re.escape(target) + r"\.\s+", line)
+        m = re.match(r"^\[([ xX~-])\]\s*" + re.escape(target) + r"([a-zA-Z]?)\.?\s+", line)
         if m:
             mark = m.group(1)
-            return "x" if mark in {"x", "X"} else mark
-    return None
+            marks.append("x" if mark in {"x", "X"} else mark)
+    if not marks:
+        return None
+    if all(mark == "x" for mark in marks):
+        return "x"
+    if all(mark in {"x", "-"} for mark in marks):
+        return "-"
+    if any(mark == "~" for mark in marks):
+        return "~"
+    return " "
 
 
 def check_sections(path: str | Path, sections: list[str]) -> dict[str, list[str]]:
@@ -249,7 +259,7 @@ def check_sections(path: str | Path, sections: list[str]) -> dict[str, list[str]
             if not s:
                 continue
             # 去掉勾选框/列表符号后判占位
-            stripped = re.sub(r"^[-*]\s*\[[ xX~]\]\s*", "", s)
+            stripped = re.sub(r"^[-*]\s*\[[ xX~-]\]\s*", "", s)
             stripped = re.sub(r"^[-*]\s*", "", stripped)
             if is_placeholder(stripped):
                 continue

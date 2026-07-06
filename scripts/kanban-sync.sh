@@ -5,13 +5,16 @@
 #   ./scripts/kanban-sync.sh --boot [--epic Plans/Epic/xxx.md]     # 确保看板服务运行
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slice 2 --done
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slice 3 --open
+#   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slice 7 --skip
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slices-done 1,2,3
+#   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --slices-skipped 7,9
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --lifecycle development   # deprecated：仅兼容旧看板字段
 #   ./scripts/kanban-sync.sh --epic Plans/Epic/xxx.md --plan-status Plans/需求分析/xxx.md 已采纳
 #
 # 说明：
 # - 直接改 markdown 后跑 --boot 即可；浏览器每 2.5s 轮询 /api/revision 自动刷新
-# - WBS 勾选推荐走 --slice / --slices-done（写回 markdown + 变更日志，与看板一致）
+# - WBS 勾选/跳过推荐走 --slice / --slices-done / --slices-skipped（写回子 plan + 变更日志，与看板一致）
+# - --skip 只对蓝图 optionalWbsSlices 声明过的分片有效；否则后端会拒绝
 # - 阶段推进以 workflow-gate.sh 派生为准；--lifecycle 不得作为 full-cycle 路由依据
 set -euo pipefail
 
@@ -22,8 +25,9 @@ BASE="http://${HOST}:${PORT}"
 EPIC=""
 BOOT=0
 SLICE=""
-SLICE_DONE=""
+SLICE_STATE=""
 SLICES_DONE=""
+SLICES_SKIPPED=""
 LIFECYCLE=""
 PLAN_PATH=""
 PLAN_STATUS=""
@@ -34,9 +38,11 @@ while [[ $# -gt 0 ]]; do
     --boot) BOOT=1; shift ;;
     --epic) EPIC="${2:-}"; shift 2 ;;
     --slice) SLICE="${2:-}"; shift 2 ;;
-    --done) SLICE_DONE=1; shift ;;
-    --open) SLICE_DONE=0; shift ;;
+    --done) SLICE_STATE="done"; shift ;;
+    --open) SLICE_STATE="open"; shift ;;
+    --skip|--skipped) SLICE_STATE="skipped"; shift ;;
     --slices-done) SLICES_DONE="${2:-}"; shift 2 ;;
+    --slices-skipped|--slices-skip) SLICES_SKIPPED="${2:-}"; shift 2 ;;
     --lifecycle) LIFECYCLE="${2:-}"; shift 2 ;;
     --plan-status)
       PLAN_PATH="${2:-}"
@@ -65,6 +71,19 @@ api_post() {
     -o /dev/null
 }
 
+sync_slices() {
+  local csv="$1" state="$2"
+  [[ -n "$EPIC" ]] || { echo "kanban-sync: slice operations require --epic" >&2; exit 1; }
+  IFS=',' read -ra nums <<< "$csv"
+  local n
+  for n in "${nums[@]}"; do
+    n="$(echo "$n" | tr -d ' ')"
+    [[ -n "$n" ]] || continue
+    api_post /api/slice "$(printf '{"file":"%s","slice":%s,"state":"%s","operator":"%s"}' "$EPIC" "$n" "$state" "$OPERATOR")"
+    echo "kanban-sync: WBS ${n} → ${state}"
+  done
+}
+
 if [[ "$BOOT" -eq 1 ]] || ! api_ok; then
   boot_args=(--no-open)
   [[ -n "$EPIC" ]] && boot_args=(--epic "$EPIC" --no-open)
@@ -77,21 +96,18 @@ if ! api_ok; then
 fi
 
 if [[ -n "$SLICES_DONE" ]]; then
-  [[ -n "$EPIC" ]] || { echo "kanban-sync: --slices-done requires --epic" >&2; exit 1; }
-  IFS=',' read -ra nums <<< "$SLICES_DONE"
-  for n in "${nums[@]}"; do
-    n="$(echo "$n" | tr -d ' ')"
-    [[ -n "$n" ]] || continue
-    api_post /api/slice "$(printf '{"file":"%s","slice":%s,"done":true,"operator":"%s"}' "$EPIC" "$n" "$OPERATOR")"
-    echo "kanban-sync: WBS ${n} → done"
-  done
+  sync_slices "$SLICES_DONE" "done"
+fi
+
+if [[ -n "$SLICES_SKIPPED" ]]; then
+  sync_slices "$SLICES_SKIPPED" "skipped"
 fi
 
 if [[ -n "$SLICE" ]]; then
   [[ -n "$EPIC" ]] || { echo "kanban-sync: --slice requires --epic" >&2; exit 1; }
-  [[ -n "$SLICE_DONE" ]] || SLICE_DONE=1
-  api_post /api/slice "$(printf '{"file":"%s","slice":%s,"done":%s,"operator":"%s"}' "$EPIC" "$SLICE" "$SLICE_DONE" "$OPERATOR")"
-  echo "kanban-sync: WBS ${SLICE} → $([ "$SLICE_DONE" = 1 ] && echo done || echo open)"
+  [[ -n "$SLICE_STATE" ]] || SLICE_STATE="done"
+  api_post /api/slice "$(printf '{"file":"%s","slice":%s,"state":"%s","operator":"%s"}' "$EPIC" "$SLICE" "$SLICE_STATE" "$OPERATOR")"
+  echo "kanban-sync: WBS ${SLICE} → ${SLICE_STATE}"
 fi
 
 if [[ -n "$LIFECYCLE" ]]; then

@@ -295,7 +295,7 @@ def _load_workflow_blueprint(workflow: str | None) -> dict[str, Any]:
 def _slice_stage_map(workflow: str | None) -> dict[int, dict[str, str]]:
     """从工作流蓝图派生 WBS 切片归属。
 
-    返回 n -> {stage_key, plan_stage_key}：
+    返回 n -> {stage_key, plan_stage_key, optional}：
     - stage_key：蓝图 stage key，用于看板显示当前阶段。
     - plan_stage_key：Epic plans.* 的 key，用于定位对应子 plan。
     """
@@ -305,12 +305,22 @@ def _slice_stage_map(workflow: str | None) -> dict[int, dict[str, str]]:
     for stage in blueprint.get("stages", []) or []:
         stage_key = str(stage.get("key") or "")
         plan_stage_key = str(stage.get("epicField") or epic_mapping.get(stage_key) or stage_key)
+        optional = set()
+        for n in stage.get("optionalWbsSlices", []) or []:
+            try:
+                optional.add(int(n))
+            except (TypeError, ValueError):
+                continue
         for n in stage.get("wbsSlices", []) or []:
             try:
                 slice_n = int(n)
             except (TypeError, ValueError):
                 continue
-            out[slice_n] = {"stage_key": stage_key, "plan_stage_key": plan_stage_key}
+            out[slice_n] = {
+                "stage_key": stage_key,
+                "plan_stage_key": plan_stage_key,
+                "optional": slice_n in optional,
+            }
     return out
 
 
@@ -362,17 +372,17 @@ def _slice_status_in(child: str | None, n: int) -> str | None:
         return None
 
 
-def _derive_slice_done(
-    epic_literal_done: bool, preferred_child: str | None, n: int
-) -> tuple[bool, str]:
+def _derive_slice_state(
+    epic_literal_done: bool, epic_literal_skipped: bool, preferred_child: str | None, n: int
+) -> tuple[bool, bool, str]:
     """切片完成态派生策略（防撒谎优先）：
     蓝图已声明切片 n 属于某 stage 时，优先到该 stage 对应子 Plan 查同号 WBS；
     查不到 / 子 Plan 不存在 / gate_parse 不可用时，回退 Epic 字面量。
-    返回 (done, derived_from)，derived_from ∈ {"child-plan", "epic-literal"}。"""
+    返回 (done, skipped, derived_from)，derived_from ∈ {"child-plan", "epic-literal"}。"""
     status = _slice_status_in(preferred_child, n)
     if status is not None:
-        return status in {"x", "-"}, "child-plan"
-    return epic_literal_done, "epic-literal"
+        return status in {"x", "-"}, status == "-", "child-plan"
+    return epic_literal_done, epic_literal_skipped, "epic-literal"
 
 
 def _parse_plan_fact(rel: str | None, parser) -> Any:
@@ -463,15 +473,19 @@ def scan_epic(path: Path) -> dict[str, Any]:
     for s in slices:
         n = s["n"]
         tbl = wbs_table.get(n, {})
-        stage_meta = slice_stage.get(n, {"stage_key": "development", "plan_stage_key": "development"})
+        stage_meta = slice_stage.get(
+            n, {"stage_key": "development", "plan_stage_key": "development", "optional": False}
+        )
         stage_key = stage_meta["stage_key"]
         plan_stage_key = stage_meta["plan_stage_key"]
         child = plan_by_stage.get(plan_stage_key)
-        done, derived_from = _derive_slice_done(s["done"], child, n)
+        done, skipped, derived_from = _derive_slice_state(s["done"], bool(s.get("skipped")), child, n)
         enriched.append(
             {
                 "n": n,
                 "done": done,
+                "skipped": skipped,
+                "optional": bool(stage_meta.get("optional")),
                 "derived_from": derived_from,
                 "label": s["label"],
                 "title": tbl.get("title") or s["label"],
@@ -736,7 +750,7 @@ def all_gate_events() -> list[dict[str, Any]]:
 
 def read_evolution_candidates() -> dict[str, list[dict[str, Any]]]:
     """从孤立反馈记录抽两组供看板展示：
-    - pending：『待蒸馏』区标题含「进化候选」的未归位待办（跳过 skill_run 留痕）。
+    - pending：『待整理』区标题含「进化候选」的未归位待办。
     - resolved：『已归位』区的已落地条目摘要（保留完整演进史，不删）。"""
     empty = {"pending": [], "resolved": []}
     if not ORPHAN_FEEDBACK.is_file():
@@ -744,12 +758,12 @@ def read_evolution_candidates() -> dict[str, list[dict[str, Any]]]:
     text = ORPHAN_FEEDBACK.read_text(encoding="utf-8")
 
     pending: list[dict[str, Any]] = []
-    m = re.search(r"##\s*待蒸馏\s*\n(.*?)(?=\n##\s|\Z)", text, re.S)
+    m = re.search(r"##\s*(?:待整理|待蒸馏)\s*\n(.*?)(?=\n##\s|\Z)", text, re.S)
     if m:
         for mm in re.finditer(r"###\s+(.+?)\n(.*?)(?=\n###\s|\Z)", m.group(1), re.S):
             title = mm.group(1).strip()
             if title.startswith("〔") or "进化候选" not in title:
-                continue  # 跳过分区标题（〔…〕）、skill_run 留痕，只收进化候选
+                continue
             title = re.sub(r"^进化候选[:：]\s*", "", title)
             body = mm.group(2).strip()
             summary = ""
@@ -1177,8 +1191,8 @@ def append_change_log(epic: Path, change_type: str, stage: str, slices: str, ope
     epic.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
 
 
-def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") -> None:
-    text = epic.read_text(encoding="utf-8")
+def _slice_line_matches(path: Path, slice_n: int) -> list[tuple[int, re.Match[str]]]:
+    text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     in_fence = False
     matches: list[tuple[int, re.Match[str]]] = []
@@ -1192,6 +1206,16 @@ def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") ->
         if not m or int(m.group(2)) != slice_n:
             continue
         matches.append((i, m))
+    return matches
+
+
+def set_slice_status(plan: Path, slice_n: int, state: str) -> None:
+    mark_by_state = {"done": "[x]", "open": "[ ]", "skipped": "[-]"}
+    if state not in mark_by_state:
+        raise ValueError(f"invalid slice state: {state}")
+    text = plan.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    matches = _slice_line_matches(plan, slice_n)
     if not matches:
         raise ValueError(f"slice {slice_n} not found")
     if len(matches) > 1 or matches[0][1].group(3):
@@ -1199,11 +1223,41 @@ def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") ->
             f"slice {slice_n} has sub-items (e.g. {slice_n}a/{slice_n}b); edit the Epic file directly"
         )
     i, m = matches[0]
-    mark = "[x]" if done else "[ ]"
+    mark = mark_by_state[state]
     lines[i] = f"{mark} {slice_n}.  {m.group(4).strip()}"
-    epic.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
-    action = "勾选切片" if done else "取消切片"
-    append_change_log(epic, action, "development", str(slice_n), operator, f"WBS {slice_n} → {'done' if done else 'open'}")
+    plan.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
+
+
+def update_slice_from_epic(epic: Path, slice_n: int, state: str, operator: str = "web") -> dict[str, Any]:
+    data = scan_epic(epic)
+    item = next((s for s in data.get("slices", []) if s.get("n") == slice_n), None)
+    if not item:
+        raise ValueError(f"slice {slice_n} not found")
+    if state == "skipped" and not item.get("optional"):
+        raise ValueError(f"slice {slice_n} is not optional")
+
+    epic_rel = str(epic.relative_to(ROOT)) if epic.is_relative_to(ROOT) else str(epic)
+    target_rel = item.get("related_plan") or epic_rel
+    target = resolve_plan(target_rel)
+    if not target.is_file() or not _slice_line_matches(target, slice_n):
+        target = epic
+        target_rel = epic_rel
+
+    set_slice_status(target, slice_n, state)
+    action = {"done": "勾选切片", "open": "重开切片", "skipped": "跳过切片"}[state]
+    append_change_log(
+        epic,
+        action,
+        item.get("stage_key", "development"),
+        str(slice_n),
+        operator,
+        f"WBS {slice_n} → {state}（写入 {target_rel}）",
+    )
+    return {"target": target_rel, "state": state, "optional": bool(item.get("optional"))}
+
+
+def toggle_slice(epic: Path, slice_n: int, done: bool, operator: str = "web") -> None:
+    update_slice_from_epic(epic, slice_n, "done" if done else "open", operator)
 
 
 def suggest_trigger(epic_file: str) -> dict[str, str]:
@@ -1331,11 +1385,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/slice":
                 rel = body.get("file", "")
                 slice_n = int(body.get("slice", 0))
-                done = bool(body.get("done", True))
+                state = str(body.get("state") or "")
+                if not state:
+                    state = "done" if bool(body.get("done", True)) else "open"
                 operator = body.get("operator", "web")
                 epic = resolve_plan(rel)
-                toggle_slice(epic, slice_n, done, operator)
-                self._json(200, {"ok": True, "file": rel, "slice": slice_n, "done": done})
+                result = update_slice_from_epic(epic, slice_n, state, operator)
+                self._json(200, {"ok": True, "file": rel, "slice": slice_n, **result})
                 return
             if path == "/api/lifecycle":
                 rel = body.get("file", "")

@@ -52,4 +52,4 @@ description: 技能多端部署/同步。用户说「部署所有技能」「部
 
 ## 反馈回路
 
-任务结束按 `Contexts/决策/Skill反馈协议.md` 输出 `skill_run` YAML 块（无 plan → 追加到 `Contexts/决策/孤立反馈记录.md` 顶部）。
+任务结束按 `Contexts/决策/Skill反馈协议.md` 收口：有 plan 则写 plan 末尾；无 plan 则只写孤立反馈的 `## 待整理` 或 `## 已归位`，不保留完整过程小票。

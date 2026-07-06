@@ -2,7 +2,7 @@
 """
 render-epic-board.py — 从「文件系统事实」派生并写回 Epic §三 WBS 看板的勾选标记。
 
-三层架构下 Epic 是**被动数据聚合根**：§三 看板的 `[ ]/[~]/[x]` 不再手写，
+三层架构下 Epic 是**被动数据聚合根**：§三 看板的 `[ ]/[~]/[-]/[x]` 不再手写，
 而是单向从子 Plan 事实派生。每个切片的标记来源（防第三份真理源）：
   - 该切片「归属 stage」的子 Plan 若有 fenced `[N.]` checklist 行 → 直接采其状态
     （复用 gate_parse.wbs_slice_status，与 workflow-gate / kanban-server 同一读法）。
@@ -35,7 +35,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from gate_parse import wbs_slice_status  # noqa: E402  同一权威读法
 
 SECTION_THREE_RE = re.compile(r"(^##\s*三、.*?)(?=^##\s|\Z)", re.DOTALL | re.MULTILINE)
-FENCED_LINE_RE = re.compile(r"^(\[)([ xX~])(\]\s*)(\d+)([a-zA-Z]?)(\.\s+.*)$")
+FENCED_LINE_RE = re.compile(r"^(\[)([ xX~-])(\]\s*)(\d+)([a-zA-Z]?)(\.\s+.*)$")
 
 
 def read_fm_key(path: pathlib.Path, key: str) -> str:
@@ -85,7 +85,7 @@ def resolve(path_str: str) -> pathlib.Path:
 
 
 def build_derivation(epic: pathlib.Path):
-    """返回 (slice_mark: dict[int,str], warn: str|None)。mark ∈ {'x','~',' '}。"""
+    """返回 (slice_mark: dict[int,str], warn: str|None)。mark ∈ {'x','~',' ','-'}。"""
     workflow = read_fm_key(epic, "workflow") or "client-dev"
     bp = load_blueprint(workflow)
     if not bp:

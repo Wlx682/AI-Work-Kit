@@ -46,4 +46,4 @@ python3 scripts/skill-smoke-test.py code-review tests/fixtures/skills/code-revie
 
 ## 反馈
 
-`utility` 只能是 `high` 或 `not-needed`。有调用方 plan 时追加到 plan 末尾，否则追加到 `Contexts/决策/孤立反馈记录.md` 顶部；协议见 `Contexts/决策/Skill反馈协议.md`。
+`utility` 只能是 `high` 或 `not-needed`。有调用方 plan 时追加到 plan 末尾；无 plan 时按 `Contexts/决策/Skill反馈协议.md` 写入孤立反馈的 `## 待整理` 或 `## 已归位`，不保留完整过程小票。

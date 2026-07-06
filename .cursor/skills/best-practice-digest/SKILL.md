@@ -54,4 +54,4 @@ description: >-
 
 ## 反馈回路
 
-skill_run 写入**独立 .meta.yaml**（人类卷 .md 不含 YAML），喂 feedback-aggregate → vault-evolve。无 plan 时仍追加 `Contexts/决策/孤立反馈记录.md`。
+skill_run 写入**独立 .meta.yaml**（人类卷 .md 不含 YAML），喂 feedback-aggregate → vault-evolve。无 plan 时不追加完整过程小票到孤立反馈；未归位缺口写 `## 待整理`，已归位结论写 `## 已归位` 摘要。

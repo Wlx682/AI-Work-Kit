@@ -80,7 +80,7 @@ relations:
 | 10 | 单元测试补充与回归（内层 TDD） | development | test-generator | CI 单测全绿 |
 | 11 | 真机联调 + 集成设计走查 | development | figma-ui / feature-dev-assistant | 真机适配走查通过 |
 
-> ⚠️ **看板硬约束**：下方 fenced checklist 每行必须为 `[标记] 编号. 描述`；标记 `[ ]`/`[~]`/`[x]`；编号纯数字或 `6a` 后缀。不符合会被 `kanban-server.py` 静默丢弃，`plan-gate-check.sh` 提交时预检。
+> ⚠️ **看板硬约束**：下方 fenced checklist 每行必须为 `[标记] 编号. 描述`；标记 `[ ]`/`[~]`/`[-]`/`[x]`；编号纯数字或 `6a` 后缀。`[-]` 表示已跳过/不适用，必须由蓝图 `optionalWbsSlices` 或看板跳过按钮支撑。不符合会被 `kanban-server.py` 静默丢弃，`plan-gate-check.sh` 提交时预检。
 
 ```
 [ ] 1.  事件风暴工作坊（领域事件墙 / 热点 / 角色-系统）
