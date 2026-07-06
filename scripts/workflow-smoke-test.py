@@ -10,13 +10,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_WORKFLOWS = ["ui-change", "bugfix", "task-split-only", "computer-mgmt", "learning-agent-dev", "client-dev"]
+DEFAULT_WORKFLOWS = ["ui-change", "bugfix", "task-split-only", "computer-mgmt", "client-dev"]
 ROUTE_PHRASES = {
     "ui-change": "帮我改一下 UI",
     "bugfix": "线上报错帮我修bug",
     "task-split-only": "这个技术方案只拆任务",
     "computer-mgmt": "帮我清理电脑缓存",
-    "learning-agent-dev": "继续创建学习工作流",
     "client-dev": "全流程开发一下支付收银台",
 }
 
@@ -333,101 +332,7 @@ p0_open: 0
     )
 
 
-def create_learning_epic(tmp: Path) -> str:
-    epic_rel = "Plans/Epic/learning-smoke.md"
-    write_fixture(
-        tmp / epic_rel,
-        """
----
-project: learning-smoke
-workflow: learning-agent-dev
-topic: 智能体路由MVP
-repo: /Users/wanglongxiang/git/agent-workflow-dev
-branch: main
-含业务逻辑: 否
-p0_open: 0
-plans:
-  topic: Plans/学习/learning-topic.md
-  theory: Plans/学习/learning-theory.md
-  test: Plans/学习/learning-test.md
-  project_setup: Plans/学习/learning-project.md
-  tool_build: Plans/学习/learning-tool.md
-  integration_run: Plans/学习/learning-integration.md
-  retro: Plans/学习/learning-retro.md
----
-
-# Learning Smoke
-
-## 三、WBS
-
-```
-[ ] 1. 选题与边界
-[ ] 2. 理论输入
-[ ] 3. 测试先行
-[ ] 4. 工程与技术选型
-[ ] 5. 工具实现
-[ ] 6. 接入试跑
-[ ] 7. 效果复盘
-```
-""",
-    )
-    return epic_rel
-
-
-def write_learning_stage(tmp: Path, rel: str, stage: str, wbs: int) -> None:
-    write_fixture(
-        tmp / rel,
-        f"""
----
-status: 已采纳
-workflow: learning-agent-dev
-workflow_stage: {stage}
-epic: Plans/Epic/learning-smoke.md
----
-
-# {stage} smoke
-
-## 三、WBS
-
-```
-[x] {wbs}. smoke
-```
-
-{skill_run("learn-assistant", rel)}
-""",
-    )
-
-
 def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
-    if workflow == "learning-agent-dev":
-        bootstrap = run_json(
-            tmp,
-            ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--project", "不存在的项目", "--json"],
-        )
-        if bootstrap.get("next_state") != "bootstrap-epic" or not bootstrap.get("blockers"):
-            raise SmokeError(f"{workflow} 无 Epic 时应要求 bootstrap: {bootstrap}")
-
-        epic_rel = create_learning_epic(tmp)
-        gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
-        assert_gate_state(gate, workflow, "topic")
-
-        stage_specs = [
-            ("Plans/学习/learning-topic.md", "topic", 1, "theory"),
-            ("Plans/学习/learning-theory.md", "theory", 2, "test-first"),
-            ("Plans/学习/learning-test.md", "test-first", 3, "project-setup"),
-            ("Plans/学习/learning-project.md", "project-setup", 4, "tool-build"),
-            ("Plans/学习/learning-tool.md", "tool-build", 5, "integration-run"),
-            ("Plans/学习/learning-integration.md", "integration-run", 6, "retro"),
-            ("Plans/学习/learning-retro.md", "retro", 7, "done"),
-        ]
-        for rel, stage, wbs, expected_next in stage_specs:
-            write_learning_stage(tmp, rel, stage, wbs)
-            gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
-            assert_gate_state(gate, workflow, expected_next)
-        if gate.get("blockers"):
-            raise SmokeError(f"{workflow} 完整推进后仍有 blockers: {gate}")
-        return
-
     if workflow != "client-dev":
         raise SmokeError(f"暂未定义 Epic 型 smoke fixture: {workflow}")
 

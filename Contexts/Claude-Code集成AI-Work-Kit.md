@@ -58,7 +58,6 @@ claude
 仓库根目录 **`CLAUDE.md`** 已从 `.cursorrules` 适配，包含：
 
 - 知识库目录结构
-- Skill 触发规则（续做、日报、学习等）
 - MCP 检索约定
 - 输出格式
 
@@ -118,7 +117,6 @@ done
 | 排查开工 | `/template-generator 任务类型=排查，背景=...` | 同上 |
 | 今日日报 | `/report-assistant 日报` | 同上，或 `@Skills/report_assistant.md` |
 | 搜历史 | 「知识库里有没有 xxx？」（enquire） | 同上（需 `.mcp.json`） |
-| 学习 | `/learn-assistant 续学` | 同上 |
 | 写回笔记 | 对话确认后写入 | 同上 |
 
 在 **业务代码仓库**打开 Claude Code 时：
@@ -182,7 +180,6 @@ Workflow 适合 **比单次 Chat 更大、需要并行 subagent** 的任务。
 ### 6.1 触发方式
 
 ```text
-ultracode: 审计 Plans/学习/ 各课完成度，对照 学习/概念/，输出学习进度报告到 学习/笔记/
 
 /deep-research Loop Engineering 与 Claude Dynamic Workflows 的区别，结合 AI-Work-Kit 工作流举例
 ```
@@ -191,7 +188,6 @@ ultracode: 审计 Plans/学习/ 各课完成度，对照 学习/概念/，输出
 
 | 名称 | 用途 | 触发说法 |
 |------|------|----------|
-| `learning-audit` | 审计 `Plans/学习/` 各课声称状态 vs 实际证据（复选框/概念卡/笔记），报告写入 `学习/笔记/` | Claude：`/learning-audit` · Cursor：`/learning-audit-assistant` |
 
 或设置会话级自动 workflow：
 
@@ -213,7 +209,6 @@ ultracode: 审计 Plans/学习/ 各课完成度，对照 学习/概念/，输出
 |------|-------------------|----------|
 | 续做一个 plan | ✅ `/resume` | 过重 |
 | 写今日日报 | ✅ report-assistant | 过重 |
-| 审计全库学习进度 + 多文件交叉验证 | 单会话易漏 | ✅ workflow |
 | 全目录 code audit | 单会话协调难 | ✅ workflow |
 
 ---
@@ -287,7 +282,6 @@ AI-Work-Kit/
 
 - [[Contexts/决策/新手引导与最佳实践]]
 - [[MCP进阶指南]]
-- [[学习/学习路线-LLM与提示词]]
 - [[Skills/README]]
 - Claude Code 官方：[Memory / CLAUDE.md](https://code.claude.com/docs/en/memory) · [Dynamic Workflows](https://code.claude.com/docs/en/workflows)
 

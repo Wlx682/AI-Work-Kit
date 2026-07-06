@@ -23,7 +23,6 @@ relations:
 | 写 ✅ | 不写 ❌ |
 |------|--------|
 | Contexts 描述了**某业务仓**的现网行为（API、字段、流程）| 决策 / 原则 / 协议（与代码无关）|
-| PM 对照表（如 MSPay 配置 / 接口字段对照）| 学习概念 / 复盘 / 日报 / 周报 |
 | 设计规范引用了**代码层**约定 | 通用 Figma 规范、模板约定 |
 
 判断：**Contexts 内容是否会因代码改动而过期？** 是 → 写 verified_against；否 → 跳过。
@@ -121,5 +120,3 @@ verified_against:
 
 1. `Contexts/收银台/MSPay收银台配置对照表.md` —— 多仓（NamiWork、ClawAI）+ 接口字段高度依赖代码
 2. `Contexts/Figma/项目设计规范.md` —— 引用代码层约定（颜色 token、组件命名等）
-
-其余 Contexts（学习概念、决策、日报）按 §一 判定不写。

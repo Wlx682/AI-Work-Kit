@@ -13,7 +13,6 @@
 **不响应（让位给其他 Skill）**：
 
 - 「日报 / 周报 / 项目复盘 / 月度复盘」→ `report-assistant`
-- 「考我 / 知识复盘 / 复习课程」→ `learn-assistant`
 - 「审计 Epic / 检查开发流程」→ `dev-lifecycle-audit-assistant`
 
 ## 输出规则（Findings-first）

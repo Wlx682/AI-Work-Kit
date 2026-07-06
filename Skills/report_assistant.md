@@ -13,7 +13,6 @@
 **不响应（让位给其他 Skill）**：
 
 - 「Code Review / review diff / 审查 PR」→ `code-review`
-- 「考我 / 知识复盘 / 复习课程」→ `learn-assistant`
 - 「审计 Epic / 检查开发流程」→ `dev-lifecycle-audit-assistant`
 
 ## 三种模式
@@ -42,7 +41,6 @@
 
 1. 日期默认今天。
 2. 扫 `~/git/*`：`git log --author=wanglongxiang`（+王龙祥）；只列本人有 commit 或未提交改动的仓库。
-3. 扫 Kit 当日 `Plans/`、学习、协作产出。
 4. 按 `Templates/日报模板.md` 生成 → 写入 `Contexts/日报/YYYY-MM-DD.md`。
 
 ## 模式 B：周报
@@ -50,7 +48,6 @@
 1. 时间段：默认本周一至今天；或用户指定。
 2. 汇总 `Contexts/日报/` 该时段日报，无日报的日期不列。
 3. `git log --since --until --author=wanglongxiang` 统计本人 commit，按主题合并。
-4. 扫描本周 `Plans/`、`Contexts/`、Skill/模板变更、学习进度。
 5. 按 `Templates/周报模板.md` 生成 → 写入 `Contexts/周报/起始日至结束日.md`。
 
 ## 模式 C：月度复盘

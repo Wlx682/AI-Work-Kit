@@ -47,7 +47,6 @@ IGNORE_PATTERNS = [
     "Contexts/日报/",
     "Contexts/周报/",
     "Contexts/复盘/",
-    "学习/",
 ]
 
 FRONTMATTER_RE = re.compile(r'\A﻿?---\s*\n(.*?)\n---\s*\n', re.S)

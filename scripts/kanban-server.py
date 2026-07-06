@@ -619,7 +619,6 @@ def _latest_stage_plan(stage: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def lightweight_payload() -> list[dict[str, Any]]:
-    """无 Epic 轻流程看板数据。学习流程已升级为 Epic，此处展示仍为无 Epic 的轻流程。"""
     items: list[dict[str, Any]] = []
     for bp in read_blueprints():
         if bp.get("uses_epic") or bp.get("kind") == "engine-index":

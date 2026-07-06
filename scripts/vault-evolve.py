@@ -40,9 +40,6 @@ AGING_IGNORE = [
     "Contexts/日报/",
     "Contexts/周报/",
     "Contexts/复盘/",
-    "Contexts/LLM学习/笔记/",
-    "Contexts/LLM学习/复盘/",
-    "Contexts/LLM学习/范例/",
     "Contexts/分享/",
 ]
 

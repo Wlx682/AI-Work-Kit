@@ -33,12 +33,10 @@ flowchart TB
 
     subgraph BRAIN["🧠 控制层 · 谁在决策"]
         ROUTER["workflow-router<br/>自然语言入口 + 路由硬规则"]
-        ENGINE["具体 workflow 蓝图 + 执行器<br/>client-dev / computer-mgmt / learning-agent-dev"]
         ROUTER --> ENGINE
     end
 
     subgraph HANDS["✋ 执行层 · 谁在干活"]
-        SKILLS["Skill 积木<br/>需求/架构/开发/测试/部署/学习…<br/>互斥锁 · 防越界"]
     end
 
     subgraph DATA["📚 数据/存储层 · 三层边界（宪法）"]

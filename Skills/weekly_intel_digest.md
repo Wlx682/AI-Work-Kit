@@ -3,7 +3,6 @@ name: weekly-intel-digest
 description: >-
   海外一手 AI 编程/Agent 资讯周报（双卷分离：人类卷发帖 + AI卷萃取进化信号）。follow 名单只是种子源，不是唯一来源；围绕智能体/AI 编程方向，优先关注 agent 开发、app 开发新范式、AI 原生开发工具链与产品构建方式，从官方文档、engineering blog、研究/概念文章、社区一手长文中发现高价值英文原文 → 筛选 → 出技术博客水准中文正文 + Agent 直接产炫酷 .html 网页（纳米Work 只上传CDN出短链）→ skill_run.contexts_missing 反哺工作流进化，是否沉淀由你决定。
   触发词：找CC文章、周报选题、海外资讯、整理分享帖、claude code 分享、/intel、/weekly-intel-digest。
-  不响应：项目日报/复盘→report-assistant；课程化学习→learn-assistant。
 ---
 
 # 海外资讯周报助手 Skill
@@ -16,7 +15,6 @@ description: >-
 - 「**找 CC/Codex 文章**」「**周报选题**」「**海外资讯**」「**整理分享帖**」「**Claude Code 分享**」
 - `/intel` / `/weekly-intel-digest`
 
-**不响应（让位）**：项目日报/迭代复盘 → `report-assistant`；课程化 LLM 学习 → `learn-assistant`；PM 通用物料 → `material-prep-assistant`。
 
 ## 必读资产（长期资产在 Contexts/情报源/）
 

@@ -61,7 +61,6 @@ relations:
 | `ui-change`       | 否        | 纯 UI 小改（范围确认→实现自检→复核）            | `workflow-plan-init.py` 生成阶段 plan |
 | `bugfix`          | 否        | Bug 修复（复现→定位→修复→回归）              | `workflow-plan-init.py` 生成阶段 plan |
 | `task-split-only` | 否        | 只拆任务（拆分→复核），不进入代码实现              | `workflow-plan-init.py` 生成阶段 plan |
-| `learning-agent-dev` | 是     | 智能体开发学习（每个知识点一个 Epic：理论→测试→工程选型→实现→接入→复盘） | `Templates/Epic模板-learning-agent-dev.md` |
 
 新增蓝图：在 `.workflows/blueprints/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号），并跑 `python3 scripts/validate-workflow-blueprint.py`。
 
@@ -89,7 +88,6 @@ stateDiagram-v2
 | 任务 | 说法 | plan |
 |------|------|------|
 | Bug | `workflow=bugfix` 或 `python3 scripts/workflow-plan-init.py --workflow bugfix --title xxx` | `Plans/Bug排查/` |
-| 学习 | `/learn-assistant`；智能体开发学习可用 `workflow=learning-agent-dev` + 学习 Epic | `Plans/Epic/` + `Plans/学习/` |
 | 纯 UI 小改 | `workflow=ui-change` 或 `python3 scripts/workflow-plan-init.py --workflow ui-change --title xxx` | `Plans/界面开发/` |
 | 只拆任务 | `workflow=task-split-only` 或 `python3 scripts/workflow-plan-init.py --workflow task-split-only --title xxx` | `Plans/功能开发/` |
 | PM 对照表 | `/material-prep` | **Contexts/**（通用） |
@@ -106,7 +104,6 @@ bash scripts/derive-epic-status.sh Plans/Epic/xxx.md      # 派生真实阶段�
 bash scripts/kanban-sync.sh --boot --epic Plans/Epic/xxx.md
 bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 python3 scripts/workflow-plan-init.py --workflow ui-change --title 卡片
-python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only learning-agent-dev
 ```
 
 | 脚本 | 用途 |
@@ -121,8 +118,6 @@ python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only learning
 | `plan-gate-check.sh` | 写代码前（与蓝图正交，不动） |
 | `kanban-sync.sh` | Agent 改进度 |
 | `generate-pipeline-status.sh --write` | 刷新 [[索引]] 进度表 |
-| `learning-progress-read.sh` / `snapshot.sh` | 学习开/收尾 |
-
 ### exitCriteria 键 · verdictPass（对抗式视觉验证门禁）
 
 UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员兼裁判、盲区重叠）。改由**独立 context 的对抗验证子 Agent** 产出结构化裁决（schema：`.workflows/schemas/figma-verdict.schema.json`），经**主控复核**滤除 metadata 误报后写回子 Plan `verdict:` 字段。`workflow-gate.sh` 的 `verdictPass` 键只读这份裁决的**文件事实**（`pass==true && reviewed==true`），不实时跑 Agent。
@@ -142,9 +137,7 @@ UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员�
 
 通用：`resume-assistant` · `template-generator` · `report-assistant` · `material-prep-assistant`
 
-学习：`learn-assistant` · `learning-audit-assistant`
 
-Claude workflow：`.claude/workflows/workflow-engine.js` · `learning-audit` · `dev-lifecycle-audit`
 
 工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/workflow-engine.js` 只是 Claude Code 的执行器入口。日常状态看 `workflow-status.py`，底层排查才看 `workflow-gate.sh --json`。
 

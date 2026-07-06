@@ -76,12 +76,8 @@
 | 提效案例、最佳实践、技术提交分享、产品提效 | best-practice-digest | `/best-practice` `/best-practice-digest` |
 | 工作流进化、反馈闭环、skill_run 聚合、流程改进沉淀 | workflow-evolution-assistant | `/workflow-evolution` `/workflow-evolution-assistant` |
 
-### 学习
-
 | 推荐自然语言触发词 | Skill | 备用命令 |
 |---------------------|-------|----------|
-| 学习路线、继续课程、LLM 学习、考我课程 | learn-assistant | `/learn` `/learn-assistant` |
-| 审计学习进度、learning-audit | learning-audit-assistant | `/learning-audit-assistant` |
 
 ### 工作流引擎（不属于 Skill 积木）
 
