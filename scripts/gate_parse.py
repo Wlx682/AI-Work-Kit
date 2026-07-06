@@ -139,6 +139,8 @@ def parse_test_map(path: str | Path) -> dict[str, list[dict[str, str]]]:
         ac_id = cells[0]
         if not re.match(r"^AC\S*$", ac_id):
             continue
+        if ac_id == "AC" or (len(cells) > 1 and cells[1] in {"用例 ID", "测试用例 ID"}):
+            continue
         case_id = cells[1]
         description = cells[3]
         if is_placeholder(case_id) or is_placeholder(description):
@@ -198,7 +200,7 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
     只认 fenced 内 `[标记] N. 描述` 行，不再匹配任何表格——表格首列同为数字，
     既有同一 plan 多张表的歧义（输入输出表 vs 状态表），也有跨子 Plan 同号误匹配，
     均由「切片号无法可靠定位唯一正确行」引起。统一到 fenced checklist 根治。
-    返回 'x' / '~' / ' '，无匹配返回 None。"""
+    返回 'x' / '~' / ' ' / '-'，无匹配返回 None。"""
     p = Path(path)
     target = str(n)
     lines = p.read_text(encoding="utf-8").splitlines()
@@ -210,7 +212,7 @@ def wbs_slice_status(path: str | Path, n: str | int) -> str | None:
             continue
         if not in_fence:
             continue
-        m = re.match(r"^\[([ xX~])\]\s*" + re.escape(target) + r"\.\s+", line)
+        m = re.match(r"^\[([ xX~-])\]\s*" + re.escape(target) + r"\.\s+", line)
         if m:
             mark = m.group(1)
             return "x" if mark in {"x", "X"} else mark

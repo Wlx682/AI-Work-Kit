@@ -112,6 +112,13 @@
               "minimum": 1
             }
           },
+          "optionalWbsSlices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
           "requiredSections": {
             "type": "array",
             "items": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from datetime import datetime
@@ -20,8 +21,14 @@ PORT = 7777
 sys.path.insert(0, str(ROOT / "scripts"))
 try:
     from gate_parse import wbs_slice_status as _wbs_slice_status  # 子 Plan = 事实源
+    from gate_parse import parse_ac_table as _parse_ac_table
+    from gate_parse import parse_dev_ac_coverage as _parse_dev_ac_coverage
+    from gate_parse import parse_test_map as _parse_test_map
 except Exception:  # pragma: no cover - gate_parse 不可用时降级读 Epic 字面量
     _wbs_slice_status = None
+    _parse_ac_table = None
+    _parse_dev_ac_coverage = None
+    _parse_test_map = None
 
 RUN_DIR = ROOT / ".workflows" / "runs"
 EVENT_DIR = ROOT / ".workflows" / "events"
@@ -96,7 +103,7 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
 
 
 PLAN_STATUSES = {"草稿", "进行中", "评审中", "已采纳", "搁置", "done", "pending-change", "已归档"}
-SLICE_RE = re.compile(r"^(\[[ xX~]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
+SLICE_RE = re.compile(r"^(\[[ xX~-]\])\s*(\d+)([a-zA-Z]?)\.?\s+(.+)$")
 WBS_TABLE_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
 
 
@@ -160,25 +167,6 @@ SLICE_SUMMARY: dict[int, str] = {
     14: "发布后冒烟与监控",
     15: "沉淀通用资料、关闭 Epic",
 }
-
-SLICE_PLAN_STAGE: dict[int, str] = {
-    1: "requirement",
-    2: "architecture",
-    3: "development",
-    4: "development",
-    5: "development",
-    6: "development",
-    7: "development",
-    8: "development",
-    9: "development",
-    10: "development",
-    11: "test",
-    12: "development",
-    13: "deploy",
-    14: "deploy",
-    15: "development",
-}
-
 
 def resolve_plan(rel: str) -> Path:
     p = Path(rel)
@@ -285,6 +273,47 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
     return plans
 
 
+def _clean_scalar(value: str | None, default: str = "") -> str:
+    if not value:
+        return default
+    return str(value).split("#", 1)[0].strip().strip('"').strip("'") or default
+
+
+def _load_workflow_blueprint(workflow: str | None) -> dict[str, Any]:
+    name = _clean_scalar(workflow, "client-dev")
+    if not re.match(r"^[A-Za-z0-9_-]+$", name):
+        name = "client-dev"
+    path = ROOT / ".workflows" / "blueprints" / f"{name}.json"
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def _slice_stage_map(workflow: str | None) -> dict[int, dict[str, str]]:
+    """从工作流蓝图派生 WBS 切片归属。
+
+    返回 n -> {stage_key, plan_stage_key}：
+    - stage_key：蓝图 stage key，用于看板显示当前阶段。
+    - plan_stage_key：Epic plans.* 的 key，用于定位对应子 plan。
+    """
+    blueprint = _load_workflow_blueprint(workflow)
+    epic_mapping = blueprint.get("epicMapping") or {}
+    out: dict[int, dict[str, str]] = {}
+    for stage in blueprint.get("stages", []) or []:
+        stage_key = str(stage.get("key") or "")
+        plan_stage_key = str(stage.get("epicField") or epic_mapping.get(stage_key) or stage_key)
+        for n in stage.get("wbsSlices", []) or []:
+            try:
+                slice_n = int(n)
+            except (TypeError, ValueError):
+                continue
+            out[slice_n] = {"stage_key": stage_key, "plan_stage_key": plan_stage_key}
+    return out
+
+
 def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
     text = path.read_text(encoding="utf-8")
     in_fence = False
@@ -307,7 +336,8 @@ def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
     for n in sorted(grouped):
         items = grouped[n]
         marks = [it["mark"] for it in items]
-        done = all(m == "[x]" for m in marks)
+        done = all(m in {"[x]", "[-]"} for m in marks)
+        skipped = all(m == "[-]" for m in marks)
         if len(items) == 1:
             label = items[0]["label"]
         else:
@@ -315,7 +345,7 @@ def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
                 (f"{it['suffix']}: {it['label']}" if it['suffix'] else it['label'])
                 for it in items
             )
-        slices.append({"n": n, "done": done, "label": label, "line": items[0]["line"]})
+        slices.append({"n": n, "done": done, "skipped": skipped, "label": label, "line": items[0]["line"]})
     return slices
 
 
@@ -333,19 +363,91 @@ def _slice_status_in(child: str | None, n: int) -> str | None:
 
 
 def _derive_slice_done(
-    epic_literal_done: bool, preferred_child: str | None, n: int, stage_key: str
+    epic_literal_done: bool, preferred_child: str | None, n: int
 ) -> tuple[bool, str]:
     """切片完成态派生策略（防撒谎优先）：
-    只有当该切片映射到 development 阶段（功能开发主 plan 按约定沿用 Epic 全局切片号）、
-    且功能开发子 Plan 明确查到该号状态时，才从子 Plan 派生；
-    其余阶段（需求/方案/测试/部署等，子 Plan 用局部编号，与 Epic 切片号无对应关系）
-    以及查无该号时，一律回退 Epic 字面量——避免把「恰好同号但语义无关」的行误当切片状态。
+    蓝图已声明切片 n 属于某 stage 时，优先到该 stage 对应子 Plan 查同号 WBS；
+    查不到 / 子 Plan 不存在 / gate_parse 不可用时，回退 Epic 字面量。
     返回 (done, derived_from)，derived_from ∈ {"child-plan", "epic-literal"}。"""
-    if stage_key == "development":
-        status = _slice_status_in(preferred_child, n)
-        if status is not None:
-            return status == "x", "child-plan"
+    status = _slice_status_in(preferred_child, n)
+    if status is not None:
+        return status in {"x", "-"}, "child-plan"
     return epic_literal_done, "epic-literal"
+
+
+def _parse_plan_fact(rel: str | None, parser) -> Any:
+    if parser is None or not rel:
+        return {}
+    try:
+        path = resolve_plan(rel)
+    except ValueError:
+        return {}
+    if not path.is_file():
+        return {}
+    try:
+        return parser(path)
+    except Exception:
+        return {}
+
+
+def _test_health(plan_by_stage: dict[str, str], plans: list[dict[str, Any]]) -> dict[str, Any]:
+    req_rel = plan_by_stage.get("requirement")
+    test_rel = plan_by_stage.get("test")
+    dev_rel = plan_by_stage.get("development")
+    acs = _parse_plan_fact(req_rel, _parse_ac_table)
+    tests = _parse_plan_fact(test_rel, _parse_test_map)
+    dev_cov = _parse_plan_fact(dev_rel, _parse_dev_ac_coverage)
+    p0_ids = sorted(ac for ac, meta in acs.items() if str(meta.get("priority", "")).upper() == "P0")
+    total_ac = len(acs)
+    covered_ac = sum(1 for ac in acs if tests.get(ac))
+    p0_covered = sum(1 for ac in p0_ids if tests.get(ac))
+    p0_dev_covered = sum(1 for ac in p0_ids if dev_cov.get(ac))
+    case_count = sum(len(items) for items in tests.values())
+    missing_p0_tests = [ac for ac in p0_ids if not tests.get(ac)]
+    missing_p0_dev = [ac for ac in p0_ids if not dev_cov.get(ac)]
+    blockers: list[str] = []
+    if req_rel and not total_ac:
+        blockers.append("需求 AC 未解析到")
+    if total_ac and not test_rel:
+        blockers.append("测试 plan 未创建")
+    if missing_p0_tests:
+        blockers.append("P0 AC 缺测试覆盖: " + "、".join(missing_p0_tests[:6]))
+    if missing_p0_dev:
+        blockers.append("P0 AC 缺开发任务覆盖: " + "、".join(missing_p0_dev[:6]))
+    if total_ac and covered_ac < total_ac:
+        blockers.append(f"AC 测试覆盖 {covered_ac}/{total_ac}")
+
+    test_plan = next((p for p in plans if p.get("stage_key") == "test"), {})
+    wbs4_status = _slice_status_in(test_rel, 4)
+    coverage_pct = round(covered_ac / total_ac * 100) if total_ac else None
+    p0_coverage_pct = round(p0_covered / len(p0_ids) * 100) if p0_ids else None
+    if not req_rel:
+        health = "none"
+    elif not total_ac or not test_rel or missing_p0_tests:
+        health = "red"
+    elif missing_p0_dev or (total_ac and covered_ac < total_ac):
+        health = "amber"
+    else:
+        health = "green"
+    return {
+        "health": health,
+        "requirement_plan": req_rel,
+        "test_plan": test_rel,
+        "development_plan": dev_rel,
+        "test_status": test_plan.get("status"),
+        "wbs4_done": wbs4_status in {"x", "-"} if wbs4_status is not None else None,
+        "ac_total": total_ac,
+        "ac_covered": covered_ac,
+        "coverage_pct": coverage_pct,
+        "p0_total": len(p0_ids),
+        "p0_covered": p0_covered,
+        "p0_coverage_pct": p0_coverage_pct,
+        "p0_dev_covered": p0_dev_covered,
+        "case_count": case_count,
+        "missing_p0_tests": missing_p0_tests,
+        "missing_p0_dev": missing_p0_dev,
+        "blockers": blockers,
+    }
 
 
 def scan_epic(path: Path) -> dict[str, Any]:
@@ -355,13 +457,17 @@ def scan_epic(path: Path) -> dict[str, Any]:
     wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
     plan_by_stage = {p["stage_key"]: p.get("path") for p in plans if p.get("path")}
+    test_health = _test_health(plan_by_stage, plans)
+    slice_stage = _slice_stage_map(fm.get("workflow"))
     enriched: list[dict[str, Any]] = []
     for s in slices:
         n = s["n"]
         tbl = wbs_table.get(n, {})
-        stage_key = SLICE_PLAN_STAGE.get(n, "development")
-        child = plan_by_stage.get(stage_key)
-        done, derived_from = _derive_slice_done(s["done"], child, n, stage_key)
+        stage_meta = slice_stage.get(n, {"stage_key": "development", "plan_stage_key": "development"})
+        stage_key = stage_meta["stage_key"]
+        plan_stage_key = stage_meta["plan_stage_key"]
+        child = plan_by_stage.get(plan_stage_key)
+        done, derived_from = _derive_slice_done(s["done"], child, n)
         enriched.append(
             {
                 "n": n,
@@ -374,8 +480,9 @@ def scan_epic(path: Path) -> dict[str, Any]:
                 "input": tbl.get("input", ""),
                 "output": tbl.get("output", ""),
                 "acceptance": tbl.get("acceptance", ""),
-                "related_plan": plan_by_stage.get(stage_key),
+                "related_plan": child,
                 "stage_key": stage_key,
+                "plan_stage_key": plan_stage_key,
             }
         )
     first_open = next((e["n"] for e in enriched if not e["done"]), None)
@@ -412,6 +519,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "branch": fm.get("branch", ""),
         "slices": enriched,
         "plans": plans,
+        "test_health": test_health,
         "next_slice": first_open,
         "gate_history": gh,
         "health": health,
@@ -485,6 +593,12 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
         for ev in gh.get("recent", []):
             if ev.get("result") == "fail" and ev.get("stage"):
                 stage_fail[ev["stage"]] += 1
+    ac_total = sum((e.get("test_health") or {}).get("ac_total", 0) for e in epics)
+    ac_covered = sum((e.get("test_health") or {}).get("ac_covered", 0) for e in epics)
+    p0_total = sum((e.get("test_health") or {}).get("p0_total", 0) for e in epics)
+    p0_covered = sum((e.get("test_health") or {}).get("p0_covered", 0) for e in epics)
+    case_count = sum((e.get("test_health") or {}).get("case_count", 0) for e in epics)
+    test_risk = sum(1 for e in epics if (e.get("test_health") or {}).get("health") in ("red", "amber"))
     n_epics = len(epics)
     blocked = sum(1 for e in epics if e.get("health") in ("red", "amber"))
     healthy = sum(1 for e in epics if e.get("health") == "green")
@@ -504,6 +618,16 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
         "top_blockers": top_blockers,
         "overall_light": overall,
         "sample_low": total_events < 10,
+        "test": {
+            "ac_total": ac_total,
+            "ac_covered": ac_covered,
+            "coverage_pct": round(ac_covered / ac_total * 100) if ac_total else None,
+            "p0_total": p0_total,
+            "p0_covered": p0_covered,
+            "p0_coverage_pct": round(p0_covered / p0_total * 100) if p0_total else None,
+            "case_count": case_count,
+            "risk_epics": test_risk,
+        },
     }
 
 
@@ -693,6 +817,331 @@ def workflows_envelope() -> dict[str, Any]:
     }
 
 
+TEST_SUITE_CATALOG = [
+    {
+        "id": "workflow-core-unit",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "unit",
+        "level_label": "单元测试",
+        "name": "工作流核心单元测试",
+        "command": (
+            "python3 scripts/test-workflow-refactor.py "
+            "WorkflowRefactorTests.test_gate_parse_supports_negative_ac_and_filters_placeholder_tests "
+            "WorkflowRefactorTests.test_kanban_exposes_test_coverage_health "
+            "WorkflowRefactorTests.test_kanban_test_coverage_flags_missing_p0_tests"
+        ),
+        "argv": [
+            "python3",
+            "scripts/test-workflow-refactor.py",
+            "WorkflowRefactorTests.test_gate_parse_supports_negative_ac_and_filters_placeholder_tests",
+            "WorkflowRefactorTests.test_kanban_exposes_test_coverage_health",
+            "WorkflowRefactorTests.test_kanban_test_coverage_flags_missing_p0_tests",
+        ],
+        "scope": "AC 解析、测试覆盖健康度、P0 缺口判定",
+        "signal": "AI 工作流自身",
+    },
+    {
+        "id": "workflow-refactor",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "regression",
+        "level_label": "回归测试",
+        "name": "全量工作流回归",
+        "command": "python3 scripts/test-workflow-refactor.py",
+        "argv": ["python3", "scripts/test-workflow-refactor.py"],
+        "scope": "蓝图 schema、路由、gate、run 事件、traceability、看板派生",
+        "signal": "AI 工作流自身",
+    },
+    {
+        "id": "workflow-smoke",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "integration",
+        "level_label": "集成测试",
+        "name": "工作流逐阶段 smoke",
+        "command": "python3 scripts/workflow-smoke-test.py",
+        "argv": ["python3", "scripts/workflow-smoke-test.py"],
+        "scope": "ui-change / bugfix / task-split-only / computer-mgmt / client-dev",
+        "signal": "AI 工作流自身",
+    },
+    {
+        "id": "workflow-utterance-e2e",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "e2e",
+        "level_label": "端到端测试",
+        "name": "自然语言入口 E2E",
+        "command": 'python3 scripts/workflow-smoke-test.py --utterance "全流程开发一下支付收银台"',
+        "argv": ["python3", "scripts/workflow-smoke-test.py", "--utterance", "全流程开发一下支付收银台"],
+        "scope": "需求文本 → router → workflow → 逐阶段 gate → done",
+        "signal": "AI 工作流自身",
+    },
+    {
+        "id": "blueprint-schema",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "contract",
+        "level_label": "契约 / Schema 测试",
+        "name": "蓝图 schema 校验",
+        "command": "python3 scripts/validate-workflow-blueprint.py",
+        "argv": ["python3", "scripts/validate-workflow-blueprint.py"],
+        "scope": ".workflows/blueprints/*.json",
+        "signal": "AI 工作流自身",
+    },
+    {
+        "id": "skill-fixtures",
+        "group": "skill-fixtures",
+        "object_type": "workflow-engine",
+        "level": "integration",
+        "level_label": "集成测试",
+        "name": "Skill 产物 fixture",
+        "command": "python3 scripts/skill-smoke-all.py",
+        "argv": ["python3", "scripts/skill-smoke-all.py"],
+        "scope": "产物型 Skill 的输入/输出 fixture 覆盖",
+        "signal": "AI 工作流自身",
+    },
+]
+
+
+TEST_OBJECTS = [
+    {
+        "id": "workflow-engine",
+        "title": "AI 工作流自身测试",
+        "description": "验证路由、蓝图、门禁、事件、Skill fixture 与全流程入口。",
+        "levels": [
+            {"id": "unit", "title": "单元测试"},
+            {"id": "contract", "title": "契约 / Schema 测试"},
+            {"id": "integration", "title": "集成测试"},
+            {"id": "e2e", "title": "端到端测试"},
+            {"id": "regression", "title": "回归测试"},
+        ],
+    },
+    {
+        "id": "workflow-task",
+        "title": "工作流任务测试",
+        "description": "验证每个 Epic 的验收标准、测试用例、开发覆盖与任务级执行结果。",
+        "levels": [
+            {"id": "unit", "title": "单元测试"},
+            {"id": "acceptance", "title": "验收测试"},
+            {"id": "integration", "title": "集成测试"},
+            {"id": "e2e", "title": "端到端测试"},
+            {"id": "regression", "title": "回归测试"},
+        ],
+    },
+]
+
+
+def _case_level(case_type: str) -> tuple[str, str]:
+    text = (case_type or "").lower()
+    if "单元" in case_type or "unit" in text or text == "ut":
+        return "unit", "单元测试"
+    if "契约" in case_type or "schema" in text or "contract" in text:
+        return "contract", "契约 / Schema 测试"
+    if "集成" in case_type or "integration" in text or text == "it":
+        return "integration", "集成测试"
+    if "端到端" in case_type or "e2e" in text:
+        return "e2e", "端到端测试"
+    if "回归" in case_type or "regression" in text:
+        return "regression", "回归测试"
+    return "acceptance", "验收测试"
+
+
+def _test_cases_for(epic_name: str, test_rel: str | None) -> list[dict[str, Any]]:
+    cases = _parse_plan_fact(test_rel, _parse_test_map)
+    out: list[dict[str, Any]] = []
+    for ac_id, items in sorted(cases.items()):
+        for item in items:
+            level, level_label = _case_level(item.get("type", ""))
+            out.append(
+                {
+                    "object_type": "workflow-task",
+                    "level": level,
+                    "level_label": level_label,
+                    "epic": epic_name,
+                    "ac": ac_id,
+                    "case_id": item.get("case_id", ""),
+                    "type": item.get("type", ""),
+                    "description": item.get("description", ""),
+                    "status": item.get("status", ""),
+                    "line": item.get("line", ""),
+                    "test_plan": test_rel,
+                }
+            )
+    return out
+
+
+def _task_level_summary(th: dict[str, Any]) -> list[dict[str, Any]]:
+    case_count = int(th.get("case_count") or 0)
+    p0_total = int(th.get("p0_total") or 0)
+    p0_covered = int(th.get("p0_covered") or 0)
+    p0_dev_covered = int(th.get("p0_dev_covered") or 0)
+    coverage_pct = th.get("coverage_pct")
+    health = th.get("health") or "none"
+    unit_status = "ready" if case_count else "not-connected"
+    unit_summary = f"{case_count} 个任务级用例" if case_count else "测试 plan 暂无可识别用例"
+    return [
+        {
+            "id": "unit",
+            "title": "单元测试",
+            "status": unit_status,
+            "summary": unit_summary,
+            "count": case_count,
+            "runnable": False,
+        },
+        {
+            "id": "acceptance",
+            "title": "验收测试",
+            "status": health,
+            "summary": f"AC 覆盖 {coverage_pct if coverage_pct is not None else '—'}%，P0 {p0_covered}/{p0_total}",
+            "count": p0_covered,
+            "total": p0_total,
+            "coverage_pct": coverage_pct,
+            "runnable": True,
+        },
+        {
+            "id": "integration",
+            "title": "集成测试",
+            "status": "not-connected",
+            "summary": "尚未接入任务级集成测试命令",
+            "count": 0,
+            "runnable": False,
+        },
+        {
+            "id": "e2e",
+            "title": "端到端测试",
+            "status": "not-connected",
+            "summary": "尚未接入任务级 E2E 测试命令",
+            "count": 0,
+            "runnable": False,
+        },
+        {
+            "id": "regression",
+            "title": "回归测试",
+            "status": "ready" if p0_dev_covered else "not-connected",
+            "summary": f"P0 开发覆盖 {p0_dev_covered}/{p0_total}" if p0_total else "暂无 P0 开发覆盖数据",
+            "count": p0_dev_covered,
+            "total": p0_total,
+            "runnable": False,
+        },
+    ]
+
+
+def tests_envelope() -> dict[str, Any]:
+    epics = board_payload()
+    test_kpi = aggregate_kpi(epics).get("test", {})
+    task_rows = []
+    all_cases: list[dict[str, Any]] = []
+    gap_counter = Counter()
+    for e in epics:
+        th = e.get("test_health") or {}
+        all_cases.extend(_test_cases_for(e.get("name", ""), th.get("test_plan")))
+        for blocker in th.get("blockers", []) or []:
+            if "P0 AC 缺测试覆盖" in blocker:
+                gap_counter["P0 缺测试覆盖"] += 1
+            elif "P0 AC 缺开发任务覆盖" in blocker:
+                gap_counter["P0 缺开发覆盖"] += 1
+            elif "测试 plan 未创建" in blocker:
+                gap_counter["测试 plan 未创建"] += 1
+            elif "需求 AC 未解析到" in blocker:
+                gap_counter["需求 AC 未解析"] += 1
+            else:
+                gap_counter["其他测试缺口"] += 1
+        task_rows.append(
+            {
+                "object_type": "workflow-task",
+                "level": "acceptance",
+                "level_label": "验收测试",
+                "epic": e.get("name"),
+                "file": e.get("file"),
+                "stage": e.get("current_stage"),
+                "health": th.get("health"),
+                "coverage_pct": th.get("coverage_pct"),
+                "p0_coverage_pct": th.get("p0_coverage_pct"),
+                "p0_total": th.get("p0_total"),
+                "p0_covered": th.get("p0_covered"),
+                "p0_dev_covered": th.get("p0_dev_covered"),
+                "case_count": th.get("case_count"),
+                "test_status": th.get("test_status"),
+                "test_plan": th.get("test_plan"),
+                "blockers": th.get("blockers", []),
+                "levels": _task_level_summary(th),
+            }
+        )
+    task_rows.sort(key=lambda r: ({"red": 0, "amber": 1, "none": 2, "green": 3}.get(r.get("health"), 9), r.get("epic") or ""))
+    return {
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        "kpi": {
+            **test_kpi,
+            "workflow_suite_count": len(TEST_SUITE_CATALOG),
+            "task_epic_count": len(task_rows),
+        },
+        "objects": TEST_OBJECTS,
+        "suites": TEST_SUITE_CATALOG,
+        "task_tests": task_rows,
+        "cases": all_cases,
+        "gaps": [{"name": name, "count": count} for name, count in gap_counter.most_common()],
+        "taxonomy": [
+            {"group": "workflow-engine", "title": "AI 工作流自身", "items": ["单元测试", "契约 / Schema", "集成测试", "端到端测试", "回归测试"]},
+            {"group": "workflow-task", "title": "工作流任务", "items": ["单元测试", "验收测试", "集成测试", "端到端测试", "回归测试"]},
+        ],
+    }
+
+
+def _run_allowed_command(argv: list[str]) -> dict[str, Any]:
+    started = datetime.now().isoformat(timespec="seconds")
+    try:
+        proc = subprocess.run(
+            argv,
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=240,
+        )
+        output = (proc.stdout + ("\n" if proc.stdout and proc.stderr else "") + proc.stderr).strip()
+        return {
+            "ok": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "started_at": started,
+            "finished_at": datetime.now().isoformat(timespec="seconds"),
+            "command": " ".join(argv),
+            "output": output[-16000:],
+        }
+    except subprocess.TimeoutExpired as exc:
+        output = ((exc.stdout or "") + ("\n" if exc.stdout and exc.stderr else "") + (exc.stderr or "")).strip()
+        return {
+            "ok": False,
+            "returncode": None,
+            "started_at": started,
+            "finished_at": datetime.now().isoformat(timespec="seconds"),
+            "command": " ".join(argv),
+            "output": (output + "\nTIMEOUT: 240s").strip()[-16000:],
+        }
+
+
+def run_test_from_board(kind: str, test_id: str) -> dict[str, Any]:
+    if kind == "suite":
+        suite = next((s for s in TEST_SUITE_CATALOG if s["id"] == test_id), None)
+        if not suite:
+            raise ValueError("unknown suite")
+        return _run_allowed_command(list(suite["argv"]))
+    if kind == "task":
+        epic = next((e for e in board_payload() if e.get("file") == test_id), None)
+        if not epic:
+            raise ValueError("unknown epic")
+        argv = ["python3", "scripts/traceability-check.py", "--epic", test_id, "--check", "test"]
+        result = _run_allowed_command(argv)
+        dev_argv = ["python3", "scripts/traceability-check.py", "--epic", test_id, "--check", "dev"]
+        dev_result = _run_allowed_command(dev_argv)
+        result["ok"] = bool(result["ok"] and dev_result["ok"])
+        result["returncode"] = 0 if result["ok"] else 1
+        result["command"] = result["command"] + " && " + dev_result["command"]
+        result["output"] = (result.get("output", "") + "\n\n--- dev coverage ---\n" + dev_result.get("output", "")).strip()[-16000:]
+        return result
+    raise ValueError("unknown test kind")
+
+
 def board_envelope() -> dict[str, Any]:
     epics = board_payload()
     return {
@@ -811,6 +1260,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/workflows" or path == "/workflows.html":
             self._send_static("workflows.html", "text/html; charset=utf-8")
             return
+        if path == "/tests" or path == "/tests.html":
+            self._send_static("tests.html", "text/html; charset=utf-8")
+            return
         if path == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
@@ -821,6 +1273,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/workflows":
             self._json(200, workflows_envelope())
+            return
+        if path == "/api/tests":
+            self._json(200, tests_envelope())
             return
         if path == "/api/revision":
             self._json(
@@ -866,6 +1321,12 @@ class Handler(BaseHTTPRequestHandler):
                         f"{rel} → {status}",
                     )
                 self._json(200, {"ok": True, "file": rel, "status": status})
+                return
+            if path == "/api/test-run":
+                kind = str(body.get("kind", ""))
+                test_id = str(body.get("id", ""))
+                result = run_test_from_board(kind, test_id)
+                self._json(200, result)
                 return
             if path == "/api/slice":
                 rel = body.get("file", "")

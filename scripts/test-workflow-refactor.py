@@ -102,6 +102,201 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(stages["development"]["skills"], ["feature-dev-assistant", "figma-ui"])
         self.assertIn("workflow-router", (ROOT / "Skills/README.md").read_text(encoding="utf-8"))
 
+    def test_kanban_derives_wbs_stage_from_blueprint(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            epic = tmp / "Plans/Epic/fixture.md"
+            epic.write_text(
+                epic.read_text(encoding="utf-8").replace("[x] 11. 非功能验证完成", "[ ] 11. 非功能验证完成"),
+                encoding="utf-8",
+            )
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.scan_epic(epic)
+            by_n = {item["n"]: item for item in data["slices"]}
+        self.assertEqual(by_n[11]["stage_key"], "development")
+        self.assertEqual(by_n[11]["plan_stage_key"], "development")
+        self.assertEqual(by_n[11]["related_plan"], "Plans/功能开发/fixture.md")
+        self.assertTrue(by_n[11]["done"])
+        self.assertEqual(by_n[11]["derived_from"], "child-plan")
+
+    def test_kanban_wbs_slices_follow_blueprint_and_child_plan_facts(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            epic = tmp / "Plans/Epic/fixture.md"
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace("[x] 9. fixture", "[ ] 9. fixture"),
+                encoding="utf-8",
+            )
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.scan_epic(epic)
+            by_n = {item["n"]: item for item in data["slices"]}
+
+        expected = {
+            1: ("requirement", "requirement", "Plans/需求分析/fixture.md"),
+            2: ("requirement", "requirement", "Plans/需求分析/fixture.md"),
+            3: ("architecture", "architecture", "Plans/技术方案/fixture.md"),
+            4: ("test-first", "test", "Plans/自动化测试/fixture.md"),
+            5: ("split", "development", "Plans/功能开发/fixture.md"),
+            6: ("development", "development", "Plans/功能开发/fixture.md"),
+            7: ("development", "development", "Plans/功能开发/fixture.md"),
+            8: ("development", "development", "Plans/功能开发/fixture.md"),
+            9: ("development", "development", "Plans/功能开发/fixture.md"),
+            10: ("development", "development", "Plans/功能开发/fixture.md"),
+            11: ("development", "development", "Plans/功能开发/fixture.md"),
+        }
+        for n, (stage_key, plan_stage_key, related_plan) in expected.items():
+            self.assertEqual(by_n[n]["stage_key"], stage_key, f"WBS {n} stage")
+            self.assertEqual(by_n[n]["plan_stage_key"], plan_stage_key, f"WBS {n} plan stage")
+            self.assertEqual(by_n[n]["related_plan"], related_plan, f"WBS {n} related plan")
+            self.assertEqual(by_n[n]["derived_from"], "child-plan", f"WBS {n} fact source")
+
+        # 子 Plan 是事实源：即使 Epic 字面量仍是 [x]，功能开发子 Plan 的 WBS9 未完成也应让看板卡住。
+        self.assertFalse(by_n[9]["done"])
+        self.assertEqual(data["next_slice"], 9)
+        self.assertEqual(data["current_stage"], "development")
+        self.assertEqual(data["slices_done"], 14)
+        self.assertEqual(data["slices_total"], 15)
+        # 蓝图未声明的历史切片保留 Epic 字面量回退，不强行推断。
+        self.assertEqual(by_n[12]["derived_from"], "epic-literal")
+
+    def test_kanban_exposes_test_coverage_health(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.scan_epic(tmp / "Plans/Epic/fixture.md")
+            th = data["test_health"]
+
+        self.assertEqual(th["health"], "green")
+        self.assertEqual(th["ac_total"], 3)
+        self.assertEqual(th["ac_covered"], 3)
+        self.assertEqual(th["p0_total"], 2)
+        self.assertEqual(th["p0_covered"], 2)
+        self.assertEqual(th["case_count"], 3)
+        self.assertEqual(th["blockers"], [])
+
+    def test_kanban_test_coverage_flags_missing_p0_tests(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_traceability_fixture(tmp, cover_tests=False, include_dev=True)
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.scan_epic(tmp / "Plans/Epic/trace.md")
+            th = data["test_health"]
+
+        self.assertEqual(th["health"], "red")
+        self.assertIn("AC1", th["missing_p0_tests"])
+        self.assertIn("AC1-反", th["missing_p0_tests"])
+        self.assertTrue(any("P0 AC 缺测试覆盖" in item for item in th["blockers"]))
+
+    def test_kanban_tests_envelope_groups_workflow_and_task_tests(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.tests_envelope()
+
+        suite_groups = {item["group"] for item in data["suites"]}
+        suite_levels = {item["level"] for item in data["suites"]}
+        object_levels = {
+            item["id"]: {level["id"] for level in item["levels"]}
+            for item in data["objects"]
+        }
+        taxonomy_groups = {item["group"] for item in data["taxonomy"]}
+        self.assertIn("workflow-engine", suite_groups)
+        self.assertIn("skill-fixtures", suite_groups)
+        self.assertIn("unit", suite_levels)
+        self.assertIn("contract", suite_levels)
+        self.assertIn("integration", suite_levels)
+        self.assertIn("e2e", suite_levels)
+        self.assertIn("regression", suite_levels)
+        self.assertIn("unit", object_levels["workflow-engine"])
+        self.assertIn("unit", object_levels["workflow-task"])
+        self.assertIn("acceptance", object_levels["workflow-task"])
+        self.assertIn("workflow-task", taxonomy_groups)
+        self.assertEqual(data["kpi"]["task_epic_count"], 1)
+        self.assertEqual(data["task_tests"][0]["coverage_pct"], 100)
+        self.assertEqual(data["task_tests"][0]["object_type"], "workflow-task")
+        self.assertTrue(any(level["id"] == "unit" for level in data["task_tests"][0]["levels"]))
+        self.assertTrue(any(level["id"] == "acceptance" and level["runnable"] for level in data["task_tests"][0]["levels"]))
+        self.assertEqual(len(data["cases"]), 3)
+        self.assertEqual({case["level"] for case in data["cases"]}, {"unit"})
+
+    def test_kanban_can_start_whitelisted_tests_from_board(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            suite = mod.run_test_from_board("suite", "blueprint-schema")
+            task = mod.run_test_from_board("task", "Plans/Epic/fixture.md")
+
+        self.assertTrue(suite["ok"], suite["output"])
+        self.assertIn("validate-workflow-blueprint.py", suite["command"])
+        self.assertTrue(task["ok"], task["output"])
+        self.assertIn("traceability-check.py", task["command"])
+
     def test_workflow_blueprints_validate(self) -> None:
         proc = subprocess.run(
             ["python3", "scripts/validate-workflow-blueprint.py"],
@@ -431,6 +626,17 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
 
+    def test_workflow_smoke_script_can_start_from_utterance(self) -> None:
+        proc = subprocess.run(
+            ["python3", "scripts/workflow-smoke-test.py", "--utterance", "全流程开发一下支付收银台"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        self.assertIn("OK:workflow-smoke-test:client-dev", proc.stdout)
+
     def test_skill_smoke_all_fixtures_valid_and_product_skills_covered(self) -> None:
         proc = subprocess.run(
             ["python3", "scripts/skill-smoke-all.py"],
@@ -517,6 +723,39 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["constitution"]["status"], "ok")
         self.assertIn("OK", data["gate_development"])
         self.assertTrue(any(item.startswith("development:Plans/功能开发/") for item in data["plans_found"]))
+
+    def test_workflow_gate_accepts_skipped_optional_wbs_slice(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            bp_file = tmp / ".workflows/blueprints/client-dev.json"
+            bp = json.loads(bp_file.read_text(encoding="utf-8"))
+            for stage in bp["stages"]:
+                if stage["key"] == "development":
+                    stage["optionalWbsSlices"] = [11]
+            bp_file.write_text(json.dumps(bp, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace("[x] 11. fixture", "[-] 11. fixture"),
+                encoding="utf-8",
+            )
+
+            data = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+        self.assertEqual(data["current_state"], "done", data)
+        self.assertEqual(data["blockers"], [])
+
+    def test_workflow_gate_blocks_skipped_required_wbs_slice(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            development = tmp / "Plans/功能开发/fixture.md"
+            development.write_text(
+                development.read_text(encoding="utf-8").replace("[x] 11. fixture", "[-] 11. fixture"),
+                encoding="utf-8",
+            )
+
+            data = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+        self.assertEqual(data["current_state"], "development", data)
+        self.assertTrue(any("缺: 11" in blocker for blocker in data["blockers"]), data["blockers"])
 
     def test_workflow_run_gate_records_pass_event_and_check_trail(self) -> None:
         with self.fixture_repo() as tmp:
@@ -652,9 +891,9 @@ class WorkflowRefactorTests(unittest.TestCase):
                 [x] 1. done
                 [~] 2. doing
                 [ ] 3. todo
+                [-] 4. skipped
                 ```
 
-                | 4 | table done | ✅ |
                 | 5 | table todo | ☐ |
                 """,
             )
@@ -673,8 +912,8 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertEqual(mod.wbs_slice_status(plan, 1), "x")
             self.assertEqual(mod.wbs_slice_status(plan, 2), "~")
             self.assertEqual(mod.wbs_slice_status(plan, 3), " ")
-            # WBS 状态只认 fenced checklist；表格行（4/5）不再被识别，避免多表/同号歧义。
-            self.assertIsNone(mod.wbs_slice_status(plan, 4))
+            self.assertEqual(mod.wbs_slice_status(plan, 4), "-")
+            # WBS 状态只认 fenced checklist；表格行（5）不再被识别，避免多表/同号歧义。
             self.assertIsNone(mod.wbs_slice_status(plan, 5))
             self.assertIsNone(mod.wbs_slice_status(plan, 6))
 

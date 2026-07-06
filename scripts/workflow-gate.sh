@@ -82,28 +82,49 @@ find_epic() {
   [[ -n "$best" ]] && echo "$best"
 }
 
-wbs_slice_done() {
+wbs_slice_status() {
   local f="$1" n="$2"
+  python3 "$ROOT/scripts/gate_parse.py" wbs-slice-status "$f" "$n" 2>/dev/null || true
+}
+
+csv_has() {
+  local csv="$1" needle="$2"
+  local item
+  IFS=',' read -ra _csv_items <<<"$csv"
+  for item in "${_csv_items[@]:-}"; do
+    [[ "$item" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+wbs_slice_satisfied() {
+  local f="$1" n="$2" optional_csv="$3"
   local status
-  status="$(python3 "$ROOT/scripts/gate_parse.py" wbs-slice-status "$f" "$n" 2>/dev/null || true)"
-  [[ "$status" == "x" ]]
+  status="$(wbs_slice_status "$f" "$n")"
+  if [[ "$status" == "x" ]]; then
+    return 0
+  fi
+  if [[ "$status" == "-" ]] && csv_has "$optional_csv" "$n"; then
+    return 0
+  fi
+  return 1
 }
 
 wbs_slices_done() {
-  # $1=file, remaining args = slice numbers
-  local f="$1"; shift
+  # $1=file, $2=optional slice csv, remaining args = slice numbers
+  local f="$1" optional_csv="$2"; shift 2
   local n
   for n in "$@"; do
-    wbs_slice_done "$f" "$n" || return 1
+    wbs_slice_satisfied "$f" "$n" "$optional_csv" || return 1
   done
   return 0
 }
 
 wbs_missing_slices() {
-  local f="$1"; shift
+  local f="$1" optional_csv="$2"; shift 2
   local n missing=()
   for n in "$@"; do
-    wbs_slice_done "$f" "$n" || missing+=("$n")
+    wbs_slice_satisfied "$f" "$n" "$optional_csv" || missing+=("$n")
   done
   local IFS=','
   echo "${missing[*]}"
@@ -140,7 +161,7 @@ fi
 
 # 读蓝图元信息
 USES_EPIC="$(python3 -c 'import json,sys; print("1" if json.load(open(sys.argv[1])).get("usesEpic") else "0")' "$BLUEPRINT")"
-# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)
+# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)|optionalWbsSlices(逗号)
 # 用非空白分隔符，避免 read 折叠空字段（如空 epicField）导致字段错位。
 mapfile -t STAGE_ROWS < <(python3 - "$BLUEPRINT" <<'PY'
 import json, sys
@@ -156,7 +177,8 @@ for s in bp.get("stages", []):
     onlyif = json.dumps(s.get("onlyIf", {}), ensure_ascii=False)
     prefix = s.get("planPrefix", "")
     req_sections = json.dumps(s.get("requiredSections", []), ensure_ascii=False)
-    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix, req_sections]))
+    optional_slices = ",".join(str(n) for n in s.get("optionalWbsSlices", []))
+    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix, req_sections, optional_slices]))
 PY
 )
 
@@ -204,7 +226,7 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
   found_stage=""
   n_stages=${#STAGE_ROWS[@]}
   for ((i=0; i<n_stages; i++)); do
-    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix s_reqsections <<<"${STAGE_ROWS[$i]}"
+    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix s_reqsections s_optional_slices <<<"${STAGE_ROWS[$i]}"
 
     # onlyIf：如 {"含业务逻辑":"是"}，不满足则跳过该 stage
     onlyif_skip=0
@@ -350,8 +372,8 @@ PY
     if [[ "$(crit_has "$s_exit" wbsDone)" == "1" && -n "$s_slices" ]]; then
       if [[ -n "$child_file" && -f "$child_file" ]]; then
         IFS=',' read -ra slice_arr <<<"$s_slices"
-        if ! wbs_slices_done "$child_file" "${slice_arr[@]}"; then
-          missing_slices="$(wbs_missing_slices "$child_file" "${slice_arr[@]}")"
+        if ! wbs_slices_done "$child_file" "$s_optional_slices" "${slice_arr[@]}"; then
+          missing_slices="$(wbs_missing_slices "$child_file" "$s_optional_slices" "${slice_arr[@]}")"
           stage_blockers+=("${s_label}：WBS 切片 ${s_slices} 未全部完成（缺: ${missing_slices:-未知}）")
         fi
       fi
@@ -519,7 +541,7 @@ payload = {
     "plans_found": json.loads(plans_found),
     "constitution": json.loads(constitution),
 }
-print(json.dumps(payload, ensure_ascii=False, indent=2))
+print(json.dumps(payload, ensure_ascii=True, indent=2))
 PY
   exit 0
 fi

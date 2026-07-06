@@ -11,6 +11,29 @@
 
 业务仓开发：运行 `./scripts/sync-agent-skills.sh --sync` 部署 Claude / Codex 全局 Skill；Cursor 继续复制 `.cursor/skills/` → `~/.cursor/skills/`。
 
+## 创建 / 修改 Skill 的最小校验链
+
+适用：新增 Skill、改触发词、改路由边界、改 Agent stub、改人类说明。
+
+1. 更新人类真理源：`Skills/<name>.md`（下划线命名）。
+2. 更新 Agent 真理源：`.cursor/skills/<name>/SKILL.md`（dash 命名）。
+3. 若是新增 Skill，确认两端都存在；若是仅改人类说明，也要确认是否需要同步 stub。
+4. 部署到生成端与全局同名副本：
+   ```bash
+   ./scripts/sync-agent-skills.sh --sync
+   ```
+5. 复校验多端一致：
+   ```bash
+   ./scripts/sync-agent-skills.sh --check
+   ```
+6. 若该 Skill 有固定产物 fixture，跑对应 smoke；否则确认它在 `scripts/skill-smoke-all.py` 的运维/路由豁免集中有合理说明：
+   ```bash
+   python3 scripts/skill-smoke-test.py <skill> tests/fixtures/skills/<skill>/<case>.input.md
+   python3 scripts/skill-smoke-all.py
+   ```
+
+判定：`sync-agent-skills.sh --check` 必须通过；产物类 Skill 的 fixture 缺口至少要在本次变更说明里交代。
+
 ## Skill 一览
 
 > **路由原则**（详见各 Skill 文件「触发条件」段）：

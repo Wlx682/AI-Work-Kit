@@ -41,6 +41,7 @@
 - 项目生成端会自动删除 `.cursor/skills` 已不存在的旧 Skill，避免同步后还需手动清理才能通过 `--check`。
 - 全局只动项目内同名 Skill，不碰用户自装的。
 - 若报「Skills/ 缺真理源」，先补 `Skills/<name>.md` 再 `--sync`。
+- 创建或修改 Skill 后的完整校验链见 `Skills/README.md`「创建 / 修改 Skill 的最小校验链」。
 - 幂等，可安全重复执行。
 
 ## 关联

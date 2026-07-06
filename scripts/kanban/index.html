@@ -152,6 +152,17 @@
     .progress .meta { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--faint); margin-top: 5px; }
     .blocker-hint { margin-top: 0.7rem; font-size: 0.76rem; color: var(--muted); display: flex; gap: 0.35rem; align-items: baseline; }
     .blocker-hint b { color: var(--amber); }
+    .test-chip { margin-top: 0.55rem; display: inline-flex; gap: 0.35rem; align-items: center; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--muted); background: rgba(0,0,0,0.18); }
+    .test-chip.green { color: var(--green); border-color: rgba(53,224,138,0.35); background: rgba(53,224,138,0.08); }
+    .test-chip.amber { color: var(--amber); border-color: rgba(255,181,71,0.35); background: rgba(255,181,71,0.08); }
+    .test-chip.red { color: var(--red); border-color: rgba(255,84,112,0.35); background: rgba(255,84,112,0.08); }
+    .test-meter { display: grid; gap: 0.55rem; }
+    .test-meter .line { display: flex; justify-content: space-between; gap: 0.8rem; font-size: 0.78rem; color: var(--muted); }
+    .test-meter b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .test-meter .mini-bar { height: 7px; border-radius: 999px; background: rgba(0,0,0,0.32); overflow: hidden; }
+    .test-meter .mini-bar i { display: block; height: 100%; border-radius: 999px; background: var(--grad); width: 0; transition: width 0.7s cubic-bezier(.2,.7,.2,1); }
+    .test-list { margin: 0.55rem 0 0; padding-left: 1rem; color: var(--muted); font-size: 0.75rem; }
+    .test-list li { margin: 0.2rem 0; }
 
     /* ---- sidebar ---- */
     .side { display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 18px); position: sticky; top: 20px; }
@@ -239,6 +250,7 @@
       <div class="actions">
         <div class="search"><input id="searchBox" placeholder="搜索 Epic / 阶段 / 卡点…" /></div>
         <a class="navlink" href="/workflows" style="text-decoration:none;color:var(--text);background:rgba(255,255,255,0.04);border:1px solid var(--stroke-strong);padding:0.5rem 0.9rem;border-radius:10px;">⚙ 工作流管理</a>
+        <a class="navlink" href="/tests" style="text-decoration:none;color:var(--text);background:rgba(255,255,255,0.04);border:1px solid var(--stroke-strong);padding:0.5rem 0.9rem;border-radius:10px;">测试中心</a>
         <button class="ghost" id="refreshBtn">刷新</button>
         <button class="primary" id="evolveBtn">⚡ 进化分析</button>
       </div>
@@ -339,6 +351,9 @@
             : '');
         const hint = e.blocker_hint && e.current_stage !== 'done'
           ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
+        const th = e.test_health || {};
+        const testLabel = th.coverage_pct == null ? '未建测试' : `测试 ${th.ac_covered || 0}/${th.ac_total || 0} AC`;
+        const testChip = `<div class="test-chip ${esc(th.health || '')}">🧪 ${esc(testLabel)}</div>`;
         return `
           <button class="ecard ${e.health} fade-in" data-file="${esc(e.file)}">
             <div class="e-head">
@@ -353,6 +368,7 @@
               <div class="meta"><span>${e.slices_done}/${e.slices_total} 切片</span><span>${pct}%</span></div>
             </div>
             ${hint}
+            ${testChip}
           </button>`;
       }).join('');
 
@@ -414,6 +430,7 @@
       // 动画：进度条 + count-up
       requestAnimationFrame(() => {
         document.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%');
+        document.querySelectorAll('.mini-bar i').forEach(i => i.style.width = i.dataset.w + '%');
         document.querySelectorAll('.k-num[data-count]').forEach(countUp);
       });
     }
@@ -603,6 +620,7 @@
       if (io) io.disconnect();
       io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('seen'); io.unobserve(x.target); } }), { threshold: 0.08 });
       document.querySelectorAll('.fade-in:not(.seen)').forEach(el => io.observe(el));
+      requestAnimationFrame(() => document.querySelectorAll('.mini-bar i').forEach(i => i.style.width = i.dataset.w + '%'));
     }
     window.addEventListener('scroll', () => $('toTop').classList.toggle('show', window.scrollY > 300));
     $('toTop').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>测试中心 · AI-Work-Kit</title>
+  <style>
+    :root {
+      --bg: #0b0d12; --surface: #11151d; --surface-2: #171c25; --line: #28303b;
+      --text: #eef2f7; --muted: #99a2b2; --faint: #697386;
+      --green: #35c979; --amber: #e7a43a; --red: #ef5f6b; --blue: #64a8ff; --cyan: #55d6c2;
+      --shadow: 0 14px 36px rgba(0,0,0,0.28); --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      color: var(--text); background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; line-height: 1.45;
+    }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 24px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    }
+    h1, h2, h3, p { margin: 0; }
+    .brand h1 { font-size: 21px; letter-spacing: 0; }
+    .brand .ver { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    .navlink {
+      text-decoration: none; color: var(--text); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 8px 12px; background: var(--surface-2); font-size: 13px;
+    }
+    .navlink.active { border-color: rgba(100,168,255,0.55); background: rgba(100,168,255,0.16); color: #dcecff; }
+    .kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-top: 16px; }
+    .kpi, .panel, .module, .drawer {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .kpi { padding: 16px; min-height: 104px; }
+    .k-label { color: var(--muted); font-size: 12px; }
+    .k-num { font-size: 34px; line-height: 1; font-weight: 760; margin-top: 14px; font-variant-numeric: tabular-nums; }
+    .k-sub { color: var(--faint); font-size: 12px; margin-top: 8px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; margin-top: 16px; align-items: start; }
+    .panel { padding: 16px; min-width: 0; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    button {
+      font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 8px 11px; cursor: pointer; transition: 0.16s ease;
+    }
+    button:hover { border-color: rgba(100,168,255,0.55); background: #1b2330; }
+    button.active { background: rgba(100,168,255,0.16); border-color: rgba(100,168,255,0.62); color: #dcecff; }
+    button.primary { background: #2368c4; border-color: #3078dc; color: #f4f9ff; }
+    button.ghost { background: transparent; }
+    button:disabled { opacity: 0.55; cursor: wait; }
+    .object-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .object-head h2 { font-size: 18px; }
+    .object-head p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .level { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+    .level:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+    .level-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .level-title h3 { font-size: 15px; }
+    .level-title .count { color: var(--muted); font-size: 12px; }
+    .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+    .module { padding: 13px; box-shadow: none; min-height: 128px; display: flex; flex-direction: column; gap: 10px; }
+    .module.selected { border-color: rgba(100,168,255,0.68); background: #151d28; }
+    .module-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .module-name { font-weight: 700; overflow-wrap: anywhere; }
+    .module-meta { color: var(--muted); font-size: 12px; min-height: 34px; overflow-wrap: anywhere; }
+    .module-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+    .badge {
+      display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 999px;
+      border: 1px solid var(--line); color: var(--muted); font-size: 12px; white-space: nowrap;
+    }
+    .badge.green, .badge.ready { color: var(--green); border-color: rgba(53,201,121,0.38); background: rgba(53,201,121,0.08); }
+    .badge.amber { color: var(--amber); border-color: rgba(231,164,58,0.38); background: rgba(231,164,58,0.08); }
+    .badge.red { color: var(--red); border-color: rgba(239,95,107,0.42); background: rgba(239,95,107,0.09); }
+    .badge.none, .badge.not-connected { color: var(--faint); }
+    .bar { height: 7px; border-radius: 999px; background: #090b10; overflow: hidden; margin-top: 7px; }
+    .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+    code { color: #92e3d7; overflow-wrap: anywhere; word-break: break-word; }
+    .drawer { position: sticky; top: 16px; width: 420px; min-width: 0; overflow: visible; }
+    .drawer-head { padding: 16px; border-bottom: 1px solid var(--line); }
+    .drawer-head h2 { font-size: 17px; overflow-wrap: anywhere; }
+    .drawer-head .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .drawer-body { padding: 16px; display: grid; gap: 16px; min-width: 0; }
+    .detail-block h3 { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .fact { padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+    .fact b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+    .fact span { color: var(--muted); font-size: 12px; }
+    .case-list, .gap-list { display: grid; gap: 8px; }
+    .case, .gap {
+      padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2);
+      min-width: 0;
+    }
+    .case .title, .gap .title { font-weight: 650; overflow-wrap: anywhere; }
+    .case .desc, .gap .desc { color: var(--muted); font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+    .output {
+      width: 100%; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+      height: auto; max-height: none; overflow: visible; background: #080a0f; border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 12px; color: var(--muted); font-size: 12px;
+    }
+    .empty { color: var(--faint); text-align: center; padding: 28px 10px; border: 1px dashed var(--line); border-radius: var(--radius); }
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns: 1fr; }
+      .drawer { position: static; width: 100%; }
+    }
+    @media (max-width: 760px) {
+      .wrap { padding: 14px; }
+      .kpi-row { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .facts { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .kpi-row { grid-template-columns: 1fr; }
+      .module-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>测试中心</h1>
+        <div class="ver" id="verLine">加载中</div>
+      </div>
+      <nav class="nav">
+        <a class="navlink" href="/">Epic 看板</a>
+        <a class="navlink" href="/workflows">工作流管理</a>
+        <a class="navlink active" href="/tests">测试中心</a>
+      </nav>
+    </div>
+    <main id="app"><div class="empty">加载中...</div></main>
+  </div>
+
+  <script>
+    const state = { data: null, objectId: 'workflow-engine', selected: null };
+    const $ = id => document.getElementById(id);
+    const esc = value => {
+      const node = document.createElement('div');
+      node.textContent = value == null ? '' : String(value);
+      return node.innerHTML;
+    };
+    const pct = value => value == null ? '-' : `${value}%`;
+    const statusText = value => ({
+      green: '健康',
+      amber: '需关注',
+      red: '阻塞',
+      none: '无数据',
+      ready: '已接入',
+      'not-connected': '未接入'
+    }[value] || '无数据');
+
+    async function load() {
+      try {
+        const data = await (await fetch('/api/tests')).json();
+        state.data = data;
+        state.objectId = (data.objects && data.objects[0] && data.objects[0].id) || 'workflow-engine';
+        state.selected = firstModule(data, state.objectId);
+        $('verLine').textContent = `同步 ${(data.updated_at || '').replace('T', ' ').slice(0, 19)}`;
+        render();
+      } catch (error) {
+        $('app').innerHTML = `<div class="empty">加载失败：${esc(error.message)}</div>`;
+      }
+    }
+
+    function firstModule(data, objectId) {
+      if (objectId === 'workflow-engine') {
+        const suite = (data.suites || [])[0];
+        return suite ? { kind: 'suite', id: suite.id } : null;
+      }
+      const task = (data.task_tests || [])[0];
+      return task ? { kind: 'task', id: task.file } : null;
+    }
+
+    function selectedKey(module) {
+      return `${module.kind}:${module.id}`;
+    }
+
+    function getSelectedModule() {
+      const data = state.data || {};
+      if (!state.selected) return null;
+      if (state.selected.kind === 'suite') return (data.suites || []).find(item => item.id === state.selected.id) || null;
+      return (data.task_tests || []).find(item => item.file === state.selected.id) || null;
+    }
+
+    function modulesForLevel(objectId, levelId) {
+      const data = state.data || {};
+      if (objectId === 'workflow-engine') {
+        return (data.suites || []).filter(item => item.level === levelId).map(item => ({
+          kind: 'suite',
+          id: item.id,
+          name: item.name,
+          meta: item.scope,
+          status: 'ready',
+          statusLabel: item.level_label,
+          command: item.command,
+          runnable: true,
+          raw: item
+        }));
+      }
+      return (data.task_tests || []).map(task => {
+        const level = (task.levels || []).find(item => item.id === levelId);
+        if (!level) return null;
+        return {
+          kind: 'task',
+          id: task.file,
+          name: task.epic,
+          meta: level.summary,
+          status: level.status,
+          statusLabel: level.title,
+          coverage: level.coverage_pct,
+          runnable: !!level.runnable,
+          raw: task
+        };
+      }).filter(Boolean);
+    }
+
+    function render() {
+      const data = state.data || {};
+      const k = data.kpi || {};
+      const objects = data.objects || [];
+      const activeObject = objects.find(item => item.id === state.objectId) || objects[0] || {};
+      $('app').innerHTML = `
+        <section class="kpi-row">
+          <div class="kpi"><div class="k-label">验收标准覆盖率</div><div class="k-num">${esc(pct(k.coverage_pct))}</div><div class="k-sub">${k.ac_covered || 0}/${k.ac_total || 0} 条验收标准</div></div>
+          <div class="kpi"><div class="k-label">P0 测试覆盖</div><div class="k-num">${esc(pct(k.p0_coverage_pct))}</div><div class="k-sub">${k.p0_covered || 0}/${k.p0_total || 0} 条 P0</div></div>
+          <div class="kpi"><div class="k-label">测试 Case</div><div class="k-num">${k.case_count || 0}</div><div class="k-sub">任务级测试用例总数</div></div>
+          <div class="kpi"><div class="k-label">风险 Epic</div><div class="k-num">${k.risk_epics || 0}</div><div class="k-sub">红色或黄色测试健康度</div></div>
+        </section>
+        <section class="workspace">
+          <div class="panel">
+            <div class="tabs">
+              ${objects.map(item => `<button class="${item.id === state.objectId ? 'active' : ''}" data-object="${esc(item.id)}">${esc(item.title)}</button>`).join('')}
+            </div>
+            <div class="object-head">
+              <div>
+                <h2>${esc(activeObject.title || '')}</h2>
+                <p>${esc(activeObject.description || '')}</p>
+              </div>
+              <span class="badge">${state.objectId === 'workflow-engine' ? `${(data.suites || []).length} 个套件` : `${(data.task_tests || []).length} 个任务`}</span>
+            </div>
+            ${renderLevels(activeObject)}
+          </div>
+          ${renderDrawer()}
+        </section>`;
+      document.querySelectorAll('[data-object]').forEach(button => {
+        button.onclick = () => {
+          state.objectId = button.dataset.object;
+          state.selected = firstModule(state.data, state.objectId);
+          render();
+        };
+      });
+      document.querySelectorAll('[data-select]').forEach(button => {
+        button.onclick = () => {
+          const [kind, ...rest] = button.dataset.select.split(':');
+          state.selected = { kind, id: rest.join(':') };
+          render();
+        };
+      });
+      document.querySelectorAll('[data-run-kind]').forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          runTest(button.dataset.runKind, button.dataset.runId, button);
+        };
+      });
+    }
+
+    function renderLevels(activeObject) {
+      const levels = activeObject.levels || [];
+      return levels.map(level => {
+        const modules = modulesForLevel(activeObject.id, level.id);
+        return `
+          <div class="level">
+            <div class="level-title">
+              <h3>${esc(level.title)}</h3>
+              <span class="count">${modules.length} 项</span>
+            </div>
+            ${modules.length ? `<div class="module-grid">${modules.map(renderModule).join('')}</div>` : `<div class="empty">暂无${esc(level.title)}模块</div>`}
+          </div>`;
+      }).join('');
+    }
+
+    function renderModule(module) {
+      const selected = state.selected && selectedKey(module) === selectedKey(state.selected);
+      return `
+        <div class="module ${selected ? 'selected' : ''}" data-select="${esc(selectedKey(module))}">
+          <div class="module-top">
+            <div>
+              <div class="module-name">${esc(module.name)}</div>
+              <div class="module-meta">${esc(module.meta || '')}</div>
+            </div>
+            <span class="badge ${esc(module.status)}">${esc(statusText(module.status))}</span>
+          </div>
+          ${module.coverage != null ? `<div class="bar"><i style="width:${module.coverage}%"></i></div>` : ''}
+          <div class="module-actions">
+            <span class="badge">${esc(module.statusLabel || '')}</span>
+            ${module.runnable ? `<button class="primary" data-run-kind="${esc(module.kind)}" data-run-id="${esc(module.id)}">启动测试</button>` : `<button disabled>未接入</button>`}
+          </div>
+        </div>`;
+    }
+
+    function renderDrawer() {
+      const module = getSelectedModule();
+      if (!module) return `<aside class="drawer"><div class="empty">请选择一个测试模块</div></aside>`;
+      if (state.selected.kind === 'suite') return renderSuiteDrawer(module);
+      return renderTaskDrawer(module);
+    }
+
+    function renderSuiteDrawer(module) {
+      return `
+        <aside class="drawer">
+          <div class="drawer-head">
+            <h2>${esc(module.name)}</h2>
+            <div class="sub">${esc(module.level_label)} · ${esc(module.signal)}</div>
+          </div>
+          <div class="drawer-body">
+            <div class="detail-block">
+              <h3>执行命令</h3>
+              <div class="output">${esc(module.command)}</div>
+            </div>
+            <div class="detail-block">
+              <h3>覆盖范围</h3>
+              <div class="case"><div class="desc">${esc(module.scope)}</div></div>
+            </div>
+            <button class="primary" data-run-kind="suite" data-run-id="${esc(module.id)}">启动测试</button>
+            <div class="detail-block">
+              <h3>运行输出</h3>
+              <div class="output" id="runOutput">尚未启动测试。</div>
+            </div>
+          </div>
+        </aside>`;
+    }
+
+    function renderTaskDrawer(module) {
+      const data = state.data || {};
+      const cases = (data.cases || []).filter(item => item.epic === module.epic);
+      const gaps = module.blockers || [];
+      return `
+        <aside class="drawer">
+          <div class="drawer-head">
+            <h2>${esc(module.epic)}</h2>
+            <div class="sub">${esc(module.stage || '-')} · ${esc(module.file || '')}</div>
+          </div>
+          <div class="drawer-body">
+            <div class="facts">
+              <div class="fact"><b>${esc(pct(module.coverage_pct))}</b><span>验收标准覆盖</span></div>
+              <div class="fact"><b>${module.p0_covered || 0}/${module.p0_total || 0}</b><span>P0 测试覆盖</span></div>
+              <div class="fact"><b>${module.p0_dev_covered || 0}/${module.p0_total || 0}</b><span>P0 开发覆盖</span></div>
+              <div class="fact"><b>${module.case_count || 0}</b><span>测试 Case</span></div>
+            </div>
+            <div class="detail-block">
+              <h3>测试 Plan</h3>
+              <div class="case"><div class="title">${esc(module.test_status || '-')}</div><div class="desc"><code>${esc(module.test_plan || '无测试 plan')}</code></div></div>
+            </div>
+            <div class="detail-block">
+              <h3>测试 Case</h3>
+              <div class="case-list">${cases.length ? cases.map(renderCase).join('') : '<div class="empty">暂无测试 Case</div>'}</div>
+            </div>
+            <div class="detail-block">
+              <h3>缺口</h3>
+              <div class="gap-list">${gaps.length ? gaps.map(item => `<div class="gap"><div class="title">${esc(item)}</div></div>`).join('') : '<div class="empty">暂无缺口</div>'}</div>
+            </div>
+            <button class="primary" data-run-kind="task" data-run-id="${esc(module.file)}">启动测试</button>
+            <div class="detail-block">
+              <h3>运行输出</h3>
+              <div class="output" id="runOutput">尚未启动测试。</div>
+            </div>
+          </div>
+        </aside>`;
+    }
+
+    function renderCase(item) {
+      return `
+        <div class="case">
+          <div class="title">${esc(item.case_id)} · ${esc(item.level_label)} · ${esc(item.ac)}</div>
+          <div class="desc">${esc(item.description || '-')}</div>
+          <div class="desc">${esc(item.status || '-')} · <code>${esc(item.test_plan || '')}${item.line ? ':' + esc(item.line) : ''}</code></div>
+        </div>`;
+    }
+
+    async function runTest(kind, id, button) {
+      const out = $('runOutput');
+      if (!out) return;
+      button.disabled = true;
+      out.textContent = `运行中：${kind} ${id}`;
+      try {
+        const res = await fetch('/api/test-run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind, id })
+        });
+        const data = await res.json();
+        out.textContent = `${data.ok ? 'PASS' : 'FAIL'} · ${data.command}\n${data.started_at || ''} -> ${data.finished_at || ''}\n\n${data.output || ''}`;
+      } catch (error) {
+        out.textContent = `启动失败：${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
