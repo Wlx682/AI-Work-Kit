@@ -18,6 +18,7 @@
 #   3. 每个 Skill 在 Skills/ 有对应真理源文件存在
 #
 # 注意：Skills/<name>.md 的内容**不**与 stub 强制字节相等（master 是长文档，stub 是短入口）；只检查存在性。
+# --sync 会清理项目生成端中不在 .cursor/skills 的旧目录；全局副本只覆盖项目同名，保留用户自装。
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -151,6 +152,30 @@ if [ "$MODE" = "--sync" ]; then
     cp -r "$d" "$CODEX_DIR/$name"
   done
   echo "已同步 .cursor → .claude / .codex"
+
+  # 1.5) 清理项目生成端旧 Skill，保证 --sync 后 --check 可直接通过。
+  # 全局目录不做清理；那里可能包含用户自装 Skill，只覆盖项目同名。
+  cleaned=0
+  for d in "$CLAUDE_DIR"/*/; do
+    [ -d "$d" ] || continue
+    name=$(basename "$d")
+    if ! printf '%s\n' "$cursor_names" | grep -Fxq "$name"; then
+      rm -rf "$d"
+      cleaned=$((cleaned + 1))
+    fi
+  done
+  for d in "$CODEX_DIR"/*/; do
+    [ -d "$d" ] || continue
+    name=$(basename "$d")
+    [ "$name" = ".system" ] && continue
+    if ! printf '%s\n' "$cursor_names" | grep -Fxq "$name"; then
+      rm -rf "$d"
+      cleaned=$((cleaned + 1))
+    fi
+  done
+  if [ "$cleaned" -gt 0 ]; then
+    echo "已清理项目生成端旧 Skill（${cleaned} 项）"
+  fi
 
   # 2) 项目生成端 → 全局 ~/.claude/skills 与 ~/.codex/skills（仅覆盖项目内 Skill 名称，保留用户自装的）
   GLOBAL_CLAUDE_DIR="$HOME/.claude/skills"

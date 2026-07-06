@@ -24,7 +24,7 @@
 # 1. 干跑校验，看清差异（默认模式，只读不写）
 ./scripts/sync-claude-skills.sh --check
 
-# 2. 部署：以 .cursor/skills 为基准覆盖生成端 + 全局副本
+# 2. 部署：以 .cursor/skills 为基准覆盖生成端 + 全局同名副本，并清理项目生成端旧 Skill
 ./scripts/sync-claude-skills.sh --sync
 
 # 3. 复校验，期望「✓ 多端一致：N 个 Skill」
@@ -37,7 +37,9 @@
 
 ## 注意
 
-- `--sync` 会 `rm -rf` 目标端同名目录再复制，是预期覆盖行为；全局只动项目内同名 Skill，不碰用户自装的。
+- `--sync` 会 `rm -rf` 目标端同名目录再复制，是预期覆盖行为。
+- 项目生成端会自动删除 `.cursor/skills` 已不存在的旧 Skill，避免同步后还需手动清理才能通过 `--check`。
+- 全局只动项目内同名 Skill，不碰用户自装的。
 - 若报「Skills/ 缺真理源」，先补 `Skills/<name>.md` 再 `--sync`。
 - 幂等，可安全重复执行。
 
