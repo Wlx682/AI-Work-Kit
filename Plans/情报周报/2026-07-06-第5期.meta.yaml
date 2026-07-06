@@ -1,0 +1,33 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-06            # 第 5 期
+  article:
+    title_cn: "一群 Claude 并行造出一个 C 编译器：没有总指挥，靠抢锁自己分工"
+    title_en: "Building a C compiler with a team of parallel Claudes"
+    url: https://www.anthropic.com/engineering/building-c-compiler
+    source: Anthropic Engineering
+    score: 47                 # 一手15/实操15/时效8/覆盖4/讨论5
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 对 4 篇 DocShark 候选打分（A 47/B 46/C 40/D 38），A「并行造编译器」讨论性最高且与本 Kit Workflow 并行编排最贴合而入选
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: 确认本篇与第 1-4 期（harness/spec-kit/managed-agents/context-engineering）主题不重复；据历史入选记录判源健康
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: DocShark anthropic-eng 库作为官方结构化文档源兜底；WebSearch 区域受限时的降级路径依此判定
+    - path: Plans/情报周报/2026-07-04-第3期.html
+      utility: high
+      reason: 复用已过浏览器自检的 .html 技术基线（深色科技感 + hero SVG + mermaid loose/dark + count-up + auto-fit 栅格 + 渐进增强兜底），只换内容不重造骨架
+  contexts_missing:            # ← capability_gap：读本篇暴露的 Kit 能力缺口
+    - "Workflow 自主认领任务模式（抢锁）：现有 parallel/pipeline 是主控预分派，缺 agent 自己抢未做任务的机制，适配任务数量事先不确定的扫描式修复/不定量 bug 收集"
+    - "门禁设计原则：验证器可靠性 = AI 自主的安全边界。任何让 AI 自主推进的环节，其门禁/验证器可靠性决定放手程度，应写进 Contexts/决策/ 门禁相关协议"
+    - "质量维度专职 agent：review 阶段固定并行跑去重/一致性/文档同步等维度专职 agent，而非只在收尾单点 review；simplify/code-review 类 Skill 补「查重复实现」检查项"
+  contexts_stale: []
+  utility: high
+  utility_reason: "本篇是多 agent 协作落地的极简一手实践，几乎逐点印证本 Kit 现有能力（worktree 隔离 / pre-commit 验证器 / 子 Agent 分工），且点出三处具体可补项，复用建议落到 Workflow 能力与门禁协议"
+  notes: |
+    source_stale_warning: follow 名单中的个人账号种子源 Boris Cherny / Cat Wu / Fiona Fung / Andrej Karpathy 连续 5 期（第1-5期）均无入选文章。判据来自已发去重清单：5 期入选全部来自 org engineering blog（Anthropic Eng ×4、GitHub ×1），个人账号零命中。
+    根因（连续 5 期稳定复现，已非偶发）：本环境 WebSearch 区域受限 + WebFetch 网关模型映射失败，X/个人博客单帖抓不到，只能靠 DocShark 结构化文档站兜底，而个人账号内容不在结构化文档站。
+    强烈建议本期后人工复核 follow 名单：种子源与实际可抓取能力已连续 5 期不匹配。建议要么给个人源补可抓取镜像（RSS/博客全文入 DocShark），要么正式把名单主结构从个人账号改为 org engineering blog（Anthropic Eng / OpenAI / GitHub Eng / 其他一手工程博客），把个人账号降为「人工补充」注脚。
