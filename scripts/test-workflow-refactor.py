@@ -56,7 +56,7 @@ def wbs_table(rows: list[int]) -> str:
 class WorkflowRefactorTests(unittest.TestCase):
     maxDiff = None
 
-    def test_router_skill_is_synced_and_legacy_full_cycle_assistant_removed(self) -> None:
+    def test_router_skill_is_synced(self) -> None:
         router_paths = [
             ROOT / ".cursor/skills/workflow-router/SKILL.md",
             ROOT / ".claude/skills/workflow-router/SKILL.md",
@@ -69,20 +69,11 @@ class WorkflowRefactorTests(unittest.TestCase):
             self.assertIn("workflow-router", text)
             self.assertIn("workflow-gate", text)
 
-        legacy_paths = [
-            ROOT / ".cursor/skills/full-cycle-assistant/SKILL.md",
-            ROOT / ".claude/skills/full-cycle-assistant/SKILL.md",
-            ROOT / ".codex/skills/full-cycle-assistant/SKILL.md",
-            ROOT / "Skills/full_cycle_assistant.md",
-        ]
-        for path in legacy_paths:
-            self.assertFalse(path.exists(), f"旧入口仍存在: {path}")
-
     def test_client_dev_blueprint_has_manifest_driven_full_workflow(self) -> None:
         bp = json.loads((ROOT / ".workflows/blueprints/client-dev.json").read_text(encoding="utf-8"))
         self.assertTrue(bp["usesEpic"])
         self.assertEqual(bp["gateScript"], "scripts/workflow-gate.sh")
-        self.assertEqual(bp["bootScript"], "scripts/full-cycle-boot.sh")
+        self.assertEqual(bp["bootScript"], "scripts/workflow-board-boot.sh")
         self.assertEqual(bp["epicTemplate"], "Templates/Epic模板-client-dev.md")
         self.assertTrue(bp["epicRequired"])
         self.assertTrue(bp["startup"]["createBoard"])
@@ -472,6 +463,66 @@ class WorkflowRefactorTests(unittest.TestCase):
         )
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/client-dev.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/computer-mgmt.json", proc.stdout)
+        self.assertIn("OK:workflow-blueprint:.workflows/blueprints/learning-agent-dev.json", proc.stdout)
+
+    def test_learning_agent_dev_blueprint_is_test_first_and_project_based(self) -> None:
+        bp = json.loads((ROOT / ".workflows/blueprints/learning-agent-dev.json").read_text(encoding="utf-8"))
+        self.assertTrue(bp["usesEpic"])
+        self.assertTrue(bp["epicRequired"])
+        self.assertEqual(bp["epicTemplate"], "Templates/Epic模板-learning-agent-dev.md")
+        self.assertEqual(bp["planRoot"], "Plans/学习")
+        self.assertEqual(bp["cycle"]["unit"], "knowledge-point")
+        self.assertEqual(bp["cycle"]["nextRoundFrom"], "retro")
+        self.assertIn("每个知识点", bp["cycle"]["repeatPolicy"])
+
+        stages = [stage["key"] for stage in bp["stages"]]
+        self.assertEqual(
+            stages,
+            ["topic", "theory", "test-first", "project-setup", "tool-build", "integration-run", "retro"],
+        )
+        self.assertLess(stages.index("test-first"), stages.index("project-setup"))
+        self.assertLess(stages.index("project-setup"), stages.index("tool-build"))
+
+        project_stage = next(stage for stage in bp["stages"] if stage["key"] == "project-setup")
+        self.assertEqual(project_stage["label"], "工程与技术选型")
+        self.assertEqual(project_stage["planFolder"], "Plans/学习")
+        self.assertEqual(project_stage["epicField"], "project_setup")
+        self.assertEqual(project_stage["planPrefix"], "工程选型")
+        self.assertEqual(project_stage["skills"], ["learn-assistant"])
+        self.assertEqual(project_stage["wbsSlices"], [4])
+        self.assertTrue(project_stage["exitCriteria"]["childPlanExists"])
+        self.assertTrue(project_stage["exitCriteria"]["skillRun"])
+
+    def test_kanban_shows_learning_epic_and_lightweight_workflows(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_learning_agent_epic_fixture(tmp)
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            data = mod.board_envelope()
+
+        learning = next((item for item in data["epics"] if item["name"] == "learning-fixture"), None)
+        self.assertIsNotNone(learning)
+        assert learning is not None
+        self.assertEqual(learning["current_stage"], "theory")
+        self.assertEqual(learning["slices_done"], 1)
+        self.assertEqual(learning["slices_total"], 7)
+        self.assertEqual(learning["slices"][0]["stage_key"], "topic")
+        self.assertEqual(learning["slices"][0]["related_plan"], "Plans/学习/learning-topic.md")
+
+        lightweight_names = {item["name"] for item in data["lightweight"]}
+        self.assertIn("ui-change", lightweight_names)
+        self.assertIn("bugfix", lightweight_names)
+        self.assertNotIn("learning-agent-dev", lightweight_names)
 
     def test_workflow_run_start_creates_instance_and_event(self) -> None:
         with self.fixture_repo() as tmp:
@@ -615,9 +666,6 @@ class WorkflowRefactorTests(unittest.TestCase):
             "开始做这个项目：会员权益": "client-dev",
             "启动项目，做订单售后模块": "client-dev",
             "启动全流程：会员中心重构": "client-dev",
-            "/full-cycle 模块=订单筛选": "client-dev",
-            "/full-cycle": "client-dev",
-            "full-cycle 新建支付模块": "client-dev",
             "全流程闭环做一下搜索页": "client-dev",
             "从0到1做个客户端功能": "client-dev",
             "新需求：客户端弹窗改版": "client-dev",
@@ -639,12 +687,14 @@ class WorkflowRefactorTests(unittest.TestCase):
             "电脑备份走一遍": "computer-mgmt",
             "备份电脑关键配置": "computer-mgmt",
             "整理电脑启动项和大文件": "computer-mgmt",
-            "/full-cycle 帮我清理电脑": "computer-mgmt",
             "workflow=computer-mgmt 帮我跑一下": "computer-mgmt",
             "工作流:computer-mgmt 帮我清理": "computer-mgmt",
             "/workflow computer-mgmt 先盘点": "computer-mgmt",
             "workflow=client-dev 启动这个项目": "client-dev",
             "工作流：client-dev 做订单模块": "client-dev",
+            "继续创建学习工作流": "learning-agent-dev",
+            "我想学习智能体开发": "learning-agent-dev",
+            "workflow=learning-agent-dev 继续": "learning-agent-dev",
             "帮我改一下 UI": "ui-change",
             "Figma还原这个卡片": "ui-change",
             "线上报错帮我修bug": "bugfix",
@@ -779,7 +829,7 @@ class WorkflowRefactorTests(unittest.TestCase):
 
     def test_workflow_smoke_script_covers_lightweight_workflows(self) -> None:
         proc = subprocess.run(
-            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only"],
+            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only", "learning-agent-dev"],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,
@@ -789,6 +839,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:learning-agent-dev", proc.stdout)
 
     def test_workflow_smoke_script_can_start_from_utterance(self) -> None:
         proc = subprocess.run(
@@ -1369,6 +1420,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "Plans/电脑管理",
                     "Plans/界面开发",
                     "Plans/Bug排查",
+                    "Plans/学习",
                 ]:
                     (self.root / plan_dir).mkdir(parents=True, exist_ok=True)
                 write_file(self.root / "Contexts/决策/Skill反馈协议.md", "# Skill反馈协议\n")
@@ -1558,6 +1610,66 @@ class WorkflowRefactorTests(unittest.TestCase):
         {skill_run("feature-dev-assistant", "Plans/功能开发/fixture.md")}
         """
         write_file(root / "Plans/功能开发/fixture.md", development)
+
+    @staticmethod
+    def create_learning_agent_epic_fixture(root: Path) -> None:
+        write_file(
+            root / "Plans/Epic/learning-fixture.md",
+            """
+            ---
+            project: learning-fixture
+            workflow: learning-agent-dev
+            topic: 智能体路由MVP
+            repo: /Users/wanglongxiang/git/agent-workflow-dev
+            branch: main
+            含业务逻辑: 否
+            p0_open: 0
+            plans:
+              topic: Plans/学习/learning-topic.md
+              theory: null
+              test: null
+              project_setup: null
+              tool_build: null
+              integration_run: null
+              retro: null
+            ---
+
+            # Learning Fixture
+
+            ## 三、WBS
+
+            ```
+            [x] 1. 选题与边界
+            [ ] 2. 理论输入
+            [ ] 3. 测试先行
+            [ ] 4. 工程与技术选型
+            [ ] 5. 工具实现
+            [ ] 6. 接入试跑
+            [ ] 7. 效果复盘
+            ```
+            """,
+        )
+        write_file(
+            root / "Plans/学习/learning-topic.md",
+            f"""
+            ---
+            status: 已采纳
+            workflow: learning-agent-dev
+            workflow_stage: topic
+            epic: Plans/Epic/learning-fixture.md
+            ---
+
+            # 选题 fixture
+
+            ## 三、WBS
+
+            ```
+            [x] 1. 选题与边界
+            ```
+
+            {skill_run("learn-assistant", "Plans/学习/learning-topic.md")}
+            """,
+        )
 
     @staticmethod
     def create_traceability_fixture(

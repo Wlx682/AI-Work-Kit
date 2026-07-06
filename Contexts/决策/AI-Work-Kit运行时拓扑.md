@@ -33,7 +33,7 @@ flowchart TB
 
     subgraph BRAIN["🧠 控制层 · 谁在决策"]
         ROUTER["workflow-router<br/>自然语言入口 + 路由硬规则"]
-        ENGINE["full-cycle 引擎<br/>读蓝图 client-dev / computer-mgmt"]
+        ENGINE["具体 workflow 蓝图 + 执行器<br/>client-dev / computer-mgmt / learning-agent-dev"]
         ROUTER --> ENGINE
     end
 
@@ -89,7 +89,7 @@ flowchart TB
 
 ## 怎么读（四个灵魂问题各走一条线）
 
-1. **谁决策**（蓝）：用户意图 → `workflow-router` 按路由硬规则选 Skill → `full-cycle` 引擎读蓝图编排。Epic 用虚线**反哺**引擎派生阶段，但自己**不驱动**——「只存不驱动」是三层重构的核心。
+1. **谁决策**（蓝）：用户意图 → `workflow-router` 按路由硬规则选具体 workflow → 执行器读对应蓝图编排。Epic 用虚线**反哺**阶段派生，但自己**不驱动**——「只存不驱动」是三层重构的核心。
 2. **谁干活**（黄）：Skill 是唯一动手的层，读写 `Plans/`。互斥锁保证单阶段词不被劫持成全流程。
 3. **谁保质量**（黑框 `🚦` = 贯穿机制①）：所有写入都得**过闸** `plan-gate-check.sh`——向左查 `Contexts/` 的协议规范，向上受 `Templates/` 骨架约束，四道校验任一失败即 BLOCKED。这是横向拦截。
 4. **怎么进化**（红 = 贯穿机制②）：有 plan 的 Skill 收工写 `skill_run`，无 plan 的反馈只归入孤立反馈 `待整理/已归位` → `vault-evolve` 月度聚合 → 回流**修正 Contexts 的宪法/协议** → 协议又反过来收紧门禁。库自己体检、纠错、沉淀。

@@ -1,9 +1,9 @@
 ---
 name: feature-dev-assistant
 description: >-
-  功能/模块开发（方案已定后落地写代码）。须挂 Epic；无 Epic 改走 full-cycle。
+  功能/模块开发（方案已定后落地写代码）。须挂 Epic；无 Epic 改走 workflow-router。
   触发词：开发[模块]功能、实现[目标]、写[模块]代码、开始写代码、做这个功能、落地这个方案、做功能、开发模块、功能开发、/dev、/feature-dev-assistant。
-  不响应：全流程开发→full-cycle；需求/PRD→requirement-analyst；架构/技术方案→architecture-design-assistant；仅 UI→figma-ui。
+  不响应：全流程开发→workflow-router；需求/PRD→requirement-analyst；架构/技术方案→architecture-design-assistant；仅 UI→figma-ui。
 ---
 
 # 功能开发助手
@@ -19,7 +19,7 @@ Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
 
 **不响应**：
 
-- 「全流程开发 / 启动项目」→ `full-cycle` 引擎（蓝图 manifest）
+- 「全流程开发 / 启动项目」→ `workflow-engine`（蓝图 manifest）
 - 「需求分析 / PRD」→ `requirement-analyst`
 - 「架构 / 技术方案」→ `architecture-design-assistant`
 - 「只做界面 / 还原 Figma」→ `figma-ui`（无业务逻辑时）

@@ -42,7 +42,7 @@
 /resume plan=Plans/【分类】/{{date}}-{{title}}.md 进度=【】
 ```
 
-当 `workflow-router` 因 `client-dev` 缺 Epic 推荐本 Skill 时，任务类型固定为 Epic，必须生成 `Plans/Epic/xxx.md`，然后提示重新运行 `bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`。
+当 `workflow-router` 因 `client-dev` 缺 Epic 推荐本 Skill 时，任务类型固定为 Epic，必须生成 `Plans/Epic/xxx.md`，然后提示重新运行 `bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`。
 
 ## 触发示例
 

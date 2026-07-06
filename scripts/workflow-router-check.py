@@ -11,7 +11,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW_DIR = ROOT / ".workflows" / "blueprints"
-DEFAULT_WORKFLOW = "client-dev"
 
 
 @dataclass(frozen=True)
@@ -40,14 +39,6 @@ def load_blueprints() -> list[dict]:
     return blueprints
 
 
-def load_engine_triggers() -> list[str]:
-    index = WORKFLOW_DIR / "full-cycle.json"
-    if not index.exists():
-        return []
-    data = json.loads(index.read_text(encoding="utf-8"))
-    return [str(item) for item in data.get("triggerPhrases", []) if str(item).strip()]
-
-
 def explicit_workflow(utterance: str, blueprints: list[dict]) -> tuple[bool, str | None]:
     names = {bp["name"] for bp in blueprints}
     patterns = [
@@ -63,17 +54,6 @@ def explicit_workflow(utterance: str, blueprints: list[dict]) -> tuple[bool, str
             return True, name
         return True, None
     return False, None
-
-
-def engine_trigger_hits(utterance: str) -> list[str]:
-    norm = normalize(utterance)
-    hits = []
-    for phrase in load_engine_triggers():
-        phrase_norm = normalize(phrase)
-        if phrase_norm and phrase_norm in norm:
-            hits.append(phrase)
-    return hits
-
 
 def route(utterance: str) -> Match:
     blueprints = load_blueprints()
@@ -99,9 +79,6 @@ def route(utterance: str) -> Match:
 
     candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
     if not candidates or candidates[0][0] <= 0:
-        engine_hits = engine_trigger_hits(utterance)
-        if engine_hits:
-            return Match(DEFAULT_WORKFLOW, True, 100, engine_hits, "engine-default")
         return Match(None, False, 0, [], "no-trigger-hint")
 
     top_score, top_name, top_hits = candidates[0]

@@ -12,9 +12,9 @@
     "requireEpicBeforeBoot": true,
     "createEpicSkill": "template-generator",
     "createEpicTemplate": "Templates/Epic模板-client-dev.md",
-    "bootCommand": "bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md"
+    "bootCommand": "bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md"
   },
-  "bootScript": "scripts/full-cycle-boot.sh",
+  "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
   "constitution": ".workflows/constitution.json",
   "triggerHints": [
@@ -28,6 +28,8 @@
     "从0到1",
     "全流程开发",
     "全流程闭环",
+    "启动全流程",
+    "开始做这个项目",
     "启动项目",
     "一条龙"
   ],

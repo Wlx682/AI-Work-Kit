@@ -1,7 +1,7 @@
 export const meta = {
-  name: 'full-cycle',
+  name: 'workflow-engine',
   description: '通用工作流编排引擎：读蓝图 manifest → 机械门禁（只看子 Plan 事实）→ 执行当前 Skill。蓝图决定阶段链，Epic 仅作数据上下文，不驱动流程。',
-  whenToUse: '用户说「开始做这个项目」「全流程开发」「full-cycle」「电脑管理」「帮我清理电脑」，或任意蓝图触发词时',
+  whenToUse: '用户说「开始做这个项目」「全流程开发」「电脑管理」「帮我清理电脑」，或任意蓝图触发词时',
   phases: [
     { title: '选蓝图与启动', detail: '参数/Epic字段/自然语言 选蓝图 + boot 看板' },
     { title: '机械门禁定位', detail: 'workflow-gate.sh 逐 stage 查子 Plan 事实' },
@@ -59,7 +59,7 @@ const resolveSetup = await agent(
   `d) 都无法确定 → 默认 client-dev，并在 workflow_reason 注明「默认，建议向用户确认」。\n` +
   `\n## 3. 启动看板 + 机械门禁\n` +
   `选定蓝图后（记其 name 为 WF，usesEpic 为 UE）依次运行：\n` +
-  `1. \`./scripts/full-cycle-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>&1 || true\`（UE=false 的蓝图看板可选；取 stdout 中 KANBAN_URL= 后地址放 kanban_url）\n` +
+  `1. \`./scripts/workflow-board-boot.sh ${epicPath ? `--epic ${epicPath} ` : ''}2>&1 || true\`（UE=false 的蓝图看板可选；取 stdout 中 KANBAN_URL= 后地址放 kanban_url）\n` +
   `2. \`./scripts/workflow-gate.sh --workflow <WF> ${gateArg}\`（人类可读，放 gate_text）\n` +
   `3. \`./scripts/workflow-gate.sh --workflow <WF> ${gateArg} --json\`（放 gate_json，原样不解析）\n` +
   `\n返回：workflow=选定蓝图 name，uses_epic=其 usesEpic，workflow_reason=依据，boot_ok=第1步是否成功，其余同名字段。不要改写脚本输出。`,

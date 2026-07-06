@@ -31,8 +31,6 @@ LEGACY_TERMS = {
     "Templates/Epic母版-client-dev.md": "Use Templates/Epic模板-client-dev.md.",
     "Skills/figma_ui_assistant.md": "Use Skills/figma_ui.md.",
     "figma_ui_assistant": "Use figma-ui / Skills/figma_ui.md.",
-    "full_cycle_assistant": "Use workflow-router + full-cycle engine.",
-    "full-cycle-assistant": "Use workflow-router + full-cycle engine.",
     ".Codex/": "Use .codex/ for skills and .workflows/blueprints/ for workflows.",
     ".codex/workflows": "Use .workflows/blueprints/.",
 }

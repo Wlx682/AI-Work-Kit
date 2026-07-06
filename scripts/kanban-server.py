@@ -463,6 +463,7 @@ def _test_health(plan_by_stage: dict[str, str], plans: list[dict[str, Any]]) -> 
 def scan_epic(path: Path) -> dict[str, Any]:
     fm, _, _ = read_frontmatter(path)
     rel = str(path.relative_to(ROOT))
+    workflow = fm.get("workflow")
     slices = parse_wbs_slices(path)
     wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
@@ -489,7 +490,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
                 "derived_from": derived_from,
                 "label": s["label"],
                 "title": tbl.get("title") or s["label"],
-                "summary": SLICE_SUMMARY.get(n, ""),
+                "summary": SLICE_SUMMARY.get(n, "") if workflow in ("", "client-dev", None) else "",
                 "skill": tbl.get("skill", ""),
                 "input": tbl.get("input", ""),
                 "output": tbl.get("output", ""),
@@ -526,6 +527,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "file": rel,
         "name": path.stem,
         "epic_id": fm.get("epic_id", ""),
+        "workflow": workflow,
         "status": fm.get("status", ""),
         "lifecycle_state": fm.get("lifecycle_state", ""),
         "p0_open": p0,
@@ -546,28 +548,27 @@ def scan_epic(path: Path) -> dict[str, Any]:
 
 def board_revision() -> str:
     epic_dir = ROOT / "Plans" / "Epic"
-    if not epic_dir.is_dir():
-        return "0"
     parts: list[str] = []
-    for f in sorted(epic_dir.glob("*.md")):
-        if f.name.startswith("."):
-            continue
-        st = f.stat()
-        parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
-    # 看板切片状态派生自子 Plan（事实源），故子 Plan 变更也须触发前端刷新。
-    child_seen: set[str] = set()
-    for f in sorted(epic_dir.glob("*.md")):
-        if f.name.startswith("."):
-            continue
-        for p in parse_plans_block(f):
-            rel = p.get("path")
-            if not rel or rel in child_seen:
+    if epic_dir.is_dir():
+        for f in sorted(epic_dir.glob("*.md")):
+            if f.name.startswith("."):
                 continue
-            child_seen.add(rel)
-            pf = ROOT / rel if not Path(rel).is_absolute() else Path(rel)
-            if pf.is_file():
-                st = pf.stat()
-                parts.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
+            st = f.stat()
+            parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
+        # 看板切片状态派生自子 Plan（事实源），故子 Plan 变更也须触发前端刷新。
+        child_seen: set[str] = set()
+        for f in sorted(epic_dir.glob("*.md")):
+            if f.name.startswith("."):
+                continue
+            for p in parse_plans_block(f):
+                rel = p.get("path")
+                if not rel or rel in child_seen:
+                    continue
+                child_seen.add(rel)
+                pf = ROOT / rel if not Path(rel).is_absolute() else Path(rel)
+                if pf.is_file():
+                    st = pf.stat()
+                    parts.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
     # 工作流页数据源在 .workflows/ 与反馈文件，也须纳入 revision，否则事件/蓝图更新页面不刷新。
     wf_globs = [
         BLUEPRINT_DIR.glob("*.json"),
@@ -579,6 +580,15 @@ def board_revision() -> str:
             if f.is_file():
                 st = f.stat()
                 parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
+    for bp in read_blueprints():
+        if bp.get("uses_epic") or bp.get("kind") == "engine-index":
+            continue
+        for stage in bp.get("stages", []):
+            folder = ROOT / str(stage.get("plan_folder") or "")
+            if folder.is_dir():
+                for f in sorted(folder.glob("*.md")):
+                    st = f.stat()
+                    parts.append(f"{bp.get('name')}:{stage.get('key')}:{f.name}:{st.st_mtime_ns}:{st.st_size}")
     return str(hash(tuple(parts)))
 
 
@@ -592,6 +602,60 @@ def board_payload() -> list[dict[str, Any]]:
             continue
         out.append(scan_epic(f))
     return out
+
+
+def _latest_stage_plan(stage: dict[str, Any]) -> dict[str, Any] | None:
+    folder = ROOT / str(stage.get("plan_folder") or "")
+    if not folder.is_dir():
+        return None
+    prefix = str(stage.get("plan_prefix") or stage.get("key") or "")
+    candidates = [f for f in folder.glob("*.md") if not prefix or prefix in f.name]
+    if not candidates:
+        return None
+    latest = max(candidates, key=lambda f: f.stat().st_mtime_ns)
+    rel = str(latest.relative_to(ROOT))
+    fm, _, _ = read_frontmatter(latest)
+    return {"path": rel, "status": fm.get("status", ""), "updated_ns": latest.stat().st_mtime_ns}
+
+
+def lightweight_payload() -> list[dict[str, Any]]:
+    """无 Epic 轻流程看板数据。学习流程已升级为 Epic，此处展示仍为无 Epic 的轻流程。"""
+    items: list[dict[str, Any]] = []
+    for bp in read_blueprints():
+        if bp.get("uses_epic") or bp.get("kind") == "engine-index":
+            continue
+        stages = []
+        current = "done"
+        blocked = False
+        for stage in bp.get("stages", []):
+            plan = _latest_stage_plan(stage)
+            done = bool(plan)
+            if not done and current == "done":
+                current = str(stage.get("key") or "")
+                blocked = True
+            stages.append(
+                {
+                    "key": stage.get("key", ""),
+                    "label": stage.get("label", stage.get("key", "")),
+                    "skill": stage.get("skill", ""),
+                    "plan": plan,
+                    "done": done,
+                }
+            )
+        total = len(stages)
+        done_count = sum(1 for s in stages if s.get("done"))
+        items.append(
+            {
+                "name": bp.get("name", ""),
+                "description": bp.get("description", ""),
+                "current_stage": current,
+                "blocked": blocked,
+                "stages_done": done_count,
+                "stages_total": total,
+                "stages": stages,
+            }
+        )
+    return items
 
 
 def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
@@ -677,12 +741,15 @@ def read_blueprints() -> list[dict[str, Any]]:
                     "key": s.get("key", ""),
                     "label": s.get("label", s.get("key", "")),
                     "skill": (s.get("skills") or [""])[0],
+                    "plan_folder": s.get("planFolder", ""),
+                    "plan_prefix": s.get("planPrefix", ""),
                     "exit": [k for k, v in crit.items() if v],
                     "onlyIf": s.get("onlyIf") or {},
                 }
             )
         out.append(
             {
+                "kind": d.get("kind", ""),
                 "name": d.get("name", f.stem),
                 "version": d.get("version", ""),
                 "uses_epic": bool(d.get("usesEpic")),
@@ -1162,6 +1229,7 @@ def board_envelope() -> dict[str, Any]:
         "revision": board_revision(),
         "updated_at": datetime.now().isoformat(timespec="seconds"),
         "epics": epics,
+        "lightweight": lightweight_payload(),
         "kpi": aggregate_kpi(epics),
     }
 

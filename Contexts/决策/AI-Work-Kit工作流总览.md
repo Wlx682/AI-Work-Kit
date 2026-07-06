@@ -26,25 +26,25 @@ relations:
 ## 一、怎么用（给同事）
 
 1. 打开 Vault + AI 编辑器（Cursor / Claude Code / Codex 任选；或业务仓 + 全局 Skill）。
-2. **新需求** → 自然语言或 `/full-cycle 模块=XX`，先命中 `workflow-router`，再自动选蓝图 client-dev。
-3. **其它工作流** → 自然语言即可（如「帮我清理电脑」→ `workflow-router` → computer-mgmt），或 `/full-cycle workflow=computer-mgmt`。
+2. **新需求** → 自然语言说清任务类型（如「全流程开发支付收银台」），先命中 `workflow-router`，再选具体蓝图 `client-dev`。
+3. **其它工作流** → 自然语言即可（如「帮我清理电脑」→ `workflow-router` → `computer-mgmt`），或显式 `workflow=<name>`。
 4. **轻流程建 plan** → `python3 scripts/workflow-plan-init.py --workflow ui-change --title 卡片`；需要一次生成全部阶段则加 `--all`。
 5. **续做** → `/resume plan=Plans/... 进度=...`。
 6. **看当前卡点** → `python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md`。
-7. **看 WBS** → `./scripts/full-cycle-boot.sh` → http://127.0.0.1:7777/
+7. **看 WBS** → `./scripts/workflow-board-boot.sh` → http://127.0.0.1:7777/
 
 ---
 
 ## 二、三层架构（积木框架）
 
-`workflow-router` 是**自然语言入口 Skill**；`full-cycle` 是**通用编排引擎**。不同 Skill/模板/脚本通过**蓝图 manifest** 组合成不同工作流。
+`workflow-router` 是**自然语言入口 Skill**；路由只面向具体 workflow 蓝图，不路由到抽象引擎。通用执行器只在已选中具体 workflow 后负责启动看板和门禁，不参与业务意图竞争。
 
 | 层 | 组件 | 职责 |
 |----|------|------|
 | **入口**（路由层） | `workflow-router` | 把自然语言映射到 workflow 蓝图；只启动引擎，不做阶段工作 |
 | **状态外壳**（UX 层） | `workflow-status.py` | 把 `workflow-gate --json` 翻译成「当前 / 卡点 / 下一步 / 继续」 |
 | **积木**（执行层） | 各子 Skill（requirement-analyst 等） | 读写 Plan 文件，干具体活 |
-| **状态机**（控制层） | `full-cycle` 引擎 + 工具中性蓝图 `.workflows/blueprints/<name>.json` | 读蓝图决定下一阶段调哪个 Skill；维护 workflow run 游标 |
+| **状态机**（控制层） | 具体 workflow 蓝图 + 通用执行器 | 读 `.workflows/blueprints/<name>.json` 决定下一阶段调哪个 Skill；维护 workflow run 游标 |
 | **数据上下文**（持久层） | Epic Plan（`Plans/Epic/`） | **只存不驱动**：子 Plan 路径映射、WBS 人工确认板、里程碑摘要 |
 
 **Epic 的硬边界**：
@@ -61,6 +61,7 @@ relations:
 | `ui-change`       | 否        | 纯 UI 小改（范围确认→实现自检→复核）            | `workflow-plan-init.py` 生成阶段 plan |
 | `bugfix`          | 否        | Bug 修复（复现→定位→修复→回归）              | `workflow-plan-init.py` 生成阶段 plan |
 | `task-split-only` | 否        | 只拆任务（拆分→复核），不进入代码实现              | `workflow-plan-init.py` 生成阶段 plan |
+| `learning-agent-dev` | 是     | 智能体开发学习（每个知识点一个 Epic：理论→测试→工程选型→实现→接入→复盘） | `Templates/Epic模板-learning-agent-dev.md` |
 
 新增蓝图：在 `.workflows/blueprints/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号），并跑 `python3 scripts/validate-workflow-blueprint.py`。
 
@@ -88,7 +89,7 @@ stateDiagram-v2
 | 任务 | 说法 | plan |
 |------|------|------|
 | Bug | `workflow=bugfix` 或 `python3 scripts/workflow-plan-init.py --workflow bugfix --title xxx` | `Plans/Bug排查/` |
-| 学习 | `/learn-assistant` | `Plans/学习/` |
+| 学习 | `/learn-assistant`；智能体开发学习可用 `workflow=learning-agent-dev` + 学习 Epic | `Plans/Epic/` + `Plans/学习/` |
 | 纯 UI 小改 | `workflow=ui-change` 或 `python3 scripts/workflow-plan-init.py --workflow ui-change --title xxx` | `Plans/界面开发/` |
 | 只拆任务 | `workflow=task-split-only` 或 `python3 scripts/workflow-plan-init.py --workflow task-split-only --title xxx` | `Plans/功能开发/` |
 | PM 对照表 | `/material-prep` | **Contexts/**（通用） |
@@ -98,25 +99,25 @@ stateDiagram-v2
 ## 四、看板与门禁
 
 ```bash
-./scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
+./scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
 python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
 bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md --json
 bash scripts/derive-epic-status.sh Plans/Epic/xxx.md      # 派生真实阶段（只读）
 bash scripts/kanban-sync.sh --boot --epic Plans/Epic/xxx.md
 bash scripts/plan-gate-check.sh Plans/功能开发/xxx.md
 python3 scripts/workflow-plan-init.py --workflow ui-change --title 卡片
-python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only
+python3 scripts/workflow-smoke-test.py ui-change bugfix task-split-only learning-agent-dev
 ```
 
 | 脚本 | 用途 |
 |------|------|
-| `full-cycle-boot.sh` | 看板 + 浏览器 |
+| `workflow-board-boot.sh` | 看板 + 浏览器 |
 | `workflow-status.py` | **日常推荐**：人话状态摘要（当前 / 卡点 / 下一步 / 继续） |
 | `workflow-gate.sh` | **通用**工作流阶段门禁（读蓝图，只看子 Plan 事实） |
 | `workflow-plan-init.py` | 为无 Epic 轻流程创建当前阶段/全部阶段 plan 骨架 |
-| `workflow-smoke-test.py` | 隔离验证轻流程：路由、空态阻塞、补齐阶段 plan 后 done |
+| `workflow-smoke-test.py` | 隔离验证工作流：路由、空态阻塞、补齐阶段 plan 后 done |
 | `derive-epic-status.sh` | 从 WBS+子 Plan status 派生 `derived_status`（只读，不写回） |
-| `full-cycle-gate.sh` | 兼容封装：等价转发到 `workflow-gate.sh --workflow client-dev`；新引用直接使用 `workflow-gate.sh` |
+| `workflow-gate.sh` | 兼容封装：等价转发到 `workflow-gate.sh --workflow client-dev`；新引用直接使用 `workflow-gate.sh` |
 | `plan-gate-check.sh` | 写代码前（与蓝图正交，不动） |
 | `kanban-sync.sh` | Agent 改进度 |
 | `generate-pipeline-status.sh --write` | 刷新 [[索引]] 进度表 |
@@ -137,15 +138,15 @@ UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员�
 
 ## 五、Skill 速查
 
-开发主线：`workflow-router` · `full-cycle` · `requirement-analyst` · `architecture-design-assistant` · `test-generator` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `code-review` · `change-impact-analysis`
+开发主线：`workflow-router` · `requirement-analyst` · `architecture-design-assistant` · `test-generator` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `code-review` · `change-impact-analysis`
 
 通用：`resume-assistant` · `template-generator` · `report-assistant` · `material-prep-assistant`
 
 学习：`learn-assistant` · `learning-audit-assistant`
 
-Claude workflow：`.claude/workflows/full-cycle.js` · `learning-audit` · `dev-lifecycle-audit`
+Claude workflow：`.claude/workflows/workflow-engine.js` · `learning-audit` · `dev-lifecycle-audit`
 
-工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/full-cycle.js` 只是 Claude Code 的引擎入口。日常状态看 `workflow-status.py`，底层排查才看 `workflow-gate.sh --json`。
+工作流蓝图真理源：`.workflows/blueprints/*.json`；`.claude/workflows/workflow-engine.js` 只是 Claude Code 的执行器入口。日常状态看 `workflow-status.py`，底层排查才看 `workflow-gate.sh --json`。
 
 详情：[[Skills/README]] · [[索引#高频任务速查]]
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# 全流程闭环启动：每次都重启 Epic 看板 + 打开浏览器
+# 工作流看板启动：每次都重启 Epic 看板 + 打开浏览器
 # 未指定 Epic 时仅在唯一 Epic 的情况下自动选择；多个 Epic 必须显式传 --epic。
 # 用法：
-#   ./scripts/full-cycle-boot.sh                # 重启服务 + 打开最新 Epic
-#   ./scripts/full-cycle-boot.sh --epic Plans/Epic/2026-06-20-新版工作空间.md
-#   ./scripts/full-cycle-boot.sh --no-open      # 仅重启服务，不弹浏览器
+#   ./scripts/workflow-board-boot.sh                # 重启服务 + 打开最新 Epic
+#   ./scripts/workflow-board-boot.sh --epic Plans/Epic/2026-06-20-新版工作空间.md
+#   ./scripts/workflow-board-boot.sh --no-open      # 仅重启服务，不弹浏览器
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
     --no-open) NO_OPEN=1; shift ;;
     --new-requirement) NEW_REQUIREMENT=1; shift ;;
     -h|--help)
-      echo "Usage: full-cycle-boot.sh [--epic Plans/Epic/xxx.md] [--no-open] [--new-requirement]"
+      echo "Usage: workflow-board-boot.sh [--epic Plans/Epic/xxx.md] [--no-open] [--new-requirement]"
       echo "  每次都重启看板服务；不传 --epic 时默认选 Plans/Epic/ 下最新的 Epic。"
       echo "  --new-requirement：新需求阶段，看板尚未创建，只起服务不弹浏览器。"
       exit 0

@@ -3,7 +3,7 @@ name: architecture-design-assistant
 description: >-
   系统架构/模块边界/ER图/数据模型/API Schema（侧重内容设计，非模板骨架）。
   触发词：系统架构设计、模块边界划分、ER图设计、数据模型、接口契约、技术方案（系统级）、/arch、/architecture-design-assistant。
-  不响应：生成技术方案模板/套模板→template-generator；全流程→full-cycle；写代码→feature-dev-assistant。
+  不响应：生成技术方案模板/套模板→template-generator；全流程→workflow-router；写代码→feature-dev-assistant。
 ---
 
 # 架构设计助手
@@ -20,7 +20,7 @@ Vault：AI-Work-Kit 根目录
 **不响应（让位给其他 Skill）**：
 
 - 「**生成技术方案模板**」「**套用方案模板**」（只要骨架）→ `template-generator`
-- 「**全流程开发**」→ `full-cycle` 引擎（蓝图 manifest）
+- 「**全流程开发**」→ `workflow-engine`（蓝图 manifest）
 - 「**开发 / 写代码**」（方案已定）→ `feature-dev-assistant`
 
 必读：`Plans/需求分析/` 关联 plan（真理源）  

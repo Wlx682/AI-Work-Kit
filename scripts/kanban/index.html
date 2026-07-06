@@ -274,7 +274,7 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成' };
+    const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
     async function loadBoard() {
@@ -373,6 +373,27 @@
           </button>`;
       }).join('');
 
+      const lightweight = (envelope.lightweight || []).map(w => {
+        const pct = w.stages_total ? Math.round(w.stages_done / w.stages_total * 100) : 0;
+        const next = zhStage(w.current_stage);
+        const plans = (w.stages || []).filter(s => s.plan).slice(0, 3).map(s => `<code>${esc(s.plan.path)}</code>`).join('<br>') || '暂无阶段 plan';
+        return `
+          <div class="ecard blue fade-in">
+            <div class="e-head">
+              <div>
+                <div class="e-name">${esc(w.name)}</div>
+                <div class="e-stage">当前 <code>${esc(next)}</code></div>
+              </div>
+              <span class="gate-badge ${w.blocked ? 'fail' : 'pass'}">${w.blocked ? '待创建阶段 plan' : '阶段齐备'}</span>
+            </div>
+            <div class="progress">
+              <div class="bar"><i data-w="${pct}"></i></div>
+              <div class="meta"><span>${w.stages_done}/${w.stages_total} 阶段</span><span>${pct}%</span></div>
+            </div>
+            <div class="blocker-hint">${plans}</div>
+          </div>`;
+      }).join('');
+
       // 全局门禁时间线（所有 Epic 最近事件合并，倒序）
       const allEvents = [];
       envelope.epics.forEach(e => (e.gate_history?.recent || []).forEach(ev => allEvents.push({ ...ev, epic: e.name })));
@@ -400,6 +421,8 @@
               </span>
             </div>
             <div class="wall" id="wall">${wall}</div>
+            <div class="section-title" style="margin-top:1.2rem"><span>轻流程任务</span><span class="badge-low">无 Epic 流程</span></div>
+            <div class="wall">${lightweight || '<div class="empty">暂无轻流程任务</div>'}</div>
           </div>
           <aside class="side">
             <div class="spanel fade-in">

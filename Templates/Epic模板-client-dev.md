@@ -34,7 +34,7 @@ relations:
 **关联仓库**：【】 · 分支：【】
 
 > **三层架构定位**：本 Epic 是**数据上下文（聚合根）**——只存子 Plan 路径映射、WBS 人工确认板、里程碑摘要。
-> **不驱动流程**：阶段推进由 `full-cycle` 引擎读工具中性蓝图 `.workflows/blueprints/client-dev.json` + `scripts/workflow-gate.sh`（只看子 Plan 事实）决定。
+> **不驱动流程**：阶段推进由通用执行器读工具中性蓝图 `.workflows/blueprints/client-dev.json` + `scripts/workflow-gate.sh`（只看子 Plan 事实）决定。
 > `lifecycle_state` 不参与路由，仅供人工阅读；整体阶段跑 `bash scripts/derive-epic-status.sh Plans/Epic/{{date}}-{{title}}.md` 派生。
 
 ---
@@ -112,5 +112,5 @@ relations:
 /resume plan=Plans/Epic/{{date}}-{{title}}.md 进度=【派生阶段 / WBS 片号】
 ```
 
-**编排**：`/full-cycle`（自动选蓝图 client-dev）· `全流程闭环` · `/workflow full-cycle`
+**编排**：自然语言「全流程开发」→ `workflow-router` → `client-dev`；或显式 `workflow=client-dev`
 **派生阶段**：`bash scripts/derive-epic-status.sh Plans/Epic/{{date}}-{{title}}.md`

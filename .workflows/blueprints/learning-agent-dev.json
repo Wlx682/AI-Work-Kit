@@ -1,0 +1,145 @@
+{
+  "name": "learning-agent-dev",
+  "label": "智能体开发学习工作流",
+  "version": "0.1.0",
+  "description": "有 Epic 的智能体开发学习流程：每个知识点一轮，强制理论、测试先行、独立工程、接入和复盘闭环。",
+  "usesEpic": true,
+  "epicRequired": true,
+  "epicTemplate": "Templates/Epic模板-learning-agent-dev.md",
+  "planRoot": "Plans/学习",
+  "cycle": {
+    "unit": "knowledge-point",
+    "repeatPolicy": "每个知识点单独启动一轮 workflow run，均需完成理论、测试先行、工程实践、接入试跑与复盘。",
+    "nextRoundFrom": "retro"
+  },
+  "startup": {
+    "createBoard": true,
+    "boardSource": "Epic",
+    "requireEpicBeforeBoot": true,
+    "createEpicSkill": "template-generator",
+    "createEpicTemplate": "Templates/Epic模板-learning-agent-dev.md",
+    "bootCommand": "bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md"
+  },
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "学习工作流",
+    "智能体学习",
+    "学习智能体开发",
+    "智能体开发学习",
+    "开发学习工作流",
+    "learning-agent-dev"
+  ],
+  "epicMapping": {
+    "topic": "topic",
+    "theory": "theory",
+    "test-first": "test",
+    "project-setup": "project_setup",
+    "tool-build": "tool_build",
+    "integration-run": "integration_run",
+    "retro": "retro"
+  },
+  "stages": [
+    {
+      "key": "topic",
+      "label": "选题",
+      "planFolder": "Plans/学习",
+      "epicField": "topic",
+      "planPrefix": "学习选题",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [1],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "theory"
+    },
+    {
+      "key": "theory",
+      "label": "理论输入",
+      "planFolder": "Plans/学习",
+      "epicField": "theory",
+      "planPrefix": "理论输入",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [2],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "test-first"
+    },
+    {
+      "key": "test-first",
+      "label": "测试先行",
+      "planFolder": "Plans/学习",
+      "epicField": "test",
+      "planPrefix": "测试先行",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [3],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "project-setup"
+    },
+    {
+      "key": "project-setup",
+      "label": "工程与技术选型",
+      "planFolder": "Plans/学习",
+      "epicField": "project_setup",
+      "planPrefix": "工程选型",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [4],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "tool-build"
+    },
+    {
+      "key": "tool-build",
+      "label": "工具实现",
+      "planFolder": "Plans/学习",
+      "epicField": "tool_build",
+      "planPrefix": "工具实现",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [5],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "integration-run"
+    },
+    {
+      "key": "integration-run",
+      "label": "接入试跑",
+      "planFolder": "Plans/学习",
+      "epicField": "integration_run",
+      "planPrefix": "接入试跑",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [6],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "retro"
+    },
+    {
+      "key": "retro",
+      "label": "效果复盘",
+      "planFolder": "Plans/学习",
+      "epicField": "retro",
+      "planPrefix": "效果复盘",
+      "skills": ["learn-assistant"],
+      "wbsSlices": [7],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

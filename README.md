@@ -21,7 +21,7 @@ Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环�
 ## 日常三步
 
 ```text
-开始/启动… 或 /full-cycle 模块=XX   # 开始一件事（自然语言入口：workflow-router）
+开始/启动… 或 自然语言或 workflow=client-dev   # 开始一件事（自然语言入口：workflow-router）
 /status                           # 看当前卡点（人话摘要：当前 / 卡点 / 下一步 / 继续）
 /resume plan=Plans/... 进度=...    # 续做
 ```

@@ -6,8 +6,7 @@
 
 - 「全流程开发」「启动项目」「启动全流程」「一条龙」「做个功能」「开发一个客户端功能」
 - 「帮我看一下电脑空间」「电脑管理」「清理电脑」「整理电脑」「磁盘满了」「磁盘空间」「释放空间」「备份电脑」「系统加固」
-- `/full-cycle`
-- `workflow=client-dev` / `workflow=computer-mgmt`
+- `workflow=client-dev` / `workflow=computer-mgmt` / `workflow=learning-agent-dev`
 
 ## 不触发时机
 
@@ -39,9 +38,10 @@
 1. 用户显式 `workflow=xxx`
 2. Epic frontmatter `workflow:`
 3. 自然语言匹配 `.workflows/blueprints/<name>.json` 的 `triggerHints`
-4. 默认 `client-dev`，并说明是默认选择
+4. 无法命中具体 workflow 时，阻塞确认，不使用默认引擎兜底
 
 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退。
+不要把抽象执行器当成业务 workflow，也不要用它给 `client-dev` 兜底。
 
 常见匹配：
 
@@ -49,6 +49,7 @@
 |----------|------|
 | 客户端功能、做个功能、全流程开发 | `client-dev` |
 | 电脑空间、电脑管理、清理电脑、磁盘满了、释放空间、备份电脑、加固 | `computer-mgmt` |
+| 学习工作流、智能体开发学习 | `learning-agent-dev` |
 
 ## 回归检查
 
@@ -65,7 +66,7 @@ python3 scripts/test-workflow-refactor.py
 
 这条规则固化在 `.workflows/blueprints/client-dev.json` 的 `startup.createBoard=true` 与 `startup.requireEpicBeforeBoot=true`；入口只执行蓝图契约，不临场判断。
 
-临时命令 `bash scripts/full-cycle-boot.sh --new-requirement` 只允许用于启动空看板服务，不算完成 `client-dev` 看板启动。
+临时命令 `bash scripts/workflow-board-boot.sh --new-requirement` 只允许用于启动空看板服务，不算完成 `client-dev` 看板启动。
 
 ## 命令
 
@@ -73,20 +74,20 @@ python3 scripts/test-workflow-refactor.py
 
 ```bash
 /template-generator 任务类型=Epic，workflow=client-dev，标题=模块名，PRD=...
-bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
+bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
 python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
 ```
 
 仅临时启动空看板服务：
 
 ```bash
-bash scripts/full-cycle-boot.sh --new-requirement
+bash scripts/workflow-board-boot.sh --new-requirement
 ```
 
 已有 Epic：
 
 ```bash
-bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md
+bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
 python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
 ```
 

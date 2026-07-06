@@ -26,7 +26,7 @@ PROMPT = """你是 AI-Work-Kit 的只读 workflow 路由建议器。
 
 判断规则：
 1. 如果用户显式给出 workflow=xxx，优先使用该 workflow；若不在可选 workflow 中，返回 unknown。
-2. 如果是单阶段任务，如 PRD 评审、日报、学习审计、Figma 对稿、测试计划、部署清单、代码 review，不要路由到 full-cycle，返回 needs_clarification。
+2. 如果是单阶段任务，如 PRD 评审、日报、学习审计、Figma 对稿、测试计划、部署清单、代码 review，不要路由到完整开发工作流，返回 needs_clarification。
 3. 如果是普通代码任务、修 bug、开发环境报错、普通资料整理，不要默认路由到 client-dev。
 4. 只有明确是客户端功能/全流程开发，才选择 client-dev。
 5. 只有明确是电脑管理/清理/备份/加固，才选择 computer-mgmt。

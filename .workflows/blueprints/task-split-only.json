@@ -5,7 +5,7 @@
   "description": "无 Epic 轻量流程：用于已有技术方案或明确目标的任务拆分，不进入代码实现。WBS 修订必须走 task-splitter 或用户确认。",
   "usesEpic": false,
   "planRoot": "Plans/功能开发",
-  "bootScript": "scripts/full-cycle-boot.sh",
+  "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
   "triggerHints": [
     "只拆任务",

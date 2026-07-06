@@ -5,7 +5,7 @@
   "description": "无 Epic 轻量流程：用于 Figma 还原、界面小改、样式调整。发现接口联调、埋点、状态机或跨模块业务逻辑时升级到 client-dev。",
   "usesEpic": false,
   "planRoot": "Plans/界面开发",
-  "bootScript": "scripts/full-cycle-boot.sh",
+  "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
   "triggerHints": [
     "纯UI",

@@ -6,7 +6,7 @@
 
 - 用户说「实例化需求」「GWT」「Given-When-Then」「验收标准」
 - Epic WBS 指向 2「实例化需求」
-- `full-cycle` 门禁推荐 `spec-by-example-assistant`
+- `workflow-gate` 门禁推荐 `spec-by-example-assistant`
 
 ## 输入
 

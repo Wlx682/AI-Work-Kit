@@ -1,18 +1,19 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、workflow=xxx、full-cycle 时触发；只负责选择蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、学习工作流、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
 ---
 
 # 工作流路由器
 
 定位：**入口 Skill / 路由器**，不是业务执行 Skill。  
-职责：自然语言 → 选择 workflow 蓝图 → 启动 `full-cycle` 引擎 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
+职责：自然语言 → 选择具体 workflow 蓝图 → 启动执行器 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
 
 ## 触发
 
 - 全流程开发、启动项目、启动全流程、一条龙、做个功能、开发一个客户端功能
 - 帮我看一下电脑空间、电脑管理、清理电脑、整理电脑、磁盘满了、磁盘空间、释放空间、备份/加固/复核电脑
-- `/full-cycle`、`workflow=client-dev`、`workflow=computer-mgmt`
+- 学习工作流、智能体开发学习
+- `workflow=client-dev`、`workflow=computer-mgmt`、`workflow=learning-agent-dev`
 
 ## 不触发
 
@@ -35,12 +36,13 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 显式 `workflow=xxx` 优先
    - 有 Epic 时读 Epic frontmatter `workflow:`
    - 否则用自然语言匹配 `.workflows/blueprints/<name>.json` 的 `triggerHints`
-   - 不确定时默认 `client-dev`，并在输出中说明
+   - 无法命中具体 workflow 时，阻塞确认
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
+   - 不把抽象执行器当成业务 workflow，也不用它给 `client-dev` 兜底
 2. 启动看板：
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
    - `client-dev` 客户端开发必须先有 Epic；若无 Epic，先调用 `template-generator` 用 `Templates/Epic模板-client-dev.md` 创建 `Plans/Epic/xxx.md`
-   - 已有/刚创建 Epic：`bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`
+   - 已有/刚创建 Epic：`bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`
    - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
 3. 看状态：
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`

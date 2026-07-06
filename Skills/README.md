@@ -38,14 +38,14 @@
 
 > **路由原则**（详见各 Skill 文件「触发条件」段）：
 > 1. **命令优先**：`/command` 永远是精准救急通道，命中即走。
-> 2. **互斥锁**：`workflow-router` 是入口 Skill，只启动引擎；`full-cycle` 是工作流引擎；单阶段词路由到子 Skill，不劫持。
+> 2. **互斥锁**：`workflow-router` 是入口 Skill，只选择具体 workflow；通用执行器只读蓝图启动看板/门禁；单阶段词路由到子 Skill，不劫持。
 > 3. **降级兜底**：≥3 个 Skill 同时命中 → 走 `resume-assistant` 询问用户「续做 vs 开新」。
 
 ### Epic 闭环（推荐自然语言触发词 + 命令）
 
 | 推荐自然语言触发词 | Skill | 备用命令 | 产出 |
 |---------------------|-------|----------|------|
-| 全流程开发、启动项目、一条龙 | workflow-router | `/full-cycle` | 选择蓝图并启动 full-cycle 引擎 |
+| 全流程开发、启动项目、一条龙 | workflow-router | 自然语言或 `workflow=client-dev` | 选择具体蓝图并启动看板/门禁 |
 | 事件风暴、领域事件、事件墙 | event-storming-assistant | `/event-storming-assistant` | `Plans/需求分析/` |
 | 实例化需求、GWT、验收标准 | spec-by-example-assistant | `/spec-by-example-assistant` | `Plans/需求分析/` |
 | PRD 评审、需求分析、查 PRD 漏洞 | requirement-analyst | `/req` `/requirement-analyst` | `Plans/需求分析/` |
@@ -62,7 +62,7 @@
 
 | 推荐自然语言触发词 | Skill | 作用 |
 |---------------------|-------|------|
-| 全流程开发、启动项目、做个功能、帮我清理电脑 | workflow-router | 自然语言选蓝图，启动 `full-cycle` 引擎，不做阶段执行 |
+| 全流程开发、启动项目、做个功能、帮我清理电脑 | workflow-router | 自然语言选具体蓝图，启动看板/门禁，不做阶段执行 |
 
 ### 通用
 
@@ -87,7 +87,7 @@
 
 | 入口 | 用途 |
 |------|------|
-| `.claude/workflows/full-cycle.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
+| `.claude/workflows/workflow-engine.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
 | `scripts/workflow-status.py` | 日常看状态：当前 / 卡点 / 下一步 / 继续 |
 | `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
 | `scripts/workflow-plan-init.py` | 为 `ui-change` / `bugfix` / `task-split-only` 等无 Epic 轻流程创建阶段 plan |

@@ -15,7 +15,7 @@
 # - 直接改 markdown 后跑 --boot 即可；浏览器每 2.5s 轮询 /api/revision 自动刷新
 # - WBS 勾选/跳过推荐走 --slice / --slices-done / --slices-skipped（写回子 plan + 变更日志，与看板一致）
 # - --skip 只对蓝图 optionalWbsSlices 声明过的分片有效；否则后端会拒绝
-# - 阶段推进以 workflow-gate.sh 派生为准；--lifecycle 不得作为 full-cycle 路由依据
+# - 阶段推进以 workflow-gate.sh 派生为准；--lifecycle 不得作为 workflow 路由依据
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -87,7 +87,7 @@ sync_slices() {
 if [[ "$BOOT" -eq 1 ]] || ! api_ok; then
   boot_args=(--no-open)
   [[ -n "$EPIC" ]] && boot_args=(--epic "$EPIC" --no-open)
-  bash "$ROOT/scripts/full-cycle-boot.sh" "${boot_args[@]}"
+  bash "$ROOT/scripts/workflow-board-boot.sh" "${boot_args[@]}"
 fi
 
 if ! api_ok; then

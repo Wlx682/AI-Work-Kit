@@ -5,7 +5,7 @@
   "description": "无 Epic 轻量流程：用于已有功能缺陷的复现、定位、修复和回归。若根因是需求变更或新增能力，转 change-impact-analysis 或 client-dev。",
   "usesEpic": false,
   "planRoot": "Plans/Bug排查",
-  "bootScript": "scripts/full-cycle-boot.sh",
+  "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
   "triggerHints": [
     "改bug",

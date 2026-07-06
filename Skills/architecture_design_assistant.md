@@ -10,7 +10,7 @@
 **不响应（让位给其他 Skill）**：
 
 - 「**生成技术方案模板**」「**套用方案模板**」（只要骨架）→ `template-generator`
-- 「**全流程开发**」→ `full-cycle` 引擎（再由蓝图编排到本 Skill）
+- 「**全流程开发**」→ `workflow-engine`（再由蓝图编排到本 Skill）
 - 「**开发 / 写代码**」（方案已定）→ `feature-dev-assistant`
 
 > **承上启下**：输入必须是已闭环（或可开发）的 `Plans/需求分析/` plan；产出写入 `Plans/技术方案/`。

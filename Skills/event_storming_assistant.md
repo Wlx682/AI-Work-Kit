@@ -6,7 +6,7 @@
 
 - 用户说「事件风暴」「领域事件」「事件墙」「业务事件」
 - Epic WBS 指向 1「事件风暴工作坊」
-- `full-cycle` 门禁推荐 `event-storming-assistant`
+- `workflow-gate` 门禁推荐 `event-storming-assistant`
 
 ## 输入
 

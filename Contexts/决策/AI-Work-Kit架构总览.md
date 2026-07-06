@@ -63,7 +63,7 @@ flowchart TB
 ### 各层一句话
 
 - **① 存储原则** — 三层存储：`Templates/` 长期骨架 / `Plans/` 做完即删的任务态 / `Contexts/` 跨任务通用资料；判定标准是"换个新任务读了会不会被误导成当前背景"。一条反直觉但关键的设计：**默认删 plan**，刻意不让"已完成功能清单"沉淀下来污染未来上下文。
-- **② 执行** — `workflow-router` 是自然语言入口，`full-cycle` 是通用编排引擎，读 `.workflows/blueprints/<name>.json` 组合 Skill；`client-dev` 是 15 步客户端开发蓝图，`computer-mgmt` 是无 Epic 轻量清单。Skill 靠路由硬规则互不越界。详见 §三。
+- **② 执行** — `workflow-router` 是自然语言入口，只路由到具体 workflow 蓝图；通用执行器不参与业务意图竞争。`client-dev` 是客户端开发蓝图，`computer-mgmt` 是无 Epic 轻量清单，`learning-agent-dev` 是学习闭环蓝图。Skill 靠路由硬规则互不越界。详见 §三。
 - **③ 协议** — 关系图谱（5 类双向关系）、漂移检测（`verified_against` 锚定代码 commit）、母子 plan 投影（子 plan 是 WBS 唯一真理源）、Skill 反馈（`utility` 二选一防中庸垃圾数据），外加一份个性化的 [[Contexts/决策/对话用词习惯]]。
 - **④ 演进** — 四回路：反馈（skill_run）/ 关系图谱（relations-check）/ 漂移（drift-scan）/ 进化调度（vault-evolve 月度 launchd 自动）。脚本层把协议变成**可执行门禁**——`plan-gate-check.sh` 是唯一开工卡点，串起投影、反馈、看板格式、文档引用四道校验，任一失败即 BLOCKED。
 
@@ -73,7 +73,7 @@ flowchart TB
 
 ### 主线 A · 业务开发线（蓝图 + Epic 数据上下文）
 
-入口 `workflow-router`（自然语言或 `/full-cycle`），先选蓝图；`client-dev` 建 `Plans/Epic/`，Epic 只存子 Plan 路径、WBS 和摘要，不驱动流程。阶段由 `workflow-gate.sh` 读蓝图和子 Plan 文件事实派生。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
+入口 `workflow-router`（自然语言或显式 `workflow=<name>`），先选具体蓝图；`client-dev` 建 `Plans/Epic/`，Epic 只存子 Plan 路径、WBS 和摘要，不驱动流程。阶段由 `workflow-gate.sh` 读蓝图和子 Plan 文件事实派生。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
 
 防越界是这条线的设计灵魂：**互斥锁**（单阶段词不准被劫持成全流程）、**降级兜底**（≥3 个 Skill 命中 → 转 `resume-assistant` 问用户）、**禁止擅自下 A/B/C 结论**、**figma-ui 与 feature-dev 互斥**（含"界面/对稿/Figma"强制走 figma-ui）。一句话概括：**把"Agent 替用户拿主意"当头号风险来防**。
 

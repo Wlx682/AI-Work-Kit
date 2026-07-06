@@ -35,7 +35,7 @@ description: >-
 
 续做格式：`/resume plan=Plans/【分类】/xxx.md 进度=...`
 
-`workflow-router` 推荐创建 `client-dev` Epic 时，必须使用 Epic 模板生成 `Plans/Epic/xxx.md`，再执行 `bash scripts/full-cycle-boot.sh --epic Plans/Epic/xxx.md`。
+`workflow-router` 推荐创建 `client-dev` Epic 时，必须使用 Epic 模板生成 `Plans/Epic/xxx.md`，再执行 `bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`。
 
 同步：`Skills/template_generator.md`
 
