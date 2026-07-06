@@ -512,12 +512,6 @@
             </select>
           </td>
         </tr>`).join('');
-      const planTl = (e.plans || []).map(p => `
-        <li class="${p.status === '已采纳' || p.status === 'done' ? 'pass' : 'fail'}">
-          <div class="tl-top"><span class="tl-at">${esc(p.status || '未创建')}</span> <span class="tl-stage"><code>${esc(p.stage)}</code></span></div>
-          <div class="tl-reason">${p.path ? esc(p.path) : '子 Plan 未创建'}</div>
-        </li>`).join('') || '<li>暂无阶段记录</li>';
-
       const gh = e.gate_history || {};
       const tl = (gh.recent || []).map(ev => `
         <li class="${ev.result}">
@@ -563,10 +557,6 @@
             </div>
           </div>
           <aside class="side">
-            <div class="spanel fade-in">
-              <h3>阶段记录（子 Plan）</h3>
-              <ul class="timeline">${planTl}</ul>
-            </div>
             <div class="spanel fade-in">
               <h3>门禁事件时间线（本 Epic）</h3>
               <ul class="timeline">${tl}</ul>
