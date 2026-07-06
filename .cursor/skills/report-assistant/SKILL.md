@@ -2,7 +2,7 @@
 name: report-assistant
 description: >-
   日报/周报/月度复盘。触发：日报、周报、今日/本周总结、整理今天/这周的工作；项目复盘、迭代回顾、月度复盘、本月回顾；/report、/report-assistant。
-  不响应：Code Review→code-review；考我/知识复盘→learn-assistant；Epic 审计→dev-lifecycle-audit-assistant。
+  不响应：Code Review→code-review；Epic 审计→dev-lifecycle-audit-assistant。
   日报→Contexts/日报/；周报→Contexts/周报/；月度→Contexts/复盘/。
 ---
 
@@ -21,7 +21,6 @@ Vault：AI-Work-Kit 根目录
 **不响应（让位给其他 Skill）**：
 
 - 「Code Review / review diff / 审查 PR」→ `code-review`
-- 「考我 / 知识复盘 / 复习课程」→ `learn-assistant`
 - 「审计 Epic / 检查开发流程」→ `dev-lifecycle-audit-assistant`
 
 | 模式 | 触发 | 写入 |
@@ -52,7 +51,7 @@ Vault：AI-Work-Kit 根目录
 
 1. 日期默认今天。
 2. 扫 `~/git/*`：`git log --author=wanglongxiang`（+王龙祥）；**只列本人**有 commit 或未提交改动的仓库。
-3. 扫 Kit 当日 `Plans/`、学习、协作产出。
+3. 扫 Kit 当日 `Plans/` 与协作产出。
 4. 按 `Templates/日报模板.md` 生成 → **写入** `Contexts/日报/YYYY-MM-DD.md`。
 
 ## 模式 B：周报
@@ -60,7 +59,7 @@ Vault：AI-Work-Kit 根目录
 1. **时间段**：默认本周一 00:00 至今天；或用户指定 `时间段=起始 至 结束`。
 2. **汇总日报**：读 `Contexts/日报/` 该时段日报，填「日报索引」；无日报的日期不列。
 3. **扫描代码仓库**：`git log --since --until --author=wanglongxiang` 统计本人 commit，按主题合并，不逐条堆 hash，不列他人提交。
-4. **扫描 Kit**：本周 `Plans/`、`Contexts/`（除日报/周报自身）、Skill/模板变更、学习进度。
+4. **扫描 Kit**：本周 `Plans/`、`Contexts/`（除日报/周报自身）、Skill/模板变更。
 5. 按 `Templates/周报模板.md` 生成 → **写入** `Contexts/周报/起始日至结束日.md`。
 6. 回复：文件路径 + 一周摘要 + 下周 P0。
 

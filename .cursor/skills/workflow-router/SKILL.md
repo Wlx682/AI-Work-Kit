@@ -1,6 +1,6 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、学习工作流、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、做界面、修 bug、只拆任务、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
 ---
 
 # 工作流路由器
@@ -12,13 +12,15 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 
 - 全流程开发、启动项目、启动全流程、一条龙、做个功能、开发一个客户端功能
 - 帮我看一下电脑空间、电脑管理、清理电脑、整理电脑、磁盘满了、磁盘空间、释放空间、备份/加固/复核电脑
-- 学习工作流、智能体开发学习
-- `workflow=client-dev`、`workflow=computer-mgmt`、`workflow=learning-agent-dev`
+- 做界面、Figma 对稿、页面视觉不对齐、样式调整
+- 修 bug、线上报错、崩溃、按钮点不动、问题排查
+- 只拆任务、方案拆成开发任务、WBS 修订
+- `workflow=client-dev`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=task-split-only`
 
 ## 不触发
 
-- 单阶段任务：PRD 评审、日报/周报、学习审计、Figma 对稿、测试计划、部署清单、代码 review
-- 普通代码任务：实现这个函数、写脚本、修 bug、开发环境报错
+- 单阶段任务：PRD 评审、日报/周报、测试计划、部署清单、代码 review
+- 普通代码任务：实现这个函数、写脚本、开发环境报错
 - 普通资料整理：备份这份文档、整理需求列表、清理文档
 - 无效显式工作流：`workflow=unknown` 时先提示未知 workflow，不回退默认蓝图
 
@@ -35,10 +37,12 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 1. 选择蓝图：
    - 显式 `workflow=xxx` 优先
    - 有 Epic 时读 Epic frontmatter `workflow:`
-   - 否则用自然语言匹配 `.workflows/blueprints/<name>.json` 的 `triggerHints`
+   - 否则由宿主模型按用户语义、蓝图 `label/description` 与 `triggerHints` 做高置信判断
+   - `scripts/workflow-router-check.py` 只作为触发词回归检查与低成本兜底，不是唯一判断来源
    - 无法命中具体 workflow 时，阻塞确认
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
    - 不把抽象执行器当成业务 workflow，也不用它给 `client-dev` 兜底
+   - 语义判断只选择现有业务蓝图；一句话同时像多个蓝图时先问清楚
 2. 启动看板：
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
    - `client-dev` 客户端开发必须先有 Epic；若无 Epic，先调用 `template-generator` 用 `Templates/Epic模板-client-dev.md` 创建 `Plans/Epic/xxx.md`

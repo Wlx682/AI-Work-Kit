@@ -2,7 +2,7 @@
 name: code-review
 description: >-
   代码审查（Findings-first）。触发：Code Review、review 这个 diff、审查 PR、UI 复核、回归复核，或 workflow review 阶段；/code-review、/review。
-  不响应：日报/周报/复盘→report-assistant；考我/知识复盘→learn-assistant；Epic 审计→dev-lifecycle-audit-assistant。
+  不响应：日报/周报/复盘→report-assistant；Epic 审计→dev-lifecycle-audit-assistant。
   产出：Findings-first 审查结论，写入 Plans/代码重构/ 或调用方 plan。
 ---
 
@@ -21,7 +21,6 @@ Vault：AI-Work-Kit 根目录
 **不响应（让位给其他 Skill）**：
 
 - 「日报 / 周报 / 项目复盘 / 月度复盘」→ `report-assistant`
-- 「考我 / 知识复盘 / 复习课程」→ `learn-assistant`
 - 「审计 Epic / 检查开发流程」→ `dev-lifecycle-audit-assistant`
 
 模板：`Templates/Code-Review模板.md`
