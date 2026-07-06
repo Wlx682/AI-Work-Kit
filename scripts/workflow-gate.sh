@@ -163,7 +163,10 @@ fi
 USES_EPIC="$(python3 -c 'import json,sys; print("1" if json.load(open(sys.argv[1])).get("usesEpic") else "0")' "$BLUEPRINT")"
 # stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)|optionalWbsSlices(逗号)
 # 用非空白分隔符，避免 read 折叠空字段（如空 epicField）导致字段错位。
-mapfile -t STAGE_ROWS < <(python3 - "$BLUEPRINT" <<'PY'
+STAGE_ROWS=()
+while IFS= read -r line; do
+  STAGE_ROWS+=("$line")
+done < <(python3 - "$BLUEPRINT" <<'PY'
 import json, sys
 bp = json.load(open(sys.argv[1]))
 US = "\x1f"

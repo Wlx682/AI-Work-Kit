@@ -38,7 +38,10 @@ fi
 
 # 未指定 --epic：只有唯一 Epic 时自动选择；多个 Epic 必须显式选择，避免并行项目误操作。
 if [[ -z "$EPIC" && -z "$NEW_REQUIREMENT" ]]; then
-  mapfile -t epic_candidates < <(find "$ROOT/Plans/Epic" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort -r)
+  epic_candidates=()
+  while IFS= read -r f; do
+    epic_candidates+=("$f")
+  done < <(find "$ROOT/Plans/Epic" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort -r)
   if [[ ${#epic_candidates[@]} -eq 1 ]]; then
     EPIC="Plans/Epic/$(basename "${epic_candidates[0]}")"
     echo "kanban: 未指定 --epic，使用唯一 Epic：$EPIC"
