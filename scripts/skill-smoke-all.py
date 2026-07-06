@@ -25,6 +25,7 @@ FIXTURE_EXEMPT = {
     "workflow-router",       # 路由：test_workflow_router_* 覆盖
     "resume-assistant",      # 续做编排：无固定产物结构
     "skill-sync",            # 运维：sync-claude-skills.sh 自带校验
+    "kanban-restart",        # 运维：重启看板服务，kanban-server.sh + HTTP 健康检查覆盖
     "workflow-evolution-assistant",  # 聚合 skill_run：feedback-aggregate 覆盖
     "feature-dev-assistant",  # 开发编排：产物是 plan/代码，由 workflow gate 覆盖
 }
