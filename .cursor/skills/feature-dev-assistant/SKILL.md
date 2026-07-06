@@ -34,7 +34,7 @@ Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
 
 ## Epic 治理
 
-见 [[Contexts/决策/Kit核心原则]] §七 · [[Templates/模板约定]] §Epic 入口。
+见 [[Contexts/决策/Kit核心原则]] 的 Gate 原则 · [[Templates/模板约定]] §Epic 入口。
 
 **前置**：`requirement-analyst` P0 闭环或用户声明 PRD 已评审。
 

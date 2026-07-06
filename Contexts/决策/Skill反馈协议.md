@@ -23,7 +23,7 @@ relations:
 # Skill 反馈协议
 
 > **全库唯一定义**：每个 Skill 完成任务时如何输出反馈数据，由 `scripts/feedback-aggregate.py` 聚合，月度复盘消费。
-> 与 [[Contexts/决策/Kit核心原则]] §九 联动；任何 Skill 修改不得违反本协议。
+> 与 [[Contexts/决策/Kit核心原则]] 的“反馈闭环原则”联动；任何 Skill 修改不得违反本协议。
 
 ---
 
@@ -152,7 +152,7 @@ skill_run:
 
 ## 七、相关
 
-- [[Contexts/决策/Kit核心原则]] §九（反馈回路）
+- [[Contexts/决策/Kit核心原则]]
 - [[Templates/月度复盘模板]]（消费聚合报告）
 - `scripts/plan-gate-check.sh`（结构校验）
 - `scripts/feedback-aggregate.py`（聚合）

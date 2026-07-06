@@ -20,7 +20,7 @@ relations:
 # 母子 plan 投影规则（派生渲染）
 
 > Epic §三 WBS 看板与各子 plan（需求/方案/开发/测试/部署）之间的真理源、派生渲染机制、门禁。
-> 本文件是 [[Contexts/决策/Kit核心原则]] §十 的细则展开。
+> 本文件展开 [[Contexts/决策/Kit核心原则]] 的“投影原则”。
 
 > **演进（2026-07-06）**：从「双写 + 一致性校验」升级为「单向派生渲染」。Epic §三 看板不再手写、
 > 不再有独立的 `validate-epic-projection.py` 一致性校验（曾因读错章节长期空转）与 PostToolUse hook；
@@ -118,7 +118,7 @@ python3 scripts/render-epic-board.py Plans/Epic/xxx.md --check    # 校验新鲜
 
 ## 六、相关
 
-- [[Contexts/决策/Kit核心原则]] §十
+- [[Contexts/决策/Kit核心原则]]
 - [[Templates/模板约定]]
 - [[Contexts/决策/AI-Work-Kit工作流总览]]
 - [[Contexts/决策/Skill反馈协议]]
