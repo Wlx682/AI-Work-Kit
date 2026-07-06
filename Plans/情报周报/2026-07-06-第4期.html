@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>上下文工程：为什么给 Agent「喂得少」反而做得好</title>
+<style>
+  :root{
+    --bg:#05070e; --bg2:#0a0f1c; --panel:#0f1626; --panel2:#0c1220;
+    --ink:#e8eefb; --ink-dim:#9db0d0; --ink-faint:#657698;
+    --line:#1b2740; --line2:#243354;
+    --brand:#4b8bf5; --brand2:#38e0c8; --violet:#a888ff;
+    --red:#ff5a5f; --green:#2fd39a; --amber:#ffca4a;
+    --maxw:1160px; --colw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.9; font-size:clamp(15.5px,1.1vw,16.8px); letter-spacing:.1px; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  code,.mono{font-family:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace}
+  a{color:var(--brand2); text-decoration:none} a:hover{text-decoration:underline}
+  #bg-canvas{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative; overflow:hidden; padding:clamp(64px,9vw,108px) clamp(20px,4vw,40px) clamp(48px,6vw,78px);
+    border-bottom:1px solid var(--line); z-index:1;
+    background:
+      radial-gradient(1200px 480px at 82% -10%, rgba(75,139,245,.22), transparent 60%),
+      radial-gradient(1000px 460px at 4% 6%, rgba(56,224,200,.13), transparent 55%),
+      radial-gradient(700px 360px at 60% 120%, rgba(168,136,255,.12), transparent 60%),
+      linear-gradient(180deg,#06090f,#05070e)}
+  .hero::before{content:""; position:absolute; inset:0; pointer-events:none; opacity:.42;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:46px 46px; mask-image:radial-gradient(circle at 55% 0,#000,transparent 78%)}
+  .hero-wrap{position:relative; max-width:var(--maxw); margin:0 auto; z-index:2;
+    display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:clamp(24px,4vw,54px); align-items:center}
+  .hero-copy{min-width:0}
+  .kicker{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--brand2);
+    font-family:"SF Mono",monospace; letter-spacing:1px; margin-bottom:20px; padding:5px 13px;
+    border:1px solid var(--line2); border-radius:999px; background:rgba(56,224,200,.06)}
+  .kicker .pulse{width:7px;height:7px;border-radius:50%;background:var(--brand2);box-shadow:0 0 10px var(--brand2);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px}
+  .chip{font-size:12.5px; color:#cfe0ff; background:rgba(75,139,245,.1); border:1px solid rgba(75,139,245,.3);
+    padding:4px 12px; border-radius:999px; letter-spacing:.3px}
+  h1.title{font-size:clamp(29px,4.6vw,50px); line-height:1.24; margin:.1em 0 .5em; font-weight:800;
+    background:linear-gradient(120deg,#fff 18%,#a9c7ff 55%,#7ef0da 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .lede{font-size:clamp(15.5px,1.5vw,17.5px); color:var(--ink-dim); margin:0 0 28px}
+  .meta{display:flex; flex-wrap:wrap; gap:14px 24px; font-size:13.5px; color:var(--ink-faint);
+    border-top:1px solid var(--line); padding-top:22px}
+  .meta b{color:var(--ink-dim); font-weight:600}
+
+  /* hero visual: 注意力预算天平 */
+  .hero-visual{position:relative; min-width:0; display:flex; align-items:center; justify-content:center; padding:2px 0}
+  .hero-svg{width:100%; max-width:476px; height:auto; overflow:visible; font-family:inherit}
+  .hero-svg .node{filter:drop-shadow(0 12px 26px rgba(0,0,0,.5))}
+  .hero-svg text{font-family:inherit}
+  .hero-svg .flow{stroke-dasharray:5 9; animation:flow 1.5s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-28}}
+  @media(prefers-reduced-motion:reduce){ .hero-svg .flow{animation:none} }
+
+  /* ---------- TOC ---------- */
+  .toc{position:sticky; top:0; z-index:30; background:rgba(6,9,15,.8); backdrop-filter:blur(14px); border-bottom:1px solid var(--line)}
+  .toc-inner{max-width:var(--maxw); margin:0 auto; display:flex; gap:6px; padding:11px clamp(20px,4vw,40px) 11px; overflow-x:auto}
+  .toc a{color:var(--ink-dim); font-size:14px; padding:5px 13px; border-radius:8px; white-space:nowrap; border:1px solid transparent; transition:.2s}
+  .toc a:hover,.toc a.active{color:#fff; background:rgba(75,139,245,.12); border-color:var(--line2); text-decoration:none}
+  .toc a .n{color:var(--brand2); font-weight:700; margin-right:6px; font-family:monospace}
+
+  /* ---------- LAYOUT ---------- */
+  .layout{max-width:var(--maxw); margin:0 auto; padding:20px clamp(20px,4vw,40px) 96px; position:relative; z-index:1;
+    display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:clamp(24px,3vw,48px); align-items:start}
+  main{min-width:0}
+  aside{position:sticky; top:70px; display:flex; flex-direction:column; gap:18px}
+  .side-card{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line2); border-radius:14px; padding:16px 18px}
+  .side-card h4{margin:0 0 12px; font-size:12.5px; letter-spacing:1px; color:var(--ink-faint); font-family:monospace; text-transform:uppercase}
+  .side-nav a{display:block; padding:7px 12px; border-radius:8px; color:var(--ink-dim); font-size:14.5px; margin-bottom:3px; transition:.2s}
+  .side-nav a:hover,.side-nav a.active{background:rgba(75,139,245,.12); color:#fff; text-decoration:none}
+  .concept{padding:12px 0; border-top:1px solid var(--line)}
+  .concept:first-of-type{border-top:0; padding-top:0}
+  .concept .c-t{font-weight:700; color:#fff; font-size:14.5px; margin-bottom:3px; display:flex; align-items:center; gap:7px}
+  .concept .c-t .arrow{color:var(--brand2)}
+  .concept .c-d{font-size:13px; color:var(--ink-dim); line-height:1.7}
+
+  section{padding:clamp(34px,5vw,50px) 0; border-bottom:1px solid var(--line)}
+  .js-reveal section{opacity:0; transform:translateY(22px); transition:.7s cubic-bezier(.2,.7,.3,1)}
+  .js-reveal section.in{opacity:1; transform:none}
+  .sec-h{display:flex; align-items:center; gap:14px; margin:0 0 10px}
+  .sec-h .idx{font-size:13px; font-weight:800; color:#04121e; background:linear-gradient(135deg,var(--brand2),#6ff0d8);
+    padding:4px 10px; border-radius:8px; letter-spacing:1px; font-family:monospace; box-shadow:0 4px 14px -4px rgba(56,224,200,.6)}
+  .sec-h h2{font-size:clamp(21px,3vw,26px); margin:0; font-weight:800; color:#fff}
+  h3.sub{font-size:clamp(17px,2vw,19px); font-weight:700; color:#dce6f7; margin:36px 0 10px; padding-left:15px; position:relative}
+  h3.sub::before{content:""; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:2px; background:linear-gradient(180deg,var(--brand),var(--brand2))}
+  p{margin:14px 0; color:#d5deee}
+  strong{color:#fff; font-weight:700}
+  code{background:#0b1322; border:1px solid var(--line2); color:#8fe6d4; padding:1.5px 7px; border-radius:6px; font-size:.85em; word-break:break-word}
+  ul{padding-left:22px} li{margin:8px 0; color:#d5deee}
+
+  /* diagram card */
+  figure.dia{margin:28px 0; background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line2);
+    border-radius:16px; overflow:hidden; box-shadow:0 22px 54px -26px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.02)}
+  figure.dia .bar{display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(255,255,255,.03),transparent)}
+  figure.dia .dot{width:11px;height:11px;border-radius:50%}
+  .d-r{background:#ff5a5f}.d-y{background:#ffca4a}.d-g{background:#2fd39a}
+  figure.dia .cap{margin-left:8px; font-size:13px; color:var(--ink-dim); font-weight:600; font-family:monospace}
+  figure.dia .mermaid{padding:26px 14px; text-align:center; overflow-x:auto; background:radial-gradient(600px 200px at 50% 0,rgba(75,139,245,.05),transparent)}
+  figure.dia figcaption{padding:0 18px 16px; font-size:13px; color:var(--ink-faint); text-align:center}
+
+  /* 数字主角化 */
+  .metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin:30px 0}
+  .metric{position:relative; background:linear-gradient(160deg,rgba(56,224,200,.1),rgba(75,139,245,.05));
+    border:1px solid var(--line2); border-radius:16px; padding:26px 24px 22px; overflow:hidden}
+  .metric::after{content:""; position:absolute; right:-24px; top:-24px; width:96px; height:96px; border-radius:50%;
+    background:radial-gradient(circle,rgba(56,224,200,.16),transparent 70%)}
+  .metric .m-k{font-size:12px; letter-spacing:1px; color:var(--ink-faint); font-family:monospace; text-transform:uppercase; margin-bottom:8px}
+  .metric .m-v{font-size:clamp(38px,5.5vw,54px); font-weight:800; line-height:1; font-family:"SF Mono",ui-monospace,monospace;
+    color:#7ef0da; letter-spacing:-1px; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap}
+  .metric.blue .m-v{color:#89b6ff}
+  .metric.violet .m-v{color:#d3c2ff; font-size:clamp(30px,4.4vw,44px)}
+  .metric .m-v .suf{font-size:.5em; font-weight:700; color:var(--ink-dim)}
+  .metric .m-d{font-size:13.5px; color:var(--ink-dim); margin-top:12px; line-height:1.7}
+
+  .note{background:var(--panel2); border:1px solid var(--line2); border-left:3px solid var(--amber); border-radius:10px; padding:14px 18px; font-size:14.5px; color:var(--ink-dim); margin:22px 0}
+
+  footer{max-width:var(--maxw); margin:0 auto; padding:36px clamp(20px,4vw,40px) 100px; color:var(--ink-faint); font-size:14px; position:relative; z-index:1}
+  footer .src{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line2); border-radius:12px; padding:18px 20px}
+
+  #top{position:fixed; right:22px; bottom:24px; width:46px; height:46px; border-radius:13px; z-index:40;
+    background:rgba(75,139,245,.16); border:1px solid rgba(75,139,245,.42); color:#cfe0ff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:.3s; font-size:19px; backdrop-filter:blur(8px)}
+  #top.show{opacity:1; pointer-events:auto} #top:hover{background:rgba(75,139,245,.3); transform:translateY(-2px)}
+
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    aside{position:static; flex-direction:row; flex-wrap:wrap; order:2}
+    .side-card{flex:1 1 260px}
+    .side-nav{display:none}
+    .hero-wrap{grid-template-columns:1fr}
+    .hero-visual{min-height:230px; max-width:360px; margin-top:8px}
+  }
+  @media(max-width:560px){
+    aside{flex-direction:column}
+    .hero-visual{min-height:210px}
+  }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<header class="hero">
+  <div class="hero-wrap">
+    <div class="hero-copy">
+      <span class="kicker"><span class="pulse"></span>WEEKLY INTEL · 第 4 期</span>
+      <div class="chips">
+        <span class="chip">上下文工程</span><span class="chip">Agent 开发</span>
+        <span class="chip">注意力预算</span><span class="chip">长任务</span>
+      </div>
+      <h1 class="title">上下文工程：<br/>为什么给 Agent「喂得少」反而做得好</h1>
+      <p class="lede">当大模型从「回答一个问题」升级成「跨几十上百步连续干活的 Agent」，真正的手艺不再是写好一句提示词，而是管理好模型每一步能看到的整个上下文。目标反直觉：不是尽量多喂，而是找到那个「最小的高信号 token 集合」。</p>
+      <div class="meta">
+        <span><b>来源</b>　Anthropic Engineering</span>
+        <span><b>日期</b>　2026-07-06</span>
+        <span><b>原文</b>　<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener">effective-context-engineering ↗</a></span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <svg class="hero-svg" viewBox="0 0 500 400" role="img"
+           aria-label="注意力预算是一个有限的天平：一头堆无关信息会污染上下文、把模型带偏；另一头是精选的高信号 token，让模型抓住重点。上下文工程就是持续把天平拨向高信号一侧。">
+        <defs>
+          <marker id="ah1" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#38e0c8"/></marker>
+        </defs>
+        <!-- 顶部：注意力预算标题 -->
+        <rect class="node" x="150" y="12" width="200" height="72" rx="16"
+              fill="rgba(75,139,245,.12)" stroke="rgba(75,139,245,.55)" stroke-width="1.5"/>
+        <text x="250" y="45" text-anchor="middle" font-size="20" font-weight="800" fill="#cfe0ff">注意力预算</text>
+        <text x="250" y="68" text-anchor="middle" font-size="11" fill="#89b6ff"><tspan font-family="monospace" fill="#6f97d6">ATTENTION BUDGET</tspan> · 有限</text>
+        <!-- 天平梁 -->
+        <line x1="250" y1="84" x2="250" y2="150" stroke="#64789c" stroke-width="2.4"/>
+        <line class="flow" x1="90" y1="176" x2="410" y2="176" stroke="#64789c" stroke-width="3" opacity=".7"/>
+        <circle cx="250" cy="176" r="7" fill="#89b6ff"/>
+        <!-- 左盘：塞满·被污染 -->
+        <path d="M90,176 L60,250 L120,250 Z" fill="rgba(255,90,95,.1)" stroke="rgba(255,90,95,.5)" stroke-width="1.5"/>
+        <rect class="node" x="30" y="252" width="120" height="96" rx="14"
+              fill="rgba(255,90,95,.08)" stroke="rgba(255,90,95,.45)" stroke-width="1.4"/>
+        <text x="90" y="286" text-anchor="middle" font-size="16" font-weight="800" fill="#ff9498">塞满窗口</text>
+        <text x="90" y="308" text-anchor="middle" font-size="10.5" fill="#d99">无关信息堆积</text>
+        <text x="90" y="328" text-anchor="middle" font-size="10.5" fill="#d99">上下文被污染</text>
+        <text x="90" y="343" text-anchor="middle" font-size="10" fill="#c77">→ 模型被带偏</text>
+        <!-- 右盘：精选·高信号 -->
+        <path d="M410,176 L380,250 L440,250 Z" fill="rgba(56,224,200,.1)" stroke="rgba(56,224,200,.5)" stroke-width="1.5"/>
+        <rect class="node" x="350" y="252" width="120" height="96" rx="14"
+              fill="rgba(56,224,200,.08)" stroke="rgba(56,224,200,.5)" stroke-width="1.4"/>
+        <text x="410" y="286" text-anchor="middle" font-size="16" font-weight="800" fill="#7ff0dd">最小高信号</text>
+        <text x="410" y="308" text-anchor="middle" font-size="10.5" fill="#7ad9c6">只留关键 token</text>
+        <text x="410" y="328" text-anchor="middle" font-size="10.5" fill="#7ad9c6">窗口清爽</text>
+        <text x="410" y="343" text-anchor="middle" font-size="10" fill="#5cc">→ 模型抓住重点</text>
+        <!-- 落点 -->
+        <text x="250" y="384" text-anchor="middle" font-size="12.5" fill="#657698">上下文工程 = 持续把天平拨向「高信号」一侧</text>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#s1"><span class="n">01</span>主题</a>
+    <a href="#s2"><span class="n">02</span>想法</a>
+    <a href="#s3"><span class="n">03</span>结论</a>
+    <a href="#s4"><span class="n">04</span>复用</a>
+  </div>
+</nav>
+
+<div class="layout">
+<main>
+
+  <section id="s1">
+    <div class="sec-h"><span class="idx">01</span><h2>主题</h2></div>
+    <p>过去两年，让大模型把活干好的核心手艺，大家习惯叫「提示词工程」——把一段指令反复打磨到位。但 Anthropic 在这篇工程博客里提出一个更贴近现在的说法：<strong>当模型从「回答一个问题」升级成「跨几十上百步连续干活的 Agent」，真正的手艺已经不是写好一句提示词，而是管理好模型每一步能看到的整个上下文。</strong>他们把这门手艺叫「上下文工程」（context engineering）。</p>
+    <p>差别听起来微妙，落到实践里却是两种思路。提示词工程关心的是「我这一句话怎么说」；上下文工程关心的是「在任意一个时刻，模型的注意力窗口里到底该装哪些信息、装多少、什么时候换掉」。作者给了一个很硬的前提：<strong>模型的注意力是有预算的，装进去的每一个 token 都在稀释其余 token 的权重。</strong>所以上下文工程的目标不是「尽量多喂」，而是反过来——<strong>找到那个「最小的、高信号的 token 集合」，让模型最可能干对。</strong></p>
+    <p>这篇值得写，是因为它把一个反直觉的结论讲清楚了：<strong>喂得少，往往做得好。</strong></p>
+    <div class="metrics">
+      <div class="metric"><div class="m-k">目标函数</div><div class="m-v" style="font-size:clamp(24px,3.4vw,34px)">最小高信号集</div><div class="m-d">不是「尽可能全」，而是「最小的、能让模型干对的 token 集合」。</div></div>
+      <div class="metric blue"><div class="m-k">长任务三招</div><div class="m-v"><span class="num" data-to="3">0</span></div><div class="m-d">压缩 / 结构化笔记 / 子 Agent —— 按任务特性搭配，不是三选一。</div></div>
+      <div class="metric violet"><div class="m-k">子 Agent 回传</div><div class="m-v"><span class="num" data-to="2">0</span><span class="suf">K token</span></div><div class="m-d">子 Agent 烧几万 token 探索，只回传 1–2K 的浓缩摘要给主 Agent。</div></div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="sec-h"><span class="idx">02</span><h2>想法</h2></div>
+    <p>先说清楚为什么「多喂」会出事。模型的上下文窗口不是越满越好，作者用了一个词叫「上下文污染」（context pollution）——窗口里堆的无关信息越多，模型越容易被带偏、抓不住重点。这跟人一样：桌上摊一百份文件，你反而找不到要用的那份。所以哪怕未来窗口做到几百万 token，<strong>「装什么」这件事依然是手艺，而不是「窗口够大就自动解决」。</strong></p>
+
+    <h3 class="sub">系统提示的「高度」：不多不少刚刚好</h3>
+    <p>作者把上下文拆成几个部件，其中最有启发的是对 system prompt「高度」（altitude）的比喻。他说好的系统提示要落在一个「金发姑娘区间」——不多不少刚刚好，两头都是坑：</p>
+    <ul>
+      <li><strong>写得太死</strong>：把复杂的 if-else 逻辑硬编码进提示词，试图规定模型每一种情况该怎么做。结果是脆——场景一变就崩，越堆越难维护。</li>
+      <li><strong>写得太虚</strong>：给一堆「要专业」「要认真」的高层空话，模型拿不到具体信号，只能瞎猜，还假装大家有共识。</li>
+    </ul>
+    <p>刚好的高度是：<strong>具体到能有效引导行为，又灵活到给模型留下自己判断的空间。</strong>工具（tools）同理，作者的结论是「求精不求多」，并给了一句特别好用的检验标准：<strong>如果一个人类工程师都没法明确说出某个场景该用哪个工具，就别指望 AI 能做得更好。</strong></p>
+
+    <h3 class="sub">长任务怎么办：三招正面应对</h3>
+    <p>真正的重头戏在长任务。当一个任务要连续干几十分钟到几小时（大型代码迁移、长研究），token 总量必然超出窗口，作者给了三招：</p>
+
+    <figure class="dia">
+      <div class="bar"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span><span class="cap">context-engineering.mmd</span></div>
+      <div class="mermaid">
+flowchart TB
+    subgraph OLD["旧做法·把所有信息都塞进一个窗口"]
+        direction LR
+        A1["越干越多<br/>窗口塞满"] --> A2["结果：模型被无关信息带偏<br/>抓不住重点·越干越糊"]
+    end
+    subgraph NEW["新做法·主动管理该留什么"]
+        direction LR
+        B1["压缩<br/>Compaction"] --> B4["结果：窗口始终<br/>只装高信号信息"]
+        B2["写笔记<br/>Note-taking"] --> B4
+        B3["派分身<br/>Sub-agent"] --> B4
+    end
+    OLD ~~~ NEW
+      </div>
+      <figcaption>旧做法「全塞进一个窗口」越干越糊；新做法用三招主动管理，窗口始终只装高信号信息。</figcaption>
+    </figure>
+
+    <p><strong>第一招·压缩（Compaction）</strong>：当对话快撑满窗口时，让模型把前面的内容总结成一份摘要，然后开一个新窗口、只带着摘要继续。Claude Code 就是这么做的——保留架构决策、没解决的 bug、关键实现细节，丢掉冗余的工具输出，然后带着「压缩后的上下文 + 最近读过的 5 个文件」接着干。作者给实现者的建议很具体：<strong>先调到「高召回」（宁可多留，别漏），再慢慢提「精度」（去掉多余）。</strong>最轻量的一种压缩是「清工具结果」——一个工具很早以前调用过了，模型没必要再看到那坨原始返回。</p>
+
+    <p><strong>第二招·结构化笔记（Note-taking / 智能体记忆）</strong>：让模型把笔记写到窗口之外的持久存储里，需要时再拉回来。就像 Claude Code 维护 to-do 清单，或自定义 Agent 维护一个 <code>NOTES.md</code>。作者举了个生动的例子：Claude 玩宝可梦时能在几千步游戏里维持精确进度——「过去 1234 步我一直在 1 号道路练级，皮卡丘已升 8 级」；窗口重置后读自己的笔记就能接着几小时的训练。<strong>记忆让长跨度的策略成为可能，这在「什么都塞进窗口」的模式下根本做不到。</strong></p>
+
+    <figure class="dia">
+      <div class="bar"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span><span class="cap">note-taking.mmd</span></div>
+      <div class="mermaid">
+flowchart LR
+    Work["干活的模型<br/>连续几十步"] -->|"随手记进度<br/>到窗口外的文件"| Notes[("笔记/记忆<br/>NOTES.md")]
+    Reset["窗口满了·重置"] -->|"读回自己的笔记"| Work2["新窗口的模型<br/>无缝接着干"]
+    Notes -->|需要时拉回| Work2
+      </div>
+      <figcaption>笔记写到窗口之外，窗口重置后读回，实现跨窗口的长跨度连续作业。</figcaption>
+    </figure>
+
+    <p><strong>第三招·子 Agent（分身）</strong>：与其让一个 Agent 扛下整个项目的状态，不如派专门的子 Agent 用干净的窗口处理各自聚焦的任务。主 Agent 拿着高层计划做协调，子 Agent 各自深挖——可能烧掉几万 token 探索，但只回传一份 1000–2000 token 的浓缩摘要。<strong>好处是「关注点分离」：细节留在子 Agent 的窗口里，主 Agent 的窗口只装综合和分析的结果，不被细节污染。</strong></p>
+    <div class="note">这三招不是三选一，而是按任务特性搭配：需要大量来回对话的任务用压缩保连续性；有清晰里程碑的迭代开发用笔记；需要并行探索的复杂研究用子 Agent。</div>
+  </section>
+
+  <section id="s3">
+    <div class="sec-h"><span class="idx">03</span><h2>结论</h2></div>
+    <p>这篇最该记住的一句话：<strong>上下文工程的目标函数是「最小的高信号 token 集」，不是「尽可能全」。</strong>模型的注意力有预算，喂进去的每样东西都在花预算——所以「该装什么」永远是主动的取舍，不会因为窗口变大而自动消失。</p>
+    <p>适用边界要说清楚：这套心法主要针对「长跨度、多步骤的 Agent 任务」。如果只是单轮问答、一次性调用，上下文管理的收益不明显，把提示词写清楚就够了。三招里，压缩有「丢掉后面才发现重要的信息」的风险，笔记和子 Agent 有额外的编排开销——<strong>它们是长任务的必需品，不是所有场景的默认项。</strong></p>
+  </section>
+
+  <section id="s4">
+    <div class="sec-h"><span class="idx">04</span><h2>复用</h2></div>
+    <p>这篇几乎每一招都能对到本工作流的现有设计上，而且能指出该补的地方：</p>
+    <h3 class="sub">「right altitude」直接可用来审 Skill 指令</h3>
+    <p>我们的 Skill 文件本质就是 system prompt。可以拿「太死 / 太虚」这把尺子做体检：哪些 Skill 把流程写成了脆的 if-else 硬编码，哪些又只有「要认真做」的空话缺具体信号。建议在 <code>Contexts/规范/</code> 下加一条「Skill 指令高度自查」清单。</p>
+    <h3 class="sub">「结构化笔记」正是我们的 auto memory 机制</h3>
+    <p>本 Kit 已有一套跨会话文件记忆（<code>memory/</code> + <code>MEMORY.md</code> 索引），与作者说的「写到窗口外、需要时拉回」完全同构——说明方向对。可补的是「记忆压缩」的迭代规范：单条记忆按「先高召回、再提精度」打磨。</p>
+    <h3 class="sub">子 Agent 只回传浓缩摘要 · 工具求精不求多</h3>
+    <p>本 Kit 的 <code>Explore</code>/<code>Plan</code> 子 Agent 就是「烧大量 token 探索、只回传结论」，与关注点分离一致；可明确「回传摘要 token 目标（1–2K）」。而挂着的大量 MCP 工具，正可用「人类都说不清该用哪个，AI 更做不到」这句去定期裁剪、收敛重叠工具。</p>
+    <div class="note">落一条具体动作：在 <code>Contexts/规范/</code> 新增「上下文工程自查清单」，把「Skill 指令高度」「子 Agent 回传摘要 token 预算」「MCP 工具集去重」变成可勾选审查项，接进现有评审流程。</div>
+  </section>
+
+</main>
+
+<aside>
+  <div class="side-card">
+    <h4>本期速读</h4>
+    <div class="side-nav">
+      <a href="#s1">01 · 主题</a>
+      <a href="#s2">02 · 想法</a>
+      <a href="#s3">03 · 结论</a>
+      <a href="#s4">04 · 复用</a>
+    </div>
+  </div>
+  <div class="side-card">
+    <h4>三个核心对照</h4>
+    <div class="concept"><div class="c-t">多喂 <span class="arrow">→</span> 精喂</div><div class="c-d">目标是「最小高信号 token 集」，不是塞满窗口；每个 token 都在花注意力预算。</div></div>
+    <div class="concept"><div class="c-t">写死 <span class="arrow">≠</span> 高度</div><div class="c-d">系统提示要落在「金发姑娘区间」：具体到能引导，灵活到留判断空间。</div></div>
+    <div class="concept"><div class="c-t">全塞 <span class="arrow">→</span> 三招</div><div class="c-d">长任务用压缩 / 笔记 / 子 Agent 按任务特性搭配，保长跨度连贯。</div></div>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <div class="src">
+    原文：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener">Effective context engineering for AI agents</a><br/>
+    Anthropic Engineering
+  </div>
+</footer>
+
+<button id="top" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{
+    mermaid.initialize({startOnLoad:true, securityLevel:'loose', theme:'dark',
+      themeVariables:{fontFamily:'-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif',
+        fontSize:'15px', lineColor:'#64789c', clusterBkg:'transparent', clusterBorder:'#2b3a58'},
+      flowchart:{htmlLabels:true, curve:'basis', nodeSpacing:46, rankSpacing:54, padding:14}});
+  }catch(e){}
+
+  (function(){
+    var c=document.getElementById('bg-canvas'), ctx=c.getContext('2d'), W,H,pts;
+    function resize(){ W=c.width=innerWidth; H=c.height=innerHeight;
+      var n=Math.min(56, Math.floor(W*H/26000)); pts=[];
+      for(var i=0;i<n;i++) pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28}); }
+    function tick(){ ctx.clearRect(0,0,W,H);
+      for(var i=0;i<pts.length;i++){ var p=pts[i]; p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>W)p.vx*=-1; if(p.y<0||p.y>H)p.vy*=-1;
+        ctx.beginPath(); ctx.arc(p.x,p.y,1.4,0,6.28); ctx.fillStyle='rgba(120,170,255,.5)'; ctx.fill();
+        for(var j=i+1;j<pts.length;j++){ var q=pts[j], dx=p.x-q.x, dy=p.y-q.y, d=dx*dx+dy*dy;
+          if(d<15000){ ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+            ctx.strokeStyle='rgba(75,139,245,'+(.14*(1-d/15000))+')'; ctx.lineWidth=1; ctx.stroke(); } } }
+      requestAnimationFrame(tick); }
+    addEventListener('resize',resize); resize(); tick();
+  })();
+
+  (function(){
+    var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    function run(el){
+      var to=+el.dataset.to, pre=el.dataset.pre||'', suf=el.dataset.suf||'';
+      if(reduce){ el.textContent=pre+to+suf; return; }
+      var t0=null, dur=1100;
+      function step(ts){ t0=t0||ts; var k=Math.min(1,(ts-t0)/dur); var e=1-Math.pow(1-k,3);
+        el.textContent=pre+Math.round(to*e)+suf; if(k<1) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    }
+    var seen=new WeakSet();
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){
+      if(e.isIntersecting && !seen.has(e.target)){ seen.add(e.target); run(e.target); io.unobserve(e.target); } }); },{threshold:.5});
+    document.querySelectorAll('.num').forEach(function(n){ io.observe(n); });
+  })();
+
+  document.body.classList.add('js-reveal');
+  var io2=new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ e.target.classList.add('in'); io2.unobserve(e.target); } }); },{threshold:.06, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('section').forEach(function(s){ io2.observe(s); });
+  setTimeout(function(){ document.querySelectorAll('section:not(.in)').forEach(function(s){ s.classList.add('in'); }); },3000);
+
+  var links=[].slice.call(document.querySelectorAll('.toc a, .side-nav a'));
+  var spy=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){
+    links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+e.target.id); }); } }); },{rootMargin:'-40% 0px -55% 0px'});
+  document.querySelectorAll('section').forEach(function(s){ spy.observe(s); });
+
+  var backBtn=document.getElementById('top');
+  backBtn.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>560) backBtn.classList.add('show'); else backBtn.classList.remove('show');
+  },{passive:true});
+</script>
+</body>
+</html>
