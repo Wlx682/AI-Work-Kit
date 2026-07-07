@@ -1,0 +1,24 @@
+skill_run:
+  skill: best-practice-digest
+  plan: Plans/最佳实践/2026-07-06-工作流事件留痕提效.md
+  date: "2026-07-06"
+  contexts_used:
+    - path: Contexts/最佳实践/提效度量口径.md
+      utility: high
+      reason: "按可复算口径聚焦事件账本：门禁事件、时间戳、失败原因、commit与快照。"
+    - path: Contexts/最佳实践/案例报告模板.md
+      utility: high
+      reason: "按领导可读的单点案例结构输出：卡点、事件字段、数据、提效原因、复用。"
+    - path: Contexts/最佳实践/进化闭环.md
+      utility: high
+      reason: "把案例从工作流体系大主题收窄到事件留痕这一项可进化能力。"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "生成自渲染HTML并进行多宽度与Mermaid校验。"
+  contexts_missing:
+    - "最佳实践需要一个workflow事件采集脚本：自动汇总gate fail/pass、阶段状态变化、失败原因、commit和plan_snapshot，供单点案例取材。"
+    - "best-practice-digest应增加单点深挖口径：每篇只讲测试、看板、事件、工作流或反馈进化中的一个点，不混写体系全貌。"
+  contexts_stale: []
+  outcome_status: pass
+  utility: high
+  utility_reason: "本次把最佳实践从工作流大而全总结收窄为事件留痕单点案例，突出卡点定位成本如何下降。"
