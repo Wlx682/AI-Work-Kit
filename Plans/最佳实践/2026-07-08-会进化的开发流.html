@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>会进化的开发流</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23081016'/%3E%3Cpath d='M7 17h9l-3 6 12-10h-9l3-6z' fill='%234de3ff'/%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #081016;
+      --panel: rgba(14, 25, 35, .78);
+      --panel-strong: rgba(18, 32, 44, .94);
+      --line: rgba(135, 206, 235, .24);
+      --text: #ecf7ff;
+      --muted: #9fb8c8;
+      --cyan: #4de3ff;
+      --green: #62f2a6;
+      --amber: #ffd166;
+      --rose: #ff7aa2;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .38);
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(77, 227, 255, .18), transparent 28rem),
+        radial-gradient(circle at 78% 16%, rgba(98, 242, 166, .13), transparent 24rem),
+        linear-gradient(135deg, #081016 0%, #0b1620 48%, #0e101a 100%);
+      color: var(--text);
+      overflow-x: hidden;
+      letter-spacing: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 78%);
+    }
+
+    a { color: inherit; }
+    .wrap {
+      width: min(var(--max), calc(100% - clamp(32px, 5vw, 72px)));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 92vh;
+      display: grid;
+      align-items: center;
+      padding: clamp(56px, 8vw, 96px) 0 clamp(32px, 6vw, 72px);
+      position: relative;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(300px, .96fr);
+      gap: clamp(28px, 5vw, 72px);
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--green);
+      border: 1px solid rgba(98, 242, 166, .32);
+      background: rgba(98, 242, 166, .08);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 20px 0 16px;
+      font-size: clamp(48px, 8vw, 104px);
+      line-height: .92;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      color: #cde4ef;
+      font-size: clamp(18px, 2.2vw, 26px);
+      line-height: 1.45;
+      margin: 0 0 26px;
+    }
+
+    .hero-tags, .mini-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-tags span, .mini-flow span {
+      border: 1px solid var(--line);
+      color: #d6edf7;
+      background: rgba(255,255,255,.045);
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .signal {
+      position: relative;
+      min-height: 430px;
+      border: 1px solid rgba(77, 227, 255, .26);
+      background: linear-gradient(145deg, rgba(13, 25, 36, .88), rgba(9, 18, 27, .66));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border-radius: 18px;
+      padding: clamp(18px, 3vw, 28px);
+    }
+
+    .signal::before {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background:
+        conic-gradient(from 180deg at 50% 50%, transparent, rgba(77,227,255,.22), transparent, rgba(98,242,166,.16), transparent);
+      animation: spin 20s linear infinite;
+      opacity: .56;
+    }
+
+    .signal-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 14px;
+    }
+
+    .node {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(7, 17, 25, .76);
+      border-radius: 14px;
+      padding: 18px;
+      display: grid;
+      gap: 8px;
+      min-height: 92px;
+    }
+
+    .node b {
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .node small {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .node:nth-child(2) { transform: translateX(clamp(14px, 3vw, 42px)); border-color: rgba(98,242,166,.28); }
+    .node:nth-child(3) { transform: translateX(clamp(28px, 6vw, 84px)); border-color: rgba(255,209,102,.28); }
+    .node:nth-child(4) { border-color: rgba(255,122,162,.24); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    main {
+      padding: clamp(28px, 5vw, 68px) 0 clamp(72px, 9vw, 120px);
+    }
+
+    .section {
+      padding: clamp(36px, 6vw, 70px) 0;
+      opacity: 1;
+      transform: none;
+    }
+
+    .js .section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .js .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h2 {
+      font-size: clamp(28px, 4.6vw, 54px);
+      line-height: 1.04;
+      margin: 0 0 16px;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      color: #c8deeb;
+      font-size: clamp(16px, 1.8vw, 20px);
+      line-height: 1.72;
+      max-width: 920px;
+      margin: 0 0 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: clamp(14px, 2vw, 22px);
+    }
+
+    .card, .quote, .diagram, .table-wrap {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 16px 48px rgba(0,0,0,.22);
+      border-radius: 16px;
+    }
+
+    .card {
+      padding: clamp(18px, 2.8vw, 26px);
+      min-height: 164px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      line-height: 1.62;
+      margin: 0;
+    }
+
+    .card ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+
+    .quote {
+      margin: 26px 0;
+      padding: clamp(18px, 3vw, 28px);
+      border-color: rgba(98, 242, 166, .3);
+      color: #ddfff0;
+      font-size: clamp(18px, 2vw, 23px);
+      line-height: 1.45;
+    }
+
+    .diagram {
+      padding: clamp(16px, 3vw, 26px);
+      overflow: clip;
+    }
+
+    .diagram-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .mermaid {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .mermaid svg {
+      width: 100%;
+      max-width: none !important;
+      min-width: 720px;
+      height: auto;
+    }
+
+    .flow-board {
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-row {
+      display: grid;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .flow-row.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .flow-row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .flow-card {
+      min-height: 108px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .flow-card b {
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .flow-card span {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      text-align: center;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .flow-note {
+      border: 1px dashed rgba(98,242,166,.45);
+      color: var(--muted);
+      border-radius: 14px;
+      padding: 12px 16px;
+      text-align: center;
+      background: rgba(98,242,166,.055);
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .arch-svg-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 4px;
+    }
+
+    .arch-svg {
+      width: 100%;
+      min-width: 1040px;
+      height: auto;
+      display: block;
+      font-family: inherit;
+    }
+
+    .arch-svg .box {
+      fill: rgba(17, 30, 42, .92);
+      stroke: rgba(77, 227, 255, .34);
+      stroke-width: 1.4;
+    }
+
+    .arch-svg .box.hot {
+      fill: rgba(19, 43, 45, .95);
+      stroke: rgba(98, 242, 166, .55);
+      stroke-dasharray: 6 5;
+    }
+
+    .arch-svg .title {
+      fill: #ecf7ff;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .arch-svg .desc {
+      fill: #a9bed0;
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+
+    .arch-svg .label {
+      fill: #dceeff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .arch-svg .flow {
+      fill: none;
+      stroke: #62f2a6;
+      stroke-width: 2.2;
+      marker-end: url(#arrow);
+    }
+
+    .arch-svg .flow.soft {
+      stroke: #4de3ff;
+      stroke-width: 1.8;
+    }
+
+    .arch-svg .flow.loop {
+      stroke-dasharray: 7 7;
+    }
+
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: clamp(16px, 2.2vw, 24px);
+      margin-top: 22px;
+    }
+
+    .metric {
+      min-height: 210px;
+      border-radius: 18px;
+      border: 1px solid rgba(77, 227, 255, .28);
+      background: linear-gradient(150deg, rgba(77,227,255,.14), rgba(14,25,35,.82) 48%, rgba(98,242,166,.1));
+      padding: clamp(20px, 3vw, 30px);
+      display: grid;
+      align-content: center;
+      gap: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: clamp(38px, 7vw, 64px);
+      line-height: .95;
+      color: var(--cyan);
+      letter-spacing: 0;
+    }
+
+    .metric span {
+      color: var(--muted);
+      line-height: 1.48;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 22px;
+    }
+
+    .before-after {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+      gap: clamp(16px, 2.4vw, 28px);
+      margin-top: 26px;
+      align-items: stretch;
+    }
+
+    .sample-box {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 16px;
+      padding: clamp(18px, 3vw, 28px);
+      min-height: 100%;
+    }
+
+    .sample-box.before {
+      border-color: rgba(255, 209, 102, .32);
+      background: linear-gradient(145deg, rgba(255,209,102,.08), rgba(14,25,35,.78));
+    }
+
+    .sample-box.after {
+      border-color: rgba(98, 242, 166, .32);
+      background: linear-gradient(145deg, rgba(98,242,166,.09), rgba(14,25,35,.78));
+    }
+
+    .sample-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #061016;
+      background: var(--amber);
+      margin-bottom: 14px;
+    }
+
+    .after .sample-label {
+      background: var(--green);
+    }
+
+    .sample-box blockquote {
+      margin: 0;
+      color: #eef9ff;
+      font-size: clamp(18px, 2vw, 24px);
+      line-height: 1.5;
+      font-weight: 750;
+    }
+
+    .sample-box ul {
+      margin: 16px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .fact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .fact {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 112px;
+    }
+
+    .fact b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .fact span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .cost-map {
+      display: grid;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .cost-row {
+      display: grid;
+      grid-template-columns: minmax(130px, .5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .cost-cell {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--muted);
+      line-height: 1.52;
+      min-height: 82px;
+    }
+
+    .cost-cell.stage {
+      color: var(--text);
+      font-weight: 850;
+      background: rgba(77, 227, 255, .1);
+      border-color: rgba(77, 227, 255, .28);
+    }
+
+    .cost-cell strong {
+      color: #e9fbff;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .ledger {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: clamp(14px, 2vw, 22px);
+      margin-top: 24px;
+    }
+
+    .ledger-card {
+      border: 1px solid rgba(77, 227, 255, .22);
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      padding: clamp(18px, 2.8vw, 26px);
+    }
+
+    .ledger-card b {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .ledger-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.62;
+    }
+
+    .arch-points {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .arch-point {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .arch-point b {
+      display: block;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th, td {
+      padding: 15px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    th {
+      color: #dff9ff;
+      background: rgba(255,255,255,.045);
+      font-size: 14px;
+    }
+
+    td {
+      color: #bcd3df;
+    }
+
+    .steps {
+      counter-reset: step;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .step {
+      counter-increment: step;
+      position: relative;
+      padding: 20px 20px 20px 62px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      min-height: 126px;
+    }
+
+    .step::before {
+      content: counter(step);
+      position: absolute;
+      left: 18px;
+      top: 20px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #051015;
+      background: var(--green);
+      font-weight: 800;
+    }
+
+    .step b { display: block; margin-bottom: 8px; }
+    .step span { color: var(--muted); line-height: 1.55; }
+
+    .footer-note {
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 22px;
+      line-height: 1.7;
+    }
+
+    .back {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(14, 25, 35, .86);
+      color: var(--text);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .back.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 820px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .before-after { grid-template-columns: 1fr; }
+      .cost-row { grid-template-columns: 1fr; }
+      .flow-row.five,
+      .flow-row.four { grid-template-columns: 1fr; }
+      .flow-card { min-height: auto; }
+      .arch-svg { min-width: 980px; }
+      .signal { min-height: auto; }
+      .node:nth-child(2), .node:nth-child(3) { transform: none; }
+      table { min-width: 640px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+      .js .section {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <script>document.documentElement.classList.add('js');</script>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">AI-Work-Kit · client-dev 最佳实践</div>
+        <h1>会进化的开发流</h1>
+        <p class="subtitle">看一条模糊客户端需求，如何被加工成需求事实、方案边界、测试证据、开发切片和流程反馈。</p>
+        <div class="hero-tags">
+          <span>需求清晰化</span>
+          <span>方案结构化</span>
+          <span>测试前置</span>
+          <span>门禁留痕</span>
+          <span>反馈进化</span>
+        </div>
+      </div>
+      <div class="signal" aria-label="client-dev workflow visual">
+        <div class="signal-inner">
+          <div class="node"><b>一句话需求</b><small>“计划模式里展示计划卡片，并支持审批、停止、历史状态。”</small></div>
+          <div class="node"><b>结构化事实</b><small>出现时机、按钮态、P0、AC、反例进入需求 Plan。</small></div>
+          <div class="node"><b>可执行切片</b><small>方案、测试、任务拆分把同一份事实继续加工。</small></div>
+          <div class="node"><b>可复盘反馈</b><small>门禁事件和 skill_run 把卡点反哺下一轮工作流。</small></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section wrap">
+      <h2>不是写得快，是少走弯路</h2>
+      <p class="lead">client-dev 的核心价值，是把一个需求从“听起来懂了”变成“每个人都按同一份事实推进”。它减少的是理解偏差、实现解释、验收后补、跨天断点和复盘失真。</p>
+      <div class="grid">
+        <article class="card"><h3>听起来懂了</h3><p>只有一句需求时，按钮态、异常流程、验收口径都藏在对话里。</p></article>
+        <article class="card"><h3>写进文件事实</h3><p>P0、AC、反例、方案边界、测试映射进入 Plan，后续阶段直接引用。</p></article>
+        <article class="card"><h3>能被门禁检查</h3><p>状态、WBS、skill_run、事件日志让“能不能继续”变成明确判断。</p></article>
+      </div>
+      <div class="quote">提效点不是让 AI 一次性替人完成全部工作，而是让每一步判断都有证据、能交接、能复盘。</div>
+    </section>
+
+    <section class="section wrap">
+      <h2>从模糊需求到文件事实</h2>
+      <p class="lead">当前 client-dev 蓝图把客户端开发拆成五个主阶段。每一站都不是单纯写文档，而是把上一站留下的不确定性继续压缩。</p>
+      <div class="diagram">
+        <div class="diagram-head"><span>client-dev flow</span><span>需求到进化闭环</span></div>
+        <pre class="mermaid">sequenceDiagram
+    participant U as 一句话需求
+    participant R as 需求事实
+    participant A as 方案边界
+    participant T as 测试证据
+    participant D as 开发切片
+    participant G as 门禁复盘
+    participant F as 反馈进化
+
+    U-&gt;&gt;R: 问清出现时机、按钮状态、P0、AC、反例
+    R-&gt;&gt;A: 用同一份需求事实拆模块、数据、接口和 ADR
+    A-&gt;&gt;T: 把 AC 映射成用例，先定义怎么证明完成
+    T-&gt;&gt;D: 按验收口径拆成可做、可续做的子任务
+    D-&gt;&gt;G: 用状态、WBS、skill_run 检查能不能继续
+    G-&gt;&gt;F: 记录 gate_fail / gate_pass、原因、commit 和快照
+    F--&gt;&gt;R: 把重复卡点变成下一轮需求分析的规则</pre>
+      </div>
+      <div class="steps">
+        <div class="step"><b>需求分析</b><span>事件风暴、GWT、P0/P1、验收标准。</span></div>
+        <div class="step"><b>技术方案</b><span>模块边界、数据模型、API Schema、ADR。</span></div>
+        <div class="step"><b>测试先行</b><span>AC 映射为用例，先知道怎么证明完成。</span></div>
+        <div class="step"><b>任务拆分</b><span>大功能拆成可落地、可续做的子任务。</span></div>
+        <div class="step"><b>反馈进化</b><span>skill_run 和事件日志成为流程改进输入。</span></div>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2>整体架构：它为什么能跑起来</h2>
+      <p class="lead">client-dev 不是一串 Prompt，而是核心原则、反馈协议、入口、蓝图、Skill、Plan、Gate、事件和反馈聚合组成的分层系统。每层只做一件事，流程才不会靠聊天记忆漂移。</p>
+      <div class="arch-points">
+        <div class="arch-point"><b>原则层</b>Kit核心原则规定 Plans / Contexts / Templates 边界，强调文件事实、门禁推进和反馈闭环。</div>
+        <div class="arch-point"><b>协议层</b>Skill反馈协议规定 skill_run 字段，让执行结果能被聚合和进化。</div>
+        <div class="arch-point"><b>入口层</b>自然语言先进入 workflow-router，选定 client-dev 蓝图。</div>
+        <div class="arch-point"><b>控制层</b>蓝图声明阶段、Skill、WBS 和 exitCriteria。</div>
+        <div class="arch-point"><b>事实层</b>Epic + 子 Plan 保存执行事实，不让对话当状态机。</div>
+        <div class="arch-point"><b>进化层</b>事件和 skill_run 一边支持执行中修正，一边汇总为下一轮流程改进。</div>
+      </div>
+      <div class="diagram">
+        <div class="diagram-head"><span>architecture</span><span>入口 · 蓝图 · 文件事实 · 门禁 · 反馈</span></div>
+        <div class="arch-svg-wrap" aria-label="会进化的开发流整体架构">
+          <svg class="arch-svg" viewBox="0 0 1200 680" role="img" aria-labelledby="arch-title">
+            <title id="arch-title">会进化的开发流整体架构</title>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#62f2a6"></path>
+              </marker>
+            </defs>
+
+            <rect class="box hot" x="40" y="34" width="360" height="96" rx="12"></rect>
+            <text class="title" x="62" y="68">Kit核心原则：贯穿约束</text>
+            <text class="desc" x="62" y="94">Plans / Contexts / Templates 边界</text>
+            <text class="desc" x="62" y="116">文件事实 · 门禁推进 · 反馈闭环</text>
+
+            <rect class="box hot" x="450" y="34" width="260" height="96" rx="12"></rect>
+            <text class="title" x="472" y="68">Skill反馈协议</text>
+            <text class="desc" x="472" y="94">阶段收口协议</text>
+            <text class="desc" x="472" y="116">规范 skill_run 字段</text>
+
+            <rect class="box" x="40" y="210" width="150" height="84" rx="12"></rect>
+            <text class="title" x="62" y="244">用户需求</text>
+            <text class="desc" x="62" y="270">一句话入口</text>
+
+            <rect class="box" x="230" y="210" width="150" height="84" rx="12"></rect>
+            <text class="title" x="252" y="244">入口层</text>
+            <text class="desc" x="252" y="270">workflow-router</text>
+
+            <rect class="box" x="420" y="210" width="150" height="84" rx="12"></rect>
+            <text class="title" x="442" y="244">控制层</text>
+            <text class="desc" x="442" y="270">client-dev 蓝图</text>
+
+            <rect class="box" x="610" y="210" width="210" height="84" rx="12"></rect>
+            <text class="title" x="632" y="244">阶段 Skill 执行</text>
+            <text class="desc" x="632" y="270">需求 → 架构 → 测试 → 拆分 → 开发</text>
+
+            <rect class="box" x="860" y="210" width="150" height="84" rx="12"></rect>
+            <text class="title" x="882" y="244">文件事实</text>
+            <text class="desc" x="882" y="270">Epic + 子 Plan</text>
+
+            <rect class="box" x="860" y="360" width="150" height="84" rx="12"></rect>
+            <text class="title" x="882" y="394">门禁层</text>
+            <text class="desc" x="882" y="420">workflow-gate</text>
+
+            <rect class="box" x="1040" y="308" width="130" height="72" rx="12"></rect>
+            <text class="title" x="1062" y="340">通过</text>
+            <text class="desc" x="1062" y="364">下一阶段</text>
+
+            <rect class="box" x="1040" y="420" width="130" height="72" rx="12"></rect>
+            <text class="title" x="1062" y="452">失败</text>
+            <text class="desc" x="1062" y="476">写事件</text>
+
+            <rect class="box" x="820" y="536" width="160" height="76" rx="12"></rect>
+            <text class="title" x="842" y="568">gate 事件</text>
+            <text class="desc" x="842" y="592">卡点 / 原因 / 快照</text>
+
+            <rect class="box" x="590" y="536" width="160" height="76" rx="12"></rect>
+            <text class="title" x="612" y="568">skill_run</text>
+            <text class="desc" x="612" y="592">用到 / 缺口 / 摩擦</text>
+
+            <rect class="box" x="360" y="536" width="160" height="76" rx="12"></rect>
+            <text class="title" x="382" y="568">反馈聚合</text>
+            <text class="desc" x="382" y="592">热点 / 缺口 / 摩擦</text>
+
+            <rect class="box hot" x="90" y="518" width="210" height="112" rx="12"></rect>
+            <text class="title" x="112" y="554">workflow-evolution</text>
+            <text class="desc" x="112" y="581">补协议 / 补脚本 / 改蓝图</text>
+            <text class="desc" x="112" y="604">修门禁 / 反哺下一轮</text>
+
+            <path class="flow" d="M190 252 H230"></path>
+            <path class="flow" d="M380 252 H420"></path>
+            <path class="flow" d="M570 252 H610"></path>
+            <path class="flow" d="M820 252 H860"></path>
+            <path class="flow" d="M935 294 V360"></path>
+            <path class="flow" d="M1010 402 C1030 402 1030 344 1040 344"></path>
+            <path class="flow" d="M1010 402 C1030 402 1030 456 1040 456"></path>
+            <path class="flow" d="M1105 492 C1105 548 980 530 900 536"></path>
+            <path class="flow soft" d="M935 294 C935 486 705 500 670 536"></path>
+            <path class="flow" d="M820 574 H750"></path>
+            <path class="flow" d="M590 574 H520"></path>
+            <path class="flow" d="M360 574 H300"></path>
+
+            <path class="flow loop" d="M220 130 V164 H1020"></path>
+            <path class="flow loop" d="M305 164 V210"></path>
+            <path class="flow loop" d="M495 164 V210"></path>
+            <path class="flow loop" d="M715 164 V210"></path>
+            <path class="flow loop" d="M935 164 V210"></path>
+            <path class="flow loop" d="M1020 164 V402 H1010"></path>
+            <path class="flow loop" d="M580 130 C580 420 670 458 670 536"></path>
+            <path class="flow loop" d="M195 518 C195 424 495 376 495 294"></path>
+
+            <text class="label" x="1030" y="328">通过</text>
+            <text class="label" x="1030" y="444">失败</text>
+            <text class="label" x="430" y="156">原则贯穿约束</text>
+            <text class="label" x="604" y="458">协议规范收口</text>
+            <text class="label" x="278" y="390">进化反哺蓝图 / Skill / 门禁</text>
+          </svg>
+        </div>
+      </div>
+      <div class="quote">核心原则定边界，反馈协议定数据格式，Plan 是事实源，Gate 是判断器，Feedback 是进化入口。Skill 可以换，模型可以换，但这些层稳定存在，工作流才不会变成一次性提示词。</div>
+      <div class="grid">
+        <article class="card"><h3>执行中进化</h3><p>门禁失败、Plan 缺字段、WBS 不匹配时，当前任务会立即补 Plan、补测试、修正状态口径或调整下一步动作。</p></article>
+        <article class="card"><h3>执行后进化</h3><p>skill_run 和事件日志进入聚合，沉淀为脚本、蓝图、Contexts 或 Skill 的长期改进。</p></article>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2>每个阶段到底省掉什么</h2>
+      <p class="lead">更深一层看，client-dev 不是“阶段多”，而是每个阶段都吃掉一种原本会在后面爆出来的成本。</p>
+      <div class="cost-map">
+        <div class="cost-row">
+          <div class="cost-cell stage">需求分析</div>
+          <div class="cost-cell"><strong>旧问题</strong>按钮态、边界、反例靠人记。</div>
+          <div class="cost-cell"><strong>工作流动作</strong>事件风暴、GWT、P0、AC。</div>
+          <div class="cost-cell"><strong>省掉的成本</strong>减少后续理解偏差和方向性返工。</div>
+        </div>
+        <div class="cost-row">
+          <div class="cost-cell stage">技术方案</div>
+          <div class="cost-cell"><strong>旧问题</strong>实现思路散在对话里。</div>
+          <div class="cost-cell"><strong>工作流动作</strong>模块边界、数据模型、API Schema、ADR。</div>
+          <div class="cost-cell"><strong>省掉的成本</strong>减少开发和测试反复解释方案。</div>
+        </div>
+        <div class="cost-row">
+          <div class="cost-cell stage">测试先行</div>
+          <div class="cost-cell"><strong>旧问题</strong>开发完才补验收。</div>
+          <div class="cost-cell"><strong>工作流动作</strong>AC 映射用例，WBS 4 过门禁。</div>
+          <div class="cost-cell"><strong>省掉的成本</strong>减少“做完才发现验收不清”。</div>
+        </div>
+        <div class="cost-row">
+          <div class="cost-cell stage">拆分开发</div>
+          <div class="cost-cell"><strong>旧问题</strong>大任务跨天后难恢复。</div>
+          <div class="cost-cell"><strong>工作流动作</strong>原子子任务、WBS、plan-gate-check。</div>
+          <div class="cost-cell"><strong>省掉的成本</strong>减少切换、交接和续做成本。</div>
+        </div>
+        <div class="cost-row">
+          <div class="cost-cell stage">反馈进化</div>
+          <div class="cost-cell"><strong>旧问题</strong>踩坑只停留在个人经验。</div>
+          <div class="cost-cell"><strong>工作流动作</strong>gate 事件、skill_run、feedback-aggregate。</div>
+          <div class="cost-cell"><strong>省掉的成本</strong>把重复卡点变成下一轮流程改进。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2>和现代智能体开发同构</h2>
+      <p class="lead">现代 Agent 不只是一个会聊天的模型，而是一套运行时：有指令、工具、状态、交接、护栏、追踪和反馈。client-dev 做的是把这套思想落到客户端开发流程里。</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Agent Runtime 概念</th><th>client-dev 对应物</th><th>带来的提效</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Instructions / Policy</td><td>Skill 说明、Contexts、蓝图规则</td><td>稳定执行，不靠临场发挥</td></tr>
+            <tr><td>Tools</td><td>脚本、MCP、代码仓操作、浏览器自检</td><td>能真实执行和验证</td></tr>
+            <tr><td>Sessions / State</td><td>Epic Plan、子 Plan、事件日志</td><td>跨天续做不丢上下文</td></tr>
+            <tr><td>Handoffs</td><td>workflow 阶段切换、子 Skill 接力</td><td>不同阶段交给不同专家能力</td></tr>
+            <tr><td>Guardrails</td><td>workflow-gate、plan-gate-check、exitCriteria</td><td>防止需求没清、测试没补就继续</td></tr>
+            <tr><td>Tracing</td><td>gate_fail / gate_pass、commit、plan_snapshot</td><td>卡点可复盘，不靠回忆</td></tr>
+            <tr><td>Evaluation / Feedback</td><td>gate 事件、skill_run、feedback-aggregate、workflow-evolution</td><td>执行中修正当前任务，执行后反哺下一轮流程</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="quote">模型负责推理和生成，工作流负责状态、边界、检查和复盘。这就是它和现代智能体开发同一套思想的地方。</div>
+    </section>
+
+    <section class="section wrap">
+      <h2>工作流资产可以跨平台迁移</h2>
+      <p class="lead">这套方案没有把核心能力绑死在某个聊天窗口里。真正可迁移的是文件化的流程资产：蓝图、Plan、Contexts、Gate 脚本和 skill_run 反馈。</p>
+      <div class="grid">
+        <article class="card"><h3>蓝图中立</h3><p><code>.workflows/blueprints/*.json</code> 描述阶段、Skill、WBS 和门禁，不属于任何单一编辑器。</p></article>
+        <article class="card"><h3>事实中立</h3><p><code>Plans/**/*.md</code> 和 <code>Contexts/**/*.md</code> 是普通 Markdown，Codex、Claude、Cursor 都能读写。</p></article>
+        <article class="card"><h3>门禁中立</h3><p><code>scripts/*.sh</code> / <code>scripts/*.py</code> 承担检查和聚合，换 Agent 也能调用。</p></article>
+        <article class="card"><h3>反馈中立</h3><p><code>.meta.yaml</code> / <code>skill_run</code> 记录执行摩擦，能继续喂给聚合和进化链。</p></article>
+      </div>
+      <div class="quote">平台迁移时，替换的是执行外壳；保留下来的，是蓝图、文件事实、门禁和反馈这套工作流资产。</div>
+    </section>
+
+    <section class="section wrap">
+      <h2>真正的深度：三本账</h2>
+      <p class="lead">如果把整体架构再压缩成一句话，它就是三本账：任务账、检查账、进化账。三本账连起来，流程才会越跑越稳。</p>
+      <div class="ledger">
+        <article class="ledger-card"><b>Plan 是任务账</b><p>记录需求、方案、测试、拆分和开发事实。换人或跨天继续时，不必重新翻对话。</p></article>
+        <article class="ledger-card"><b>Gate 是检查账</b><p>只看文件事实：状态是否采纳、P0 是否清零、WBS 是否完成、skill_run 是否存在。</p></article>
+        <article class="ledger-card"><b>Feedback 是进化账</b><p>记录哪些 Contexts 有用、哪些能力缺失、哪些阶段卡住，让流程能被下一轮修正。</p></article>
+      </div>
+      <div class="quote">AI 工作流真正的复利，不在单次任务，而在任务结束后留下的数据能不能改进下一次流程。</div>
+    </section>
+
+    <section class="section wrap">
+      <h2>证据只用仓库里能复查的</h2>
+      <p class="lead">因为缺少旧流程耗时基线，本案例不写“提升 X%”。这里展示的是已存在的流程事实。</p>
+      <div class="numbers">
+        <div class="metric"><strong><span data-count="5">5</span></strong><span>client-dev 主阶段：需求、方案、测试、拆分、开发。</span></div>
+        <div class="metric"><strong><span data-count="10">10</span></strong><span>已记录 gate_fail，卡点从回忆变成事件。</span></div>
+        <div class="metric"><strong><span data-count="21">21</span></strong><span>2026-07 skill_run 已被反馈聚合 dry-run 识别。</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>维度</th><th>可复查证据</th><th>提效解释</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>阶段结构</td><td>client-dev 五阶段蓝图</td><td>把模糊开发过程拆成固定阶段</td></tr>
+            <tr><td>需求清晰度</td><td>需求 Plan 的 AC、P0、p0_open</td><td>提前收敛边界和验收口径</td></tr>
+            <tr><td>方案可复用</td><td>技术方案 Plan 的模块边界、数据模型、API Schema</td><td>测试和拆分可以复用设计事实</td></tr>
+            <tr><td>卡点留痕</td><td>10 次 gate_fail、2 次 gate_pass</td><td>卡点从口头回忆变成结构化事件</td></tr>
+            <tr><td>重复问题识别</td><td>同一开发 WBS 缺口重复 6 次</td><td>具备自动洞察和流程优化价值</td></tr>
+            <tr><td>反馈闭环</td><td>2026-07 聚合到 21 次 skill_run</td><td>流程摩擦可进入进化链</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2>下一步：从记录卡点到主动提效</h2>
+      <p class="lead">当前最值得沉淀的能力，是 workflow 事件洞察。让系统不只告诉我们“卡住了”，还告诉我们“为什么反复卡、下一步该做什么”。</p>
+      <div class="grid">
+        <article class="card">
+          <h3>workflow-insights</h3>
+          <ul>
+            <li>汇总 gate_fail / gate_pass</li>
+            <li>识别重复失败原因</li>
+            <li>输出阻塞阶段和建议动作</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>增强 workflow-status</h3>
+          <ul>
+            <li>报告当前阶段</li>
+            <li>给出下一条可执行命令</li>
+            <li>列出应读取的 Plan</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>统一状态枚举</h3>
+          <ul>
+            <li>机器状态保持稳定</li>
+            <li>走查、编译等放入备注</li>
+            <li>降低门禁解析成本</li>
+          </ul>
+        </article>
+      </div>
+      <div class="quote">client-dev 的本质，是把客户端开发变成一条能留下事实、暴露卡点、持续进化的链路。</div>
+      <p class="footer-note">交纳米Work（只托管，不生成）：把本 HTML 上传到 CDN，返回一个可公开访问的短链接。网页已由 Agent 生成并通过本地自检，托管侧无需改动内容或样式。</p>
+    </section>
+  </main>
+
+  <button class="back" type="button" aria-label="返回顶部">↑</button>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      securityLevel: 'loose',
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: 'transparent',
+        primaryColor: '#102633',
+        primaryTextColor: '#ecf7ff',
+        primaryBorderColor: '#4de3ff',
+        lineColor: '#62f2a6',
+        secondaryColor: '#192f3d',
+        tertiaryColor: '#221d32'
+      }
+    });
+
+    const sections = Array.from(document.querySelectorAll('.section'));
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+    sections.forEach((section) => revealObserver.observe(section));
+    setTimeout(() => sections.forEach((section) => section.classList.add('visible')), 1200);
+
+    const metricEls = Array.from(document.querySelectorAll('[data-count]'));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const animateCount = (el) => {
+      const target = Number(el.dataset.count || '0');
+      if (reduceMotion) {
+        el.textContent = String(target);
+        return;
+      }
+      const start = performance.now();
+      const duration = 900;
+      const tick = (now) => {
+        const progress = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = String(Math.round(target * eased));
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    const countObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting || entry.target.dataset.done) return;
+        entry.target.dataset.done = '1';
+        animateCount(entry.target);
+      });
+    }, { threshold: 0.55 });
+    metricEls.forEach((el) => countObserver.observe(el));
+
+    const backBtn = document.querySelector('.back');
+    window.addEventListener('scroll', () => {
+      backBtn.classList.toggle('show', window.scrollY > 700);
+    }, { passive: true });
+    backBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  </script>
+</body>
+</html>

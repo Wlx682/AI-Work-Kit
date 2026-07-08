@@ -1,0 +1,30 @@
+skill_run:
+  skill: best-practice-digest
+  plan: Plans/最佳实践/2026-07-08-会进化的开发流.md
+  date: "2026-07-08"
+  contexts_used:
+    - path: Contexts/最佳实践/提效度量口径.md
+      utility: high
+      reason: "按可测量可验证原则，本案例不编造耗时百分比，只使用 Plan、事件日志与 skill_run 聚合等仓库证据。"
+    - path: Contexts/最佳实践/案例报告模板.md
+      utility: high
+      reason: "按技术博客式结构组织主题、方法、阶段提效、数据和复用建议。"
+    - path: Contexts/最佳实践/进化闭环.md
+      utility: high
+      reason: "把 client-dev 全流程提效与 feedback-aggregate、workflow-evolution 的闭环关系写清楚。"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "生成自渲染 HTML，包含 Mermaid、关键数字主角化和多宽度适配自检。"
+    - path: Contexts/决策/AI-Work-Kit工作流总览.md
+      utility: high
+      reason: "核对 client-dev 分层、蓝图、门禁和脚本职责，避免把 Epic 与状态机边界写错。"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "核对 skill_run 与 feedback-aggregate 的字段和消费方式。"
+  contexts_missing:
+    - "需要 workflow-insights 脚本自动汇总 gate_fail/gate_pass、重复失败原因、阶段阻塞和建议动作，供最佳实践和日常续做复用。"
+    - "client-dev 最佳实践需要阶段级提效度量模板：需求清晰度、方案复用度、测试前置率、拆分可续做性、门禁卡点复盘率。"
+  contexts_stale: []
+  outcome_status: pass
+  friction: "严格最佳实践需要旧流程基线和本次耗时；本次按用户选择改为证据版，不输出节省百分比。"
+  revisit_needed: false
