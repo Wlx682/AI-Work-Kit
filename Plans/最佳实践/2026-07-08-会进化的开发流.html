@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>会进化的开发流</title>
+  <title>别让 AI 高速跑偏</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23081016'/%3E%3Cpath d='M7 17h9l-3 6 12-10h-9l3-6z' fill='%234de3ff'/%3E%3C/svg%3E" />
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
@@ -720,23 +720,23 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <div class="eyebrow">AI-Work-Kit · client-dev 最佳实践</div>
-        <h1>会进化的开发流</h1>
-        <p class="subtitle">看一条模糊客户端需求，如何被加工成需求事实、方案边界、测试证据、开发切片和流程反馈。</p>
+        <div class="eyebrow">AI-Work-Kit · 会进化的开发流</div>
+        <h1>别让 AI 高速跑偏</h1>
+        <p class="subtitle">AI 执行已经很快，真正拖慢交付的是跑偏、返工、反复解释和跨天断档。client-dev 做的是给高效率 AI 加一条可验证、可复盘的工作流轨道。</p>
         <div class="hero-tags">
-          <span>需求清晰化</span>
-          <span>方案结构化</span>
-          <span>测试前置</span>
-          <span>门禁留痕</span>
+          <span>执行很快</span>
+          <span>容易跑偏</span>
+          <span>沟通成本</span>
+          <span>文件事实</span>
           <span>反馈进化</span>
         </div>
       </div>
       <div class="signal" aria-label="client-dev workflow visual">
         <div class="signal-inner">
-          <div class="node"><b>一句话需求</b><small>“计划模式里展示计划卡片，并支持审批、停止、历史状态。”</small></div>
-          <div class="node"><b>结构化事实</b><small>出现时机、按钮态、P0、AC、反例进入需求 Plan。</small></div>
-          <div class="node"><b>可执行切片</b><small>方案、测试、任务拆分把同一份事实继续加工。</small></div>
-          <div class="node"><b>可复盘反馈</b><small>门禁事件和 skill_run 把卡点反哺下一轮工作流。</small></div>
+          <div class="node"><b>AI 执行很快</b><small>代码、方案、页面都能迅速生成。</small></div>
+          <div class="node"><b>但容易跑偏</b><small>需求没钉住时，偏差会被高速放大。</small></div>
+          <div class="node"><b>写进文件事实</b><small>需求、方案、测试、切片都有可引用状态。</small></div>
+          <div class="node"><b>反哺下一轮</b><small>门禁事件和 skill_run 把跑偏点变成流程改进。</small></div>
         </div>
       </div>
     </div>
@@ -744,19 +744,19 @@
 
   <main>
     <section class="section wrap">
-      <h2>不是写得快，是少走弯路</h2>
-      <p class="lead">client-dev 的核心价值，是把一个需求从“听起来懂了”变成“每个人都按同一份事实推进”。它减少的是理解偏差、实现解释、验收后补、跨天断点和复盘失真。</p>
+      <h2>AI 已经够快，问题是容易跑偏</h2>
+      <p class="lead">现在模型写代码、改界面、拆任务都很快。真正拖慢交付的，是它带着不完整上下文高速前进：需求没钉住、方案散在对话里、验收最后才补、跨天后状态断掉。</p>
       <div class="grid">
-        <article class="card"><h3>听起来懂了</h3><p>只有一句需求时，按钮态、异常流程、验收口径都藏在对话里。</p></article>
-        <article class="card"><h3>写进文件事实</h3><p>P0、AC、反例、方案边界、测试映射进入 Plan，后续阶段直接引用。</p></article>
-        <article class="card"><h3>能被门禁检查</h3><p>状态、WBS、skill_run、事件日志让“能不能继续”变成明确判断。</p></article>
+        <article class="card"><h3>方向会跑偏</h3><p>一句需求看起来懂了，落地时才发现按钮态、异常流程、历史状态都没定。</p></article>
+        <article class="card"><h3>沟通会反复</h3><p>方案和决策留在聊天里，下一轮接手还要重新解释一次。</p></article>
+        <article class="card"><h3>验收会后补</h3><p>测试跟着实现走，反例、边界和失败流程容易漏掉。</p></article>
       </div>
-      <div class="quote">提效点不是让 AI 一次性替人完成全部工作，而是让每一步判断都有证据、能交接、能复盘。</div>
+      <div class="quote">真正的提效点，是把高速执行变成可控执行：每一步判断都有证据、能交接、能验证、能复盘。</div>
     </section>
 
     <section class="section wrap">
-      <h2>从模糊需求到文件事实</h2>
-      <p class="lead">当前 client-dev 蓝图把客户端开发拆成五个主阶段。每一站都不是单纯写文档，而是把上一站留下的不确定性继续压缩。</p>
+      <h2>用工作流给 AI 加轨道</h2>
+      <p class="lead">client-dev 不是为了增加流程感，而是把 AI 容易跑偏的地方拆成固定检查点：需求先变事实，方案再定边界，测试提前锁验收，任务拆成可续做切片，最后用门禁和反馈把跑偏点留下来。</p>
       <div class="diagram">
         <div class="diagram-head"><span>client-dev flow</span><span>需求到进化闭环</span></div>
         <pre class="mermaid">sequenceDiagram
@@ -783,6 +783,32 @@
         <div class="step"><b>任务拆分</b><span>大功能拆成可落地、可续做的子任务。</span></div>
         <div class="step"><b>反馈进化</b><span>skill_run 和事件日志成为流程改进输入。</span></div>
       </div>
+    </section>
+
+    <section class="section wrap">
+      <h2>先进概念学习：从外部共识到本地应用</h2>
+      <p class="lead">好的 AI 工作流，不是把模型放出去“自己想办法”，而是把上下文、状态和控制流工程化。汇报重点不是概念本身，而是这些模式怎么减少跑偏、返工、解释和跨天恢复成本。</p>
+      <div class="grid">
+        <article class="card"><h3>Anthropic：workflow 更适合清晰路径</h3><p><a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">Building Effective Agents</a> 区分 workflow 和 agent：定义清楚的任务，更需要可预测、一致的流程。</p></article>
+        <article class="card"><h3>Anthropic：上下文要按需取用</h3><p><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener">Context engineering</a> 强调用文件、链接、查询等外部结构，让 agent 在运行时取上下文。</p></article>
+        <article class="card"><h3>Thoughtworks：规则和技能都是上下文工程</h3><p><a href="https://martinfowler.com/articles/exploring-gen-ai/context-engineering-coding-agents.html" target="_blank" rel="noopener">Context Engineering for Coding Agents</a> 把 rules、skills、specs、workflows 都视为 coding agent 的上下文配置。</p></article>
+        <article class="card"><h3>12-Factor Agents：可靠性来自工程抓手</h3><p><a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">12-Factor Agents</a> 强调即使模型继续变强，仍需要管理上下文、状态、控制流和可观测性。</p></article>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>学到的模式 / 概念</th><th>对效率的价值</th><th>在 AI-Work-Kit 里的应用</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Skills / 专家能力按需加载</td><td>减少每次重新解释规则的成本</td><td>Skills 与多端 skill 同步，按阶段路由到需求、架构、测试、开发</td></tr>
+            <tr><td>Claude Hooks / 确定性检查</td><td>减少“AI 自己忘了检查”的返工</td><td>plan-gate-check、workflow-gate、workflow-status</td></tr>
+            <tr><td>项目级规则文件</td><td>减少跨会话沟通成本</td><td>AGENTS.md、Contexts/决策、Templates/模板约定</td></tr>
+            <tr><td>Context Engineering</td><td>减少上下文丢失和跨天恢复成本</td><td>Plans、Contexts、Epic、子 Plan 作为可检索事实源</td></tr>
+            <tr><td>Workflow 优先</td><td>减少自由发挥带来的跑偏</td><td>client-dev 蓝图固化阶段、Skill、WBS、exitCriteria</td></tr>
+            <tr><td>Observability / Feedback</td><td>减少同类卡点重复发生</td><td>gate 事件、skill_run、feedback-aggregate</td></tr>
+            <tr><td>Evolution Loop</td><td>把一次提效变成后续复用能力</td><td>workflow-evolution 反哺 Skills、脚本、蓝图和协议</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="quote">这套工作流不是给 AI 增加文档负担，而是把 AI 原本容易丢失的东西外部化，变成下一轮也能继续使用的流程资产。</div>
     </section>
 
     <section class="section wrap">
