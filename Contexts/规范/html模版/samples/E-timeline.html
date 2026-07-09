@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>灰度发布实施步骤 · 流程时间线</title>
+<style>
+  :root{
+    --bg:#080a0f; --bg-2:#0c0f17; --ink:#e6ebf5; --ink-2:#98a4bb; --ink-3:#5f6b83;
+    --line:#1a2030; --line-2:#252d42;
+    --brand:#4d8dff; --brand-2:#38d9c4; --glow:rgba(77,141,255,.5);
+    --amber:#ffb849; --red:#ff5d6c; --green:#31d0a5;
+    --readw:760px; --maxw:900px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16.5px;line-height:1.85;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--brand-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono)}
+
+  #prog{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));box-shadow:0 0 12px var(--glow)}
+  .brandbar{position:fixed;top:0;left:0;right:0;z-index:55;height:52px;display:flex;align-items:center;
+    padding:0 clamp(18px,4vw,40px);background:rgba(8,10,15,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .brandbar .bl{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;letter-spacing:.3px}
+  .brandbar .mk{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    display:flex;align-items:center;justify-content:center;color:#04121e;font-family:var(--mono);font-weight:800;font-size:12px}
+  .brandbar .rt{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+
+  /* hero */
+  .hero{position:relative;padding:124px clamp(20px,5vw,40px) 44px;text-align:center;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(900px 380px at 50% -8%,rgba(77,141,255,.16),transparent 62%)}
+  .hero::after{content:"";position:absolute;inset:0;opacity:.3;pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:52px 52px;mask-image:radial-gradient(circle at 50% 0,#000,transparent 72%)}
+  .hero-in{position:relative;z-index:2;max-width:var(--readw);margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--brand-2);border:1px solid var(--line-2);border-radius:999px;padding:5px 14px;margin-bottom:22px}
+  .eyebrow .pulse{width:6px;height:6px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 9px var(--brand-2);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-size:clamp(30px,5.4vw,50px);line-height:1.14;font-weight:850;letter-spacing:-1px;margin:0 0 18px;
+    background:linear-gradient(120deg,#fff 20%,#a9c9ff 60%,#7defd8 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:clamp(15.5px,1.7vw,18px);color:var(--ink-2);margin:0 auto;max-width:600px}
+  .hero-meta{display:flex;justify-content:center;gap:10px 24px;flex-wrap:wrap;margin-top:28px;
+    font-family:var(--mono);font-size:12.5px;color:var(--ink-3);padding-top:22px;border-top:1px solid var(--line)}
+  .hero-meta b{color:var(--ink-2);font-weight:500}
+
+  /* timeline */
+  .timeline{max-width:var(--maxw);margin:0 auto;padding:44px clamp(20px,5vw,40px) 120px;position:relative}
+  .spine{position:absolute;left:calc(clamp(20px,5vw,40px) + 21px);top:44px;bottom:120px;width:2px;
+    background:linear-gradient(180deg,var(--brand),var(--brand-2) 60%,var(--line));opacity:.5}
+  .step{position:relative;padding:0 0 12px 66px;margin-bottom:34px}
+  .step .node{position:absolute;left:8px;top:0;width:44px;height:44px;border-radius:13px;z-index:2;
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:16px;color:#04121e;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));box-shadow:0 0 22px -4px var(--glow)}
+  .step.done .node{background:linear-gradient(135deg,var(--green),#7defd8)}
+  .step.warn .node{background:linear-gradient(135deg,var(--amber),#ffd28a)}
+  .step .card{background:linear-gradient(180deg,var(--bg-2),#0a0d15);border:1px solid var(--line-2);
+    border-radius:16px;padding:20px 22px;box-shadow:0 20px 50px -34px rgba(0,0,0,.9)}
+  .step .when{font-family:var(--mono);font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--brand-2);margin-bottom:6px}
+  .step h2{font-size:clamp(19px,2.6vw,23px);font-weight:800;letter-spacing:-.3px;margin:0 0 8px;line-height:1.3}
+  .step p{color:#cdd6e8;margin:10px 0}
+  .step ul{margin:12px 0;padding-left:20px}
+  .step li{margin:5px 0;color:#cdd6e8;font-size:14.8px}
+  strong{color:#fff;font-weight:700}
+  code.inl{background:#0e1626;border:1px solid var(--line-2);color:#8fe6d4;padding:1.5px 7px;border-radius:6px;font-size:.83em}
+  .js-reveal .step{opacity:0;transform:translateY(20px);transition:.65s cubic-bezier(.2,.7,.3,1)}
+  .js-reveal .step.in{opacity:1;transform:none}
+
+  blockquote{margin:16px 0 0;padding:14px 20px;border-left:3px solid var(--brand-2);background:linear-gradient(90deg,rgba(56,217,196,.06),transparent);
+    border-radius:0 12px 12px 0;color:#cfeee7;font-size:15.5px}
+  .callout{display:flex;gap:12px;padding:13px 16px;border-radius:12px;margin:14px 0 0;font-size:14px;line-height:1.65;
+    background:var(--bg-2);border:1px solid var(--line-2)}
+  .callout .ic{flex:none;width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#04121e}
+  .callout.warn{border-left:3px solid var(--amber)}.callout.warn .ic{background:var(--amber)}
+
+  figure.dia{margin:16px 0 0;background:#0a0d14;border:1px solid var(--line-2);
+    border-radius:14px;overflow:hidden}
+  figure.dia .bar{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  figure.dia .dot{width:9px;height:9px;border-radius:50%}
+  .dr{background:#ff5d6c}.dy{background:#ffb849}.dg{background:#31d0a5}
+  figure.dia .mermaid{padding:22px 12px;text-align:center;overflow-x:auto}
+
+  .tpl-badge{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    background:rgba(12,15,23,.9);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px}
+  #top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:12px;z-index:50;cursor:pointer;
+    background:rgba(77,141,255,.15);border:1px solid rgba(77,141,255,.4);color:#cfe0ff;display:flex;align-items:center;justify-content:center;
+    font-size:18px;opacity:0;pointer-events:none;transition:.3s;backdrop-filter:blur(8px)}
+  #top.show{opacity:1;pointer-events:auto}
+
+  @media(max-width:560px){
+    .hero{padding:104px 18px 36px}
+    .spine{left:calc(clamp(20px,5vw,40px) + 17px)}
+    .step{padding-left:56px}
+    .step .node{width:36px;height:36px;left:0;font-size:14px}
+  }
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="brandbar">
+  <span class="bl"><span class="mk">N</span>NAMIWork 技术文档</span>
+  <span class="rt">docs/release · 阅读约 5 分钟</span>
+</div>
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="eyebrow"><span class="pulse"></span>实施手册 · 灰度发布</span>
+    <h1>灰度发布五步实施</h1>
+    <p>一个纵向时间线版式：步骤沿一条高亮脊柱依次展开，编号节点标出进度，进屏逐个渐显。适合实施步骤、里程碑、事故复盘时序。</p>
+    <div class="hero-meta">
+      <span><b>阶段</b> 上线流程</span>
+      <span><b>负责</b> 平台组</span>
+      <span><b>更新</b> 2026-07-08</span>
+    </div>
+  </div>
+</header>
+
+<div class="timeline reveal-host">
+  <div class="spine"></div>
+
+  <div class="step done">
+    <div class="node">1</div>
+    <div class="card">
+      <div class="when">T-1 天 · 准备</div>
+      <h2>切流开关与回滚预案就位</h2>
+      <p>在配置中心建好灰度开关 <code class="inl">gray.ratio</code>，默认 0；准备一键回滚脚本并演练一次。<strong>回滚必须比发布快</strong>。</p>
+    </div>
+  </div>
+
+  <div class="step done">
+    <div class="node">2</div>
+    <div class="card">
+      <div class="when">T0 · 内部放量</div>
+      <h2>1% 内部流量验证</h2>
+      <p>先把 <code class="inl">gray.ratio</code> 调到 1%，只覆盖内部账号，观察核心指标 30 分钟。</p>
+      <ul>
+        <li>错误率、p95 延迟无异常抬升</li>
+        <li>关键业务链路日志无新报错</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step warn">
+    <div class="node">3</div>
+    <div class="card">
+      <div class="when">T0 +1h · 观测点</div>
+      <h2>放量到 10%，设熔断阈值</h2>
+      <p>扩到 10% 真实流量，同时挂上自动熔断：错误率超阈值自动回退到上一档。</p>
+      <div class="callout warn"><span class="ic">!</span><div>观测窗口内一旦触发熔断，先回滚再排查，<strong>不在放量态调试</strong>。</div></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="node">4</div>
+    <div class="card">
+      <div class="when">T0 +4h · 全量前</div>
+      <h2>灰度决策与流转</h2>
+      <p>各档指标绿灯后进入全量决策。决策依据一条状态线走完才放行。</p>
+      <figure class="dia">
+        <div class="bar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;gray-flow.mmd</div>
+        <div class="mermaid">
+flowchart LR
+    S1["1% 内部"] -->|"指标绿"| S2["10% 真实"]
+    S2 -->|"观测通过"| S3["50%"]
+    S2 -->|"异常"| RB["自动熔断回滚"]
+    S3 -->|"稳定"| S4["100% 全量"]
+        </div>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="node">5</div>
+    <div class="card">
+      <div class="when">T +1 天 · 收尾</div>
+      <h2>全量与开关下线</h2>
+      <p>全量稳定 24 小时后，移除灰度开关与旧分支代码，把本次阈值与观测结论沉淀进发布手册。</p>
+      <blockquote>时间线版式的价值：让「先做什么、卡在哪、什么条件才往下走」一目了然，比平铺文字更适合被人照着执行。</blockquote>
+    </div>
+  </div>
+</div>
+
+<div class="tpl-badge">TEMPLATE E · timeline</div>
+<button id="top" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{ mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',
+    themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#5f6b83',
+      primaryColor:'#101728',primaryBorderColor:'#2a3552',primaryTextColor:'#e6ebf5'},
+    flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:44,rankSpacing:52,padding:14}}); }catch(e){}
+
+  var prog=document.getElementById('prog');
+  addEventListener('scroll',function(){
+    var h=document.documentElement, sc=h.scrollTop, mx=h.scrollHeight-h.clientHeight;
+    prog.style.width=(mx>0?(sc/mx*100):0)+'%';
+  },{passive:true});
+
+  document.body.classList.add('js-reveal');
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12,rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('.step').forEach(function(s){io.observe(s);});
+  setTimeout(function(){document.querySelectorAll('.step:not(.in)').forEach(function(s){s.classList.add('in');});},3000);
+
+  var backBtn=document.getElementById('top');
+  backBtn.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});
+  addEventListener('scroll',function(){ if(scrollY>560)backBtn.classList.add('show');else backBtn.classList.remove('show'); },{passive:true});
+</script>
+</body>
+</html>

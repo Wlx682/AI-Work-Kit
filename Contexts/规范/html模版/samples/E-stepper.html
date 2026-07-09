@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>端到端提交流程 · 步骤流水线</title>
+<style>
+  :root{
+    --bg:#080b12; --panel:#0d111c; --panel-2:#0b0f18; --ink:#e6ecf7; --ink-2:#95a2bb; --ink-3:#57657f;
+    --line:#172032; --line-2:#232d44;
+    --brand:#5b8cff; --brand-2:#3ad9c0; --green:#3fd89a; --amber:#ffbe55; --red:#ff6b7a;
+    --maxw:960px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.78;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--brand-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono)}
+
+  /* sticky stepper */
+  .stepper{position:sticky;top:0;z-index:50;background:rgba(8,11,18,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .stepper-in{max-width:var(--maxw);margin:0 auto;padding:14px clamp(18px,4vw,32px);display:flex;align-items:center;gap:6px;overflow-x:auto}
+  .snode{display:flex;align-items:center;gap:9px;flex:none}
+  .snode .num{width:28px;height:28px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:800;color:var(--ink-3);transition:.3s}
+  .snode .lbl{font-size:12.5px;color:var(--ink-3);white-space:nowrap;transition:.3s}
+  .snode.done .num{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#04121e;border-color:transparent}
+  .snode.active .num{background:transparent;border-color:var(--brand);color:#cfe0ff;box-shadow:0 0 0 3px rgba(91,140,255,.16)}
+  .snode.active .lbl{color:var(--ink)}
+  .sbar{flex:1;height:2px;min-width:16px;background:var(--line-2);border-radius:2px}
+  .sbar.done{background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+  .hero{max-width:var(--maxw);margin:0 auto;padding:48px clamp(18px,4vw,32px) 10px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--brand-2);margin-bottom:12px}
+  h1{font-size:clamp(27px,4.2vw,40px);font-weight:850;letter-spacing:-.5px;line-height:1.16;margin:0 0 14px;
+    background:linear-gradient(120deg,#fff 25%,#a9c9ff 70%,#7defd8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--ink-2);font-size:16.5px;max-width:64ch;margin:0}
+
+  .steps{max-width:var(--maxw);margin:0 auto;padding:20px clamp(18px,4vw,32px) 90px}
+  .stepcard{scroll-margin-top:80px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line-2);
+    border-radius:18px;padding:26px clamp(20px,3vw,32px) 28px;margin:22px 0;position:relative;overflow:hidden}
+  .stepcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--brand),var(--brand-2))}
+  .stepcard .head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .stepcard .big{font-family:var(--mono);font-size:32px;font-weight:850;line-height:1;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stepcard h2{font-size:21px;font-weight:800;margin:0;letter-spacing:-.2px}
+  .stepcard .est{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);border:1px solid var(--line-2);padding:3px 9px;border-radius:6px}
+  .stepcard p{color:#ccd5e8;margin:12px 0}
+  .stepcard strong{color:#fff}
+  code.inl{background:#0e1626;border:1px solid var(--line-2);color:#8fe6d4;padding:1.5px 7px;border-radius:6px;font-size:.84em;word-break:break-word}
+
+  pre.code{background:#060910;border:1px solid var(--line-2);border-radius:11px;padding:14px 16px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.8px;line-height:1.72;color:#cbd6ea;margin:16px 0}
+  pre.code .k{color:#ff9da5}.c{color:#57657f}.s{color:#8fe6d4}.fl{color:#ffbe55}.p{color:#3fd89a}
+
+  .cbar{display:flex;align-items:center;gap:7px;margin:16px 0 -8px;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .cbar .dot{width:9px;height:9px;border-radius:50%}.dr{background:#ff5f56}.dy{background:#ffbd2e}.dg{background:#27c93f}
+
+  .callout{display:flex;gap:11px;padding:13px 15px;border-radius:10px;margin:16px 0;font-size:13.6px;line-height:1.6;background:var(--panel-2);border:1px solid var(--line-2)}
+  .callout .ic{flex:none;width:21px;height:21px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#04121e}
+  .callout.warn{border-left:2px solid var(--amber)}.callout.warn .ic{background:var(--amber)}
+  .callout.tip{border-left:2px solid var(--green)}.callout.tip .ic{background:var(--green)}
+
+  figure.dia{margin:16px 0;border:1px solid var(--line-2);border-radius:11px;overflow:hidden;background:#060910}
+  figure.dia .bar{padding:8px 13px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  figure.dia .mermaid{padding:20px 12px;text-align:center;overflow-x:auto}
+
+  .navrow{display:flex;justify-content:space-between;margin-top:22px;padding-top:18px;border-top:1px dashed var(--line-2)}
+  .navrow a{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);padding:7px 14px;border:1px solid var(--line-2);border-radius:8px}
+  .navrow a:hover{background:var(--panel);text-decoration:none;color:#cfe0ff}
+  .navrow a.disabled{opacity:.3;pointer-events:none}
+
+  .tpl-badge{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--mono);font-size:11px;color:var(--ink-3);background:rgba(13,17,28,.9);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px}
+
+  @media(max-width:600px){ .snode .lbl{display:none} .stepcard .big{font-size:26px} }
+</style>
+</head>
+<body>
+
+<div class="stepper">
+  <div class="stepper-in" id="stepper">
+    <div class="snode active" data-i="0"><span class="num">1</span><span class="lbl">确认改动</span></div>
+    <div class="sbar"></div>
+    <div class="snode" data-i="1"><span class="num">2</span><span class="lbl">提交</span></div>
+    <div class="sbar"></div>
+    <div class="snode" data-i="2"><span class="num">3</span><span class="lbl">拉取 rebase</span></div>
+    <div class="sbar"></div>
+    <div class="snode" data-i="3"><span class="num">4</span><span class="lbl">推送</span></div>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">开发工作流 · 提交代码</div>
+  <h1>端到端提交流程：确认 → 提交 → rebase → 推送</h1>
+  <p>「提交代码」在本项目是一套固定四步动作。每一步都有明确的命令与门禁，跟着走一遍即可安全地把改动推上远端。</p>
+</header>
+
+<div class="steps">
+  <div class="stepcard" id="s0" data-i="0">
+    <div class="head"><span class="big">01</span><h2>确认改动</h2><span class="est">~1 min</span></div>
+    <p>提交前先列出改动给自己（或用户）确认，避免误提无关文件。</p>
+    <div class="cbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;terminal</div>
+    <pre class="code"><span class="k">git</span> status <span class="fl">--short</span>
+<span class="k">git</span> diff <span class="fl">--stat</span> HEAD</pre>
+    <div class="callout tip"><span class="ic">✓</span><div>只 <code class="inl">git add</code> 与本次改动相关的文件，不要 <code class="inl">git add -A</code> 顺手带进 <code class="inl">.env</code>、大二进制等无关文件。</div></div>
+    <div class="navrow"><a class="disabled">← 上一步</a><a href="#s1">下一步 · 提交 →</a></div>
+  </div>
+
+  <div class="stepcard" id="s1" data-i="1">
+    <div class="head"><span class="big">02</span><h2>提交（三行格式）</h2><span class="est">~2 min</span></div>
+    <p>commit message 三个字段<strong>各占一行</strong>，用多段 <code class="inl">-m</code> 保证换行；修改说明 ≤30 字，不加 Co-Authored-By 尾注。</p>
+    <div class="cbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;commit</div>
+    <pre class="code"><span class="k">git</span> commit <span class="fl">-m</span> <span class="s">"[修改类型] FIX"</span> \
+  <span class="fl">-m</span> <span class="s">"[修改说明] 修复切tab键盘未收起"</span> \
+  <span class="fl">-m</span> <span class="s">"[影响范围] 终端tab切换"</span></pre>
+    <div class="callout warn"><span class="ic">!</span><div>修改类型仅四种取值：<code class="inl">FEAT</code> / <code class="inl">FIX</code> / <code class="inl">优化</code> / <code class="inl">UI</code>。细节放 PR 描述，不堆进 commit。</div></div>
+    <div class="navrow"><a href="#s0">← 上一步</a><a href="#s2">下一步 · rebase →</a></div>
+  </div>
+
+  <div class="stepcard" id="s2" data-i="2">
+    <div class="head"><span class="big">03</span><h2>拉取 rebase</h2><span class="est">~1 min</span></div>
+    <p>拉远端并变基到当前分支，保持线性历史。遇 <code class="inl">Podfile.lock</code> 冲突取远端版本。</p>
+    <div class="cbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;rebase</div>
+    <pre class="code"><span class="k">git</span> pull <span class="fl">--rebase</span> origin <span class="p">$(git branch --show-current)</span>
+
+<span class="c"># Podfile.lock 冲突时</span>
+<span class="k">git</span> checkout <span class="fl">--theirs</span> Podfile.lock
+<span class="k">git</span> add Podfile.lock
+<span class="p">GIT_EDITOR=true</span> <span class="k">git</span> rebase <span class="fl">--continue</span></pre>
+    <figure class="dia">
+      <div class="bar">conflict-flow.mmd</div>
+      <div class="mermaid">
+flowchart LR
+    A["git pull --rebase"] --> B{"有冲突?"}
+    B -->|"否"| E["进入推送"]
+    B -->|"Podfile.lock"| C["取 theirs · add · continue"]
+    B -->|"其他文件"| D["手动解决 · add · continue"]
+    C --> E
+    D --> E
+      </div>
+    </figure>
+    <div class="navrow"><a href="#s1">← 上一步</a><a href="#s3">下一步 · 推送 →</a></div>
+  </div>
+
+  <div class="stepcard" id="s3" data-i="3">
+    <div class="head"><span class="big">04</span><h2>推送当前分支</h2><span class="est">~30 s</span></div>
+    <p>rebase 成功后只推当前分支，不跨分支操作。</p>
+    <div class="cbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;push</div>
+    <pre class="code"><span class="k">git</span> push origin HEAD</pre>
+    <div class="callout warn"><span class="ic">!</span><div>严禁跨分支 merge / cherry-pick / checkout 他分支；不 force push 到已有他人提交的历史。rebase 完成若动过 Podfile.lock，记得 <code class="inl">pod install</code>。</div></div>
+    <div class="navrow"><a href="#s2">← 上一步</a><a class="disabled">完成 ✓</a></div>
+  </div>
+</div>
+
+<div class="tpl-badge">TEMPLATE E · stepper</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{ mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',
+    themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'13.5px',lineColor:'#57657f',
+      primaryColor:'#101a2e',primaryBorderColor:'#243248',primaryTextColor:'#e6ecf7'},
+    flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:38,rankSpacing:44,padding:12}}); }catch(e){}
+
+  var nodes=[].slice.call(document.querySelectorAll('.snode'));
+  var bars=[].slice.call(document.querySelectorAll('.sbar'));
+  function setActive(n){
+    nodes.forEach(function(nd,i){
+      nd.classList.toggle('active',i===n);
+      nd.classList.toggle('done',i<n);
+    });
+    bars.forEach(function(b,i){ b.classList.toggle('done',i<n); });
+  }
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){ setActive(+e.target.dataset.i); }});},{rootMargin:'-40% 0px -50% 0px'});
+  document.querySelectorAll('.stepcard').forEach(function(s){io.observe(s);});
+</script>
+</body>
+</html>

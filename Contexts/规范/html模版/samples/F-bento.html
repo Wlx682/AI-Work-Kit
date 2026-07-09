@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>模型越强越挑工具 · Bento 速览</title>
+<style>
+  :root{
+    --bg:#06080e; --card:#0e1220; --card-2:#0b0f1a; --ink:#e8eef9; --ink-2:#98a5be; --ink-3:#5a6a86;
+    --line:#182234; --line-2:#26314a;
+    --brand:#5b8cff; --brand-2:#3ad9c0; --violet:#b48cff; --amber:#ffbe55; --red:#ff6b7a; --pink:#ff7ac0; --green:#3fd89a;
+    --maxw:1200px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
+      radial-gradient(1100px 500px at 85% -10%,rgba(91,140,255,.1),transparent 60%),
+      radial-gradient(800px 400px at 5% 5%,rgba(58,217,192,.07),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--brand-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono)}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:44px clamp(16px,3.5vw,34px) 90px}
+
+  .masthead{margin-bottom:24px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--brand-2);margin-bottom:14px;
+    display:inline-flex;align-items:center;gap:8px}
+  .eyebrow .pulse{width:6px;height:6px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 9px var(--brand-2);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-size:clamp(28px,4.6vw,46px);font-weight:850;letter-spacing:-.6px;line-height:1.14;margin:0 0 12px;max-width:20ch;
+    background:linear-gradient(120deg,#fff 22%,#a9c9ff 62%,#7defd8 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .masthead p{color:var(--ink-2);font-size:16px;max-width:66ch;margin:0}
+  .mrow{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:16px;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  .mrow b{color:var(--ink-2);font-weight:500}
+
+  .bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;grid-auto-rows:minmax(10px,auto)}
+  .cell{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line-2);border-radius:18px;
+    padding:22px 22px;position:relative;overflow:hidden;transition:.3s}
+  .cell:hover{border-color:#33507e;transform:translateY(-2px)}
+  .cell .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  .cell h3{font-size:17px;font-weight:750;margin:0 0 8px;letter-spacing:-.2px}
+  .cell p{color:var(--ink-2);font-size:13.8px;margin:8px 0}
+  .cell strong{color:#fff}
+  code.inl{background:#0e1626;border:1px solid var(--line-2);color:#8fe6d4;padding:1px 6px;border-radius:5px;font-size:.82em}
+
+  /* spans */
+  .c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c6{grid-column:span 6}
+  .c5{grid-column:span 5}.c4{grid-column:span 4}.c3{grid-column:span 3}
+
+  /* metric cell */
+  .metric{display:flex;flex-direction:column;justify-content:center}
+  .metric::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;
+    background:radial-gradient(circle,rgba(91,140,255,.14),transparent 70%)}
+  .metric .big{font-family:var(--mono);font-weight:850;line-height:.98;letter-spacing:-1.5px;
+    font-size:clamp(38px,6vw,60px);background:linear-gradient(135deg,#89b6ff,#7defd8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .metric.red .big{background:linear-gradient(135deg,#ff8a94,#ffbe55);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .metric.violet .big{background:linear-gradient(135deg,#c3a6ff,#ff7ac0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .metric .k{font-family:var(--mono);font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  .metric .d{color:var(--ink-2);font-size:12.8px;margin-top:10px;line-height:1.6}
+
+  .accent{background:linear-gradient(150deg,rgba(91,140,255,.12),rgba(58,217,192,.05));border-color:#2a3d63}
+  .lead-cell h2{font-size:clamp(19px,2.4vw,24px);font-weight:800;margin:0 0 10px;letter-spacing:-.3px;line-height:1.3}
+  .lead-cell p{font-size:14.5px;color:#c8d2e6}
+
+  figure.dia{margin:0;border:1px solid var(--line-2);border-radius:12px;overflow:hidden;background:#080b13}
+  figure.dia .bar{padding:8px 13px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  figure.dia .mermaid{padding:18px 10px;text-align:center;overflow-x:auto}
+
+  .list li{position:relative;padding:6px 0 6px 20px;color:#c3cde2;font-size:13.6px;list-style:none}
+  .list ul{margin:6px 0;padding:0}
+  .list li::before{content:"›";position:absolute;left:2px;color:var(--brand-2);font-weight:800}
+
+  .quote{font-size:16px;line-height:1.6;color:#cfeee7;font-style:italic;border:0}
+  .quote .mk{font-family:var(--mono);font-size:40px;color:var(--brand-2);line-height:.5;opacity:.5}
+
+  .tpl-badge{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--mono);font-size:11px;color:var(--ink-3);background:rgba(14,18,32,.9);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px}
+
+  @media(max-width:900px){
+    .c8,.c7,.c6,.c5{grid-column:span 12}
+    .c4,.c3{grid-column:span 6}
+  }
+  @media(max-width:560px){
+    .bento{gap:12px}
+    .c4,.c3{grid-column:span 12}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <span class="eyebrow"><span class="pulse"></span>Weekly Intel · 第 7 期 · 速览</span>
+    <h1>模型越强，越挑工具</h1>
+    <p>最新的 Claude（Opus 4.8 / Sonnet 5）调用第三方编辑工具时，反而比老模型更容易凭空塞进乱造字段。挖到底，是所有自建 agent 框架都该知道的真相。</p>
+    <div class="mrow"><span><b>来源</b> Armin Ronacher</span><span><b>日期</b> 2026-07-04</span><span><b>标签</b> 工具调用 · harness · 受限采样</span></div>
+  </div>
+
+  <div class="bento">
+    <div class="cell c7 accent lead-cell">
+      <div class="tag">核心论点</div>
+      <h2>工具的参数结构（schema）不是中立契约</h2>
+      <p>它落在模型训练分布的什么位置，直接决定模型能不能稳定地把它填对。模型可能完全理解你的 schema，却依然在压力下采样不出那个精确的形状。</p>
+    </div>
+    <div class="cell c5 metric red">
+      <div class="k">Opus 4.8 失败率</div>
+      <div class="big"><span class="num" data-to="20" data-suf="%">0%</span></div>
+      <div class="d">在真实 agent 会话里继续对话，约 1/5 概率产出带乱造字段的工具调用。</div>
+    </div>
+
+    <div class="cell c4 metric">
+      <div class="k">删 thinking 块后</div>
+      <div class="big"><span class="num" data-to="50" data-pre="↓" data-suf="%">↓0%</span></div>
+      <div class="d">仅剥掉历史 thinking 块，失败率减半——高度依赖上下文。</div>
+    </div>
+    <div class="cell c4 metric violet">
+      <div class="k">乱造字段种类</div>
+      <div class="big"><span class="num" data-to="12" data-suf="+">0+</span></div>
+      <div class="d">type / id / requireUnique / oldText2… 一整个动物园，非单一别名。</div>
+    </div>
+    <div class="cell c4">
+      <div class="tag">为什么是随机 key</div>
+      <p>模型「知道这里也许能有一个可选字段，但没有训练过的名字」，于是<strong>每次现编一个</strong>看着合理的名字。</p>
+    </div>
+
+    <div class="cell c6">
+      <div class="tag">机制 · 扁平 vs 嵌套</div>
+      <h3>出错出在嵌套那条路</h3>
+      <figure class="dia">
+        <div class="bar">flat-vs-nested.mmd</div>
+        <div class="mermaid">
+flowchart TB
+    F["扁平工具<br/>old_string/new_string"] --> FR["顶层字段<br/>顺手写对 ✓"]
+    N["嵌套工具<br/>edits:[{oldText,newText}]"] --> NR["参数里手写 JSON<br/>结尾塞废字段 ✗"]
+        </div>
+      </figure>
+    </div>
+    <div class="cell c6">
+      <div class="tag">机制 · 奖励塑形</div>
+      <h3>宽容 harness 固化了坏习惯</h3>
+      <figure class="dia">
+        <div class="bar">reward-shaping.mmd</div>
+        <div class="mermaid">
+flowchart LR
+    M["带废字段的调用"] --> H{"哪个 harness?"}
+    H -->|"Claude Code·超宽容"| G1["静默修好·拿奖励"]
+    H -->|"第三方·严格"| G2["校验失败·打回"]
+    G1 --> R["坏习惯被固化"]
+        </div>
+      </figure>
+    </div>
+
+    <div class="cell c8">
+      <div class="tag">复用 · 落到我们工作流</div>
+      <div class="list">
+        <ul>
+          <li><strong>工具优先扁平参数</strong>：<code class="inl">file_path/old_string/new_string</code>，少用对象数组嵌套。</li>
+          <li><strong>自建 harness 加宽容修复层</strong>：未知字段过滤、参数别名归一、类型强转。</li>
+          <li><strong>能开严格采样就开</strong>：Anthropic 模型 + 复杂 schema 时列为默认基线。</li>
+          <li><strong>补跨 harness 迁移压测</strong>：在真实 agent 历史下测调用成功率，别只测单轮。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell c4">
+      <div class="quote"><span class="mk">"</span>越强的模型先验越硬，「靠把工具说明写好、让模型自己适应任意 schema」这条路，比半年前更难走了。</div>
+    </div>
+  </div>
+</div>
+
+<div class="tpl-badge">TEMPLATE F · bento</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{ mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',
+    themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'12.5px',lineColor:'#5a6a86',
+      primaryColor:'#101a2e',primaryBorderColor:'#243248',primaryTextColor:'#e8eef9'},
+    flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:32,rankSpacing:38,padding:10}}); }catch(e){}
+
+  // count-up
+  (function(){
+    var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+    function run(el){var to=+el.dataset.to,pre=el.dataset.pre||'',suf=el.dataset.suf||'';
+      if(reduce){el.textContent=pre+to+suf;return;}
+      var t0=null;function step(ts){t0=t0||ts;var k=Math.min(1,(ts-t0)/1100);var e=1-Math.pow(1-k,3);
+        el.textContent=pre+Math.round(to*e)+suf;if(k<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
+    var seen=new WeakSet();
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting&&!seen.has(e.target)){seen.add(e.target);run(e.target);io.unobserve(e.target);}});},{threshold:.5});
+    document.querySelectorAll('.num').forEach(function(n){io.observe(n);});
+  })();
+</script>
+</body>
+</html>

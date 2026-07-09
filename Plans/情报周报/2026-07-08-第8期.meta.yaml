@@ -1,0 +1,38 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-08          # 第 8 期
+  article:
+    title_cn: "正在到来的循环：当 harness 而非模型来决定“活儿干完了没”"
+    title_en: "The Coming Loop"
+    url: https://lucumr.pocoo.org/2026/6/23/the-coming-loop/
+    author: Armin Ronacher (mitsuhiko, lucumr.pocoo.org)
+    theme: harness-outer-loop / agentic-engineering / human-in-the-loop
+    score: 49        # 一手15 + 实操15 + 时效10 + 覆盖4 + 讨论5
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 按加权分从 5 篇跨源候选里选出 Top1（The Coming Loop 49 分）
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: 前 7 期均为 Anthropic/OpenAI 官方源，据此优先选非官方一手源破除源集中，并确认 harness-outer-loop 主题未发过
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: 名单预警 WebSearch/WebFetch 网关不稳 + 上期 source_stale_warning（源过度集中 anthropic-eng）；据此本期主动扩源到 Armin Ronacher 个人博客
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: HTML 按此规范落关键数字主角化 + 流式栅格 + mermaid 自渲染 + 三宽度自检
+    - path: Contexts/规范/html模版/samples/B-sidebar-docs.html
+      utility: high
+      reason: 观点长文章节多（8 节），复用 B 侧栏文档骨架
+  contexts_missing:          # capability_gap：读这篇暴露的 Kit 能力缺口
+    - "上循环/放手 vs 强制人在环的判据规范：按『产物寿命 + 可机械验证性』决定哪些任务可交自动循环、哪些必须 human-in-the-loop（对应文章核心洞察，可落进 workflow-evolution-assistant 与 Workflow 编排）"
+    - "vault-evolve 合入判据补一问：新增规则/兜底是『让坏状态不可能』还是『给局部失败打补丁』，后者拒绝——防止 Skill 逐轮累积局部防御变得没人能懂"
+    - "follow 名单缺可 DocShark 建库的非官方一手工程博客清单（本期临时加了 lucumr，应固化并扩充为常备种子源池）"
+  contexts_stale: []
+  notes: |
+    source_health:
+      - 破除上期预警：第 8 期首次采用非 Anthropic 一手源（Armin Ronacher / lucumr.pocoo.org），已用 DocShark 新建库 lucumr（爬取成功、search/get_doc_page 均可用），source_stale_warning（源过度集中 anthropic-eng）本期已主动响应。
+      - WebSearch 仍区域限制返回空、WebFetch 第三方网关仍报“model参数不存在”——与前 7 期一致；curl 探测 lucumr/cloudflare/simonwillison 等站 200 可达，故走 DocShark 建库而非 WebFetch。
+      - 建议把 lucumr 增补进 follow 名单 B 类（前沿观点·Agent），并继续物色 2-3 个可 DocShark 建库的非官方一手工程博客，形成对官方源的独立视角对冲。
+    dedup_note: 与前 7 期无重叠。本篇讲 harness 外层循环，与第3期 managed-agents（brain/hands 解耦）、第6期 Codex 委托同主线但更进一格——聚焦“完成信号裁判权转移”这一新范式，且带一手的批判性判断（何时该/不该上循环），角度独特。
+    web_self_check: mermaid 2/2 hasSVG=true · section 8/8 opacity=1 · count-up 触发 · console 仅 favicon 404 · 375/768/1440 三宽度 overflow=false · 残留已清理

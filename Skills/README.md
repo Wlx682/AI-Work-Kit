@@ -74,6 +74,7 @@
 | PM 物料、整理通用资料 | material-prep-assistant | `/material-prep` |
 | 找 CC 文章、周报选题、海外资讯、整理分享帖 | weekly-intel-digest | `/intel` `/weekly-intel-digest` |
 | 提效案例、最佳实践、技术提交分享、产品提效 | best-practice-digest | `/best-practice` `/best-practice-digest` |
+| 生成网页、做成网页、出 HTML、技术文档网页、换个骨架/风格 | html-generate | `/html` `/html-generate` |
 | 工作流进化、反馈闭环、skill_run 聚合、流程改进沉淀 | workflow-evolution-assistant | `/workflow-evolution` `/workflow-evolution-assistant` |
 
 | 推荐自然语言触发词 | Skill | 备用命令 |

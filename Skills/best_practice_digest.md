@@ -50,7 +50,7 @@ description: >-
    ├ 必配 ≥1 张 Mermaid 流程图/架构图，标签用大白话，非技术受众看图能懂
    └ 正常写完即干净成品（无需刻意去痕迹）；过自查清单
 5. 生成 AI 卷  → 同名 .meta.yaml(纯 YAML)：skill_run(contexts_used/missing/stale)，喂 feedback-aggregate
-6. 生成炫酷网页 → **Agent 直接产同名 `.html` 自渲染成品**（遵 [[Contexts/规范/炫酷建站规范]]：深色科技感 + 内嵌 mermaid.js 自渲染 + 渐进增强 + 适度动效，零 WIP/零机器块），并**用本地浏览器过自检**（图渲染成 SVG / console 无报错 / 正文全可见 / 移动端不溢出）
+6. 生成炫酷网页 → **走 `@Skills/html_generate.md`**：正文交给「内容→骨架」选择器（提效数据案例默认 **C 指标看板式**，前后对比案例可选 D，实施步骤类可选 E）→套骨架产自渲染 `.html`（遵 [[Contexts/规范/炫酷建站规范]]：深色科技感 + 内嵌 mermaid.js 自渲染 + 渐进增强 + 适度动效，零 WIP/零机器块），并**用本地浏览器过自检**（图渲染成 SVG / console 无报错 / 正文全可见 / 移动端不溢出）
 7. 提交确认语  → 一段发群的确认语（拿到纳米Work 托管短链后补 URL，不带占位）
 8. 收尾        → 三卷存 Plans/最佳实践/YYYY-MM-DD-案例名.{md,html,meta.yaml}；台账追加一行
 ```

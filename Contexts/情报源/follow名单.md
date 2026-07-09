@@ -23,6 +23,7 @@ date: 2026-07-01
 | 人物/源 | 关注点 | 平台 |
 |---------|--------|------|
 | Andrej Karpathy | 提示词、Agent、LLM 系统观 | Twitter/X、YouTube、个人博客 |
+| Armin Ronacher (mitsuhiko) | agentic coding、harness/循环、agent 工程一线判断 | 个人博客 lucumr.pocoo.org（可 DocShark 建库，第8期入选） |
 | （待补）| Agent 论文 | arXiv cs.AI / cs.CL 每周新论文 |
 
 ## C. 对比 / 生态（Codex 等）

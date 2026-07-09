@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>多设备事件流隔离 · 单栏叙事</title>
+<style>
+  :root{
+    --bg:#080a0f; --bg-2:#0c0f17; --ink:#e6ebf5; --ink-2:#98a4bb; --ink-3:#5f6b83;
+    --line:#1a2030; --line-2:#252d42;
+    --brand:#4d8dff; --brand-2:#38d9c4; --glow:rgba(77,141,255,.5);
+    --amber:#ffb849; --red:#ff5d6c; --green:#31d0a5;
+    --readw:740px; --maxw:1080px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16.5px;line-height:1.85;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--brand-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono)}
+
+  /* top progress */
+  #prog{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));box-shadow:0 0 12px var(--glow)}
+  .brandbar{position:fixed;top:0;left:0;right:0;z-index:55;height:52px;display:flex;align-items:center;
+    padding:0 clamp(18px,4vw,40px);background:rgba(8,10,15,.7);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .brandbar .bl{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;letter-spacing:.3px}
+  .brandbar .mk{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    display:flex;align-items:center;justify-content:center;color:#04121e;font-family:var(--mono);font-weight:800;font-size:12px}
+  .brandbar .rt{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+
+  /* hero */
+  .hero{position:relative;padding:130px clamp(20px,5vw,40px) 60px;text-align:center;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(900px 380px at 50% -8%,rgba(77,141,255,.16),transparent 62%),
+      radial-gradient(600px 300px at 50% 110%,rgba(56,217,196,.08),transparent 60%)}
+  .hero::after{content:"";position:absolute;inset:0;opacity:.35;pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:52px 52px;mask-image:radial-gradient(circle at 50% 0,#000,transparent 72%)}
+  .hero-in{position:relative;z-index:2;max-width:var(--readw);margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--brand-2);border:1px solid var(--line-2);border-radius:999px;padding:5px 14px;margin-bottom:26px}
+  .eyebrow .pulse{width:6px;height:6px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 9px var(--brand-2);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-size:clamp(30px,5.4vw,52px);line-height:1.14;font-weight:850;letter-spacing:-1px;margin:0 0 22px;
+    background:linear-gradient(120deg,#fff 20%,#a9c9ff 60%,#7defd8 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:clamp(16px,1.7vw,18.5px);color:var(--ink-2);margin:0 auto;max-width:620px}
+  .hero-meta{display:flex;justify-content:center;gap:10px 26px;flex-wrap:wrap;margin-top:32px;
+    font-family:var(--mono);font-size:12.5px;color:var(--ink-3);padding-top:24px;border-top:1px solid var(--line)}
+  .hero-meta b{color:var(--ink-2);font-weight:500}
+
+  /* reading column */
+  article{max-width:var(--readw);margin:0 auto;padding:20px clamp(20px,5vw,40px) 120px}
+  section{padding:44px 0;border-bottom:1px solid var(--line);position:relative}
+  .js-reveal section{opacity:0;transform:translateY(20px);transition:.7s cubic-bezier(.2,.7,.3,1)}
+  .js-reveal section.in{opacity:1;transform:none}
+  .sec-num{font-family:var(--mono);font-size:12.5px;color:var(--brand-2);letter-spacing:2px;margin-bottom:10px}
+  h2{font-size:clamp(23px,3.2vw,30px);font-weight:800;letter-spacing:-.4px;margin:0 0 6px;line-height:1.25}
+  h3{font-size:19px;font-weight:700;margin:34px 0 8px;color:#dfe7f5;padding-left:14px;position:relative}
+  h3::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:2px;background:linear-gradient(180deg,var(--brand),var(--brand-2))}
+  p{color:#cdd6e8;margin:16px 0}
+  strong{color:#fff;font-weight:700}
+  code.inl{background:#0e1626;border:1px solid var(--line-2);color:#8fe6d4;padding:1.5px 7px;border-radius:6px;font-size:.83em;word-break:break-word}
+
+  .lead{font-size:19px;color:var(--ink-2);line-height:1.8}
+  .lead::first-letter{float:left;font-size:62px;line-height:.86;font-weight:850;padding:6px 14px 0 0;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  blockquote{margin:26px 0;padding:18px 24px;border-left:3px solid var(--brand-2);background:linear-gradient(90deg,rgba(56,217,196,.06),transparent);
+    border-radius:0 12px 12px 0;color:#cfeee7;font-size:17.5px}
+
+  table{width:100%;border-collapse:collapse;margin:24px 0;font-size:14.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+  td code{color:#8fe6d4}
+  tr:last-child td{border-bottom:0}
+
+  figure.dia{margin:32px 0;background:linear-gradient(180deg,var(--bg-2),#0a0d14);border:1px solid var(--line-2);
+    border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.9)}
+  figure.dia .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  figure.dia .dot{width:10px;height:10px;border-radius:50%}
+  .dr{background:#ff5d6c}.dy{background:#ffb849}.dg{background:#31d0a5}
+  figure.dia .mermaid{padding:28px 14px;text-align:center;overflow-x:auto}
+  figcaption{padding:0 18px 16px;font-size:13px;color:var(--ink-3);text-align:center}
+
+  pre.code{background:#0a0f1a;border:1px solid var(--line-2);border-radius:12px;padding:16px 18px;overflow-x:auto;
+    font-family:var(--mono);font-size:13.4px;line-height:1.75;color:#c9d4e8;margin:24px 0}
+  pre.code .k{color:#ff9da5}.c{color:#5f6b83}.s{color:#8fe6d4}.f{color:#c3a6ff}.n{color:#79c0ff}
+
+  .callout{display:flex;gap:13px;padding:16px 18px;border-radius:12px;margin:24px 0;font-size:15px;line-height:1.7;
+    background:var(--bg-2);border:1px solid var(--line-2)}
+  .callout .ic{flex:none;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#04121e}
+  .callout.warn{border-left:3px solid var(--amber)}.callout.warn .ic{background:var(--amber)}
+  .callout.note{border-left:3px solid var(--brand)}.callout.note .ic{background:var(--brand)}
+
+  footer{max-width:var(--readw);margin:0 auto;padding:10px clamp(20px,5vw,40px) 90px}
+  footer .src{background:var(--bg-2);border:1px solid var(--line-2);border-radius:14px;padding:20px 22px;font-size:14px;color:var(--ink-3)}
+  footer .src b{color:var(--ink-2)}
+
+  .tpl-badge{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    background:rgba(12,15,23,.9);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px}
+  #top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:12px;z-index:50;cursor:pointer;
+    background:rgba(77,141,255,.15);border:1px solid rgba(77,141,255,.4);color:#cfe0ff;display:flex;align-items:center;justify-content:center;
+    font-size:18px;opacity:0;pointer-events:none;transition:.3s;backdrop-filter:blur(8px)}
+  #top.show{opacity:1;pointer-events:auto}
+
+  @media(max-width:640px){
+    .hero{padding:104px 18px 48px}
+    .lead::first-letter{font-size:50px}
+  }
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="brandbar">
+  <span class="bl"><span class="mk">N</span>NAMIWork 技术文档</span>
+  <span class="rt">docs/claude · 阅读约 6 分钟</span>
+</div>
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="eyebrow"><span class="pulse"></span>Chat 链路 · 事件隔离</span>
+    <h1>多设备场景下的<br/>子龙虾事件流隔离</h1>
+    <p>同一用户在移动端 + Web 端同时操作同一个子龙虾的不同会话时，如何防止事件流串流、消息错位、UI 状态污染。这是单栏纵向叙事骨架——无侧栏、居中阅读列，适合没有明显结构特征的通用长文。</p>
+    <div class="hero-meta">
+      <span><b>模块</b> ClawChat</span>
+      <span><b>状态</b> 已实现</span>
+      <span><b>更新</b> 2026-07-08</span>
+    </div>
+  </div>
+</header>
+
+<article class="reveal-host">
+  <section>
+    <div class="sec-num">01 — 问题域</div>
+    <h2>为什么需要隔离</h2>
+    <p class="lead">OpenClaw 协议有一条硬约束：一个 sessionKey 在服务端同一时刻只能有一个 active 会话。当设备 A 激活会话 X，设备 B 的会话 X 会被标记为 archived。这条约束一旦遇上多设备并发，就会产生事件串流。</p>
+    <p>典型场景：移动端进入某会话的历史（<code class="inl">active=false</code>），Web 端在同一会话发起新对话，服务端把新 runId 的流式事件推送到所有订阅该会话的设备。移动端并没有这轮对话的用户问题，<strong>不应该渲染这些事件</strong>。</p>
+    <div class="callout warn"><span class="ic">!</span><div>修复前的 bug：移动端看到 <code class="inl">currentRunId=nil</code> 就认领了远程 runId，结果 Web 端的回答被拼接到移动端历史消息的最后一轮。</div></div>
+  </section>
+
+  <section>
+    <div class="sec-num">02 — 核心概念</div>
+    <h2>四个关键标识</h2>
+    <table>
+      <thead><tr><th>概念</th><th>说明</th><th>生命周期</th></tr></thead>
+      <tbody>
+        <tr><td><code>sessionKey</code></td><td>会话标识符，如 agent:main:main</td><td>持久</td></tr>
+        <tr><td><code>sessionId</code></td><td>会话 UUID，服务端分配</td><td>持久</td></tr>
+        <tr><td><code>runId</code></td><td>对话轮次标识符，每轮一问一答生成一次</td><td>临时</td></tr>
+        <tr><td><code>active</code></td><td>会话是否活跃，服务端维护且唯一</td><td>动态</td></tr>
+      </tbody>
+    </table>
+    <p>隔离的本质，是在事件到达时用这四个标识回答一个问题：<strong>这条事件属不属于「当前设备正在看的这一轮对话」</strong>。</p>
+  </section>
+
+  <section>
+    <div class="sec-num">03 — 解决方案</div>
+    <h2>三层防护体系</h2>
+    <p>隔离不是单点判断，而是三层依次收窄的守卫：从「是不是这个 Agent」，到「是不是这一轮」，再到「本机是不是活跃」。</p>
+    <figure class="dia">
+      <div class="bar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;three-layer-guard.mmd</div>
+      <div class="mermaid">
+flowchart TB
+    E["WebSocket 事件到达"] --> L1["Layer 1 · SessionKey 过滤&lt;br/&gt;防不同 Agent 串流"]
+    L1 --> L2["Layer 2 · RunId 归属校验&lt;br/&gt;currentRunId 匹配&lt;br/&gt;或 pendingUnfinishedTurn"]
+    L2 --> L3["Layer 3 · Active 状态刷新&lt;br/&gt;sessions.history RPC 拉最新"]
+    L3 --> OK["放行 → ViewModel 渲染"]
+      </div>
+      <figcaption>三层依次收窄：任一层不通过即丢弃事件</figcaption>
+    </figure>
+
+    <h3>Layer 2 的双守卫</h3>
+    <p>远程 runId 认领是最容易出错的一环。它要求<strong>两个守卫同时满足</strong>：会话必须活跃，且历史加载状态必须是「有未完成 turn」。</p>
+    <pre class="code"><span class="k">guard</span> handler.active <span class="k">else</span> {
+  <span class="c">// 非活跃：用户在查看历史，拒绝认领</span>
+  <span class="k">return</span>
+}
+<span class="k">guard</span> handler.initialHistoryLoadState
+      == .pendingUnfinishedTurn <span class="k">else</span> {
+  <span class="c">// 无未完成 turn，不认领远程事件</span>
+  <span class="k">return</span>
+}
+handler.currentRunId = runId  <span class="c">// 通过双守卫，认领</span></pre>
+  </section>
+
+  <section>
+    <div class="sec-num">04 — 状态机</div>
+    <h2>历史加载的四态流转</h2>
+    <p>Layer 2 是否放行，取决于 <code class="inl">NMChatInitialHistoryStateCoordinator</code> 的状态。关键是 <code class="inl">pendingUnfinishedTurn</code>——它告诉守卫「当前有未完成对话，允许放行远程事件等待认领」。</p>
+    <figure class="dia">
+      <div class="bar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;load-state.mmd</div>
+      <div class="mermaid">
+flowchart LR
+    idle["idle"] --> loading["loading"]
+    loading -->|"最后一轮已完成"| resolved["resolved"]
+    loading -->|"未完成 + runId 为空"| pending["pendingUnfinishedTurn"]
+    pending -->|"收到事件并认领"| resolved
+      </div>
+    </figure>
+    <div class="callout note"><span class="ic">i</span><div>30 秒安全超时：若 <code class="inl">pendingUnfinishedTurn</code> 内一直没收到事件，自动转 <code class="inl">resolved</code>，防止永久卡在 pending 状态。</div></div>
+    <blockquote>这套设计的核心判断：不靠「有没有 runId」单点决定，而是靠「本机是否活跃 × 历史是否有未完成轮次」两个维度交叉，才决定要不要认领一条来路不明的远程事件。</blockquote>
+  </section>
+</article>
+
+<footer>
+  <div class="src">
+    <b>来源</b>　NAMIWork · docs/claude/multi-device-event-isolation.md<br/>
+    <b>模板</b>　样品 A · 单栏纵向叙事（无侧栏 · 顶部进度条 · 居中阅读列）
+  </div>
+</footer>
+
+<div class="tpl-badge">TEMPLATE A · single-scroll</div>
+<button id="top" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{ mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',
+    themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#5f6b83',
+      primaryColor:'#101728',primaryBorderColor:'#2a3552',primaryTextColor:'#e6ebf5'},
+    flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:44,rankSpacing:52,padding:14}}); }catch(e){}
+
+  // progress bar
+  var prog=document.getElementById('prog');
+  addEventListener('scroll',function(){
+    var h=document.documentElement, sc=h.scrollTop, mx=h.scrollHeight-h.clientHeight;
+    prog.style.width=(mx>0?(sc/mx*100):0)+'%';
+  },{passive:true});
+
+  // reveal
+  document.body.classList.add('js-reveal');
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.08,rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('section').forEach(function(s){io.observe(s);});
+  setTimeout(function(){document.querySelectorAll('section:not(.in)').forEach(function(s){s.classList.add('in');});},3000);
+
+  var backBtn=document.getElementById('top');
+  backBtn.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});
+  addEventListener('scroll',function(){ if(scrollY>560)backBtn.classList.add('show');else backBtn.classList.remove('show'); },{passive:true});
+</script>
+</body>
+</html>

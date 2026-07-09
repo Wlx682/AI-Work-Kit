@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Loop Engineering 提效实测 · 指标看板</title>
+<style>
+  :root{
+    --bg:#080a0f; --bg-2:#0c0f17; --ink:#e6ebf5; --ink-2:#98a4bb; --ink-3:#5f6b83;
+    --line:#1a2030; --line-2:#252d42;
+    --brand:#4d8dff; --brand-2:#38d9c4; --glow:rgba(77,141,255,.5);
+    --amber:#ffb849; --red:#ff5d6c; --green:#31d0a5; --purple:#c3a6ff;
+    --readw:820px; --maxw:1080px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16.5px;line-height:1.85;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--brand-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono)}
+
+  #prog{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));box-shadow:0 0 12px var(--glow)}
+  .brandbar{position:fixed;top:0;left:0;right:0;z-index:55;height:52px;display:flex;align-items:center;
+    padding:0 clamp(18px,4vw,40px);background:rgba(8,10,15,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .brandbar .bl{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;letter-spacing:.3px}
+  .brandbar .mk{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    display:flex;align-items:center;justify-content:center;color:#04121e;font-family:var(--mono);font-weight:800;font-size:12px}
+  .brandbar .rt{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+
+  /* hero */
+  .hero{position:relative;padding:126px clamp(20px,5vw,40px) 40px;text-align:center;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(900px 400px at 50% -8%,rgba(77,141,255,.16),transparent 62%),
+      radial-gradient(600px 300px at 50% 120%,rgba(49,208,165,.09),transparent 60%)}
+  .hero::after{content:"";position:absolute;inset:0;opacity:.32;pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:52px 52px;mask-image:radial-gradient(circle at 50% 0,#000,transparent 72%)}
+  .hero-in{position:relative;z-index:2;max-width:var(--readw);margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--brand-2);border:1px solid var(--line-2);border-radius:999px;padding:5px 14px;margin-bottom:24px}
+  .eyebrow .pulse{width:6px;height:6px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 9px var(--brand-2);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  h1{font-size:clamp(30px,5.4vw,50px);line-height:1.14;font-weight:850;letter-spacing:-1px;margin:0 0 18px;
+    background:linear-gradient(120deg,#fff 20%,#a9c9ff 60%,#7defd8 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:clamp(15.5px,1.7vw,18px);color:var(--ink-2);margin:0 auto;max-width:620px}
+
+  /* metric wall — hero of this skeleton */
+  .wall{max-width:var(--maxw);margin:0 auto;padding:26px clamp(20px,5vw,40px) 8px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(14px,2vw,20px)}
+  .stat{position:relative;background:linear-gradient(180deg,var(--bg-2),#0a0d15);border:1px solid var(--line-2);
+    border-radius:18px;padding:30px 26px 26px;overflow:hidden;box-shadow:0 24px 60px -34px rgba(0,0,0,.9)}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--brand),var(--brand-2))}
+  .stat.g::before{background:linear-gradient(180deg,var(--green),#7defd8)}
+  .stat.p::before{background:linear-gradient(180deg,var(--purple),#8fb4ff)}
+  .stat .lb{font-family:var(--mono);font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3)}
+  .stat .num{font-weight:850;line-height:1;letter-spacing:-2px;margin:16px 0 4px;
+    font-size:clamp(38px,6vw,54px);font-variant-numeric:tabular-nums;
+    background:linear-gradient(120deg,#fff,#9fd8ff 70%,#7defd8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .sub{font-size:13.5px;color:var(--ink-2)}
+  .stat .sub b{color:var(--green);font-family:var(--mono)}
+  /* the "论点公式" card, sits in same wall */
+  .stat.claim .num{font-size:clamp(30px,4.4vw,42px);letter-spacing:-1px;
+    background:linear-gradient(120deg,#ffd9a8,#ffb849);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* reading body */
+  article{max-width:var(--readw);margin:0 auto;padding:22px clamp(20px,5vw,40px) 120px}
+  section{padding:40px 0;border-bottom:1px solid var(--line);position:relative}
+  section:last-child{border-bottom:0}
+  .js-reveal section{opacity:0;transform:translateY(18px);transition:.7s cubic-bezier(.2,.7,.3,1)}
+  .js-reveal section.in{opacity:1;transform:none}
+  .sec-num{font-family:var(--mono);font-size:12.5px;color:var(--brand-2);letter-spacing:2px;margin-bottom:10px}
+  h2{font-size:clamp(22px,3.2vw,29px);font-weight:800;letter-spacing:-.4px;margin:0 0 6px;line-height:1.25}
+  h3{font-size:18.5px;font-weight:700;margin:32px 0 8px;color:#dfe7f5;padding-left:14px;position:relative}
+  h3::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:2px;background:linear-gradient(180deg,var(--brand),var(--brand-2))}
+  p{color:#cdd6e8;margin:15px 0}
+  strong{color:#fff;font-weight:700}
+  code.inl{background:#0e1626;border:1px solid var(--line-2);color:#8fe6d4;padding:1.5px 7px;border-radius:6px;font-size:.83em}
+
+  blockquote{margin:24px 0;padding:16px 22px;border-left:3px solid var(--brand-2);background:linear-gradient(90deg,rgba(56,217,196,.06),transparent);
+    border-radius:0 12px 12px 0;color:#cfeee7;font-size:16.5px}
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+  tr:last-child td{border-bottom:0}
+
+  figure.dia{margin:30px 0;background:linear-gradient(180deg,var(--bg-2),#0a0d14);border:1px solid var(--line-2);
+    border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.9)}
+  figure.dia .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  figure.dia .dot{width:10px;height:10px;border-radius:50%}
+  .dr{background:#ff5d6c}.dy{background:#ffb849}.dg{background:#31d0a5}
+  figure.dia .mermaid{padding:26px 14px;text-align:center;overflow-x:auto}
+  figcaption{padding:0 18px 16px;font-size:13px;color:var(--ink-3);text-align:center}
+
+  .callout{display:flex;gap:13px;padding:15px 18px;border-radius:12px;margin:22px 0;font-size:14.5px;line-height:1.7;
+    background:var(--bg-2);border:1px solid var(--line-2)}
+  .callout .ic{flex:none;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#04121e}
+  .callout.note{border-left:3px solid var(--brand)}.callout.note .ic{background:var(--brand)}
+
+  .tpl-badge{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    background:rgba(12,15,23,.9);border:1px solid var(--line-2);border-radius:8px;padding:5px 10px}
+  #top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:12px;z-index:50;cursor:pointer;
+    background:rgba(77,141,255,.15);border:1px solid rgba(77,141,255,.4);color:#cfe0ff;display:flex;align-items:center;justify-content:center;
+    font-size:18px;opacity:0;pointer-events:none;transition:.3s;backdrop-filter:blur(8px)}
+  #top.show{opacity:1;pointer-events:auto}
+
+  @media(max-width:640px){ .hero{padding:104px 18px 34px} .stat .num{letter-spacing:-1px} }
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="brandbar">
+  <span class="bl"><span class="mk">N</span>NAMIWork 最佳实践</span>
+  <span class="rt">practice/loop-eng · 阅读约 6 分钟</span>
+</div>
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="eyebrow"><span class="pulse"></span>提效实测 · 可验证</span>
+    <h1>Loop Engineering 把回归验证<br/>从半天压到分钟级</h1>
+    <p>一个把量化结论「主角化」的看板式版式：首屏三张大数字卡成组呈现，进屏 count-up 入场，把最核心的一句论点也公式化成一张卡，让读者一眼记住三个锚点。</p>
+  </div>
+</header>
+
+<div class="wall reveal-host">
+  <div class="stat">
+    <div class="lb">回归耗时 · p50</div>
+    <div class="num" data-to="60" data-suf="%" data-pre="↓">↓60%</div>
+    <div class="sub">4.5h → <b>~1.8h</b> · 单次回归中位数</div>
+  </div>
+  <div class="stat g">
+    <div class="lb">尾部延迟 · p95</div>
+    <div class="num" data-to="90" data-suf="%+" data-pre="↓">↓90%+</div>
+    <div class="sub">最坏情况从 <b>1 天</b> 收敛到小时级</div>
+  </div>
+  <div class="stat claim p">
+    <div class="lb">核心论点</div>
+    <div class="num" data-static="接口 &gt; 实现">接口 &gt; 实现</div>
+    <div class="sub">先固化验收接口，再谈实现细节</div>
+  </div>
+</div>
+
+<article class="reveal-host">
+  <section>
+    <div class="sec-num">01 — 背景</div>
+    <h2>问题是什么</h2>
+    <p>回归验证过去靠人工跑用例，一轮下来大半天，尾部情况能拖满一天。谁改了代码谁盯，节奏被验证卡死。指标看板式版式适合这种<strong>有明确基线 + 本次值 + 提升幅度</strong>的提效案例。</p>
+    <div class="callout note"><span class="ic">i</span><div>看板式的关键：数字卡不能挤在角落，要特大字号、独占整卡、成组三张一排，进屏 count-up。JS 关闭时仍显终值（写死在 HTML）。</div></div>
+  </section>
+
+  <section>
+    <div class="sec-num">02 — 机制</div>
+    <h2>为什么能压下来</h2>
+    <p>把验收接口固化成机器可跑的契约，实现细节随便换，验证一条命令跑完。核心是<strong>接口先于实现</strong>——契约稳定，回归就能自动化。</p>
+    <figure class="dia">
+      <div class="bar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>&nbsp;before-after.mmd</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph OLD["旧做法·人工跑回归"]
+        A1["改代码"] --> A2["手动点用例"] --> A3["结果：半天~1天"]
+    end
+    subgraph NEW["新做法·契约驱动"]
+        B1["改代码"] --> B2["一条命令跑契约"] --> B3["结果：分钟级"]
+    end
+    OLD ~~~ NEW
+      </div>
+      <figcaption>把验证从「人盯」变成「契约自动跑」</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-num">03 — 复用</div>
+    <h2>能落到哪</h2>
+    <p>这套做法可以沉淀进 <code class="inl">test-generator</code> 与回归门禁脚本：先生成契约，再让 CI 自动跑。</p>
+    <blockquote>提效的灵魂不是「快了多少」，而是把一次性动作变成可复用、可度量的能力——下一个人不用重新踩坑。</blockquote>
+  </section>
+</article>
+
+<div class="tpl-badge">TEMPLATE C · metrics-dashboard</div>
+<button id="top" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{ mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',
+    themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#5f6b83',
+      primaryColor:'#101728',primaryBorderColor:'#2a3552',primaryTextColor:'#e6ebf5'},
+    flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:44,rankSpacing:52,padding:14}}); }catch(e){}
+
+  var prog=document.getElementById('prog');
+  addEventListener('scroll',function(){
+    var h=document.documentElement, sc=h.scrollTop, mx=h.scrollHeight-h.clientHeight;
+    prog.style.width=(mx>0?(sc/mx*100):0)+'%';
+  },{passive:true});
+
+  document.body.classList.add('js-reveal');
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.08,rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('section,.stat').forEach(function(s){io.observe(s);});
+  setTimeout(function(){document.querySelectorAll('section:not(.in),.stat:not(.in)').forEach(function(s){s.classList.add('in');});},3000);
+
+  // count-up (numeric cards only; respects reduced-motion; static cards untouched)
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var counted=new WeakSet();
+  var cio=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(!e.isIntersecting) return;
+    var el=e.target; if(counted.has(el)) return; counted.add(el);
+    var to=parseFloat(el.getAttribute('data-to'));
+    if(isNaN(to)) return; // static card: leave literal text
+    var suf=el.getAttribute('data-suf')||'', pre=el.getAttribute('data-pre')||'';
+    if(reduce){ el.textContent=pre+to+suf; return; }
+    var t0=null, dur=1100;
+    function step(ts){ if(!t0)t0=ts; var k=Math.min(1,(ts-t0)/dur);
+      var v=Math.round(to*(1-Math.pow(1-k,3)));
+      el.textContent=pre+v+suf; if(k<1)requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  });},{threshold:.5});
+  document.querySelectorAll('.stat .num[data-to]').forEach(function(n){cio.observe(n);});
+
+  var backBtn=document.getElementById('top');
+  backBtn.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});
+  addEventListener('scroll',function(){ if(scrollY>560)backBtn.classList.add('show');else backBtn.classList.remove('show'); },{passive:true});
+</script>
+</body>
+</html>
