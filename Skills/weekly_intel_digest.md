@@ -63,7 +63,7 @@ DocShark 工具（若可用）：
 8. 组装人类卷 → 按「人类卷写作规范」写**纯净正文** `.md`（从标题开始，无提示词/注释/元说明），必须先过「原文完备度门禁」+「原则迁移门禁」，再过「信息完整性自查清单」（正文不含 YAML）
 9. 生成炫酷网页 → **走 `@Skills/html_generate.md`**：把纯净正文交给「内容→骨架」选择器（周报深挖长文默认 **B 侧栏文档式**，含前后对比时可选 D）；若正文含公式、数据图、UML/架构图、复杂依赖、研究谱系、伪代码或 API/Schema 表格，按 `@Skills/visual_markdown_toolbox.md` 的平铺选择表确定表达方式 → 产自渲染 `.html`（遵 [[Contexts/规范/炫酷建站规范]]：渐进增强 + 炫酷标准），并**用本地浏览器过自检清单**（各表达引擎渲染成功 / console 无报错 / 正文全可见 / 移动端不溢出）
 10. 生成 AI 卷 → 同名 .meta.yaml：skill_run 块，主要从「工作流提炼」段的 transfer_map 萃取 contexts_missing + 源健康自检；附 `source_coverage` 记录覆盖情况；不得反向污染「文章介绍/知识总结」
-11. 收尾     → 三个文件存 Plans/情报周报/：`.md`（正文）+ `.html`（Agent 产的炫酷网页，已过自检）+ `.meta.yaml`（AI卷）；**交你把 `.html` 给纳米Work → 它只做「上传 CDN + 返回短链」，不再生成网页**；发布后追加去重清单一行、删 plan
+11. 收尾     → 三个文件存 Plans/情报周报/：`.md`（正文）+ `.html`（Agent 产的炫酷网页，已过自检）+ `.meta.yaml`（AI卷）；生成完成后立即追加去重清单一行，避免后续选题重复；**交你把 `.html` 给纳米Work → 它只做「上传 CDN + 返回短链」，不再生成网页**；发布后再删 plan
 ```
 
 **双卷分离**（与 `best-practice-digest` 同源机制）：人类卷(.md)是**技术博客水准的署名文章**给同事读，无 YAML 噪音；AI 卷(.meta.yaml)给脚本读——`feedback-aggregate.py` 优先扫 `Plans/**/*.meta.yaml`。两卷同源，一次萃取。**网页由 Agent 直接产 `.html`**（遵 [[Contexts/规范/炫酷建站规范]]），纳米Work 降级为纯托管。

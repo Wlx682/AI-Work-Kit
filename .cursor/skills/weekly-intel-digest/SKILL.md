@@ -34,7 +34,7 @@ description: >-
 7. 组装人类卷：**每期只写1篇**，产出纯净正文 `.md`(从标题开始·无提示词/注释/元说明);按 `文章介绍 → 知识总结 → 工作流提炼` 三段递进；前两段只服务原文理解，不强行映射 AI-Work-Kit；工作流提炼先抽通用原则，再判断 Kit 现状/缺口/边界/落地形态；过原文完备度门禁+原则迁移门禁+自查清单(无YAML)
 8. 生成炫酷网页：**Agent 直接产同名 `.html` 自渲染成品**(遵 Contexts/规范/炫酷建站规范 + @Skills/html_generate.md：先选布局骨架；公式/数据图/UML架构图/复杂依赖/研究谱系/伪代码/API表格等复杂表达走 @Skills/visual_markdown_toolbox.md 平铺选择表；关键数字主角化+流式栅格),并用本地浏览器过自检(表达块渲染成功/无 raw text leak/console0报错/正文全可见/**375·768·1440三宽度无横溢出**)
 9. 生成AI卷：同名 .meta.yaml 写 skill_run，能力缺口→contexts_missing + `source_coverage` + 源健康自检（主要从「工作流提炼」段萃取）
-10. 收尾：三文件存 Plans/情报周报/(.md正文 + .html网页 + .meta.yaml);交用户把 `.html` 给纳米Work→它**只上传CDN+返回短链**,不再生成网页;发布后追加去重清单、删 plan
+10. 收尾：三文件存 Plans/情报周报/(.md正文 + .html网页 + .meta.yaml);生成完成后立即追加去重清单，避免后续选题重复；交用户把 `.html` 给纳米Work→它**只上传CDN+返回短链**,不再生成网页;发布后再删 plan
 ```
 
 ## 硬规则（详见全文）
