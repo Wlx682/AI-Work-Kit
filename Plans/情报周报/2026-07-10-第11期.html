@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace Agents · 团队工作流资产 · 情报周报第11期</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090d'/%3E%3Cpath d='M8 17h16M16 8v16' stroke='%2346e0c2' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#07090d;
+  --panel:#0e131b;
+  --panel2:#111925;
+  --text:#e8edf7;
+  --muted:#9ba8bb;
+  --faint:#667386;
+  --line:#202a39;
+  --line2:#2d394b;
+  --blue:#64a6ff;
+  --mint:#46e0c2;
+  --gold:#ffc15d;
+  --rose:#ff6b80;
+  --green:#7cf0b7;
+  --max:1180px;
+  --read:770px;
+  --side:250px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+  --mono:"SF Mono",Menlo,Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:16.5px;
+  line-height:1.82;
+  overflow-x:hidden;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(100,166,255,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(70,224,194,.045) 1px,transparent 1px);
+  background-size:54px 54px;
+  mask-image:linear-gradient(180deg,#000,rgba(0,0,0,.64),transparent 92%);
+}
+a{color:var(--mint);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--blue),var(--mint));z-index:80}
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:70;
+  height:56px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0 clamp(16px,4vw,42px);
+  background:rgba(7,9,13,.78);
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(16px);
+}
+.mark{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:8px;
+  background:linear-gradient(135deg,var(--blue),var(--mint));
+  color:#041017;
+  font-family:var(--mono);
+  font-weight:800;
+}
+.topbar b{font-size:14px}
+.topbar span:last-child{margin-left:auto;color:var(--faint);font-family:var(--mono);font-size:12px}
+.hero{
+  position:relative;
+  padding:clamp(92px,12vw,132px) clamp(18px,5vw,44px) clamp(42px,7vw,70px);
+  border-bottom:1px solid var(--line);
+}
+.hero-inner{
+  position:relative;
+  z-index:2;
+  max-width:var(--max);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);
+  gap:clamp(28px,5vw,72px);
+  align-items:center;
+}
+.hero-copy{min-width:0}
+.eyebrow{
+  display:inline-flex;
+  gap:9px;
+  align-items:center;
+  padding:6px 13px;
+  border:1px solid var(--line2);
+  border-radius:999px;
+  color:var(--mint);
+  font-family:var(--mono);
+  font-size:12px;
+  background:rgba(14,19,27,.72);
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 14px var(--mint)}
+h1{
+  max-width:760px;
+  margin:22px 0 18px;
+  font-size:clamp(34px,6vw,66px);
+  line-height:1.08;
+  letter-spacing:0;
+}
+.lead{max-width:720px;color:#b9c5d8;font-size:clamp(16px,1.8vw,19px);margin:0}
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 22px;
+  margin-top:30px;
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:12.5px;
+}
+.hero-meta strong{color:#cdd7e8;font-weight:600}
+.hero-visual{
+  position:relative;
+  min-height:320px;
+  border:1px solid rgba(100,166,255,.26);
+  border-radius:12px;
+  padding:18px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 18% 12%,rgba(70,224,194,.16),transparent 32%),
+    linear-gradient(135deg,rgba(18,32,51,.88),rgba(7,12,19,.82));
+  box-shadow:0 26px 70px -42px rgba(70,224,194,.65);
+}
+.hero-visual:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:28px 28px;
+  mask-image:linear-gradient(135deg,#000,transparent 78%);
+}
+.visual-title{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  color:#dfe8f6;
+  font-family:var(--mono);
+  font-size:12px;
+  margin-bottom:18px;
+}
+.visual-title span:last-child{color:var(--mint)}
+.agent-node{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  padding:12px;
+  margin:10px 0;
+  border:1px solid var(--line2);
+  border-radius:10px;
+  background:rgba(8,13,20,.78);
+}
+.agent-node:nth-of-type(2){margin-left:34px}
+.agent-node:nth-of-type(3){margin-left:68px}
+.agent-node:nth-of-type(4){margin-left:34px}
+.agent-icon{
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:linear-gradient(135deg,rgba(100,166,255,.24),rgba(70,224,194,.18));
+  border:1px solid rgba(70,224,194,.28);
+  color:#dffdf7;
+  font-family:var(--mono);
+  font-weight:800;
+}
+.agent-node b{display:block;font-size:14px;line-height:1.35}
+.agent-node small{display:block;margin-top:3px;color:var(--muted);line-height:1.45}
+.visual-flow{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px;
+}
+.flow-pill{
+  min-height:42px;
+  display:grid;
+  place-items:center;
+  padding:8px;
+  border:1px solid rgba(70,224,194,.24);
+  border-radius:999px;
+  color:#aef7e8;
+  background:rgba(70,224,194,.07);
+  font-size:12px;
+  text-align:center;
+}
+.metrics{
+  max-width:var(--max);
+  margin:-30px auto 24px;
+  padding:0 clamp(18px,5vw,44px);
+  position:relative;
+  z-index:3;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+.metric{
+  min-height:154px;
+  padding:22px;
+  border:1px solid var(--line2);
+  background:linear-gradient(180deg,rgba(17,25,37,.96),rgba(9,13,20,.96));
+  border-radius:8px;
+}
+.metric .num{
+  display:block;
+  font-family:var(--mono);
+  font-size:clamp(40px,7vw,64px);
+  line-height:1;
+  color:#fff;
+}
+.metric .label{display:block;margin-top:14px;color:var(--muted);font-size:14px;line-height:1.5}
+.wrap{
+  max-width:var(--max);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:var(--side) minmax(0,1fr);
+  gap:clamp(22px,4vw,56px);
+  padding:24px clamp(18px,5vw,44px) 104px;
+  align-items:start;
+}
+aside{position:sticky;top:78px}
+.toc-title{font-family:var(--mono);font-size:12px;color:var(--faint);margin:0 0 12px}
+.toc{list-style:none;margin:0 0 20px;padding:0;border-left:1px solid var(--line2)}
+.toc a{
+  display:block;
+  padding:8px 0 8px 14px;
+  border-left:2px solid transparent;
+  color:var(--muted);
+  font-size:14px;
+}
+.toc a.active{color:var(--mint);border-left-color:var(--mint);font-weight:700}
+.side-card{
+  border:1px solid var(--line2);
+  background:var(--panel);
+  border-radius:8px;
+  padding:14px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+.side-card b{display:block;color:var(--text);font-family:var(--mono);font-size:12px;margin-bottom:8px}
+article{max-width:var(--read);min-width:0}
+section{padding:22px 0 44px;border-bottom:1px solid var(--line);scroll-margin-top:78px}
+section:last-child{border-bottom:0}
+.js-reveal section{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.js-reveal section.visible{opacity:1;transform:none}
+.sec-kicker{font-family:var(--mono);font-size:12px;color:var(--mint);margin:0 0 8px}
+h2{font-size:clamp(24px,3vw,32px);line-height:1.24;margin:0 0 16px;letter-spacing:0}
+h3{font-size:19px;margin:30px 0 10px;padding-left:14px;border-left:3px solid var(--blue)}
+p{color:#cfd8e8;margin:14px 0}
+strong{color:#fff}
+code{font-family:var(--mono)}
+code.inline{font-size:.86em;background:#111a28;border:1px solid var(--line2);border-radius:6px;padding:2px 6px;color:#8ff0d9;word-break:break-word}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:13px;
+  margin:22px 0;
+}
+.concept{
+  border:1px solid var(--line2);
+  border-radius:8px;
+  background:var(--panel);
+  padding:16px;
+}
+.concept b{display:block;margin-bottom:6px}
+.concept p{font-size:14px;line-height:1.65;color:var(--muted);margin:0}
+figure.diagram{
+  margin:30px 0;
+  border:1px solid var(--line2);
+  border-radius:8px;
+  background:linear-gradient(180deg,var(--panel2),#0a0e15);
+  overflow:hidden;
+}
+.figbar{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:11px 14px;
+  border-bottom:1px solid var(--line);
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:12px;
+}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.r{background:var(--rose)}.y{background:var(--gold)}.g{background:var(--green)}
+.mermaid{padding:24px 10px;text-align:center;overflow-x:auto}
+figcaption{padding:0 16px 16px;text-align:center;color:var(--faint);font-size:13px}
+table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:11px 12px;vertical-align:top}
+th{color:var(--faint);font-family:var(--mono);font-size:12px}
+.quote{
+  margin:24px 0;
+  padding:16px 18px;
+  border-left:3px solid var(--mint);
+  background:linear-gradient(90deg,rgba(70,224,194,.08),rgba(70,224,194,.01));
+  color:#d8fff6;
+  border-radius:0 8px 8px 0;
+}
+.source{
+  margin-top:30px;
+  padding:16px;
+  border:1px solid var(--line2);
+  background:var(--panel);
+  border-radius:8px;
+  color:var(--muted);
+  font-size:14px;
+}
+#backTop{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:60;
+  width:44px;
+  height:44px;
+  border-radius:8px;
+  border:1px solid rgba(100,166,255,.45);
+  background:rgba(17,25,37,.86);
+  color:var(--text);
+  cursor:pointer;
+  opacity:0;
+  pointer-events:none;
+}
+#backTop.show{opacity:1;pointer-events:auto}
+@media(max-width:880px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero-visual{min-height:auto;padding:14px}
+  .visual-title{font-size:11px;margin-bottom:12px}
+  .agent-node,.agent-node:nth-of-type(2),.agent-node:nth-of-type(3),.agent-node:nth-of-type(4){margin-left:0}
+  .agent-node{grid-template-columns:34px minmax(0,1fr);gap:10px;padding:10px;margin:8px 0}
+  .agent-icon{width:34px;height:34px;border-radius:8px;font-size:13px}
+  .agent-node b{font-size:13px}
+  .agent-node small{font-size:12px}
+  .visual-flow{gap:7px;margin-top:10px}
+  .flow-pill{min-height:36px;font-size:11.5px}
+  .wrap{grid-template-columns:1fr}
+  aside{position:static;order:-1}
+  .toc{display:flex;flex-wrap:wrap;gap:7px;border-left:0}
+  .toc a{border:1px solid var(--line2);border-radius:999px;padding:5px 11px;font-size:12.5px}
+  .toc a.active{border-color:var(--mint)}
+  .side-card{display:none}
+  .topbar span:last-child{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .js-reveal section{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar">
+  <span class="mark">11</span>
+  <b>Weekly Intel Digest</b>
+  <span>2026-07-10 · Workspace Agents</span>
+</div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="pulse"></span>OpenAI · Workspace Agents · 团队工作流</div>
+      <h1>从个人助手到团队岗位：Agent 开始变成可治理的工作流资产</h1>
+      <p class="lead">Workspace Agents 的关键不只是“让 ChatGPT 多做事”，而是把重复任务封装成可发布、可共享、可审批、可观察、可持续改进的团队资产。</p>
+      <div class="hero-meta">
+        <span><strong>来源</strong> OpenAI 官方发布 + Help Center</span>
+        <span><strong>主题</strong> 共享 agent / 权限治理 / 运行观测</span>
+        <span><strong>读法</strong> 约 10 分钟</span>
+      </div>
+    </div>
+    <div class="hero-visual" aria-label="Workspace Agent 治理流程示意">
+      <div class="visual-title"><span>workspace-agent.asset</span><span>published</span></div>
+      <div class="agent-node">
+        <span class="agent-icon">01</span>
+        <div><b>团队目录</b><small>把高频流程发布成可发现的固定岗位</small></div>
+      </div>
+      <div class="agent-node">
+        <span class="agent-icon">02</span>
+        <div><b>权限边界</b><small>限定能读什么、能写哪里、能调哪些工具</small></div>
+      </div>
+      <div class="agent-node">
+        <span class="agent-icon">03</span>
+        <div><b>人类审批</b><small>敏感动作先停下来确认，再继续自动化</small></div>
+      </div>
+      <div class="agent-node">
+        <span class="agent-icon">04</span>
+        <div><b>运行观测</b><small>用运行记录和反馈推动下一版工作流</small></div>
+      </div>
+      <div class="visual-flow">
+        <span class="flow-pill">ChatGPT</span>
+        <span class="flow-pill">Slack</span>
+        <span class="flow-pill">Schedule</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="metrics" aria-label="核心数字">
+  <div class="metric"><span class="num" data-count="1">1</span><span class="label">一个核心转变：从个人对话能力到团队工作流资产</span></div>
+  <div class="metric"><span class="num" data-count="4">4</span><span class="label">四类治理面：工具、权限、审批、审计</span></div>
+  <div class="metric"><span class="num" data-count="3">3</span><span class="label">三种运行入口：ChatGPT、Slack、计划或 API 触发</span></div>
+</div>
+
+<main class="wrap">
+  <aside>
+    <p class="toc-title">本页目录</p>
+    <ul class="toc" id="toc">
+      <li><a class="active" href="#theme">01 · 主题</a></li>
+      <li><a href="#idea">02 · 想法</a></li>
+      <li><a href="#conclusion">03 · 结论</a></li>
+      <li><a href="#reuse">04 · 复用</a></li>
+    </ul>
+    <div class="side-card">
+      <b>核心判断</b>
+      团队级 agent 的竞争点不只是模型能力，而是流程资产化、权限治理、运行可见性和持续改进。
+    </div>
+  </aside>
+
+  <article>
+    <section id="theme">
+      <p class="sec-kicker">01 — 主题</p>
+      <h2>OpenAI 这次讲的不是一个更大的聊天框</h2>
+      <p>OpenAI 的 Workspace Agents 更像是在回答组织级问题：当 agent 不再只服务某个个人，而要被整个团队长期复用时，它应该长成什么形态。</p>
+      <p>过去的 AI 工具默认是个人助手模型。一个人开一个对话，临时贴上下文，让模型帮忙写代码、查资料、生成文档。这个模式上手快，但进入团队工作后会遇到三类问题：知识散在个人对话里，流程靠人记；权限和审批很难说清；做得好的 prompt 或 workflow 很难稳定复制给别人。</p>
+      <p>Workspace Agents 把 agent 做成一个可创建、可测试、可发布、可共享、可调度、可审计的工作流对象。官方示例覆盖软件请求评审、产品反馈路由、周报、线索跟进、第三方风险评估等场景；配套文档进一步说明，agent 可以接工具、加技能、上传文件、设置模型和 reasoning effort、接入 Slack、按计划运行，也能通过权限控制决定谁能构建、发布、运行和管理它。</p>
+      <div class="quote">它的价值不是又提供了一组模板，而是把“组织如何复用 AI 能力”从聊天技巧推进到资产治理。</div>
+    </section>
+
+    <section id="idea">
+      <p class="sec-kicker">02 — 想法</p>
+      <h2>Agent 从对话能力变成工作区岗位</h2>
+      <p>个人 GPT 或单次聊天更像一个临时帮手：你把背景讲清楚，它这次帮你完成一件事。Workspace Agent 更像一个固定岗位：它有任务定义，有可用工具，有审批边界，有运行入口，有版本和 analytics，也可以被放到 Slack 频道里等人调用。</p>
+      <figure class="diagram">
+        <div class="figbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> personal-vs-workspace-agent.mmd</div>
+        <pre class="mermaid">
+flowchart TB
+    subgraph OLD["旧做法·个人对话里临时请人帮忙"]
+        A1["个人发起任务"] --> A2["临时贴资料和规则"]
+        A2 --> A3["Agent 产出一次结果"]
+        A3 --> A4["经验留在这次对话里"]
+    end
+    subgraph NEW["新做法·团队工作区里的固定岗位"]
+        B1["定义重复任务"] --> B2["配置工具、技能、文件和权限"]
+        B2 --> B3["测试后发布到团队目录或 Slack"]
+        B3 --> B4["多人复用、按计划运行、持续观察"]
+    end
+    OLD ~~~ NEW
+        </pre>
+        <figcaption>核心变化：从一次性对话，变成可被团队发现、复用和治理的固定资产。</figcaption>
+      </figure>
+      <p>技术含义也很直接：上下文不再只靠用户每次手动喂，流程不再只靠 prompt 描述，复用也不再靠复制一段长提示词。Workspace Agents 把这些要素拆成了更明确的层：任务说明负责“要做什么”，连接器和工具负责“能去哪拿信息、能在哪落动作”，技能和文件负责“长期知识和做法”，权限和审批负责“哪些动作必须停下来问人”。</p>
+      <div class="grid">
+        <div class="concept"><b>任务说明</b><p>把重复工作定义成岗位动作链，而不是一次聊天请求。</p></div>
+        <div class="concept"><b>工具和数据</b><p>让 agent 能跨系统读取上下文，并在允许范围内执行动作。</p></div>
+        <div class="concept"><b>技能和文件</b><p>把团队知识变成长期可复用的工作材料。</p></div>
+        <div class="concept"><b>权限和审批</b><p>让自动化深度和风险等级匹配，敏感动作先问人。</p></div>
+      </div>
+      <h3>共享必须和治理一起出现</h3>
+      <p>OpenAI 官方发布强调，团队可以决定 agent 能用哪些工具和数据、能采取哪些动作、哪些敏感步骤要先审批；Help Center 也把 role-based access control、共享范围、发布前测试、管理员开关、Slack 部署、版本历史和 analytics 放在同一个能力集合里。</p>
+      <figure class="diagram">
+        <div class="figbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> controlled-automation.mmd</div>
+        <pre class="mermaid">
+flowchart LR
+    U["团队成员&lt;br/&gt;提出工作请求"] --> A["Workspace Agent&lt;br/&gt;按既定流程处理"]
+    A --> K["知识和文件&lt;br/&gt;长期上下文"]
+    A --> T["连接工具&lt;br/&gt;读数据或执行动作"]
+    A --> P{"敏感动作&lt;br/&gt;是否需要批准"}
+    P -->|"需要"| H["人类审批&lt;br/&gt;确认后继续"]
+    P -->|"不需要"| O["输出结果&lt;br/&gt;报告、票据、邮件、文件"]
+    G["管理员&lt;br/&gt;角色、权限、审计"] --> A
+        </pre>
+        <figcaption>真正的产品能力不是“全自动”，而是“可控地自动”。</figcaption>
+      </figure>
+      <p>个人使用时，误发邮件或改错表格通常还能靠用户自己兜底；团队共享后，agent 的每一次运行都可能影响更多人、更真实的业务系统。此时读可以自动，写可能要确认；普通动作可以放行，敏感动作要审批；个人私用可以轻，组织共享必须可见、可停、可追踪。</p>
+      <h3>最佳实践要同时有入口和知识底座</h3>
+      <p>官方文把 Workspace Agents 描述成一种把团队知识变成可复用工作流的方式。这和 AI-Work-Kit 的 Skill 很接近。Skill 不是保存某次对话，而是把一类任务的触发条件、必读资料、执行协议、硬规则和反馈回路固定下来，交给后续任务复用。</p>
+      <figure class="diagram">
+        <div class="figbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> asset-loop.mmd</div>
+        <pre class="mermaid">
+flowchart TB
+    W["可运行入口&lt;br/&gt;ChatGPT、Slack、计划任务、API"] --> R["重复执行"]
+    C["知识底座&lt;br/&gt;流程、模板、Skill、上下文"] --> R
+    R --> E["可观察结果&lt;br/&gt;runs、用户数、输出质量、失败点"]
+    E --> I["迭代改进&lt;br/&gt;调工具、改权限、补流程、更新知识"]
+    I --> C
+    I --> W
+        </pre>
+        <figcaption>组织级 agent 资产需要同时有能运行的入口和能进化的知识底座。</figcaption>
+      </figure>
+    </section>
+
+    <section id="conclusion">
+      <p class="sec-kicker">03 — 结论</p>
+      <h2>团队级 agent 的核心是资产治理</h2>
+      <p>这篇最该记住的一句话是：团队级 agent 的核心不是更会聊天，而是把重复工作封装成可共享、可治理、可观察、可改进的工作流资产。</p>
+      <table>
+        <thead><tr><th>Workspace Agents</th><th>AI-Work-Kit</th></tr></thead>
+        <tbody>
+          <tr><td>Agent builder</td><td>Skill / workflow 蓝图</td></tr>
+          <tr><td>Team directory</td><td>Skills 表 / 入口索引</td></tr>
+          <tr><td>Connected apps and tools</td><td>MCP / scripts / 本地工具</td></tr>
+          <tr><td>Files and skills</td><td><code class="inline">Contexts/</code> / Templates / Skills</td></tr>
+          <tr><td>Schedule / Slack / API trigger</td><td>workflow-router / 自动化 / 看板触发</td></tr>
+          <tr><td>RBAC and approvals</td><td>用户确认规则 / gate / 写 Contexts 约束</td></tr>
+          <tr><td>Analytics and run history</td><td><code class="inline">运行记录</code> / <code class="inline">AI 卷</code> / feedback-aggregate</td></tr>
+        </tbody>
+      </table>
+      <p>边界也要说清。OpenAI 这篇主要是产品发布和官方帮助文档，不是工程论文；它讲清楚了能力形态和治理面，但没有展开底层 runtime、调度、隔离、成本控制、失败恢复等实现细节。因此它更像一个方向信号：agent 真正进入组织以后，竞争点会从模型单次能力，转向流程资产化、权限治理、运行可见性和持续改进。</p>
+    </section>
+
+    <section id="reuse">
+      <p class="sec-kicker">04 — 复用</p>
+      <h2>把高频 Skill 当成“团队岗位”审视</h2>
+      <p>第一，给高频 Skill 增加岗位化审视。像 <code class="inline">weekly-intel-digest</code>、<code class="inline">report-assistant</code>、<code class="inline">workflow-router</code>、<code class="inline">kanban-restart</code> 这类重复触发的流程，可以多问一层：固定输入是什么，运行入口是什么，能读写哪些路径，哪些动作必须确认，输出后留下什么运行指标。</p>
+      <p>第二，补一个轻量的 agent asset 字段候选。未来如果设计 workflow 蓝图或 Skill 扩展，可以考虑增加 <code class="inline">triggers</code>、<code class="inline">inputs</code>、<code class="inline">tools_allowed</code>、<code class="inline">write_scope</code>、<code class="inline">approval_required</code>、<code class="inline">share_scope</code>、<code class="inline">run_metrics</code>、<code class="inline">handoff_surface</code>。这些字段不是为了复杂化，而是为了让一个流程从“我知道怎么做”升级到“团队知道怎么安全复用”。</p>
+      <p>第三，把发布前测试从网页自检扩展到流程自检。Workspace Agents 强调先测试再发布；我们现在网页已经有 Playwright 自检，plan 也有 gate，但 Skill 层面的复用测试还偏弱。可以先为高频 Skill 补一个最小验收：触发词是否路由正确，必读资产是否存在，输出是否落到规定目录，是否写了 <code class="inline">AI 卷</code>，是否没有越权写 Contexts。</p>
+      <p>第四，让看板增加一个 Skill 资产视图：哪些 Skill 高频使用，哪些连续 <code class="inline">not-needed</code>，哪些 <code class="inline">能力缺口</code> 最多，哪些适合岗位化。目录让团队找到资产，分析视图让资产继续变好。</p>
+      <p>第五，保留人的审批位置。越是像团队岗位的 agent，越不能默认全自动。写 Contexts 前确认、长期规则变更前确认、跨目录写入前 gate，这些不是阻碍效率，而是让 agent 能被组织放心复用的基础。</p>
+      <div class="source">
+        原文：<a href="https://openai.com/index/introducing-workspace-agents-in-chatgpt/">Introducing workspace agents in ChatGPT · OpenAI</a><br>
+        配套文档：<a href="https://help.openai.com/en/articles/20001143-chatgpt-workspace-agents-for-enterprise-and-business">ChatGPT Workspace Agents for Enterprise and Business · OpenAI Help Center</a>
+      </div>
+    </section>
+  </article>
+</main>
+
+<button id="backTop" aria-label="回到顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  document.documentElement.classList.add('js-reveal');
+  mermaid.initialize({
+    startOnLoad:true,
+    securityLevel:'loose',
+    theme:'dark',
+    themeVariables:{
+      darkMode:true,
+      background:'#0e131b',
+      primaryColor:'#122033',
+      primaryTextColor:'#e8edf7',
+      primaryBorderColor:'#64a6ff',
+      lineColor:'#46e0c2',
+      secondaryColor:'#162437',
+      tertiaryColor:'#111925',
+      fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Microsoft YaHei,sans-serif'
+    }
+  });
+  const sections=[...document.querySelectorAll('section')];
+  const links=[...document.querySelectorAll('#toc a')];
+  const progress=document.getElementById('progress');
+  const backBtn=document.getElementById('backTop');
+  const revealObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  },{threshold:.12});
+  sections.forEach(section=>revealObserver.observe(section));
+  setTimeout(()=>sections.forEach(section=>section.classList.add('visible')),900);
+  const navObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      links.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+entry.target.id));
+    });
+  },{rootMargin:'-30% 0px -55% 0px'});
+  sections.forEach(section=>navObserver.observe(section));
+  function onScroll(){
+    const maxScroll=document.documentElement.scrollHeight-window.innerHeight;
+    const ratio=maxScroll>0?window.scrollY/maxScroll:0;
+    progress.style.width=(ratio*100).toFixed(2)+'%';
+    backBtn.classList.toggle('show',window.scrollY>520);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  backBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+  onScroll();
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const countObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      const el=entry.target;
+      if(el.dataset.done) return;
+      el.dataset.done='1';
+      const target=parseInt(el.dataset.count,10);
+      if(reduce){ el.textContent=String(target); return; }
+      const start=performance.now();
+      const duration=800;
+      function tick(now){
+        const t=Math.min(1,(now-start)/duration);
+        const eased=1-Math.pow(1-t,3);
+        el.textContent=String(Math.max(1,Math.round(target*eased)));
+        if(t<1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  },{threshold:.45});
+  document.querySelectorAll('.num').forEach(el=>countObserver.observe(el));
+})();
+</script>
+</body>
+</html>
