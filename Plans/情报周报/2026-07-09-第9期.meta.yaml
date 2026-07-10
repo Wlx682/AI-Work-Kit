@@ -1,0 +1,75 @@
+skill_run:
+  skill: weekly-intel-digest
+  plan: Plans/情报周报/2026-07-09-第9期.md
+  date: 2026-07-09
+  article:
+    title_cn: "把 Agent 关进安全轨道：GitHub 用跨仓文档工作流证明，自动化真正难的是边界"
+    title_en: "Automating cross-repo documentation with GitHub Agentic Workflows"
+    url: https://github.blog/ai-and-ml/github-copilot/automating-cross-repo-documentation-with-github-agentic-workflows/
+    source: GitHub Blog
+    published: 2026-07-08
+    score: 50
+    scoring:
+      一手性: 5
+      实操价值: 5
+      时效性: 5
+      覆盖面: 5
+      讨论性: 5
+      weighted_total: 50
+  candidates:
+    - title: "Automating cross-repo documentation with GitHub Agentic Workflows"
+      url: https://github.blog/ai-and-ml/github-copilot/automating-cross-repo-documentation-with-github-agentic-workflows/
+      source: GitHub Blog
+      score: 50
+      decision: selected
+      reason: "英文一手、2026-07-08 发布、未在近8周去重清单中出现；用完整生产案例展示跨仓 agent workflow、safe-outputs、SME review 和可量化结果。"
+    - title: "How agents are transforming work"
+      url: https://openai.com/index/how-agents-are-transforming-work/
+      source: OpenAI
+      score: 47
+      decision: rejected_duplicate_plan
+      reason: "质量高，但 Plans/情报周报 已存在第6期草稿深挖同一原文，本期避让。"
+    - title: "Evaluating performance and efficiency of the GitHub Copilot agentic harness across models and tasks"
+      url: https://github.blog/ai-and-ml/github-copilot/evaluating-performance-and-efficiency-of-the-github-copilot-agentic-harness-across-models-and-tasks/
+      source: GitHub Blog
+      score: 45
+      decision: shortlisted
+      reason: "技术含量高，但与近8周 harness 主题部分重叠，且本期入选文章更贴近工作流边界治理。"
+    - title: "Building self-improving tax agents with Codex"
+      url: https://openai.com/index/building-self-improving-tax-agents-with-codex/
+      source: OpenAI
+      score: 44
+      decision: shortlisted
+      reason: "反馈闭环价值高，但发布时间较早，时效性弱于入选文章。"
+    - title: "Browser tools for GitHub Copilot in VS Code are generally available"
+      url: https://github.blog/changelog/2026-07-01-browser-tools-for-github-copilot-in-vs-code-are-generally-available/
+      source: GitHub Changelog
+      score: 41
+      decision: shortlisted
+      reason: "适合前端验证主题，但原文偏 changelog，深挖素材不如入选文章完整。"
+  contexts_used:
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: "作为种子源与源健康参考，确认本期可扩展到 GitHub/OpenAI 等一手工程博客。"
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: "按一手性、实操价值、时效性、覆盖面、讨论性对候选打分并选择最高分。"
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: "确认本期未重复第1-5期已登记主题，并发现第6期草稿已使用 OpenAI Codex 工作报告，故避让。"
+    - path: Contexts/情报源/周帖模板.md
+      utility: high
+      reason: "确认本期仍按每期一篇深挖、纳米Work只托管的交付方式。"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "用于生成自渲染 HTML、Mermaid 图、关键数字主角化和 375/768/1440 自检。"
+  contexts_missing:
+    - "workflow 蓝图缺 safe_outputs 契约字段：需要支持 allowed_paths、blocked_paths、allowed_actions、human_review_required、fallback，把 Agent 输出意图与系统落地动作分层。"
+    - "跨仓/跨文件自动化缺结构化预处理规范：可参考 GitHub pre-agent steps，先抽取目标文件、分支、权限、去重项、review owner，再交给 Agent 判断。"
+    - "Skill 缺 not-needed 正当出口的验收模板：需要把拒绝执行、无需产物、无变更等结果作为可审计输出，而不是只记录新增文件。"
+  contexts_stale: []
+  utility: high
+  utility_reason: "本篇用最新一手生产案例证明 agent workflow 的关键不只是生成能力，而是 safe-output、权限边界、人工审查和失败兜底，可直接反哺 AI-Work-Kit 的 workflow 契约设计。"
+  notes: |
+    source_stale_warning: follow 名单中的个人账号种子源 Boris Cherny / Cat Wu / Fiona Fung / Andrej Karpathy 连续多期无入选文章。建议把 GitHub Blog、OpenAI Engineering/Research、Anthropic Engineering 这类 org source 升为主种子源，个人账号保留为补充巡检。
+    browser_self_check: 2026-07-09-第9期.html 已用 Playwright + 系统 Chrome 对 375/768/1440 宽度检查；3 张 Mermaid 均渲染为 SVG，rawTextLeak=false，console error 为 0，section opacity=1，全宽无横向溢出，关键数字字号 >=42px。
