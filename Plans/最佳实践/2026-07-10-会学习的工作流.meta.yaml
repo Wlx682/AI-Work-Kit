@@ -1,0 +1,37 @@
+skill_run:
+  skill: best-practice-digest
+  plan: Plans/最佳实践/2026-07-10-会学习的工作流.md
+  date: "2026-07-10"
+  contexts_used:
+    - path: Contexts/最佳实践/提效度量口径.md
+      utility: high
+      reason: "按可测量可验证原则区分仓库事实与推断旧基线，不输出伪精确百分比。"
+    - path: Contexts/最佳实践/案例报告模板.md
+      utility: high
+      reason: "按技术博客结构组织主题、方法、数据、案例和复用建议。"
+    - path: Contexts/最佳实践/进化闭环.md
+      utility: high
+      reason: "解释最佳实践案例如何反哺 skill_run、feedback-aggregate 与 workflow-evolution。"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "核对 skill_run 字段、contexts_missing、friction 与反馈聚合消费方式。"
+    - path: Contexts/决策/Kit核心原则.md
+      utility: high
+      reason: "确认 Plans/Contexts/Templates 边界，以及反馈闭环和写回边界。"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "生成自渲染 HTML，包含 Mermaid、关键数字主角化和多宽度适配自检。"
+    - path: Plans/Epic/2026-07-08-智能体开发.md
+      utility: high
+      reason: "作为学习循环、学习地图和知识图谱增量的主要证据。"
+    - path: Plans/情报周报/2026-07-10-第10期.meta.yaml
+      utility: high
+      reason: "作为知识推荐从普通信息筛选转向反馈进化机制的证据。"
+  contexts_missing:
+    - "feedback handoff 视图：把高优先级 contexts_missing 自动整理为可执行改造包，包含证据、改动入口、验收命令。"
+    - "contexts_missing 验收提示字段：当缺口指向可落地能力时，记录补好后如何证明有效。"
+    - "friction 结构化写法：固定为 阶段/动作/卡点/建议，便于聚合具体流程改造点。"
+  contexts_stale: []
+  outcome_status: pass
+  friction: "用户反馈领导读者缺少背景，已重写为先讲业务问题、旧做法、新做法和价值，再解释内部机制。"
+  revisit_needed: false
