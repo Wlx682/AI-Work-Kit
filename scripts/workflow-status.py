@@ -22,7 +22,12 @@ STATE_LABELS = {
     "verify": "非功能验证",
     "review": "Code Review",
     "deploy": "部署",
-    "retro": "团队回顾",
+    "retro": "复盘",
+    "topic-intake": "学习主题确认",
+    "material-prepare": "AI 准备资料",
+    "study": "用户学习与答疑",
+    "practice": "实践任务",
+    "record": "学习记录",
     "done": "全部完成",
 }
 
@@ -40,7 +45,7 @@ SKILL_ACTIONS = {
     "review-assistant": "补 Review 结论",
     "deployment-assistant": "补部署检查和冒烟计划",
     "retro-assistant": "补团队回顾",
-    "material-prep-assistant": "补轻量清单",
+    "material-prep-assistant": "准备资料或沉淀记录",
 }
 
 

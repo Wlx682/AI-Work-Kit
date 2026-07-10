@@ -510,6 +510,63 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("ui-change", lightweight_names)
         self.assertNotIn("bugfix", lightweight_names)
 
+    def test_kanban_reads_hyphenated_learning_plan_keys(self) -> None:
+        with self.fixture_repo() as tmp:
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            write_file(
+                tmp / "Plans/Epic/learning.md",
+                """
+                ---
+                workflow: learning-loop
+                p0_open: 0
+                plans:
+                  topic-intake: Plans/学习循环/topic.md
+                  material-prepare: Plans/学习循环/material.md
+                  study: Plans/学习循环/study.md
+                ---
+
+                # Learning Epic
+
+                ## 三、WBS
+
+                ```
+                [x] 1. topic
+                [x] 2. material
+                [ ] 3. study
+                ```
+                """,
+            )
+            for rel in ["topic.md", "material.md", "study.md"]:
+                write_file(
+                    tmp / f"Plans/学习循环/{rel}",
+                    """
+                    ---
+                    status: 进行中
+                    ---
+                    # learning child
+                    """,
+                )
+
+            epic = next(item for item in mod.board_payload() if item["file"] == "Plans/Epic/learning.md")
+
+        plan_by_stage = {item["stage_key"]: item["path"] for item in epic["plans"]}
+        self.assertEqual(plan_by_stage["topic-intake"], "Plans/学习循环/topic.md")
+        self.assertEqual(plan_by_stage["material-prepare"], "Plans/学习循环/material.md")
+        slice_by_n = {item["n"]: item for item in epic["slices"]}
+        self.assertEqual(slice_by_n[1]["related_plan"], "Plans/学习循环/topic.md")
+        self.assertEqual(slice_by_n[2]["related_plan"], "Plans/学习循环/material.md")
+
     def test_workflow_run_start_creates_instance_and_event(self) -> None:
         with self.fixture_repo() as tmp:
             proc = subprocess.run(
@@ -698,6 +755,12 @@ class WorkflowRefactorTests(unittest.TestCase):
             "帮我把方案拆成开发任务": "task-split-only",
             "这个功能拆成几步做": "task-split-only",
             "WBS修订一下": "task-split-only",
+            "我要学习 agent 开发": "learning-loop",
+            "开始学习智能体开发": "learning-loop",
+            "帮我准备资料学习 MCP": "learning-loop",
+            "学完之后开始实践": "learning-loop",
+            "实践完了帮我验证复盘": "learning-loop",
+            "总结知识图谱": "learning-loop",
         }
         for utterance, expected in cases.items():
             with self.subTest(utterance=utterance):
@@ -820,9 +883,9 @@ class WorkflowRefactorTests(unittest.TestCase):
                     self.assertEqual(data["blockers"], [])
                     self.assertTrue(data["plans_found"], data)
 
-    def test_workflow_smoke_script_covers_lightweight_workflows(self) -> None:
+    def test_workflow_smoke_script_covers_core_workflows(self) -> None:
         proc = subprocess.run(
-            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only"],
+            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only", "learning-loop"],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,
@@ -832,6 +895,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:learning-loop", proc.stdout)
 
     def test_workflow_smoke_script_can_start_from_utterance(self) -> None:
         proc = subprocess.run(
@@ -1445,6 +1509,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "Plans/最佳实践",
                     "Plans/电脑管理",
                     "Plans/界面开发",
+                    "Plans/学习循环",
                     "Plans/Bug排查",
                 ]:
                     (self.root / plan_dir).mkdir(parents=True, exist_ok=True)

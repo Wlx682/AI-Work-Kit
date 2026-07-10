@@ -1,0 +1,179 @@
+{
+  "name": "learning-loop",
+  "label": "学习循环",
+  "version": "0.1.0",
+  "description": "学习工作流蓝图：必须先创建学习 Epic。AI 先准备资料，用户学习后进入实践，AI 验证与复盘，最后记录学习记录和知识图谱增量；多轮循环直到用户明确确认学完。",
+  "usesEpic": true,
+  "epicRequired": true,
+  "epicTemplate": "Templates/Epic模板-learning-loop.md",
+  "planRoot": "Plans/Epic",
+  "startup": {
+    "createBoard": true,
+    "boardSource": "Epic",
+    "requireEpicBeforeBoot": true,
+    "createEpicSkill": "template-generator",
+    "createEpicTemplate": "Templates/Epic模板-learning-loop.md",
+    "bootCommand": "bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md"
+  },
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "我要学习",
+    "我想学习",
+    "开始学习",
+    "学习agent",
+    "学习 Agent",
+    "学习智能体",
+    "智能体开发",
+    "学习循环",
+    "学习工作流",
+    "帮我准备资料",
+    "准备学习资料",
+    "学完",
+    "学完之后实践",
+    "开始实践",
+    "实践完",
+    "实践完验证",
+    "验证复盘",
+    "学习复盘",
+    "学习记录",
+    "知识图谱",
+    "总结知识图谱",
+    "整体实践总结",
+    "learning-loop",
+    "workflow=learning-loop"
+  ],
+  "epicMapping": {
+    "topic-intake": "topic-intake",
+    "material-prepare": "material-prepare",
+    "study": "study",
+    "practice": "practice",
+    "verify": "verify",
+    "retro": "retro",
+    "record": "record"
+  },
+  "stages": [
+    {
+      "key": "topic-intake",
+      "label": "学习主题确认",
+      "planFolder": "Plans/学习循环",
+      "epicField": "topic-intake",
+      "planPrefix": "学习主题",
+      "wbsSlices": [1],
+      "skills": ["workflow-router"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["一、学习主题", "二、完成门槛"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "material-prepare"
+    },
+    {
+      "key": "material-prepare",
+      "label": "AI 准备资料",
+      "planFolder": "Plans/学习循环",
+      "epicField": "material-prepare",
+      "planPrefix": "学习资料",
+      "wbsSlices": [2],
+      "skills": ["material-prep-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["三、资料准备", "四、最小概念树"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "study"
+    },
+    {
+      "key": "study",
+      "label": "用户学习与答疑",
+      "planFolder": "Plans/学习循环",
+      "epicField": "study",
+      "planPrefix": "学习答疑",
+      "wbsSlices": [3],
+      "skills": ["material-prep-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["五、学习过程", "六、问题与澄清"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "practice"
+    },
+    {
+      "key": "practice",
+      "label": "实践任务",
+      "planFolder": "Plans/学习循环",
+      "epicField": "practice",
+      "planPrefix": "学习实践",
+      "wbsSlices": [4],
+      "skills": ["feature-dev-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["七、实践任务", "八、实践产物"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "verify"
+    },
+    {
+      "key": "verify",
+      "label": "AI 验证",
+      "planFolder": "Plans/学习循环",
+      "epicField": "verify",
+      "planPrefix": "学习验证",
+      "wbsSlices": [5],
+      "skills": ["test-generator"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["九、验证清单", "十、验证结论"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "retro"
+    },
+    {
+      "key": "retro",
+      "label": "学习复盘",
+      "planFolder": "Plans/学习循环",
+      "epicField": "retro",
+      "planPrefix": "学习复盘",
+      "wbsSlices": [6],
+      "skills": ["report-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["十一、复盘", "十二、下一步建议"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "record"
+    },
+    {
+      "key": "record",
+      "label": "学习记录与知识图谱增量",
+      "planFolder": "Plans/学习循环",
+      "epicField": "record",
+      "planPrefix": "学习记录",
+      "wbsSlices": [7],
+      "skills": ["material-prep-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["十三、学习记录", "十四、知识图谱增量", "十五、用户确认"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

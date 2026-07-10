@@ -10,12 +10,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_WORKFLOWS = ["ui-change", "bugfix", "task-split-only", "computer-mgmt", "client-dev"]
+DEFAULT_WORKFLOWS = ["ui-change", "bugfix", "task-split-only", "computer-mgmt", "learning-loop", "client-dev"]
 ROUTE_PHRASES = {
     "ui-change": "帮我改一下 UI",
     "bugfix": "线上报错帮我修bug",
     "task-split-only": "这个技术方案只拆任务",
     "computer-mgmt": "帮我清理电脑缓存",
+    "learning-loop": "我要学习 agent 开发",
     "client-dev": "全流程开发一下支付收银台",
 }
 
@@ -196,6 +197,114 @@ plans:
     return epic_rel
 
 
+LEARNING_STAGE_FIXTURES = [
+    (
+        "topic-intake",
+        "Plans/学习循环/smoke-topic.md",
+        "workflow-router",
+        ["一、学习主题", "二、完成门槛"],
+        1,
+    ),
+    (
+        "material-prepare",
+        "Plans/学习循环/smoke-material.md",
+        "material-prep-assistant",
+        ["三、资料准备", "四、最小概念树"],
+        2,
+    ),
+    (
+        "study",
+        "Plans/学习循环/smoke-study.md",
+        "material-prep-assistant",
+        ["五、学习过程", "六、问题与澄清"],
+        3,
+    ),
+    (
+        "practice",
+        "Plans/学习循环/smoke-practice.md",
+        "feature-dev-assistant",
+        ["七、实践任务", "八、实践产物"],
+        4,
+    ),
+    (
+        "verify",
+        "Plans/学习循环/smoke-verify.md",
+        "test-generator",
+        ["九、验证清单", "十、验证结论"],
+        5,
+    ),
+    (
+        "retro",
+        "Plans/学习循环/smoke-retro.md",
+        "report-assistant",
+        ["十一、复盘", "十二、下一步建议"],
+        6,
+    ),
+    (
+        "record",
+        "Plans/学习循环/smoke-record.md",
+        "material-prep-assistant",
+        ["十三、学习记录", "十四、知识图谱增量", "十五、用户确认"],
+        7,
+    ),
+]
+
+
+def create_learning_epic(tmp: Path) -> str:
+    epic_rel = "Plans/Epic/smoke-learning.md"
+    plan_lines = "\n".join(f"  {stage}: {rel}" for stage, rel, *_ in LEARNING_STAGE_FIXTURES)
+    write_fixture(
+        tmp / epic_rel,
+        f"""
+---
+project: smoke-learning
+workflow: learning-loop
+p0_open: 0
+plans:
+{plan_lines}
+---
+
+# Smoke Learning Epic
+
+## 三、WBS
+
+```
+[ ] 1. 确认学习主题与完成门槛
+[ ] 2. AI 准备资料与最小概念树
+[ ] 3. 用户学习与答疑
+[ ] 4. 实践任务
+[ ] 5. AI 验证
+[ ] 6. 学习复盘
+[ ] 7. 学习记录与知识图谱增量
+```
+""",
+    )
+    return epic_rel
+
+
+def create_learning_stage_plan(tmp: Path, epic_rel: str, rel: str, stage: str, skill: str, sections: list[str], slice_n: int) -> None:
+    section_blocks = "\n\n".join(f"## {title}\n\nsmoke {title}" for title in sections)
+    write_fixture(
+        tmp / rel,
+        f"""
+---
+status: 已采纳
+workflow: learning-loop
+workflow_stage: {stage}
+epic: {epic_rel}
+---
+
+# 学习阶段 smoke：{stage}
+
+{section_blocks}
+
+{wbs_table([slice_n])}
+
+{skill_run(skill, rel)}
+""",
+    )
+
+
 def create_client_requirement(tmp: Path, epic_rel: str) -> None:
     req_body = "需求背景：" + ("这是用于 workflow smoke 的需求说明。" * 45)
     write_fixture(
@@ -332,7 +441,53 @@ p0_open: 0
     )
 
 
+def smoke_learning_workflow(tmp: Path, workflow: str, bp: dict) -> None:
+    bootstrap = run_json(
+        tmp,
+        ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--project", "不存在的学习", "--json"],
+    )
+    if bootstrap.get("next_state") != "bootstrap-epic" or not bootstrap.get("blockers"):
+        raise SmokeError(f"{workflow} 无 Epic 时应要求 bootstrap: {bootstrap}")
+
+    epic_rel = create_learning_epic(tmp)
+    gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+    assert_gate_state(gate, workflow, "topic-intake")
+    if not any(("子 Plan 未创建" in item or "子 Plan 不存在" in item) for item in gate.get("blockers", [])):
+        raise SmokeError(f"{workflow} 新 Epic 应阻塞在学习主题子 Plan: {gate}")
+
+    stages = [stage.get("key") for stage in bp.get("stages", [])]
+    for index, (stage, rel, skill, sections, slice_n) in enumerate(LEARNING_STAGE_FIXTURES):
+        create_learning_stage_plan(tmp, epic_rel, rel, stage, skill, sections, slice_n)
+        gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+        expected = stages[index + 1] if index + 1 < len(stages) else "done"
+        assert_gate_state(gate, workflow, expected)
+
+    if gate.get("blockers"):
+        raise SmokeError(f"{workflow} 完整真实推进后仍有 blockers: {gate}")
+
+    run_rel = run_text(
+        tmp,
+        ["python3", "scripts/workflow-run.py", "start", "--workflow", workflow, "--epic", epic_rel],
+    ).strip()
+    run_text(tmp, ["python3", "scripts/workflow-run.py", "gate", "--run", run_rel])
+    run_file = tmp / run_rel
+    run_text_body = run_file.read_text(encoding="utf-8")
+    if 'result: "pass"' not in run_text_body:
+        raise SmokeError(f"{workflow} run gate 未记录 pass: {run_rel}")
+    event_rel = run_text_body.split('events: "')[1].split('"')[0]
+    event_types = [
+        json.loads(line)["type"]
+        for line in (tmp / event_rel).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if "gate_pass" not in event_types:
+        raise SmokeError(f"{workflow} run 事件缺 gate_pass: {event_types}")
+
+
 def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
+    if workflow == "learning-loop":
+        smoke_learning_workflow(tmp, workflow, bp)
+        return
     if workflow != "client-dev":
         raise SmokeError(f"暂未定义 Epic 型 smoke fixture: {workflow}")
 

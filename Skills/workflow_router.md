@@ -9,6 +9,7 @@
 - 「做界面」「Figma 对稿」「页面视觉不对齐」「样式调整」
 - 「修 bug」「线上报错」「崩溃」「按钮点不动」「问题排查」
 - 「只拆任务」「方案拆成开发任务」「WBS 修订」
+- 「我要学习」「我想学习」「帮我准备资料」「学完实践」「实践完验证」「学习复盘」「学习记录」「总结知识图谱」
 
 ## 不触发时机
 
@@ -56,6 +57,7 @@
 | 做界面、Figma 对稿、还原设计稿、样式调整 | `ui-change` |
 | 修 bug、线上报错、崩溃、问题排查 | `bugfix` |
 | 只拆任务、方案拆成开发任务、WBS 修订 | `task-split-only` |
+| 我要学习、准备学习资料、实践验证、学习复盘、学习记录、知识图谱 | `learning-loop` |
 
 ## 回归检查
 
@@ -107,6 +109,14 @@ python3 scripts/workflow-status.py --workflow client-dev --project 模块名
 
 ```bash
 python3 scripts/workflow-status.py --workflow computer-mgmt
+```
+
+学习循环：
+
+```bash
+# 先用 Templates/Epic模板-learning-loop.md 创建 Plans/Epic/xxx.md
+bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md
 ```
 
 需要排查底层字段时再跑：

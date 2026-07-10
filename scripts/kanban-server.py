@@ -312,6 +312,13 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
         "development": "功能开发",
         "test": "自动化测试",
         "deploy": "部署",
+        "topic-intake": "学习主题确认",
+        "material-prepare": "AI 准备资料",
+        "study": "用户学习与答疑",
+        "practice": "实践任务",
+        "verify": "AI 验证",
+        "retro": "学习复盘",
+        "record": "学习记录",
     }
     in_plans = False
     for line in text.splitlines():
@@ -321,7 +328,7 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
         if in_plans:
             if line and not line.startswith(" ") and not line.startswith("\t"):
                 break
-            m = re.match(r"^\s+(\w+):\s*(.+)$", line)
+            m = re.match(r"^\s+([A-Za-z0-9_-]+):\s*(.+)$", line)
             if not m:
                 continue
             stage_key, raw = m.group(1), m.group(2).strip()

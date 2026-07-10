@@ -1,6 +1,6 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、做界面、修 bug、只拆任务、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做需求/架构/开发/测试等阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、帮我清理电脑、做界面、修 bug、只拆任务、我要学习、准备学习资料、学习复盘、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做具体阶段工作。
 ---
 
 # 工作流路由器
@@ -15,7 +15,8 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 - 做界面、Figma 对稿、页面视觉不对齐、样式调整
 - 修 bug、线上报错、崩溃、按钮点不动、问题排查
 - 只拆任务、方案拆成开发任务、WBS 修订
-- `workflow=client-dev`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=task-split-only`
+- 我要学习、我想学习、帮我准备资料、学完实践、实践完验证、学习复盘、学习记录、总结知识图谱
+- `workflow=client-dev`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=task-split-only`、`workflow=learning-loop`
 
 ## 不触发
 
@@ -37,7 +38,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 1. 选择蓝图：
    - 显式 `workflow=xxx` 优先
    - 有 Epic 时读 Epic frontmatter `workflow:`
-   - 否则由宿主模型按用户语义、蓝图 `label/description` 与 `triggerHints` 做高置信判断
+   - 否则由宿主模型按用户语义、蓝图 `label/description` 与 `triggerHints` 做高置信判断；学习型请求优先考虑 `learning-loop`，不要借 `client-dev`
    - `scripts/workflow-router-check.py` 只作为触发词回归检查与低成本兜底，不是唯一判断来源
    - 无法命中具体 workflow 时，阻塞确认
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
@@ -45,15 +46,16 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 语义判断只选择现有业务蓝图；一句话同时像多个蓝图时先问清楚
 2. 启动看板：
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
-   - `client-dev` 客户端开发必须先有 Epic；若无 Epic，先调用 `template-generator` 用 `Templates/Epic模板-client-dev.md` 创建 `Plans/Epic/xxx.md`
+   - `usesEpic=true` 的蓝图必须先有 Epic；`client-dev` 用 `Templates/Epic模板-client-dev.md`，`learning-loop` 用 `Templates/Epic模板-learning-loop.md`
    - 已有/刚创建 Epic：`bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`
    - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
 3. 看状态：
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
    - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`
+   - 学习循环：`python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md`
    - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
-4. 根据 `recommended_skill` 调用真正阶段 Skill；若 `client-dev` 阻塞为缺 Epic，必须先调用 `template-generator` 创建 Epic，然后重新 `boot --epic` 打开具体看板。
+4. 根据 `recommended_skill` 调用真正阶段 Skill；若 `usesEpic=true` 的蓝图阻塞为缺 Epic，必须先调用 `template-generator` 创建对应 Epic，然后重新 `boot --epic` 打开具体看板。
 
 ## 输出
 

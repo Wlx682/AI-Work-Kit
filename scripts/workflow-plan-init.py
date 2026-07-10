@@ -79,8 +79,13 @@ def render_plan(workflow: str, stage: dict[str, Any], title: str, rel_path: str,
     required_sections = stage.get("requiredSections") or []
     gates = stage.get("exitCriteria") or {}
     sections = "\n".join(f"- [ ] {item}" for item in required_sections) or "- [ ] 按当前阶段补齐必要内容"
+    section_blocks = "\n\n".join(
+        f"## {item}\n\n本阶段输出将在执行时补齐。"
+        for item in required_sections
+    )
     gate_lines = "\n".join(f"- `{key}`: {value}" for key, value in gates.items())
     feedback = "\n\n" + skill_run(skill, rel_path) if include_feedback else ""
+    required_section_text = f"\n\n{section_blocks}" if section_blocks else ""
     return f"""---
 tags: [工作流, {workflow}]
 type: plan
@@ -110,6 +115,7 @@ skill: {skill}
 ## 二、阶段产出
 
 {sections}
+{required_section_text}
 
 ## 三、完成门禁
 
