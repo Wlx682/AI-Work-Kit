@@ -1,0 +1,87 @@
+"""System 1：快行动。对应架构图「系统1（快行动）工具调用 · 代码生成 · 直觉响应」。
+
+职责：
+1. 接收 System 2 下发的单个步骤
+2. 调用工具执行
+3. 所有工具调用经过安全层审核
+4. 返回执行结果（观察）
+"""
+
+import json
+
+from . import llm
+from . import safety
+from .tools import get_function, get_all_schemas
+
+EXECUTOR_PROMPT = """\
+你是 System 1（执行者）。你会收到一个具体的执行步骤，请调用工具完成它。
+
+规则：
+- 只执行当前步骤，不要做额外的事。
+- 执行完后用 1~3 句话报告结果。
+- 如果步骤不需要工具，直接给出结果。
+"""
+
+MAX_TOOL_ROUNDS = 5
+
+
+def execute(step: str, context: str = "") -> str:
+    """执行单个步骤，返回结果文本。"""
+    messages = [
+        {"role": "system", "content": EXECUTOR_PROMPT},
+        {"role": "user", "content": f"背景信息：\n{context}\n\n当前步骤：{step}"},
+    ]
+
+    schemas = get_all_schemas()
+
+    for _ in range(MAX_TOOL_ROUNDS):
+        result = llm.chat(messages, tools=schemas)
+
+        if result["content"]:
+            print(f"   💬 {result['content']}")
+
+        if result["finish_reason"] == "stop" or not result["tool_calls"]:
+            return result["content"] or "(无输出)"
+
+        messages.append(result["raw"])
+
+        for tool_call in result["tool_calls"]:
+            fn_name = tool_call.function.name
+            fn_args = json.loads(tool_call.function.arguments)
+            print(f"   🔧 {fn_name}({fn_args})")
+
+            # 安全层审核
+            verdict = safety.check(fn_name, fn_args)
+            if not verdict.get("allowed", True):
+                tool_result = f"安全层拒绝: {verdict['reason']}"
+                safety.log(fn_name, fn_args, "blocked")
+            elif verdict.get("needs_approval"):
+                if safety.request_approval(fn_name, fn_args, verdict["reason"]):
+                    tool_result = _run_tool(fn_name, fn_args)
+                else:
+                    tool_result = "用户拒绝执行该操作"
+            else:
+                tool_result = _run_tool(fn_name, fn_args)
+                safety.log(fn_name, fn_args, "executed")
+
+            preview = tool_result[:150] + "..." if len(tool_result) > 150 else tool_result
+            print(f"      ← {preview}")
+
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": tool_result,
+            })
+
+    return "(达到工具调用上限)"
+
+
+def _run_tool(name: str, args: dict) -> str:
+    """执行工具函数。"""
+    fn = get_function(name)
+    if fn is None:
+        return f"Error: unknown tool '{name}'"
+    try:
+        return fn(**args)
+    except Exception as e:
+        return f"Error executing {name}: {e}"
