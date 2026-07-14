@@ -47,7 +47,8 @@
     "topic-intake": "topic-intake",
     "material-prepare": "material-prepare",
     "study": "study",
-    "practice": "practice",
+    "design": "design",
+    "code": "code",
     "verify": "verify",
     "retro": "retro",
     "record": "record"
@@ -72,7 +73,7 @@
     },
     {
       "key": "material-prepare",
-      "label": "AI 准备资料",
+      "label": "AI 准备核心概念",
       "planFolder": "Plans/学习循环",
       "epicField": "material-prepare",
       "planPrefix": "学习资料",
@@ -89,7 +90,7 @@
     },
     {
       "key": "study",
-      "label": "用户学习与答疑",
+      "label": "用户理解概念 + 答疑",
       "planFolder": "Plans/学习循环",
       "epicField": "study",
       "planPrefix": "学习答疑",
@@ -102,18 +103,35 @@
         "sectionsPresent": true,
         "skillRun": true
       },
-      "next": "practice"
+      "next": "design"
     },
     {
-      "key": "practice",
-      "label": "实践任务",
+      "key": "design",
+      "label": "设计决策",
       "planFolder": "Plans/学习循环",
-      "epicField": "practice",
-      "planPrefix": "学习实践",
-      "wbsSlices": [4],
+      "epicField": "design",
+      "planPrefix": "设计决策",
+      "wbsSlices": ["4a"],
       "skills": ["feature-dev-assistant"],
       "template": "Templates/学习循环模板.md",
-      "requiredSections": ["七、实践任务", "八、实践产物"],
+      "requiredSections": ["七、设计决策"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "code"
+    },
+    {
+      "key": "code",
+      "label": "编码实现",
+      "planFolder": "Plans/学习循环",
+      "epicField": "code",
+      "planPrefix": "编码实现",
+      "wbsSlices": ["4b"],
+      "skills": ["feature-dev-assistant"],
+      "template": "Templates/学习循环模板.md",
+      "requiredSections": ["八、编码实现", "九、代码产物"],
       "exitCriteria": {
         "childPlanExists": true,
         "sectionsPresent": true,
@@ -123,14 +141,14 @@
     },
     {
       "key": "verify",
-      "label": "AI 验证",
+      "label": "验证：概念 + 代码 + 设计",
       "planFolder": "Plans/学习循环",
       "epicField": "verify",
       "planPrefix": "学习验证",
       "wbsSlices": [5],
       "skills": ["test-generator"],
       "template": "Templates/学习循环模板.md",
-      "requiredSections": ["九、验证清单", "十、验证结论"],
+      "requiredSections": ["十、验证清单", "十一、验证结论"],
       "exitCriteria": {
         "childPlanExists": true,
         "sectionsPresent": true,
@@ -147,7 +165,7 @@
       "wbsSlices": [6],
       "skills": ["report-assistant"],
       "template": "Templates/学习循环模板.md",
-      "requiredSections": ["十一、复盘", "十二、下一步建议"],
+      "requiredSections": ["十二、复盘", "十三、下一步建议"],
       "exitCriteria": {
         "childPlanExists": true,
         "sectionsPresent": true,
@@ -164,7 +182,7 @@
       "wbsSlices": [7],
       "skills": ["material-prep-assistant"],
       "template": "Templates/学习循环模板.md",
-      "requiredSections": ["十三、学习记录", "十四、知识图谱增量", "十五、用户确认"],
+      "requiredSections": ["十四、学习记录", "十五、知识图谱增量", "十六、用户确认"],
       "exitCriteria": {
         "childPlanExists": true,
         "sectionsPresent": true,

@@ -1,20 +1,17 @@
-"""System 1：快行动。对应架构图「系统1（快行动）工具调用 · 代码生成 · 直觉响应」。
+"""能力·执行（act）：调工具完成一个步骤。对应架构图 System 1 快行动。
 
-职责：
-1. 接收 System 2 下发的单个步骤
-2. 调用工具执行
-3. 所有工具调用经过安全层审核
-4. 返回执行结果（观察）
+全系统唯一的执行器。以前 system1.execute 和 Executor._execute_step 各写一份、
+几乎逐行重复；现在两边都调这一个 run_step，重复被消除。
 """
 
 import json
 
-from . import llm
-from . import safety
-from .tools import get_function, get_all_schemas
+from .. import llm
+from .. import safety
+from ..tools import get_function, get_all_schemas
 
-EXECUTOR_PROMPT = """\
-你是 System 1（执行者）。你会收到一个具体的执行步骤，请调用工具完成它。
+ACT_PROMPT = """\
+你会收到一个具体的执行步骤，请调用工具完成它。
 
 规则：
 - 只执行当前步骤，不要做额外的事。
@@ -25,13 +22,12 @@ EXECUTOR_PROMPT = """\
 MAX_TOOL_ROUNDS = 5
 
 
-def execute(step: str, context: str = "") -> str:
-    """执行单个步骤，返回结果文本。"""
+def run_step(step: str, context: str = "") -> str:
+    """执行单个步骤（工具调用循环 + 安全层），返回结果文本。"""
     messages = [
-        {"role": "system", "content": EXECUTOR_PROMPT},
+        {"role": "system", "content": ACT_PROMPT},
         {"role": "user", "content": f"背景信息：\n{context}\n\n当前步骤：{step}"},
     ]
-
     schemas = get_all_schemas()
 
     for _ in range(MAX_TOOL_ROUNDS):
@@ -50,19 +46,7 @@ def execute(step: str, context: str = "") -> str:
             fn_args = json.loads(tool_call.function.arguments)
             print(f"   🔧 {fn_name}({fn_args})")
 
-            # 安全层审核
-            verdict = safety.check(fn_name, fn_args)
-            if not verdict.get("allowed", True):
-                tool_result = f"安全层拒绝: {verdict['reason']}"
-                safety.log(fn_name, fn_args, "blocked")
-            elif verdict.get("needs_approval"):
-                if safety.request_approval(fn_name, fn_args, verdict["reason"]):
-                    tool_result = _run_tool(fn_name, fn_args)
-                else:
-                    tool_result = "用户拒绝执行该操作"
-            else:
-                tool_result = _run_tool(fn_name, fn_args)
-                safety.log(fn_name, fn_args, "executed")
+            tool_result = _safe_run(fn_name, fn_args)
 
             preview = tool_result[:150] + "..." if len(tool_result) > 150 else tool_result
             print(f"      ← {preview}")
@@ -76,12 +60,22 @@ def execute(step: str, context: str = "") -> str:
     return "(达到工具调用上限)"
 
 
-def _run_tool(name: str, args: dict) -> str:
-    """执行工具函数。"""
+def _safe_run(name: str, args: dict) -> str:
+    """经安全层审核后执行工具。"""
+    verdict = safety.check(name, args)
+    if not verdict.get("allowed", True):
+        safety.log(name, args, "blocked")
+        return f"安全层拒绝: {verdict['reason']}"
+    if verdict.get("needs_approval"):
+        if not safety.request_approval(name, args, verdict["reason"]):
+            return "用户拒绝执行该操作"
+
     fn = get_function(name)
     if fn is None:
         return f"Error: unknown tool '{name}'"
     try:
-        return fn(**args)
+        out = fn(**args)
+        safety.log(name, args, "executed")
+        return out
     except Exception as e:
         return f"Error executing {name}: {e}"

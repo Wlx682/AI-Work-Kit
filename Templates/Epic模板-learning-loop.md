@@ -12,7 +12,8 @@ plans:
   topic-intake: null
   material-prepare: null
   study: null
-  practice: null
+  design: null
+  code: null
   verify: null
   retro: null
   record: null
@@ -55,10 +56,11 @@ relations:
 | 阶段 | stage key | 路径 | status |
 |------|-----------|------|--------|
 | 学习主题确认 | topic-intake | — | ⬜ |
-| AI 准备资料 | material-prepare | — | ⬜ |
-| 用户学习与答疑 | study | — | ⬜ |
-| 实践任务 | practice | — | ⬜ |
-| AI 验证 | verify | — | ⬜ |
+| AI 准备核心概念 | material-prepare | — | ⬜ |
+| 用户理解概念 + 答疑 | study | — | ⬜ |
+| 设计决策 | design | — | ⬜ |
+| 编码实现 | code | — | ⬜ |
+| 验证：概念 + 代码 + 设计 | verify | — | ⬜ |
 | 学习复盘 | retro | — | ⬜ |
 | 学习记录与知识图谱增量 | record | — | ⬜ |
 
@@ -70,28 +72,30 @@ relations:
 
 | 轮次 | 学习地图节点 | 状态 | 本轮主题 | 子 Plan 链路 | 学习记录 | 图谱增量 |
 |------|--------------|------|----------|--------------|----------|----------|
-| 01 | L0 【】 | ⬜ | 【】 | topic-intake: —<br>material-prepare: —<br>study: —<br>practice: —<br>verify: —<br>retro: —<br>record: — | — | 【】 |
+| 01 | L0 【】 | ⬜ | 【】 | topic-intake: —<br>material-prepare: —<br>study: —<br>design: —<br>code: —<br>verify: —<br>retro: —<br>record: — | — | 【】 |
 
 ---
 
-## 四、WBS 看板（学习循环 1–7）
+## 四、WBS 看板（学习循环 1–8）
 
 | # | 切片 | 归属 stage | Skill | 验收 |
 |---|------|------------|-------|------|
 | 1 | 确认学习主题与完成门槛 | topic-intake | workflow-router | 明确主题、范围和本轮完成门槛 |
-| 2 | AI 准备资料与最小概念树 | material-prepare | material-prep-assistant | 资料可直接学习，概念树可解释 |
-| 3 | 用户学习与答疑 | study | material-prep-assistant | 用户完成学习并提出/解决关键问题 |
-| 4 | 实践任务 | practice | feature-dev-assistant | 产生可检查的实践产物 |
-| 5 | AI 验证 | verify | test-generator | 验证清单有结论，问题可追踪 |
+| 2 | AI 准备核心概念与最小概念树 | material-prepare | material-prep-assistant | 资料可直接学习，概念树可解释 |
+| 3 | 用户理解概念与答疑 | study | material-prep-assistant | 用户完成学习并提出/解决关键问题 |
+| 4a | 设计决策 | design | feature-dev-assistant | 用户做出架构/方案选择并说明理由 |
+| 4b | 编码实现 | code | feature-dev-assistant | 产生可运行的代码产物，用户理解每行代码 |
+| 5 | 验证：概念 + 代码 + 设计 | verify | test-generator | 验证清单有结论，问题可追踪 |
 | 6 | 学习复盘 | retro | report-assistant | 形成已掌握/未掌握/下一步 |
 | 7 | 学习记录与知识图谱增量 | record | material-prep-assistant | 学习记录和知识图谱摘要已更新，用户确认是否进入下一轮 |
 
 ```
 [ ] 1. 确认学习主题与完成门槛
-[ ] 2. AI 准备资料与最小概念树
-[ ] 3. 用户学习与答疑
-[ ] 4. 实践任务
-[ ] 5. AI 验证
+[ ] 2. AI 准备核心概念与最小概念树
+[ ] 3. 用户理解概念与答疑
+[ ] 4a. 设计决策
+[ ] 4b. 编码实现
+[ ] 5. 验证：概念 + 代码 + 设计
 [ ] 6. 学习复盘
 [ ] 7. 学习记录与知识图谱增量
 ```

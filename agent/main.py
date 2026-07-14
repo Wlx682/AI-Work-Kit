@@ -2,8 +2,9 @@
 """CLI 入口。只负责参数解析和 REPL 交互，不含业务逻辑。
 
 用法：
-  python3 -m agent.main
-  python3 -m agent.main "帮我看看当前目录有哪些文件"
+  python3 -m agent.main                                   # 单智能体 REPL
+  python3 -m agent.main "帮我看看当前目录有哪些文件"        # 单智能体
+  python3 -m agent.main --team "统计有多少个 .py 文件"      # 多智能体团队
 """
 
 import sys
@@ -22,18 +23,28 @@ def main():
         print("   获取 API key: https://platform.deepseek.com/api_keys")
         sys.exit(1)
 
-    agent = Orchestrator(Memory())
+    # --team 开关：选多智能体团队编排，否则走单智能体
+    args = sys.argv[1:]
+    use_team = "--team" in args
+    args = [a for a in args if a != "--team"]
 
-    if len(sys.argv) > 1:
-        task = " ".join(sys.argv[1:])
+    if use_team:
+        from .team import Team
+        agent = Team()
+    else:
+        agent = Orchestrator(Memory())
+
+    if args:
+        task = " ".join(args)
         agent.run(task)
         return
 
-    print("🤖 通用小助手 Agent — 双系统架构（输入 quit 退出）")
+    mode = "多智能体团队（Planner→Predictor→Executor→Reviewer）" if use_team else "单智能体（一个脑子顺序调能力）"
+    print(f"🤖 通用小助手 Agent — {mode}（输入 quit 退出）")
     print("═" * 60)
-    print("   🧠 System 2 = 规划 + 反思 + 世界模型")
-    print("   ⚡ System 1 = 工具执行（经安全层审核）")
-    print("   📚 记忆 = 工作/情景/语义/程序")
+    print("   能力层：act 执行 · planning 规划 · reviewing 评审（单/多智能体共用）")
+    print("   编排层：Orchestrator 单脑顺序调 / Team 三独立 Agent 调")
+    print("   📚 记忆 = 工作/情景/语义/程序/纠正")
 
     while True:
         try:
