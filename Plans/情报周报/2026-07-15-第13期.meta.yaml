@@ -1,0 +1,88 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-15
+  issue: 13
+  contexts_used:
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: 作为 Anthropic/Claude Code 与 agentic engineering 的种子源，辅助确定本期方向
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 按一手性、实操价值、时效性、覆盖面、讨论性评分，确认 Bun 官方长文入选
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: 比对近 8 周，确认未与第1-12期原文重复
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: 指导 HTML 产物的首屏、指标主角化、表达块和浏览器自检
+    - path: Skills/html_generate.md
+      utility: high
+      reason: 选用 D 新旧对比骨架，并结合指标卡与流程表达
+    - path: Skills/visual_markdown_toolbox.md
+      utility: high
+      reason: 将 workflow 机制、benchmark/数字和迁移对照分别路由为 Mermaid、指标卡和表格
+  contexts_missing:
+    - "高风险 Agent 任务的实现者/审查者职责隔离协议：实现 agent、对抗审查 agent、人工抽样 review 的输入输出与通过标准"
+    - "长任务 loop health checkpoint：记录失败模式是否收敛、workflow 是否被修改、是否出现跳过测试或追求绿灯的风险"
+    - "大规模 AI 生成变更的发布后验证台账：known regressions、fuzz/安全审查/监控观察项、回滚条件"
+    - "高成本 Agent 运行的 cost rationale 字段：人力替代基线、等待成本、验证成本、失败回滚成本"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "Rewriting Bun in Rust"
+      - "Just be really smart and don't make mistakes?"
+      - "What about C/C++?"
+      - "Why Rust?"
+      - "Claude, rewrite Bun in Rust."
+      - "Loops that write & review code"
+      - "Adversarial review"
+      - "What does this look like?"
+      - "Prep work"
+      - "Trial run"
+      - "False starts"
+      - "Finally writing the code"
+      - "Compiler errors as a work queue"
+      - "Smoke tests"
+      - "Get the test suite passing locally"
+      - "Get the test suite passing in CI"
+      - "Merging the Rust rewrite"
+      - "Stats"
+      - "The work continues"
+      - "Porting mistakes"
+      - "Bun is better in Rust"
+      - "Reduced memory usage"
+      - "Smaller binary size"
+      - "Reduced stack space usage"
+      - "2% - 5% faster"
+      - "Production"
+      - "Shipping"
+      - "Maintainability"
+      - "What's next"
+    omitted: []
+    coverage_notes: "原文主章节均已覆盖；关键数字、CI/test 口径、known regressions、unsafe 边界、生产验证和发布后 fuzzing 均已纳入正文。"
+  selected_source:
+    title: "Rewriting Bun in Rust"
+    url: "https://bun.com/blog/bun-in-rust"
+    author: "Jarred Sumner / Bun"
+    published: "2026-07-08"
+    score:
+      first_party: 5
+      practical_value: 5
+      timeliness: 4
+      audience_coverage: 5
+      discussion: 5
+      weighted_total: 47
+    filter_result: "英文一手；非视频；可提取正文；近 8 周未发。"
+  candidate_notes:
+    - title: "ChatGPT is now a partner for your most ambitious work"
+      url: "https://openai.com/index/chatgpt-for-your-most-ambitious-work/"
+      weighted_total: 42
+      reason_not_selected: "OpenAI 官方且时效高，但与第6/11期 Codex/workspace agents 主题相近，本期选择更工程深挖的 Bun 迁移复盘。"
+    - title: "How Claude remembers your project"
+      url: "https://docs.anthropic.com/en/docs/claude-code/memory"
+      weighted_total: 39
+      reason_not_selected: "官方文档实操价值高，但更适合专题教程；本期 Bun 文章具有更完整的工程复盘和迁移原则。"
+  notes: |
+    source_stale_warning: Cat Wu 连续多期无独立入选文章，但 Anthropic/Claude Code 官方相关源持续有入选；建议后续人工复核 follow 名单中个人源与官方源的区分粒度。
+    本期入选源 Bun 官方博客不在 follow 名单中，但属于 Anthropic 生态相关的一手工程复盘，建议加入“生态/Agent 工程案例”候选源池。
+
