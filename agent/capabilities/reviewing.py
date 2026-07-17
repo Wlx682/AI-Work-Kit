@@ -1,10 +1,10 @@
-"""能力·评审（reviewing）：中途反思 / 终局评审。对应架构图 System 2 慢思考。
+"""能力·评审（reviewing）：中途反思 / 终局评审。
 
 两个不同用途的能力：
   - reflect：执行途中，判断继续/调整/完成，并标记是否有教训（供 L7 蒸馏）。
   - review：全部执行完后，以第三方视角判断结果是否达标，accept/revise。
 
-以前 reflect 写在 system2、review 写在 roles/reviewer；现在统一到评审能力层。
+以前单智能体反思和 Reviewer 评审分散实现；现在统一到评审能力层。
 """
 
 from .. import llm

@@ -104,7 +104,7 @@ class Memory:
     def corrections_get(self) -> list[dict]:
         return list(self._corrections)
 
-    # --- 汇总：给 System 2 的上下文 ---
+    # --- 汇总：提供给规划与反思节点的上下文 ---
 
     def to_context(self) -> str:
         parts = []

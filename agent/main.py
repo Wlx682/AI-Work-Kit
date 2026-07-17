@@ -36,7 +36,12 @@ def main():
 
     if args:
         task = " ".join(args)
-        agent.run(task)
+        if use_team:
+            agent.run(task)
+        else:
+            result = agent.run_with_trace(task)
+            if not result.succeeded:
+                print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
         return
 
     mode = "多智能体团队（Planner→Predictor→Executor→Reviewer）" if use_team else "单智能体（一个脑子顺序调能力）"
@@ -60,7 +65,12 @@ def main():
             break
 
         try:
-            agent.run(task)
+            if use_team:
+                agent.run(task)
+            else:
+                result = agent.run_with_trace(task)
+                if not result.succeeded:
+                    print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
         except KeyboardInterrupt:
             print("\n\n⚠️  用户中断执行。")
         except Exception as e:

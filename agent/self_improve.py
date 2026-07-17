@@ -26,7 +26,7 @@ DISTILL_PROMPT = """\
 规则：
 - facts 是通用知识，未来遇到类似情况可以直接复用的结论，而不是本次任务的具体细节。
 - patterns 是可复用的操作步骤模式，trigger 描述触发条件，steps 描述步骤。
-- corrections 是本次执行中走了弯路、犯了错、或被 System 2 纠正的地方。mistake 描述做错了什么，lesson 描述正确做法。
+- corrections 是本次执行中走了弯路、犯了错、或被反思节点纠正的地方。mistake 描述做错了什么，lesson 描述正确做法。
 - 如果没有值得提炼的经验，对应字段输出空数组。
 - 只输出 JSON。
 """
