@@ -1,0 +1,33 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-17
+  issue: 14
+  contexts_used:
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: Armin Ronacher 来自 follow 名单 B 区，lucumr 已建 DocShark 库，高效定位原文
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: 按加权分选出 Top1（47/50）
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: 确认第8期选了 The Coming Loop，本篇主题不重复
+  contexts_missing:
+    - "agent tool schema regression detection：模型升级后 tool calling 可靠性回归的自动化检测机制"
+    - "RL post-training impact tracking：跟踪闭源模型后训练对工作流行为影响的观测手段"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "Tool Calls Are Text"
+      - "The Failure"
+      - "Why It's Getting Worse"
+      - "The Slop Harness"
+      - "Strictness"
+      - "What This Means For Harnesses"
+    omitted: []
+    coverage_notes: "原文全部6个主节均已覆盖；ANTML编码细节、失败样例zoo、Claude Code逆向分析、OpenAI Harmony对比、constrained decoding讨论均已展开"
+  notes: |
+    本期入选源 Armin Ronacher (lucumr) 连续第2期入选（第8期 The Coming Loop），source health 良好。
+    Cat Wu / Fiona Fung 本期无新公开内容可入选。Boris Cherny 无7月新文。
+    Anthropic Engineering Blog 最新仅到4月23日，7月无新文。
+    交叉引用 GitHub Blog 7月10日 "Better tools made Copilot code review worse" 作为互补视角。
