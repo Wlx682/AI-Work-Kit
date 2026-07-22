@@ -1,0 +1,85 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-22
+  issue: 17
+  selected_source:
+    title: "Agents That Teach: Towards Designing Incidental Learning Back into AI-Assisted Software Development"
+    url: "https://arxiv.org/abs/2607.06101"
+    authors: "Rohit Mehra, Samdyuti Suri, Prithviraj K Tagadinamani, Kapil Singi, Vikrant Kaulgud, Adam P. Burden / Accenture Labs"
+    published: 2026-07-07
+    venue: "ASE 2026 New Ideas and Emerging Results Track"
+    score:
+      first_party: 5
+      practical_value: 4
+      timeliness: 5
+      breadth: 5
+      discussion: 5
+      weighted_total: 47
+  candidate_review:
+    - title: "Agents That Teach: Towards Designing Incidental Learning Back into AI-Assisted Software Development"
+      source: "Mehra et al. / Accenture Labs / arXiv"
+      score: 47
+      decision: selected
+      reason: "英文一手 ASE 论文；知识债、偶发学习与学习感知 Agent 尚未被前16期覆盖，技术和组织讨论面兼具"
+    - title: "Cheap Code, Costly Judgment: A Case Study on Governable Agentic Software Engineering"
+      source: "Davis et al. / arXiv"
+      score: 49
+      decision: rejected
+      reason: "与第16期人类监督和团队治理主题、以及第13期验证系统主题过近，触发近8周同主题去重"
+    - title: "Latent Programming Horizons in Coding Agents"
+      source: "Silva, Tu, Monperrus / arXiv"
+      score: 40
+      decision: reserve
+      reason: "机制解释和实验新颖，但依赖隐藏状态探针，当前对混合角色读者的直接实操价值较低"
+    - title: "What Do AI Agents Actually Change?"
+      source: "Dovhoshliubnyi et al. / arXiv"
+      score: 39
+      decision: reserve
+      reason: "1,254 个性能 diff hunk 的实证扎实，但主题偏 SBSE 与性能变异算子，覆盖面较窄"
+  contexts_used:
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: "以 Agent 论文方向为种子，扩展发现 ASE 2026 学习感知开发研究"
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: "执行英文一手、时效、实操、覆盖面和讨论性加权评分"
+    - path: Contexts/情报源/周帖模板.md
+      utility: not-needed
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: "淘汰分数更高但与第16期治理主题重叠的候选，确认知识债为新主题"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "约束侧栏长文、关键数字、渐进增强和三档宽度浏览器门禁"
+    - path: Skills/html_generate.md
+      utility: high
+      reason: "按章节型机制长文选择 B 侧栏文档式骨架"
+    - path: Skills/visual_markdown_toolbox.md
+      utility: high
+      reason: "将六原则映射表、SHIELD 多智能体架构和闭环生命周期路由为表格与自绘 SVG"
+  contexts_missing:
+    - "knowledge-retention handoff：从高风险或高新颖度 Agent 任务中提取候选概念与证据，异步交给学习循环"
+    - "decision evidence contract：结构化记录目标、方案、备选、约束、不确定性与验证证据，替代对完整思维链的依赖"
+    - "learning outcome state model：区分 surfaced、delivered、practiced、verified，避免把资料生成视为能力形成"
+    - "learner-controlled concept profile：个人可查看、纠正、过期与删除的概念熟悉度假设，禁止用于绩效评价"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "Abstract"
+      - "1 Introduction"
+      - "2 Related Work"
+      - "3 Designing Incidental Learning into Developer-Agent Interactions"
+      - "Six Design Principles: Contextual, Grounded, Ambient, Selective, Adaptive, Closed-Loop"
+      - "4 SHIELD"
+      - "4.1 Architecture"
+      - "4.2 Implementation"
+      - "5 Conclusion and Future Work"
+      - "Data Availability Statement"
+    omitted:
+      - heading: "References"
+        reason: "正文解释了与论点直接相关的认知卸载、17%理解差距和认知参与方法，未逐项转录完整参考书目"
+    coverage_notes: "覆盖知识债定义、相关工作、六原则、全部 SHIELD 组件、概念图冷启动与筛选机制、webhook 案例、技术栈、未来研究和无数据集边界；两张原图重构为可编辑架构与闭环表达。"
+  notes: |
+    source_stale_warning: Boris Cherny、Cat Wu、Fiona Fung、Andrej Karpathy 连续至少3期无独立来源入选；建议复核公开源可抓取性与名单价值，不因未入选自动移除。
+    本文属于 NIER 新想法与原型论文，没有用户研究或公开数据集；内部演示反馈不能当作学习效果证据。
+    utility=not-needed 的周帖模板属于旧版多篇短帖结构，本期继续执行单篇技术博客三件套。
