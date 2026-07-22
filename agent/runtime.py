@@ -26,6 +26,7 @@ class RunResult:
     outcome: str | None
     events: tuple[RunEvent, ...]
     error: str | None = None
+    warnings: tuple[str, ...] = ()
 
     @property
     def succeeded(self) -> bool:

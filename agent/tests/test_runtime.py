@@ -1,10 +1,12 @@
 """Offline tests for the LangGraph runtime migration."""
 
 import unittest
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from agent.langgraph_runtime import LangGraphRuntime
 from agent.orchestrator import Orchestrator
+from agent.trace_store import TraceStore
 
 
 class FakeMemory:
@@ -35,45 +37,91 @@ class FakeMemory:
 
 
 class LangGraphRuntimeTests(unittest.TestCase):
+    def test_persists_normal_completion_trace(self):
+        memory = FakeMemory()
+        with TemporaryDirectory() as directory:
+            store = TraceStore(directory)
+            orchestrator = Orchestrator(memory, LangGraphRuntime(memory, store))
+
+            with (
+                patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
+                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+                patch("agent.langgraph_runtime.act.run_step", return_value="done"),
+            ):
+                result = orchestrator.run_with_trace("test task")
+
+            self.assertTrue(result.succeeded)
+            self.assertEqual(store.load(result.run_id), result)
+            self.assertEqual(
+                [event.phase for event in result.events],
+                ["run", "load_memory", "plan", "predict", "execute_step", "save_memory", "run"],
+            )
+
     def test_records_replan_trace_and_framework_checkpoints(self):
         memory = FakeMemory()
-        orchestrator = Orchestrator(memory)
-        self.assertIsInstance(orchestrator.runtime, LangGraphRuntime)
+        with TemporaryDirectory() as directory:
+            store = TraceStore(directory)
+            orchestrator = Orchestrator(memory, LangGraphRuntime(memory, store))
+            self.assertIsInstance(orchestrator.runtime, LangGraphRuntime)
+
+            with (
+                patch("agent.langgraph_runtime.planning.make_plan", return_value=["first", "second"]),
+                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+                patch("agent.langgraph_runtime.act.run_step", side_effect=["first result", "final result"]),
+                patch("agent.langgraph_runtime.reviewing.reflect", return_value={
+                    "action": "replan",
+                    "new_steps": ["second revised"],
+                    "has_lesson": True,
+                }),
+                patch("agent.langgraph_runtime.self_improve.distill", return_value={}),
+                patch("agent.langgraph_runtime.self_improve.consolidate", return_value=0),
+            ):
+                result = orchestrator.run_with_trace("test task")
+
+            self.assertTrue(result.succeeded)
+            self.assertEqual(result.outcome, "final result")
+            self.assertEqual(memory.episodes[0][3], "final result")
+            self.assertEqual([event.sequence for event in result.events], list(range(1, len(result.events) + 1)))
+            self.assertEqual(result.events[0].phase, "run")
+            self.assertIn("plan", [event.phase for event in result.events])
+            self.assertIn("reflect", [event.phase for event in result.events])
+            self.assertGreater(orchestrator.runtime.checkpoint_count(result.run_id), 1)
+            self.assertEqual(result.events[-1].status, "completed")
+            self.assertEqual(store.load(result.run_id), result)
+
+    def test_captures_planning_failure_as_a_structured_result(self):
+        memory = FakeMemory()
+        with TemporaryDirectory() as directory:
+            store = TraceStore(directory)
+            orchestrator = Orchestrator(memory, LangGraphRuntime(memory, store))
+
+            with patch("agent.langgraph_runtime.planning.make_plan", side_effect=RuntimeError("LLM unavailable")):
+                result = orchestrator.run_with_trace("test task")
+
+            self.assertFalse(result.succeeded)
+            self.assertIn("LLM unavailable", result.error)
+            self.assertEqual(result.events[-1].status, "failed")
+            self.assertEqual(store.load(result.run_id), result)
+
+    def test_trace_failure_is_a_warning_not_a_business_failure(self):
+        memory = FakeMemory()
+        runtime = LangGraphRuntime(memory)
+        orchestrator = Orchestrator(memory, runtime)
 
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["first", "second"]),
+            patch.object(runtime.trace_store, "save", side_effect=OSError("disk full")),
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
             patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
             patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.run_step", side_effect=["first result", "final result"]),
-            patch("agent.langgraph_runtime.reviewing.reflect", return_value={
-                "action": "replan",
-                "new_steps": ["second revised"],
-                "has_lesson": True,
-            }),
-            patch("agent.langgraph_runtime.self_improve.distill", return_value={}),
-            patch("agent.langgraph_runtime.self_improve.consolidate", return_value=0),
+            patch("agent.langgraph_runtime.act.run_step", return_value="done"),
         ):
             result = orchestrator.run_with_trace("test task")
 
         self.assertTrue(result.succeeded)
-        self.assertEqual(result.outcome, "final result")
-        self.assertEqual(memory.episodes[0][3], "final result")
-        self.assertEqual([event.sequence for event in result.events], list(range(1, len(result.events) + 1)))
-        self.assertEqual(result.events[0].phase, "run")
-        self.assertIn("plan", [event.phase for event in result.events])
-        self.assertIn("reflect", [event.phase for event in result.events])
-        self.assertGreater(orchestrator.runtime.checkpoint_count(result.run_id), 1)
-        self.assertEqual(result.events[-1].status, "completed")
-
-    def test_captures_planning_failure_as_a_structured_result(self):
-        orchestrator = Orchestrator(FakeMemory())
-
-        with patch("agent.langgraph_runtime.planning.make_plan", side_effect=RuntimeError("LLM unavailable")):
-            result = orchestrator.run_with_trace("test task")
-
-        self.assertFalse(result.succeeded)
-        self.assertIn("LLM unavailable", result.error)
-        self.assertEqual(result.events[-1].status, "failed")
+        self.assertEqual(result.outcome, "done")
+        self.assertEqual(result.warnings, ("trace_persist_failed: disk full",))
 
 
 if __name__ == "__main__":

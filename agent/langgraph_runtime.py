@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from operator import add
 from typing import Annotated, TypedDict
 from uuid import uuid4
@@ -13,6 +14,7 @@ from . import self_improve, world_model
 from .capabilities import act, planning, reviewing
 from .memory import Memory
 from .runtime import RunEvent, RunResult
+from .trace_store import TraceStore
 
 MAX_STEPS = 10
 
@@ -29,8 +31,9 @@ class AgentState(TypedDict):
 class LangGraphRuntime:
     """Maps the existing agent policies onto a LangGraph StateGraph."""
 
-    def __init__(self, memory: Memory):
+    def __init__(self, memory: Memory, trace_store: TraceStore | None = None):
         self.memory = memory
+        self.trace_store = trace_store or TraceStore()
         self.checkpointer = InMemorySaver()
         self.graph = self._build_graph()
 
@@ -75,10 +78,18 @@ class LangGraphRuntime:
         except Exception as error:
             message = str(error) or error.__class__.__name__
             events.append(RunEvent(len(events) + 1, run_id, "run", "failed", {"error": message}))
-            return RunResult(run_id, task, None, tuple(events), message)
+            return self._persist_trace(RunResult(run_id, task, None, tuple(events), message))
 
         events.append(RunEvent(len(events) + 1, run_id, "run", "completed", {"outcome": outcome}))
-        return RunResult(run_id, task, outcome, tuple(events))
+        return self._persist_trace(RunResult(run_id, task, outcome, tuple(events)))
+
+    def _persist_trace(self, result: RunResult) -> RunResult:
+        try:
+            self.trace_store.save(result)
+        except Exception as error:
+            message = str(error) or error.__class__.__name__
+            return replace(result, warnings=result.warnings + (f"trace_persist_failed: {message}",))
+        return result
 
     def checkpoint_count(self, run_id: str) -> int:
         """Return the number of framework checkpoints saved for one run."""
