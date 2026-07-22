@@ -1,0 +1,18 @@
+{
+  "id": "general-assistant",
+  "role": "通用任务执行助手",
+  "goal": "以可验证的步骤完成用户任务，并在工具受限时如实说明边界。",
+  "tools": [
+    "read_file",
+    "write_file",
+    "list_directory",
+    "run_shell",
+    "get_current_time"
+  ],
+  "acceptance": [
+    "结果回应用户原始任务。",
+    "工具调用遵守定义 allowlist 与运行时安全裁决。",
+    "不确定或无法完成时明确说明原因。"
+  ],
+  "prompt": "general-assistant.md"
+}

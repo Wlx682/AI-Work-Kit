@@ -4,8 +4,12 @@
 """
 
 import json
+from typing import TYPE_CHECKING
 
 from .. import llm
+
+if TYPE_CHECKING:
+    from ..agent_definition import AgentDefinition
 
 PLAN_PROMPT = """\
 你的职责是把用户的任务拆解成具体的执行步骤。
@@ -48,14 +52,22 @@ REVISE_PROMPT = """\
 """
 
 
-def make_plan(task: str, memory_context: str = "") -> list[str]:
+def make_plan(
+    task: str,
+    memory_context: str = "",
+    definition: "AgentDefinition | None" = None,
+) -> list[str]:
     """把任务拆解成步骤列表。"""
     user_content = task
     if memory_context and memory_context != "(无记忆)":
         user_content = f"参考信息：\n{memory_context}\n\n任务：{task}"
 
+    prompt = PLAN_PROMPT
+    if definition is not None:
+        prompt = f"{PLAN_PROMPT}\n\n{definition.prompt_context()}"
+
     return llm.chat_json([
-        {"role": "system", "content": PLAN_PROMPT},
+        {"role": "system", "content": prompt},
         {"role": "user", "content": user_content},
     ])
 

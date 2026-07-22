@@ -11,10 +11,11 @@ from .base import BaseAgent
 
 class Reviewer(BaseAgent):
     name = "Reviewer"
+    definition_id = "reviewer"
 
     def review(self, task: str, steps: list[str], results: list[str]) -> dict:
         """审查执行结果，accept 则通知协调者收工，revise 则打回给 Planner。"""
-        verdict = reviewing.review(task, steps, results)
+        verdict = reviewing.review(task, steps, results, self.definition.acceptance)
 
         if verdict.get("verdict") == "accept":
             self.send("Coordinator", "review", {"verdict": "accept", "reason": verdict.get("reason", "")})

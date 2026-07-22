@@ -40,7 +40,13 @@ REVIEW_PROMPT = """\
 """
 
 
-def reflect(task: str, steps: list[str], done_index: int, results: list[str]) -> dict:
+def reflect(
+    task: str,
+    steps: list[str],
+    done_index: int,
+    results: list[str],
+    acceptance: tuple[str, ...] = (),
+) -> dict:
     """执行途中反思，决定下一步。"""
     completed = "\n".join(f"步骤 {i+1} [{steps[i]}]: {r}" for i, r in enumerate(results))
     remaining = "\n".join(
@@ -48,20 +54,30 @@ def reflect(task: str, steps: list[str], done_index: int, results: list[str]) ->
         for i, s in enumerate(steps[done_index:], done_index)
     )
 
+    acceptance_text = "\n".join(f"- {item}" for item in acceptance) or "(未额外声明)"
     return llm.chat_json([
         {"role": "system", "content": REFLECT_PROMPT},
         {"role": "user", "content": (
-            f"原始任务：{task}\n\n已完成：\n{completed}\n\n剩余步骤：\n{remaining or '(无)'}"
+            f"原始任务：{task}\n\n验收标准：\n{acceptance_text}\n\n"
+            f"已完成：\n{completed}\n\n剩余步骤：\n{remaining or '(无)'}"
         )},
     ])
 
 
-def review(task: str, steps: list[str], results: list[str]) -> dict:
+def review(
+    task: str,
+    steps: list[str],
+    results: list[str],
+    acceptance: tuple[str, ...] = (),
+) -> dict:
     """终局评审：审查最终执行结果，返回 {"verdict", "reason", "suggestion"}。"""
     execution = "\n".join(
         f"步骤{i+1}：{s}\n结果：{r}" for i, (s, r) in enumerate(zip(steps, results))
     )
+    acceptance_text = "\n".join(f"- {item}" for item in acceptance) or "(未额外声明)"
     return llm.chat_json([
         {"role": "system", "content": REVIEW_PROMPT},
-        {"role": "user", "content": f"任务：{task}\n\n执行记录：\n{execution}"},
+        {"role": "user", "content": (
+            f"任务：{task}\n\n验收标准：\n{acceptance_text}\n\n执行记录：\n{execution}"
+        )},
     ])

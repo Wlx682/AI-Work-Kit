@@ -5,6 +5,10 @@
 """
 
 from . import llm
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .agent_definition import AgentDefinition
 
 PREDICT_PROMPT = """\
 你是世界模型（World Model）。你的职责是在行动前预测后果。
@@ -24,14 +28,19 @@ PREDICT_PROMPT = """\
 """
 
 
-def predict(steps: list[str], context: str = "") -> list[dict]:
+def predict(
+    steps: list[str],
+    context: str = "",
+    definition: "AgentDefinition | None" = None,
+) -> list[dict]:
     """对计划的每个步骤做行动前预测。"""
     prompt = f"环境上下文：\n{context or '(无)'}\n\n计划步骤：\n"
     for i, s in enumerate(steps, 1):
         prompt += f"{i}. {s}\n"
 
+    prompt_context = f"\n\n{definition.prompt_context()}" if definition is not None else ""
     predictions = llm.chat_json([
-        {"role": "system", "content": PREDICT_PROMPT},
+        {"role": "system", "content": f"{PREDICT_PROMPT}{prompt_context}"},
         {"role": "user", "content": prompt},
     ])
 

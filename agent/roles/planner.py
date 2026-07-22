@@ -11,10 +11,11 @@ from .base import BaseAgent
 
 class Planner(BaseAgent):
     name = "Planner"
+    definition_id = "planner"
 
     def make_plan(self, task: str) -> list[str]:
         """首次规划：拆解任务，把计划发给 Predictor 审风险。"""
-        steps = planning.make_plan(task)
+        steps = planning.make_plan(task, definition=self.definition)
         self.send("Predictor", "plan", steps)
         return steps
 

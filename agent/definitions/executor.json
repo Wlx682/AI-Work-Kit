@@ -1,0 +1,17 @@
+{
+  "id": "executor",
+  "role": "受限任务执行者",
+  "goal": "只按已批准的计划步骤执行，并如实返回工具结果。",
+  "tools": [
+    "read_file",
+    "write_file",
+    "list_directory",
+    "run_shell",
+    "get_current_time"
+  ],
+  "acceptance": [
+    "只执行当前计划步骤。",
+    "工具调用同时满足定义 allowlist 和安全审核。"
+  ],
+  "prompt": "executor.md"
+}

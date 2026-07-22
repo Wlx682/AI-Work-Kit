@@ -11,6 +11,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from . import self_improve, world_model
+from .agent_definition import AgentDefinition, load_agent_definition
 from .capabilities import act, planning, reviewing
 from .memory import Memory
 from .runtime import RunEvent, RunResult
@@ -31,15 +32,24 @@ class AgentState(TypedDict):
 class LangGraphRuntime:
     """Maps the existing agent policies onto a LangGraph StateGraph."""
 
-    def __init__(self, memory: Memory, trace_store: TraceStore | None = None):
+    def __init__(
+        self,
+        memory: Memory,
+        trace_store: TraceStore | None = None,
+        definition: AgentDefinition | None = None,
+    ):
         self.memory = memory
         self.trace_store = trace_store or TraceStore()
+        self.definition = definition or load_agent_definition()
         self.checkpointer = InMemorySaver()
         self.graph = self._build_graph()
 
     def run(self, task: str) -> RunResult:
         run_id = uuid4().hex
-        events = [RunEvent(1, run_id, "run", "started", {"task": task})]
+        events = [RunEvent(1, run_id, "run", "started", {
+            "task": task,
+            "agent_id": self.definition.id,
+        })]
         config = {
             "configurable": {"thread_id": run_id},
             "recursion_limit": MAX_STEPS * 2 + 10,
@@ -128,7 +138,7 @@ class LangGraphRuntime:
 
     def _plan(self, state: AgentState) -> dict:
         print("\n🧭 [规划] 正在生成计划...")
-        steps = planning.make_plan(state["task"], state["memory_context"])
+        steps = planning.make_plan(state["task"], state["memory_context"], self.definition)
         for index, step in enumerate(steps, 1):
             print(f"   📋 步骤 {index}: {step}")
         return {"steps": steps}
@@ -157,7 +167,7 @@ class LangGraphRuntime:
             f"[步骤{result_index + 1}结果] {result}"
             for result_index, result in enumerate(state["results"])
         )
-        result = act.run_step(step, context or "(第一步，暂无上下文)")
+        result = act.run_step(step, context or "(第一步，暂无上下文)", self.definition)
         self.memory.working_add({"step": step, "result": result, "summary": result[:100]})
         return {"results": [result]}
 
@@ -169,7 +179,13 @@ class LangGraphRuntime:
     def _reflect(self, state: AgentState) -> dict:
         print("\n🔎 [反思] 正在评估进展...")
         done_index = len(state["results"])
-        decision = reviewing.reflect(state["task"], state["steps"], done_index, state["results"])
+        decision = reviewing.reflect(
+            state["task"],
+            state["steps"],
+            done_index,
+            state["results"],
+            self.definition.acceptance,
+        )
         has_lesson = state["has_lesson"] or decision.get("has_lesson", False)
 
         if decision["action"] == "done":

@@ -5,10 +5,14 @@
 """
 
 import json
+from typing import TYPE_CHECKING
 
 from .. import llm
 from .. import safety
 from ..tools import get_function, get_all_schemas
+
+if TYPE_CHECKING:
+    from ..agent_definition import AgentDefinition
 
 ACT_PROMPT = """\
 你会收到一个具体的执行步骤，请调用工具完成它。
@@ -22,13 +26,17 @@ ACT_PROMPT = """\
 MAX_TOOL_ROUNDS = 5
 
 
-def run_step(step: str, context: str = "") -> str:
+def run_step(
+    step: str,
+    context: str = "",
+    definition: "AgentDefinition | None" = None,
+) -> str:
     """执行单个步骤（工具调用循环 + 安全层），返回结果文本。"""
     messages = [
         {"role": "system", "content": ACT_PROMPT},
         {"role": "user", "content": f"背景信息：\n{context}\n\n当前步骤：{step}"},
     ]
-    schemas = get_all_schemas()
+    schemas = _tool_schemas(definition)
 
     for _ in range(MAX_TOOL_ROUNDS):
         result = llm.chat(messages, tools=schemas)
@@ -46,7 +54,7 @@ def run_step(step: str, context: str = "") -> str:
             fn_args = json.loads(tool_call.function.arguments)
             print(f"   🔧 {fn_name}({fn_args})")
 
-            tool_result = _safe_run(fn_name, fn_args)
+            tool_result = _safe_run(fn_name, fn_args, definition)
 
             preview = tool_result[:150] + "..." if len(tool_result) > 150 else tool_result
             print(f"      ← {preview}")
@@ -60,8 +68,17 @@ def run_step(step: str, context: str = "") -> str:
     return "(达到工具调用上限)"
 
 
-def _safe_run(name: str, args: dict) -> str:
+def _tool_schemas(definition: "AgentDefinition | None") -> list[dict]:
+    schemas = get_all_schemas()
+    if definition is None:
+        return schemas
+    return [schema for schema in schemas if schema["function"]["name"] in definition.tools]
+
+
+def _safe_run(name: str, args: dict, definition: "AgentDefinition | None" = None) -> str:
     """经安全层审核后执行工具。"""
+    if definition is not None and name not in definition.tools:
+        return f"Agent 定义未授权工具: {name}"
     verdict = safety.check(name, args)
     if not verdict.get("allowed", True):
         safety.log(name, args, "blocked")
