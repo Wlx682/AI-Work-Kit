@@ -1,8 +1,4 @@
-"""Predictor：预测者 Agent。独立第三方视角预测计划风险。
-
-薄壳：自身只负责"身份 + A2A 通信"，真正的预测本事调用 world_model。
-和 Reviewer 同理——Planner 不能预测自己的计划，就像不能审自己的代码。
-"""
+"""Predictor：预测者 Agent。独立第三方视角预测计划风险。"""
 
 from .. import world_model
 from .base import BaseAgent
@@ -21,9 +17,7 @@ class Predictor(BaseAgent):
         if risky:
             for p in risky:
                 print(f"      ⚠️  {p['step']}: {p['risk']}")
-            self.send("Planner", "risk", risky)
         else:
             print("      ✅ 未发现高风险")
-            self.send("Coordinator", "safe", {"steps": len(steps)})
 
         return risky

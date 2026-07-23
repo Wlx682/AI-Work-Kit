@@ -1,8 +1,7 @@
-"""多智能体角色包。四个纯独立 Agent：Planner / Predictor / Executor / Reviewer。
+"""Team Graph 的四个独立角色：Planner / Predictor / Executor / Reviewer。
 
-每个角色是一个"身份 + A2A 通信"的薄壳，只靠消息沟通；干活时统一调用
-能力层（capabilities.act / planning / reviewing）和共享基础设施（world_model），
-和单智能体共用同一份能力，不再各写一份执行/规划/评审逻辑。
+角色只承载身份策略并调用共享 capability；路由、重试和交接留痕由
+TeamGraphRuntime 的 LangGraph 状态图负责。
 """
 
 from .planner import Planner

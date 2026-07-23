@@ -29,28 +29,25 @@ def main():
     args = [a for a in args if a != "--team"]
 
     if use_team:
-        from .team import Team
-        agent = Team()
+        from .team_graph_runtime import TeamGraphRuntime
+        agent = TeamGraphRuntime(Memory())
     else:
         agent = Orchestrator(Memory())
 
     if args:
         task = " ".join(args)
-        if use_team:
-            agent.run(task)
-        else:
-            result = agent.run_with_trace(task)
-            if not result.succeeded:
-                print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
-            for warning in result.warnings:
-                print(f"⚠️ {warning}")
+        result = agent.run(task) if use_team else agent.run_with_trace(task)
+        if not result.succeeded:
+            print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
+        for warning in result.warnings:
+            print(f"⚠️ {warning}")
         return
 
-    mode = "多智能体团队（Planner→Predictor→Executor→Reviewer）" if use_team else "单智能体（一个脑子顺序调能力）"
+    mode = "多智能体 Team Graph（Planner→Predictor→Executor→Reviewer）" if use_team else "单智能体（一个脑子顺序调能力）"
     print(f"🤖 通用小助手 Agent — {mode}（输入 quit 退出）")
     print("═" * 60)
     print("   能力层：act 执行 · planning 规划 · reviewing 评审（单/多智能体共用）")
-    print("   编排层：Orchestrator 单脑顺序调 / Team 三独立 Agent 调")
+    print("   编排层：Orchestrator 单智能体图 / Team 四角色图")
     print("   📚 记忆 = 工作/情景/语义/程序/纠正")
 
     while True:
@@ -67,14 +64,11 @@ def main():
             break
 
         try:
-            if use_team:
-                agent.run(task)
-            else:
-                result = agent.run_with_trace(task)
-                if not result.succeeded:
-                    print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
-                for warning in result.warnings:
-                    print(f"⚠️ {warning}")
+            result = agent.run(task) if use_team else agent.run_with_trace(task)
+            if not result.succeeded:
+                print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
+            for warning in result.warnings:
+                print(f"⚠️ {warning}")
         except KeyboardInterrupt:
             print("\n\n⚠️  用户中断执行。")
         except Exception as e:
