@@ -225,6 +225,8 @@
 
     .fade-in { opacity: 0; transform: translateY(14px); }
     .fade-in.seen { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1); }
+    #app.no-entry-motion .fade-in { opacity: 1; transform: none; transition: none; }
+    #app.no-entry-motion .bar i, #app.no-entry-motion .mini-bar i { transition: none; }
     @media (prefers-reduced-motion: reduce) { .fade-in { opacity: 1 !important; transform: none !important; } .light.red { animation: none; } }
 
     button.danger { background: rgba(255,84,112,0.12); border: 1px solid rgba(255,84,112,0.4); color: var(--red); }
@@ -278,27 +280,40 @@
     const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
-    async function loadBoard() {
+    function boardContentSignature(data) {
+      const { revision, updated_at, ...content } = data || {};
+      return JSON.stringify(content);
+    }
+
+    async function loadBoard({ animate = true, skipUnchanged = false } = {}) {
       const res = await fetch('/api/board');
-      envelope = await res.json();
+      const nextEnvelope = await res.json();
+      if (skipUnchanged && envelope && boardContentSignature(nextEnvelope) === boardContentSignature(envelope)) {
+        envelope = { ...envelope, revision: nextEnvelope.revision, updated_at: nextEnvelope.updated_at };
+        $('verLine').textContent = `markdown 为唯一真相 · 同步 ${(envelope.updated_at || '').replace('T', ' ').slice(0, 19)}`;
+        return false;
+      }
+      envelope = nextEnvelope;
       $('verLine').textContent = `markdown 为唯一真相 · 同步 ${(envelope.updated_at || '').replace('T', ' ').slice(0, 19)}`;
       const light = envelope.kpi?.overall_light || 'green';
       $('healthLight').className = 'light ' + light;
-      draw();
+      draw(animate);
+      return true;
     }
 
-    function draw() {
+    function draw(animate = true) {
+      $('app').classList.toggle('no-entry-motion', !animate);
       if (!envelope || !envelope.epics?.length) {
         $('app').innerHTML = '<div class="empty">Plans/Epic/ 下暂无 Epic。先实例化 Epic 母版。</div>';
         return;
       }
       if (view === 'detail') { renderDetail(); }
-      else { renderOverview(); }
-      observeFades();
+      else { renderOverview(animate); }
+      observeFades(animate);
     }
 
     /* ============ Level 1: Overview ============ */
-    function renderOverview() {
+    function renderOverview(animate = true) {
       const k = envelope.kpi || {};
       const epics = envelope.epics.slice().sort((a, b) => (HEALTH_ORDER[a.health] ?? 9) - (HEALTH_ORDER[b.health] ?? 9));
 
@@ -456,7 +471,10 @@
       requestAnimationFrame(() => {
         document.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%');
         document.querySelectorAll('.mini-bar i').forEach(i => i.style.width = i.dataset.w + '%');
-        document.querySelectorAll('.k-num[data-count]').forEach(countUp);
+        document.querySelectorAll('.k-num[data-count]').forEach(el => {
+          if (animate) countUp(el);
+          else el.textContent = (el.dataset.count || '0') + (el.dataset.suffix || '');
+        });
       });
     }
 
@@ -657,10 +675,16 @@
 
     /* ============ scroll fade + to-top ============ */
     let io;
-    function observeFades() {
+    function observeFades(animate = true) {
       if (io) io.disconnect();
+      const fades = document.querySelectorAll('.fade-in:not(.seen)');
+      if (!animate) {
+        fades.forEach(el => el.classList.add('seen'));
+        document.querySelectorAll('.mini-bar i').forEach(i => i.style.width = i.dataset.w + '%');
+        return;
+      }
       io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('seen'); io.unobserve(x.target); } }), { threshold: 0.08 });
-      document.querySelectorAll('.fade-in:not(.seen)').forEach(el => io.observe(el));
+      fades.forEach(el => io.observe(el));
       requestAnimationFrame(() => document.querySelectorAll('.mini-bar i').forEach(i => i.style.width = i.dataset.w + '%'));
     }
     window.addEventListener('scroll', () => $('toTop').classList.toggle('show', window.scrollY > 300));
@@ -672,7 +696,7 @@
       try {
         const r = await fetch('/api/revision');
         const { revision } = await r.json();
-        if (lastRev !== null && revision !== lastRev) await loadBoard();
+        if (lastRev !== null && revision !== lastRev) await loadBoard({ animate: false, skipUnchanged: true });
         lastRev = revision;
       } catch (_) {}
     }

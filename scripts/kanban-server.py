@@ -2,6 +2,7 @@
 """Local Epic kanban server — 127.0.0.1:7777 only. Stdlib only."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -636,18 +637,12 @@ def scan_epic(path: Path) -> dict[str, Any]:
 
 def board_revision() -> str:
     epic_dir = ROOT / "Plans" / "Epic"
-    parts: list[str] = []
+    files: list[Path] = []
     if epic_dir.is_dir():
-        for f in sorted(epic_dir.glob("*.md")):
-            if f.name.startswith("."):
-                continue
-            st = f.stat()
-            parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
-        # 看板切片状态派生自子 Plan（事实源），故子 Plan 变更也须触发前端刷新。
+        epics = [f for f in sorted(epic_dir.glob("*.md")) if not f.name.startswith(".")]
+        files.extend(epics)
         child_seen: set[str] = set()
-        for f in sorted(epic_dir.glob("*.md")):
-            if f.name.startswith("."):
-                continue
+        for f in epics:
             for p in parse_plans_block(f):
                 rel = p.get("path")
                 if not rel or rel in child_seen:
@@ -655,29 +650,28 @@ def board_revision() -> str:
                 child_seen.add(rel)
                 pf = ROOT / rel if not Path(rel).is_absolute() else Path(rel)
                 if pf.is_file():
-                    st = pf.stat()
-                    parts.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
-    # 工作流页数据源在 .workflows/ 与反馈文件，也须纳入 revision，否则事件/蓝图更新页面不刷新。
+                    files.append(pf)
     wf_globs = [
         BLUEPRINT_DIR.glob("*.json"),
         EVENT_DIR.glob("*.events.jsonl"),
         [CONSTITUTION_FILE, ORPHAN_FEEDBACK],
     ]
-    for g in wf_globs:
-        for f in sorted(g, key=lambda p: p.name):
-            if f.is_file():
-                st = f.stat()
-                parts.append(f"{f.name}:{st.st_mtime_ns}:{st.st_size}")
+    for group in wf_globs:
+        files.extend(f for f in sorted(group, key=lambda p: p.name) if f.is_file())
     for bp in read_blueprints():
         if bp.get("uses_epic") or bp.get("kind") == "engine-index":
             continue
         for stage in bp.get("stages", []):
             folder = ROOT / str(stage.get("plan_folder") or "")
             if folder.is_dir():
-                for f in sorted(folder.glob("*.md")):
-                    st = f.stat()
-                    parts.append(f"{bp.get('name')}:{stage.get('key')}:{f.name}:{st.st_mtime_ns}:{st.st_size}")
-    return str(hash(tuple(parts)))
+                files.extend(sorted(folder.glob("*.md")))
+    digest = hashlib.sha256()
+    for f in files:
+        digest.update(str(f.relative_to(ROOT) if f.is_relative_to(ROOT) else f).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(f.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def board_payload() -> list[dict[str, Any]]:

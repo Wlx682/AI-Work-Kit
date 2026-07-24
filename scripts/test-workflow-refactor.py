@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import importlib.util
+import os
 import shutil
 import subprocess
 import tempfile
@@ -171,6 +172,44 @@ class WorkflowRefactorTests(unittest.TestCase):
 
         self.assertEqual(data["pending"], [{"title": "候选 A", "summary": "证据：A 的摘要"}])
         self.assertEqual(data["resolved"], [{"date": "2026-07-06", "summary": "候选 B 已归位：验证通过"}])
+
+    def test_kanban_revision_tracks_content_not_file_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            epic = tmp / "Plans/Epic/fixture.md"
+            write_file(epic, "# fixture")
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.CONSTITUTION_FILE = tmp / ".workflows/constitution.json"
+            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+
+            initial = mod.board_revision()
+            content = epic.read_bytes()
+            original_stat = epic.stat()
+            epic.write_bytes(content)
+            os.utime(epic, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns + 1_000_000_000))
+            self.assertNotEqual(original_stat.st_mtime_ns, epic.stat().st_mtime_ns)
+            timestamp_only = mod.board_revision()
+            epic.write_text("# fixture changed\n", encoding="utf-8")
+            content_changed = mod.board_revision()
+
+        self.assertEqual(initial, timestamp_only)
+        self.assertNotEqual(initial, content_changed)
+
+    def test_kanban_poll_refresh_skips_unchanged_payload_and_entry_animation(self) -> None:
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+
+        self.assertIn("function boardContentSignature(data)", html)
+        self.assertIn("skipUnchanged && envelope && boardContentSignature(nextEnvelope) === boardContentSignature(envelope)", html)
+        self.assertIn("await loadBoard({ animate: false, skipUnchanged: true })", html)
+        self.assertIn("function observeFades(animate = true)", html)
+        self.assertIn("if (!animate) {", html)
 
     def test_kanban_derives_wbs_stage_from_blueprint(self) -> None:
         with self.fixture_repo() as tmp:
