@@ -32,17 +32,17 @@ class RoleDefinitionTests(unittest.TestCase):
         with (
             patch("agent.roles.planner.planning.make_plan", return_value=["step"]) as make_plan,
             patch("agent.roles.predictor.world_model.predict", return_value=[]) as predict,
-            patch("agent.roles.executor.act.run_step", return_value="done") as run_step,
+            patch("agent.roles.executor.act.advance", return_value={"status": "done", "result": "done"}) as advance,
             patch("agent.roles.reviewer.reviewing.review", return_value={"verdict": "accept"}) as review,
         ):
             planner.make_plan("task")
             predictor.evaluate(["step"])
-            executor.run(["step"])
+            executor.advance_step({"messages": [], "pending_calls": [], "tool_rounds": 0})
             reviewer.review("task", ["step"], ["done"])
 
         self.assertIs(make_plan.call_args.args[2], planner.definition)
         self.assertIs(predict.call_args.args[2], predictor.definition)
-        self.assertIs(run_step.call_args.args[2], executor.definition)
+        self.assertIs(advance.call_args.args[1], executor.definition)
         self.assertEqual(review.call_args.args[3], reviewer.definition.acceptance)
 
 

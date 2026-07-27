@@ -20,3 +20,7 @@ class Orchestrator:
     def run_with_trace(self, task: str) -> RunResult:
         """Execute the task through LangGraph and return normalized trace data."""
         return self.runtime.run(task)
+
+    def resume(self, run_id: str, decision: object) -> RunResult:
+        """Resume a paused tool approval for the same run."""
+        return self.runtime.resume(run_id, decision)

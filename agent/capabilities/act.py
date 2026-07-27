@@ -26,73 +26,159 @@ ACT_PROMPT = """\
 MAX_TOOL_ROUNDS = 5
 
 
-def run_step(
-    step: str,
-    context: str = "",
-    definition: "AgentDefinition | None" = None,
-) -> str:
-    """执行单个步骤（工具调用循环 + 安全层），返回结果文本。"""
-    messages = [
-        {"role": "system", "content": ACT_PROMPT},
-        {"role": "user", "content": f"背景信息：\n{context}\n\n当前步骤：{step}"},
-    ]
-    schemas = _tool_schemas(definition)
+def start_step(step: str, context: str = "") -> dict:
+    """Create a serializable tool-use session for one execution step."""
+    return {
+        "messages": [
+            {"role": "system", "content": ACT_PROMPT},
+            {"role": "user", "content": f"背景信息：\n{context}\n\n当前步骤：{step}"},
+        ],
+        "pending_calls": [],
+        "tool_rounds": 0,
+    }
 
-    for _ in range(MAX_TOOL_ROUNDS):
-        result = llm.chat(messages, tools=schemas)
 
+def advance(session: dict, definition: "AgentDefinition | None" = None) -> dict:
+    """Advance a session until it finishes or needs an approval decision.
+
+    The returned session and proposal are JSON-serializable so a graph checkpoint
+    can preserve the exact tool call that a human is asked to approve.
+    """
+    messages = list(session["messages"])
+    pending_calls = list(session["pending_calls"])
+    tool_rounds = session["tool_rounds"]
+
+    while True:
+        if pending_calls:
+            call = pending_calls[0]
+            verdict = _tool_verdict(call["name"], call["args"], definition)
+            if verdict.get("needs_approval"):
+                return {
+                    "status": "approval_required",
+                    "session": _session(messages, pending_calls, tool_rounds),
+                    "proposal": {
+                        "tool_call_id": call["id"],
+                        "tool": call["name"],
+                        "args": call["args"],
+                        "reason": verdict["reason"],
+                    },
+                }
+
+            tool_result = _execute_with_verdict(call["name"], call["args"], verdict)
+            messages.append(_tool_message(call["id"], tool_result))
+            pending_calls.pop(0)
+            continue
+
+        if tool_rounds >= MAX_TOOL_ROUNDS:
+            return {"status": "done", "result": "(达到工具调用上限)"}
+
+        result = llm.chat(messages, tools=_tool_schemas(definition))
         if result["content"]:
             print(f"   💬 {result['content']}")
 
         if result["finish_reason"] == "stop" or not result["tool_calls"]:
-            return result["content"] or "(无输出)"
+            return {"status": "done", "result": result["content"] or "(无输出)"}
 
-        messages.append(result["raw"])
+        calls = _normalize_tool_calls(result["tool_calls"])
+        messages.append(_assistant_message(result["content"], calls))
+        pending_calls = calls
+        tool_rounds += 1
 
-        for tool_call in result["tool_calls"]:
-            fn_name = tool_call.function.name
-            fn_args = json.loads(tool_call.function.arguments)
-            print(f"   🔧 {fn_name}({fn_args})")
 
-            tool_result = _safe_run(fn_name, fn_args, definition)
+def resolve_approval(
+    session: dict,
+    decision: object,
+    definition: "AgentDefinition | None" = None,
+) -> dict:
+    """Apply a human decision to the exact first pending tool call."""
+    pending_calls = list(session["pending_calls"])
+    if not pending_calls:
+        raise ValueError("approval requested without a pending tool call")
 
-            preview = tool_result[:150] + "..." if len(tool_result) > 150 else tool_result
-            print(f"      ← {preview}")
+    call = pending_calls.pop(0)
+    approved = decision is True or (
+        isinstance(decision, dict) and decision.get("approved") is True
+    )
+    if not approved:
+        safety.log(call["name"], call["args"], "rejected_by_user")
+        tool_result = "用户拒绝执行该操作"
+        # Later proposals came from the same model turn and may depend on it.
+        pending_calls = []
+    else:
+        verdict = _tool_verdict(call["name"], call["args"], definition)
+        tool_result = _execute_with_verdict(call["name"], call["args"], verdict)
 
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": tool_result,
-            })
+    messages = list(session["messages"])
+    messages.append(_tool_message(call["id"], tool_result))
+    return _session(messages, pending_calls, session["tool_rounds"])
 
-    return "(达到工具调用上限)"
 
+def _session(messages: list[dict], pending_calls: list[dict], tool_rounds: int) -> dict:
+    return {
+        "messages": messages,
+        "pending_calls": pending_calls,
+        "tool_rounds": tool_rounds,
+    }
+
+
+def _normalize_tool_calls(tool_calls: list) -> list[dict]:
+    calls = []
+    for tool_call in tool_calls:
+        calls.append({
+            "id": tool_call.id,
+            "name": tool_call.function.name,
+            "args": json.loads(tool_call.function.arguments),
+        })
+    return calls
+
+
+def _assistant_message(content: str | None, calls: list[dict]) -> dict:
+    return {
+        "role": "assistant",
+        "content": content,
+        "tool_calls": [
+            {
+                "id": call["id"],
+                "type": "function",
+                "function": {
+                    "name": call["name"],
+                    "arguments": json.dumps(call["args"], ensure_ascii=False),
+                },
+            }
+            for call in calls
+        ],
+    }
+
+
+def _tool_message(tool_call_id: str, result: str) -> dict:
+    preview = result[:150] + "..." if len(result) > 150 else result
+    print(f"      ← {preview}")
+    return {"role": "tool", "tool_call_id": tool_call_id, "content": result}
+
+
+def _tool_verdict(name: str, args: dict, definition: "AgentDefinition | None") -> dict:
+    if definition is not None and name not in definition.tools:
+        return {"allowed": False, "reason": f"Agent 定义未授权工具: {name}"}
+    return safety.check(name, args)
+
+
+def _execute_with_verdict(name: str, args: dict, verdict: dict) -> str:
+    if not verdict.get("allowed", True):
+        safety.log(name, args, "blocked")
+        return f"安全层拒绝: {verdict['reason']}"
+    fn = get_function(name)
+    if fn is None:
+        return f"Error: unknown tool '{name}'"
+    try:
+        print(f"   🔧 {name}({args})")
+        out = fn(**args)
+        safety.log(name, args, "executed")
+        return out
+    except Exception as error:
+        return f"Error executing {name}: {error}"
 
 def _tool_schemas(definition: "AgentDefinition | None") -> list[dict]:
     schemas = get_all_schemas()
     if definition is None:
         return schemas
     return [schema for schema in schemas if schema["function"]["name"] in definition.tools]
-
-
-def _safe_run(name: str, args: dict, definition: "AgentDefinition | None" = None) -> str:
-    """经安全层审核后执行工具。"""
-    if definition is not None and name not in definition.tools:
-        return f"Agent 定义未授权工具: {name}"
-    verdict = safety.check(name, args)
-    if not verdict.get("allowed", True):
-        safety.log(name, args, "blocked")
-        return f"安全层拒绝: {verdict['reason']}"
-    if verdict.get("needs_approval"):
-        if not safety.request_approval(name, args, verdict["reason"]):
-            return "用户拒绝执行该操作"
-
-    fn = get_function(name)
-    if fn is None:
-        return f"Error: unknown tool '{name}'"
-    try:
-        out = fn(**args)
-        safety.log(name, args, "executed")
-        return out
-    except Exception as e:
-        return f"Error executing {name}: {e}"

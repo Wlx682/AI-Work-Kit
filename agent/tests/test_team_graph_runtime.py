@@ -4,6 +4,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from langgraph.checkpoint.memory import InMemorySaver
+
 from agent.team_graph_runtime import TeamGraphRuntime
 from agent.trace_store import TraceStore
 
@@ -29,17 +31,21 @@ class FakeMemory:
 
 
 class TeamGraphRuntimeTests(unittest.TestCase):
+    @staticmethod
+    def runtime(memory, trace_store=None):
+        return TeamGraphRuntime(memory, trace_store, checkpointer=InMemorySaver())
+
     def test_routes_safe_plan_to_execution_and_persists_handoffs(self):
         memory = FakeMemory()
         with TemporaryDirectory() as directory:
             store = TraceStore(directory)
-            runtime = TeamGraphRuntime(memory, store)
+            runtime = self.runtime(memory, store)
 
             with (
                 patch("agent.roles.planner.planning.make_plan", return_value=["only step"]),
                 patch("agent.roles.predictor.world_model.predict", return_value=[]),
                 patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
-                patch("agent.roles.executor.act.run_step", return_value="done"),
+                patch("agent.roles.executor.act.advance", return_value={"status": "done", "result": "done"}),
                 patch("agent.roles.reviewer.reviewing.review", return_value={
                     "verdict": "accept", "reason": "complete", "suggestion": "",
                 }),
@@ -50,7 +56,7 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             self.assertEqual(result.outcome, "done")
             self.assertEqual(
                 [event.phase for event in result.events],
-                ["run", "load_memory", "plan", "predict", "execute", "review", "save_memory", "run"],
+                ["run", "load_memory", "plan", "predict", "prepare_action", "review", "save_memory", "run"],
             )
             handoffs = [
                 event.payload["handoffs"][0]
@@ -72,7 +78,7 @@ class TeamGraphRuntimeTests(unittest.TestCase):
     def test_routes_risk_and_review_rejection_through_graph_edges(self):
         memory = FakeMemory()
         with TemporaryDirectory() as directory:
-            runtime = TeamGraphRuntime(memory, TraceStore(directory))
+            runtime = self.runtime(memory, TraceStore(directory))
             risk = [{"step": "first", "risk": "unsafe", "suggestion": "adjust"}]
 
             with (
@@ -80,7 +86,10 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                 patch("agent.roles.predictor.world_model.predict", return_value=risk),
                 patch("agent.roles.predictor.world_model.has_high_risk", return_value=risk),
                 patch("agent.roles.planner.planning.adjust_plan", return_value=["safer"]),
-                patch("agent.roles.executor.act.run_step", side_effect=["first result", "final result"]),
+                patch("agent.roles.executor.act.advance", side_effect=[
+                    {"status": "done", "result": "first result"},
+                    {"status": "done", "result": "final result"},
+                ]),
                 patch("agent.roles.reviewer.reviewing.review", side_effect=[
                     {"verdict": "revise", "reason": "incomplete", "suggestion": "fix it"},
                     {"verdict": "accept", "reason": "complete", "suggestion": ""},
@@ -98,22 +107,22 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             self.assertEqual(
                 [event.phase for event in result.events],
                 [
-                    "run", "load_memory", "plan", "predict", "adjust_plan", "execute", "review",
-                    "revise_plan", "execute", "review", "save_memory", "run",
+                    "run", "load_memory", "plan", "predict", "adjust_plan", "prepare_action", "review",
+                    "revise_plan", "prepare_action", "review", "save_memory", "run",
                 ],
             )
             self.assertEqual(memory.episodes[0][1], ["revised"])
 
     def test_trace_failure_is_only_a_warning_for_team_execution(self):
         memory = FakeMemory()
-        runtime = TeamGraphRuntime(memory)
+        runtime = self.runtime(memory)
 
         with (
             patch.object(runtime.trace_store, "save", side_effect=OSError("disk full")),
             patch("agent.roles.planner.planning.make_plan", return_value=["only step"]),
             patch("agent.roles.predictor.world_model.predict", return_value=[]),
             patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
-            patch("agent.roles.executor.act.run_step", return_value="done"),
+            patch("agent.roles.executor.act.advance", return_value={"status": "done", "result": "done"}),
             patch("agent.roles.reviewer.reviewing.review", return_value={"verdict": "accept"}),
         ):
             result = runtime.run("test task")
@@ -124,13 +133,13 @@ class TeamGraphRuntimeTests(unittest.TestCase):
     def test_stops_after_the_configured_retry_limit(self):
         memory = FakeMemory()
         with TemporaryDirectory() as directory:
-            runtime = TeamGraphRuntime(memory, TraceStore(directory))
+            runtime = self.runtime(memory, TraceStore(directory))
 
             with (
                 patch("agent.roles.planner.planning.make_plan", return_value=["only step"]),
                 patch("agent.roles.predictor.world_model.predict", return_value=[]),
                 patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
-                patch("agent.roles.executor.act.run_step", return_value="partial"),
+                patch("agent.roles.executor.act.advance", return_value={"status": "done", "result": "partial"}),
                 patch("agent.roles.reviewer.reviewing.review", return_value={
                     "verdict": "revise", "reason": "incomplete", "suggestion": "fix it",
                 }),
@@ -145,6 +154,41 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             self.assertNotIn("revise_plan", [event.phase for event in result.events])
             revise_plan.assert_not_called()
             distill.assert_called_once()
+
+    def test_resumes_the_exact_team_tool_proposal_without_restarting_the_session(self):
+        memory = FakeMemory()
+        with TemporaryDirectory() as directory:
+            runtime = self.runtime(memory, TraceStore(directory))
+            session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
+            proposal = {
+                "tool_call_id": "call-1",
+                "tool": "run_shell",
+                "args": {"command": "rm -rf scratch"},
+                "reason": "危险命令模式: rm -rf",
+            }
+
+            with (
+                patch("agent.roles.planner.planning.make_plan", return_value=["sensitive step"]),
+                patch("agent.roles.predictor.world_model.predict", return_value=[]),
+                patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
+                patch("agent.roles.executor.act.start_step", return_value=session) as start_step,
+                patch("agent.roles.executor.act.advance", side_effect=[
+                    {"status": "approval_required", "session": session, "proposal": proposal},
+                    {"status": "done", "result": "executed"},
+                ]) as advance,
+                patch("agent.roles.executor.act.resolve_approval", return_value=session) as resolve,
+                patch("agent.roles.reviewer.reviewing.review", return_value={"verdict": "accept"}),
+            ):
+                paused = runtime.run("test task")
+                resumed = runtime.resume(paused.run_id, {"approved": True})
+
+            self.assertTrue(paused.is_paused)
+            self.assertEqual(paused.interrupts[0]["value"], proposal)
+            self.assertTrue(resumed.succeeded)
+            start_step.assert_called_once()
+            self.assertEqual(advance.call_count, 2)
+            self.assertEqual(resolve.call_args.args[0], session)
+            self.assertEqual(resumed.outcome, "executed")
 
 
 if __name__ == "__main__":

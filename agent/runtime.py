@@ -19,7 +19,7 @@ class RunEvent:
 
 @dataclass(frozen=True)
 class RunResult:
-    """Structured terminal state for one agent execution."""
+    """Structured state for one agent execution, including approval pauses."""
 
     run_id: str
     task: str
@@ -27,7 +27,12 @@ class RunResult:
     events: tuple[RunEvent, ...]
     error: str | None = None
     warnings: tuple[str, ...] = ()
+    interrupts: tuple[dict[str, Any], ...] = ()
 
     @property
     def succeeded(self) -> bool:
-        return self.error is None
+        return self.error is None and not self.is_paused
+
+    @property
+    def is_paused(self) -> bool:
+        return bool(self.interrupts)

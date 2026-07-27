@@ -33,18 +33,6 @@ def check(tool_name: str, args: dict) -> dict:
     return {"allowed": True}
 
 
-def request_approval(tool_name: str, args: dict, reason: str) -> bool:
-    """请求用户人工审批。"""
-    print(f"\n🛡️  安全审批请求")
-    print(f"   工具: {tool_name}")
-    print(f"   参数: {args}")
-    print(f"   原因: {reason}")
-    confirm = input("   确认执行? (y/N): ")
-    approved = confirm.lower() == "y"
-    log(tool_name, args, "approved" if approved else "rejected_by_user")
-    return approved
-
-
 def log(tool_name: str, args: dict, result: str):
     """记录审计日志。"""
     entry = {

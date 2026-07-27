@@ -50,6 +50,7 @@ class TraceStore:
             events=events,
             error=result.get("error"),
             warnings=tuple(result.get("warnings", [])),
+            interrupts=tuple(result.get("interrupts", [])),
         )
 
     def _path(self, run_id: str) -> Path:

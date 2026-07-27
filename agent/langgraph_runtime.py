@@ -7,12 +7,14 @@ from operator import add
 from typing import Annotated, TypedDict
 from uuid import uuid4
 
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Command, interrupt
 
 from . import self_improve, world_model
 from .agent_definition import AgentDefinition, load_agent_definition
 from .capabilities import act, planning, reviewing
+from .checkpoint_store import DEFAULT_CHECKPOINT_PATH, open_sqlite_checkpointer
 from .memory import Memory
 from .runtime import RunEvent, RunResult
 from .trace_store import TraceStore
@@ -27,6 +29,8 @@ class AgentState(TypedDict):
     has_lesson: bool
     should_stop: bool
     outcome: str
+    execution_session: dict
+    pending_approval: dict
 
 
 class LangGraphRuntime:
@@ -37,12 +41,26 @@ class LangGraphRuntime:
         memory: Memory,
         trace_store: TraceStore | None = None,
         definition: AgentDefinition | None = None,
+        checkpointer: BaseCheckpointSaver | None = None,
+        checkpoint_path: str | None = None,
     ):
         self.memory = memory
         self.trace_store = trace_store or TraceStore()
         self.definition = definition or load_agent_definition()
-        self.checkpointer = InMemorySaver()
+        self._checkpoint_connection = None
+        if checkpointer is None:
+            self.checkpointer, self._checkpoint_connection = open_sqlite_checkpointer(
+                checkpoint_path or DEFAULT_CHECKPOINT_PATH,
+            )
+        else:
+            self.checkpointer = checkpointer
         self.graph = self._build_graph()
+
+    def close(self) -> None:
+        """Close the SQLite connection owned by this runtime, if any."""
+        if self._checkpoint_connection is not None:
+            self._checkpoint_connection.close()
+            self._checkpoint_connection = None
 
     def run(self, task: str) -> RunResult:
         run_id = uuid4().hex
@@ -62,11 +80,28 @@ class LangGraphRuntime:
             "has_lesson": False,
             "should_stop": False,
             "outcome": "",
+            "execution_session": {},
+            "pending_approval": {},
         }
 
+        return self._execute_graph(task, run_id, initial_state, config, events)
+
+    def resume(self, run_id: str, decision: object) -> RunResult:
+        """Resume a paused run with an explicit approval decision."""
+        config = {"configurable": {"thread_id": run_id}, "recursion_limit": MAX_STEPS * 2 + 10}
+        state = self.graph.get_state(config).values
+        task = state.get("task")
+        if not task:
+            raise ValueError(f"unknown or expired run: {run_id}")
+        events = self._previous_events(run_id)
+        events.append(RunEvent(len(events) + 1, run_id, "run", "resumed", {"decision": decision}))
+        return self._execute_graph(task, run_id, Command(resume=decision), config, events)
+
+    def _execute_graph(self, task: str, run_id: str, graph_input: object, config: dict, events: list[RunEvent]) -> RunResult:
+        interrupts: list[dict] = []
         try:
             for chunk in self.graph.stream(
-                initial_state,
+                graph_input,
                 config,
                 stream_mode="updates",
                 version="v2",
@@ -74,6 +109,11 @@ class LangGraphRuntime:
                 if chunk["type"] != "updates":
                     continue
                 for node_name, update in chunk["data"].items():
+                    if node_name == "__interrupt__":
+                        payload = self._interrupt_payload(update)
+                        interrupts.extend(payload)
+                        events.append(RunEvent(len(events) + 1, run_id, "approval", "paused", {"interrupts": payload}))
+                        continue
                     payload = dict(update) if update else {}
                     events.append(RunEvent(
                         len(events) + 1,
@@ -83,6 +123,8 @@ class LangGraphRuntime:
                         payload,
                     ))
 
+            if interrupts:
+                return self._persist_trace(RunResult(run_id, task, None, tuple(events), interrupts=tuple(interrupts)))
             state = self.graph.get_state(config).values
             outcome = state.get("outcome") or "(未执行)"
         except Exception as error:
@@ -92,6 +134,16 @@ class LangGraphRuntime:
 
         events.append(RunEvent(len(events) + 1, run_id, "run", "completed", {"outcome": outcome}))
         return self._persist_trace(RunResult(run_id, task, outcome, tuple(events)))
+
+    def _previous_events(self, run_id: str) -> list[RunEvent]:
+        try:
+            return list(self.trace_store.load(run_id).events)
+        except FileNotFoundError:
+            return []
+
+    @staticmethod
+    def _interrupt_payload(update: object) -> list[dict]:
+        return [{"id": item.id, "value": item.value} for item in update]
 
     def _persist_trace(self, result: RunResult) -> RunResult:
         try:
@@ -111,20 +163,23 @@ class LangGraphRuntime:
         builder.add_node("load_memory", self._load_memory)
         builder.add_node("plan", self._plan)
         builder.add_node("predict", self._predict)
-        builder.add_node("execute_step", self._execute_step)
+        builder.add_node("prepare_action", self._prepare_action)
+        builder.add_node("approve_tool", self._approve_tool)
         builder.add_node("reflect", self._reflect)
         builder.add_node("save_memory", self._save_memory)
 
         builder.add_edge(START, "load_memory")
         builder.add_edge("load_memory", "plan")
         builder.add_edge("plan", "predict")
-        builder.add_edge("predict", "execute_step")
-        builder.add_conditional_edges("execute_step", self._after_execute, {
+        builder.add_edge("predict", "prepare_action")
+        builder.add_conditional_edges("prepare_action", self._after_prepare, {
+            "approve_tool": "approve_tool",
             "reflect": "reflect",
             "save_memory": "save_memory",
         })
+        builder.add_edge("approve_tool", "prepare_action")
         builder.add_conditional_edges("reflect", self._after_reflect, {
-            "execute_step": "execute_step",
+            "prepare_action": "prepare_action",
             "save_memory": "save_memory",
         })
         builder.add_edge("save_memory", END)
@@ -159,17 +214,31 @@ class LangGraphRuntime:
             print(f"   📋 调整后步骤 {index}: {step}")
         return {"steps": steps}
 
-    def _execute_step(self, state: AgentState) -> dict:
+    def _prepare_action(self, state: AgentState) -> dict:
         index = len(state["results"])
         step = state["steps"][index]
-        print(f"\n⚡ [执行] 步骤 {index + 1}/{len(state['steps'])}: {step}")
-        context = "\n".join(
-            f"[步骤{result_index + 1}结果] {result}"
-            for result_index, result in enumerate(state["results"])
-        )
-        result = act.run_step(step, context or "(第一步，暂无上下文)", self.definition)
+        session = state["execution_session"]
+        if not session:
+            print(f"\n⚡ [执行] 步骤 {index + 1}/{len(state['steps'])}: {step}")
+            context = "\n".join(f"[步骤{i + 1}结果] {result}" for i, result in enumerate(state["results"]))
+            session = act.start_step(step, context or "(第一步，暂无上下文)")
+        progress = act.advance(session, self.definition)
+        if progress["status"] == "approval_required":
+            return {"execution_session": progress["session"], "pending_approval": progress["proposal"]}
+
+        result = progress["result"]
         self.memory.working_add({"step": step, "result": result, "summary": result[:100]})
-        return {"results": [result]}
+        return {"results": [result], "execution_session": {}, "pending_approval": {}}
+
+    def _approve_tool(self, state: AgentState) -> dict:
+        decision = interrupt(state["pending_approval"])
+        session = act.resolve_approval(state["execution_session"], decision, self.definition)
+        return {"execution_session": session, "pending_approval": {}}
+
+    def _after_prepare(self, state: AgentState) -> str:
+        if state["pending_approval"]:
+            return "approve_tool"
+        return self._after_execute(state)
 
     def _after_execute(self, state: AgentState) -> str:
         if len(state["results"]) >= len(state["steps"]) or len(state["results"]) >= MAX_STEPS:
@@ -202,7 +271,7 @@ class LangGraphRuntime:
     def _after_reflect(self, state: AgentState) -> str:
         if state["should_stop"] or len(state["results"]) >= len(state["steps"]) or len(state["results"]) >= MAX_STEPS:
             return "save_memory"
-        return "execute_step"
+        return "prepare_action"
 
     def _save_memory(self, state: AgentState) -> dict:
         results = state["results"]

@@ -8,12 +8,14 @@ class Executor(BaseAgent):
     name = "Executor"
     definition_id = "executor"
 
-    def run(self, steps: list[str]) -> list[str]:
-        """按顺序执行所有步骤，返回每步结果。"""
-        results: list[str] = []
-        for i, step in enumerate(steps, 1):
-            print(f"\n   ⚡ Executor 执行 {i}/{len(steps)}: {step}")
-            context = "\n".join(f"[步骤{j+1}结果] {r}" for j, r in enumerate(results))
-            results.append(act.run_step(step, context or "(第一步)", self.definition))
+    def start_step(self, step: str, context: str = "") -> dict:
+        """Create a checkpointable tool-use session for one assigned step."""
+        return act.start_step(step, context)
 
-        return results
+    def advance_step(self, session: dict) -> dict:
+        """Propose or run safe tool calls until approval or completion."""
+        return act.advance(session, self.definition)
+
+    def resolve_approval(self, session: dict, decision: object) -> dict:
+        """Apply a decision to the exact proposal stored in graph state."""
+        return act.resolve_approval(session, decision, self.definition)

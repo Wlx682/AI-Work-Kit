@@ -14,6 +14,18 @@ from .orchestrator import Orchestrator
 from .memory import Memory
 
 
+def report_result(result):
+    if result.is_paused:
+        print(f"⏸️  执行暂停，等待审批（run={result.run_id}）")
+        for item in result.interrupts:
+            print(f"   审批请求: {item['value']}")
+        return
+    if not result.succeeded:
+        print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
+    for warning in result.warnings:
+        print(f"⚠️ {warning}")
+
+
 def main():
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
@@ -37,10 +49,7 @@ def main():
     if args:
         task = " ".join(args)
         result = agent.run(task) if use_team else agent.run_with_trace(task)
-        if not result.succeeded:
-            print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
-        for warning in result.warnings:
-            print(f"⚠️ {warning}")
+        report_result(result)
         return
 
     mode = "多智能体 Team Graph（Planner→Predictor→Executor→Reviewer）" if use_team else "单智能体（一个脑子顺序调能力）"
@@ -65,10 +74,7 @@ def main():
 
         try:
             result = agent.run(task) if use_team else agent.run_with_trace(task)
-            if not result.succeeded:
-                print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
-            for warning in result.warnings:
-                print(f"⚠️ {warning}")
+            report_result(result)
         except KeyboardInterrupt:
             print("\n\n⚠️  用户中断执行。")
         except Exception as e:
