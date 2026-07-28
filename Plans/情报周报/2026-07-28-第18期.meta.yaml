@@ -1,0 +1,107 @@
+skill_run:
+  skill: weekly-intel-digest
+  date: 2026-07-28
+  issue: 18
+  selected_source:
+    title: "ICAE-Bench: Evaluating Coding Agents as Interactive Project Builders"
+    url: "https://arxiv.org/html/2607.21217"
+    authors: "Zhongyuan Peng, Dan Huang, Chuyu Zhang, Caijun Xu, Changyi Xiao, Shibo Hong, David Lo, Lin Qiu, Xuezhi Cao, Jiyuan He, Yixin Cao"
+    published: 2026-07-23
+    score:
+      first_party: 5
+      practical_value: 5
+      timeliness: 5
+      breadth: 4
+      discussion: 4
+      weighted_total: 48
+  candidate_review:
+    - title: "ICAE-Bench: Evaluating Coding Agents as Interactive Project Builders"
+      source: "paper authors / arXiv"
+      score: 48
+      decision: selected
+      reason: "本周英文一手 benchmark；覆盖模糊需求、交互澄清、项目构建、harness 与可执行验收，主题未被前17期覆盖"
+    - title: "IssueTrojanBench: Benchmarking AI Coding Agents Against Malicious Issue Requests"
+      source: "Singh, Yang, Chen / arXiv"
+      score: 47
+      decision: rejected
+      reason: "66.5% 攻击穿透数据有讨论性，但与第15期 Agent containment、安全边界和输入信任主题高度重叠"
+    - title: "How Do AI Coding Agents Contribute to Software Development?"
+      source: "Mazloomzadeh, Morovati, Khomh / arXiv"
+      score: 46
+      decision: rejected
+      reason: "纵向 PR 质量研究扎实，但与第16期项目级 Agent PR 采用和监督结构属于近8周同主题"
+    - title: "Autoresearch with Coding Agents: Generalizers and Metric-Maximizers on Quran Recitation Data"
+      source: "paper authors / arXiv"
+      score: 43
+      decision: reserve
+      reason: "自动指标优化与 reward hacking 机制有价值，但特定数据领域降低覆盖面，且自改进主题与第10/12期邻近"
+  contexts_used:
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: "以 Agent 论文和官方工程源为种子，扩展到交互式项目构建 benchmark"
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: "按英文一手、实操价值、时效、覆盖面和讨论性计算48/50"
+    - path: Contexts/情报源/周帖模板.md
+      utility: not-needed
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: "淘汰安全攻击与Agent PR两个高分重复主题，确认需求到执行断点为新主题"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "约束指标主角化、流式栅格、渐进增强和三档宽度浏览器验收"
+    - path: Skills/html_generate.md
+      utility: high
+      reason: "成组实验数据命中高权重判据，选择C指标看板式骨架"
+    - path: Skills/visual_markdown_toolbox.md
+      utility: high
+      reason: "将benchmark公式、消融数据、失败分类和需求链路路由为表格、自绘SVG与状态表达"
+  contexts_missing:
+    - "requirement-to-evidence trace：让每条已确认行为约束关联实现决策、可执行验收或人工评审证据"
+    - "constraint lifecycle state：unknown/surfaced/confirmed/mapped/verified/superseded 的持久状态与变更历史"
+    - "agent-run manifest：统一记录模型、harness、工具、审批、环境、思考配置、交互预算和验收版本"
+    - "workflow failure taxonomy：区分需求访问、约束保持、实现、执行环境、验证合同和待人工决策断点"
+    - "clarification marginal-value signal：记录问题改变的决策或验收，辅助判断交互何时收敛"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "Abstract"
+      - "I Introduction"
+      - "II Related Work"
+      - "II-A Software-Agent Benchmarks"
+      - "II-B 0-to-1 Repository Generation"
+      - "II-C Ambiguity and Clarification"
+      - "III ICAE-Bench"
+      - "III-A Benchmark Instance Definition"
+      - "III-B Benchmark Construction"
+      - "III-C Artifact Verification"
+      - "III-D Benchmark Statistics"
+      - "III-E Interactive User Agent"
+      - "III-F Evaluation Metrics"
+      - "IV Experiments"
+      - "IV-A Experimental Settings"
+      - "IV-B Main Results"
+      - "IV-C1 Failure Mode Taxonomy"
+      - "IV-C2 Effect of Test Scaffolding"
+      - "IV-C3 Impact of Agent Frameworks"
+      - "IV-C4 Impact of User Agent Capability"
+      - "IV-C5 Impact of Interaction Budgets"
+      - "IV-C6 Impact of Thinking Configuration"
+      - "IV-C7 Impact of Execution Environment"
+      - "IV-C8 Cross-lingual Generalization"
+      - "V Discussion"
+      - "V-A Validity of ICAE-Bench-Lite"
+      - "V-B Reliability of Subjective Metrics"
+      - "V-C Runtime and Token Usage"
+      - "VI Conclusion and Future Work"
+    omitted:
+      - heading: "References"
+        reason: "正文覆盖与谱系和方法直接相关的代表基准，未逐项转录完整参考书目"
+      - heading: "Appendices A-I prompt text"
+        reason: "正文说明各提示词用于构造、澄清与critic评测，并覆盖其关键约束；未逐字转录长提示词"
+    coverage_notes: "覆盖完整构造管线、任务公式、480任务/12语言规模、User Agent泄漏边界、四组指标、六模型主结果、八项分析、全部关键消融、Lite有效性、critic人工验证、成本边界和未来多模态方向。"
+  notes: |
+    source_stale_warning: Boris Cherny、Cat Wu、Fiona Fung、Andrej Karpathy 连续至少3期无独立来源入选；建议人工复核公开源可抓取性与名单价值，不因未入选自动移除。
+    ICAE-Bench 发布于2026-07-23，当前为arXiv v1；模型和产品版本属于论文实验设置，不代表后续版本表现。
+    utility=not-needed 的周帖模板属于旧版多篇短帖结构，本期继续执行单篇技术博客三件套。
+    revision_feedback: 初稿按论文目录和术语组织，知识连贯性不足；已改为“现实问题→公平构造→任务体验→分组结果→失效原因→工作流启示”的问题推进式叙事，并同步重写网页正文。
