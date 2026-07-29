@@ -16,12 +16,12 @@ from .memory import Memory
 
 def report_result(result):
     if result.is_paused:
-        print(f"⏸️  执行暂停，等待审批（run={result.run_id}）")
+        print(f"⏸️  执行暂停，等待审批（run={result.run_id}, thread={result.thread_id}）")
         for item in result.interrupts:
             print(f"   审批请求: {item['value']}")
         return
     if not result.succeeded:
-        print(f"❌ 执行失败（run={result.run_id}）：{result.error}")
+        print(f"❌ 执行失败（run={result.run_id}, thread={result.thread_id}）：{result.error}")
     for warning in result.warnings:
         print(f"⚠️ {warning}")
 

@@ -51,6 +51,10 @@ class TraceStore:
             error=result.get("error"),
             warnings=tuple(result.get("warnings", [])),
             interrupts=tuple(result.get("interrupts", [])),
+            thread_id=result.get("thread_id"),
+            parent_run_id=result.get("parent_run_id"),
+            recovered_from_checkpoint_id=result.get("recovered_from_checkpoint_id"),
+            recovery_mode=result.get("recovery_mode"),
         )
 
     def _path(self, run_id: str) -> Path:
