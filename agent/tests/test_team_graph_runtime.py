@@ -72,7 +72,8 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                     ("Reviewer", "Team", "accept"),
                 ],
             )
-            self.assertGreater(runtime.checkpoint_count(result.run_id), 1)
+            self.assertNotEqual(result.run_id, result.thread_id)
+            self.assertGreater(runtime.checkpoint_count(result.thread_id), 1)
             self.assertEqual(store.load(result.run_id), result)
 
     def test_routes_risk_and_review_rejection_through_graph_edges(self):
@@ -180,11 +181,20 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                 patch("agent.roles.reviewer.reviewing.review", return_value={"verdict": "accept"}),
             ):
                 paused = runtime.run("test task")
-                resumed = runtime.resume(paused.run_id, {"approved": True})
+                resumed = runtime.resume(
+                    paused.thread_id,
+                    {"approved": True},
+                    parent_run_id=paused.run_id,
+                )
 
             self.assertTrue(paused.is_paused)
             self.assertEqual(paused.interrupts[0]["value"], proposal)
             self.assertTrue(resumed.succeeded)
+            self.assertNotEqual(resumed.run_id, paused.run_id)
+            self.assertEqual(resumed.thread_id, paused.thread_id)
+            self.assertEqual(resumed.parent_run_id, paused.run_id)
+            self.assertIsNotNone(resumed.recovered_from_checkpoint_id)
+            self.assertEqual(runtime.trace_store.load(paused.run_id), paused)
             start_step.assert_called_once()
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)

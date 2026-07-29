@@ -16,7 +16,7 @@ from .agent_definition import AgentDefinition, load_agent_definition
 from .capabilities import act, planning, reviewing
 from .checkpoint_store import DEFAULT_CHECKPOINT_PATH, open_sqlite_checkpointer
 from .memory import Memory
-from .runtime import RunEvent, RunResult
+from .runtime import CheckpointInfo, RunEvent, RunResult, validate_recovery_state_patch
 from .trace_store import TraceStore
 
 MAX_STEPS = 10
@@ -63,13 +63,15 @@ class LangGraphRuntime:
             self._checkpoint_connection = None
 
     def run(self, task: str) -> RunResult:
+        thread_id = uuid4().hex
         run_id = uuid4().hex
         events = [RunEvent(1, run_id, "run", "started", {
             "task": task,
             "agent_id": self.definition.id,
+            "thread_id": thread_id,
         })]
         config = {
-            "configurable": {"thread_id": run_id},
+            "configurable": {"thread_id": thread_id},
             "recursion_limit": MAX_STEPS * 2 + 10,
         }
         initial_state: AgentState = {
@@ -84,20 +86,103 @@ class LangGraphRuntime:
             "pending_approval": {},
         }
 
-        return self._execute_graph(task, run_id, initial_state, config, events)
+        return self._execute_graph(task, run_id, thread_id, initial_state, config, events)
 
-    def resume(self, run_id: str, decision: object) -> RunResult:
-        """Resume a paused run with an explicit approval decision."""
-        config = {"configurable": {"thread_id": run_id}, "recursion_limit": MAX_STEPS * 2 + 10}
+    def resume(self, thread_id: str, decision: object, parent_run_id: str | None = None) -> RunResult:
+        """Resume the latest checkpoint with a decision, such as tool approval."""
+        run_id = uuid4().hex
+        config = {"configurable": {"thread_id": thread_id}, "recursion_limit": MAX_STEPS * 2 + 10}
+        snapshot = self.graph.get_state(config)
+        checkpoint_id = snapshot.config.get("configurable", {}).get("checkpoint_id")
+        task = snapshot.values.get("task")
+        if not checkpoint_id or not task:
+            raise ValueError(f"unknown or expired thread: {thread_id}")
+        events = [RunEvent(1, run_id, "run", "resumed", {
+            "thread_id": thread_id,
+            "parent_run_id": parent_run_id,
+            "recovered_from_checkpoint_id": checkpoint_id,
+            "recovery_mode": "replay",
+        })]
+        return self._execute_graph(
+            task,
+            run_id,
+            thread_id,
+            Command(resume=decision),
+            config,
+            events,
+            parent_run_id,
+            checkpoint_id,
+            "replay",
+        )
+
+    def checkpoint_history(self, thread_id: str) -> tuple[CheckpointInfo, ...]:
+        """List selectable checkpoints, newest first, for one state thread."""
+        config = {"configurable": {"thread_id": thread_id}}
+        history = []
+        for snapshot in self.graph.get_state_history(config):
+            checkpoint_id = snapshot.config.get("configurable", {}).get("checkpoint_id")
+            if checkpoint_id:
+                history.append(CheckpointInfo(checkpoint_id, tuple(snapshot.next)))
+        return tuple(history)
+
+    def recover(
+        self,
+        thread_id: str,
+        checkpoint_id: str,
+        state_patch: dict | None = None,
+        parent_run_id: str | None = None,
+    ) -> RunResult:
+        """Replay a checkpoint, or fork from it when an explicit state patch is supplied."""
+        validate_recovery_state_patch(state_patch)
+        config = self._checkpoint_config(thread_id, checkpoint_id)
+        recovery_mode = "fork" if state_patch else "replay"
+        if state_patch:
+            # Treat an operator's changed steps as a revised plan, so prediction runs again.
+            config = self.graph.update_state(config, values=state_patch, as_node="plan")
+        config = {**config, "recursion_limit": MAX_STEPS * 2 + 10}
         state = self.graph.get_state(config).values
         task = state.get("task")
         if not task:
-            raise ValueError(f"unknown or expired run: {run_id}")
-        events = self._previous_events(run_id)
-        events.append(RunEvent(len(events) + 1, run_id, "run", "resumed", {"decision": decision}))
-        return self._execute_graph(task, run_id, Command(resume=decision), config, events)
+            raise ValueError(f"checkpoint does not contain a runnable task: {checkpoint_id}")
+        run_id = uuid4().hex
+        events = [RunEvent(1, run_id, "run", "recovered", {
+            "thread_id": thread_id,
+            "parent_run_id": parent_run_id,
+            "recovered_from_checkpoint_id": checkpoint_id,
+            "recovery_mode": recovery_mode,
+            "patched_fields": sorted(state_patch) if state_patch else [],
+        })]
+        return self._execute_graph(
+            task,
+            run_id,
+            thread_id,
+            None,
+            config,
+            events,
+            parent_run_id,
+            checkpoint_id,
+            recovery_mode,
+        )
 
-    def _execute_graph(self, task: str, run_id: str, graph_input: object, config: dict, events: list[RunEvent]) -> RunResult:
+    def _checkpoint_config(self, thread_id: str, checkpoint_id: str) -> dict:
+        for snapshot in self.graph.get_state_history({"configurable": {"thread_id": thread_id}}):
+            config = snapshot.config
+            if config.get("configurable", {}).get("checkpoint_id") == checkpoint_id:
+                return config
+        raise ValueError(f"unknown checkpoint {checkpoint_id} for thread {thread_id}")
+
+    def _execute_graph(
+        self,
+        task: str,
+        run_id: str,
+        thread_id: str,
+        graph_input: object,
+        config: dict,
+        events: list[RunEvent],
+        parent_run_id: str | None = None,
+        recovered_from_checkpoint_id: str | None = None,
+        recovery_mode: str | None = None,
+    ) -> RunResult:
         interrupts: list[dict] = []
         try:
             for chunk in self.graph.stream(
@@ -124,22 +209,31 @@ class LangGraphRuntime:
                     ))
 
             if interrupts:
-                return self._persist_trace(RunResult(run_id, task, None, tuple(events), interrupts=tuple(interrupts)))
-            state = self.graph.get_state(config).values
+                return self._persist_trace(RunResult(
+                    run_id, task, None, tuple(events), interrupts=tuple(interrupts),
+                    thread_id=thread_id, parent_run_id=parent_run_id,
+                    recovered_from_checkpoint_id=recovered_from_checkpoint_id,
+                    recovery_mode=recovery_mode,
+                ))
+            state = self.graph.get_state({"configurable": {"thread_id": thread_id}}).values
             outcome = state.get("outcome") or "(未执行)"
         except Exception as error:
             message = str(error) or error.__class__.__name__
             events.append(RunEvent(len(events) + 1, run_id, "run", "failed", {"error": message}))
-            return self._persist_trace(RunResult(run_id, task, None, tuple(events), message))
+            return self._persist_trace(RunResult(
+                run_id, task, None, tuple(events), message,
+                thread_id=thread_id, parent_run_id=parent_run_id,
+                recovered_from_checkpoint_id=recovered_from_checkpoint_id,
+                recovery_mode=recovery_mode,
+            ))
 
         events.append(RunEvent(len(events) + 1, run_id, "run", "completed", {"outcome": outcome}))
-        return self._persist_trace(RunResult(run_id, task, outcome, tuple(events)))
-
-    def _previous_events(self, run_id: str) -> list[RunEvent]:
-        try:
-            return list(self.trace_store.load(run_id).events)
-        except FileNotFoundError:
-            return []
+        return self._persist_trace(RunResult(
+            run_id, task, outcome, tuple(events), thread_id=thread_id,
+            parent_run_id=parent_run_id,
+            recovered_from_checkpoint_id=recovered_from_checkpoint_id,
+            recovery_mode=recovery_mode,
+        ))
 
     @staticmethod
     def _interrupt_payload(update: object) -> list[dict]:
@@ -153,9 +247,9 @@ class LangGraphRuntime:
             return replace(result, warnings=result.warnings + (f"trace_persist_failed: {message}",))
         return result
 
-    def checkpoint_count(self, run_id: str) -> int:
-        """Return the number of framework checkpoints saved for one run."""
-        config = {"configurable": {"thread_id": run_id}}
+    def checkpoint_count(self, thread_id: str) -> int:
+        """Return the number of framework checkpoints saved for one thread."""
+        config = {"configurable": {"thread_id": thread_id}}
         return sum(1 for _ in self.checkpointer.list(config))
 
     def _build_graph(self):

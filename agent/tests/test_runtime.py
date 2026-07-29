@@ -97,7 +97,8 @@ class LangGraphRuntimeTests(unittest.TestCase):
             self.assertEqual(result.events[0].phase, "run")
             self.assertIn("plan", [event.phase for event in result.events])
             self.assertIn("reflect", [event.phase for event in result.events])
-            self.assertGreater(orchestrator.runtime.checkpoint_count(result.run_id), 1)
+            self.assertNotEqual(result.run_id, result.thread_id)
+            self.assertGreater(orchestrator.runtime.checkpoint_count(result.thread_id), 1)
             self.assertEqual(result.events[-1].status, "completed")
             self.assertEqual(store.load(result.run_id), result)
 
@@ -157,11 +158,20 @@ class LangGraphRuntimeTests(unittest.TestCase):
                 patch("agent.langgraph_runtime.act.resolve_approval", return_value=session) as resolve,
             ):
                 paused = runtime.run("test task")
-                resumed = runtime.resume(paused.run_id, {"approved": True})
+                resumed = runtime.resume(
+                    paused.thread_id,
+                    {"approved": True},
+                    parent_run_id=paused.run_id,
+                )
 
             self.assertTrue(paused.is_paused)
             self.assertEqual(paused.interrupts[0]["value"], proposal)
             self.assertTrue(resumed.succeeded)
+            self.assertNotEqual(resumed.run_id, paused.run_id)
+            self.assertEqual(resumed.thread_id, paused.thread_id)
+            self.assertEqual(resumed.parent_run_id, paused.run_id)
+            self.assertIsNotNone(resumed.recovered_from_checkpoint_id)
+            self.assertEqual(runtime.trace_store.load(paused.run_id), paused)
             start_step.assert_called_once()
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)
@@ -197,15 +207,91 @@ class LangGraphRuntimeTests(unittest.TestCase):
                 runtime.close()
 
                 fresh_runtime = LangGraphRuntime(memory, trace_store, checkpoint_path=str(checkpoint_path))
-                resumed = fresh_runtime.resume(paused.run_id, {"approved": True})
+                resumed = fresh_runtime.resume(
+                    paused.thread_id,
+                    {"approved": True},
+                    parent_run_id=paused.run_id,
+                )
                 fresh_runtime.close()
 
             self.assertTrue(paused.is_paused)
             self.assertTrue(resumed.succeeded)
+            self.assertNotEqual(resumed.run_id, paused.run_id)
+            self.assertEqual(resumed.thread_id, paused.thread_id)
+            self.assertEqual(resumed.parent_run_id, paused.run_id)
             start_step.assert_called_once()
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)
             self.assertEqual(resumed.outcome, "executed")
+
+    def test_replays_and_forks_from_a_selected_checkpoint(self):
+        memory = FakeMemory()
+        with TemporaryDirectory() as directory:
+            store = TraceStore(directory)
+            runtime = self.runtime(memory, store)
+
+            with (
+                patch("agent.langgraph_runtime.planning.make_plan", return_value=["original step"]),
+                patch("agent.langgraph_runtime.world_model.predict", return_value=[]) as predict,
+                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]) as has_high_risk,
+                patch("agent.langgraph_runtime.act.advance", side_effect=[
+                    {"status": "done", "result": "original result"},
+                    {"status": "done", "result": "replayed result"},
+                    {"status": "done", "result": "forked result"},
+                ]) as advance,
+            ):
+                original = runtime.run("test task")
+                checkpoints = runtime.checkpoint_history(original.thread_id)
+                selected = next(item for item in checkpoints if item.next_nodes == ("prepare_action",))
+                replayed = runtime.recover(
+                    original.thread_id,
+                    selected.checkpoint_id,
+                    parent_run_id=original.run_id,
+                )
+                forked = runtime.recover(
+                    original.thread_id,
+                    selected.checkpoint_id,
+                    state_patch={"steps": ["forked step"]},
+                    parent_run_id=original.run_id,
+                )
+
+            self.assertTrue(original.succeeded)
+            self.assertTrue(replayed.succeeded)
+            self.assertTrue(forked.succeeded)
+            self.assertEqual(replayed.outcome, "replayed result")
+            self.assertEqual(forked.outcome, "forked result")
+            self.assertEqual(replayed.recovery_mode, "replay")
+            self.assertEqual(forked.recovery_mode, "fork")
+            self.assertEqual(replayed.recovered_from_checkpoint_id, selected.checkpoint_id)
+            self.assertEqual(forked.recovered_from_checkpoint_id, selected.checkpoint_id)
+            self.assertEqual(replayed.parent_run_id, original.run_id)
+            self.assertEqual(forked.parent_run_id, original.run_id)
+            self.assertEqual(advance.call_count, 3)
+            self.assertEqual(predict.call_count, 2)
+            self.assertEqual(has_high_risk.call_count, 2)
+            self.assertEqual(forked.events[0].payload["patched_fields"], ["steps"])
+            self.assertEqual(store.load(original.run_id), original)
+            self.assertEqual(store.load(replayed.run_id), replayed)
+            self.assertEqual(store.load(forked.run_id), forked)
+
+    def test_recovery_fork_rejects_state_that_could_bypass_approval(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+        with (
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
+            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+            patch("agent.langgraph_runtime.act.advance", return_value={"status": "done", "result": "done"}),
+        ):
+            original = runtime.run("test task")
+            checkpoint = runtime.checkpoint_history(original.thread_id)[0]
+            with self.assertRaisesRegex(ValueError, "pending_approval"):
+                runtime.recover(
+                    original.thread_id,
+                    checkpoint.checkpoint_id,
+                    state_patch={"pending_approval": {}},
+                    parent_run_id=original.run_id,
+                )
 
 
 if __name__ == "__main__":
