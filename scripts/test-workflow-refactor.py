@@ -54,6 +54,66 @@ def wbs_table(rows: list[int]) -> str:
     return "## 三、WBS\n\n```\n" + lines + "\n```\n\n## 四、记录"
 
 
+def merge_analysis_sections(*, resolved: bool = True) -> str:
+    decision_conclusion = "采用兼容并集，保留人工审核并新增自动校验" if resolved else "待确认"
+    decision_owner = "支付模块开发负责人" if resolved else "待确认"
+    decision_record = "2026-07-03 合并评审记录 #42" if resolved else "待确认"
+    decision_status = "已决策" if resolved else "待决策"
+    return textwrap.dedent(
+        f"""
+        ## 双边代码意图
+
+        | 意图ID | 分支侧 | 文件/模块 | 代码变化 | 业务目标 | 行为/规则变化 | 证据 | 置信度 |
+        |--------|--------|-----------|----------|----------|---------------|------|--------|
+        | SI-001 | 源分支 | payment/risk.py | 增加自动风险校验 | 降低异常支付 | 支付提交前增加自动校验 | commit abc；test_risk.py | 高 |
+        | TI-001 | 目标分支 | payment/review.py | 保留人工审核入口 | 控制高风险订单 | 高风险订单必须人工审核 | commit def；test_review.py | 高 |
+
+        ## 业务冲突矩阵
+
+        | 冲突ID | 关联意图 | 冲突类型 | 业务影响 | AI结论 | 需开发者决策 | 决策ID |
+        |--------|----------|----------|----------|--------|----------------|--------|
+        | MC-001 | SI-001, TI-001 | 业务规则 | 自动校验可能绕过人工审核 | 需开发者决策：代码证据不能确定审核优先级 | 是 | D-001 |
+
+        ## 开发者决策清单
+
+        | 决策ID | 待决策问题 | 可选方案及影响 | 开发者结论 | 决策人 | 确认记录 | 状态 |
+        |--------|------------|----------------|------------|--------|----------|------|
+        | D-001 | 自动校验后是否仍需人工审核 | A 保留审核更安全；B 自动放行吞吐更高 | {decision_conclusion} | {decision_owner} | {decision_record} | {decision_status} |
+
+        ## 合并策略与验证映射
+
+        | 冲突ID | 处理策略 | 影响范围 | 验证场景 | 状态 |
+        |--------|----------|----------|----------|------|
+        | MC-001 | 自动校验通过后高风险订单仍进入人工审核 | 支付提交与审核队列 | 高风险订单校验通过后仍生成审核任务 | 已规划 |
+        """
+    ).strip()
+
+
+def merge_implementation_sections() -> str:
+    return textwrap.dedent(
+        """
+        ## 决策落实记录
+
+        | 追踪ID | 影响文件 | 落实方式 | 验证用例 | 状态 |
+        |--------|----------|----------|----------|------|
+        | MC-001 | payment/risk.py | 自动校验不直接改变人工审核状态 | test_risk_then_review | 已落实 |
+        | D-001 | payment/review.py | 高风险订单始终进入人工审核队列 | test_high_risk_review_queue | 已落实 |
+
+        ## 验证记录
+
+        | 命令/检查 | 覆盖意图/冲突 | 结果 | 备注 |
+        |-----------|---------------|------|------|
+        | pytest payment | SI-001, TI-001, MC-001, D-001 | pass | 组合场景通过 |
+
+        ## 合并结果
+
+        - 合并后 SHA：abc123
+        - 两边业务意图：均已保留
+        - 开发者决策：已全部落实
+        """
+    ).strip()
+
+
 class WorkflowRefactorTests(unittest.TestCase):
     maxDiff = None
 
@@ -503,6 +563,20 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertTrue(task["ok"], task["output"])
         self.assertIn("traceability-check.py", task["command"])
 
+    def test_merge_code_scenario_suite_is_p0_and_first_in_catalog(self) -> None:
+        spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+        self.assertIsNotNone(spec)
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(mod)
+
+        suite = mod.TEST_SUITE_CATALOG[0]
+        self.assertEqual(suite["id"], "merge-code-p0-scenarios")
+        self.assertEqual(suite["priority"], "P0")
+        self.assertEqual(suite["argv"], ["python3", "scripts/test-merge-code-workflow.py"])
+        for scenario in ["权限位", "文本冲突", "删除/修改", "重命名", "二进制", "文件/目录", "脏工作树", "无文本业务冲突"]:
+            self.assertIn(scenario, suite["scope"])
+
     def test_workflow_blueprints_validate(self) -> None:
         proc = subprocess.run(
             ["python3", "scripts/validate-workflow-blueprint.py"],
@@ -513,7 +587,120 @@ class WorkflowRefactorTests(unittest.TestCase):
             check=True,
         )
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/client-dev.json", proc.stdout)
+        self.assertIn("OK:workflow-blueprint:.workflows/blueprints/merge-code.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/computer-mgmt.json", proc.stdout)
+
+    def test_merge_code_blueprint_requires_business_intent_and_decision_traceability(self) -> None:
+        bp = json.loads((ROOT / ".workflows/blueprints/merge-code.json").read_text(encoding="utf-8"))
+        stages = {stage["key"]: stage for stage in bp["stages"]}
+        self.assertEqual(list(stages), ["preflight", "intent-analysis", "merge", "review"])
+        self.assertTrue(stages["intent-analysis"]["exitCriteria"]["mergeAnalysis"])
+        self.assertEqual(
+            stages["merge"]["exitCriteria"]["mergeDecisionTraceability"],
+            "intent-analysis",
+        )
+        self.assertIn("开发者决策清单", stages["intent-analysis"]["requiredSections"])
+        self.assertIn("决策落实记录", stages["merge"]["requiredSections"])
+
+    def test_merge_analysis_validator_blocks_unresolved_decisions_and_missing_implementation(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            valid_analysis = tmp / "valid-analysis.md"
+            no_conflict_analysis = tmp / "no-conflict-analysis.md"
+            unresolved_analysis = tmp / "unresolved-analysis.md"
+            valid_implementation = tmp / "valid-implementation.md"
+            incomplete_implementation = tmp / "incomplete-implementation.md"
+            frontmatter = """
+                ---
+                status: 已采纳
+                p0_open: 0
+                ---
+            """
+            write_file(valid_analysis, frontmatter + "\n" + merge_analysis_sections())
+            write_file(
+                no_conflict_analysis,
+                frontmatter
+                + "\n"
+                + merge_analysis_sections()
+                .replace(
+                    "| MC-001 | SI-001, TI-001 | 业务规则 | 自动校验可能绕过人工审核 | 需开发者决策：代码证据不能确定审核优先级 | 是 | D-001 |",
+                    "| MC-000 | SI-001, TI-001 | 无冲突 | 两边规则可按顺序同时生效 | 可证明兼容：调用链与测试均保留 | 否 | 无 |",
+                )
+                .replace(
+                    "| D-001 | 自动校验后是否仍需人工审核 | A 保留审核更安全；B 自动放行吞吐更高 | 采用兼容并集，保留人工审核并新增自动校验 | 支付模块开发负责人 | 2026-07-03 合并评审记录 #42 | 已决策 |",
+                    "| 无 | 当前未发现需开发者决策项 | 不适用 | 无需决策 | 不适用 | 不适用 | 无需决策 |",
+                )
+                .replace(
+                    "| MC-001 | 自动校验通过后高风险订单仍进入人工审核 | 支付提交与审核队列 | 高风险订单校验通过后仍生成审核任务 | 已规划 |",
+                    "| MC-000 | 顺序保留自动校验与人工审核 | 支付提交与审核队列 | 自动校验与人工审核组合回归 | 已规划 |",
+                ),
+            )
+            write_file(unresolved_analysis, frontmatter + "\n" + merge_analysis_sections(resolved=False))
+            write_file(valid_implementation, merge_implementation_sections())
+            write_file(
+                incomplete_implementation,
+                merge_implementation_sections().replace(
+                    "| D-001 | payment/review.py | 高风险订单始终进入人工审核队列 | test_high_risk_review_queue | 已落实 |\n",
+                    "",
+                ),
+            )
+
+            valid = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/validate-merge-analysis.py"),
+                    "--analysis",
+                    str(valid_analysis),
+                    "--implementation",
+                    str(valid_implementation),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            unresolved = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/validate-merge-analysis.py"),
+                    "--analysis",
+                    str(unresolved_analysis),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            no_conflict = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/validate-merge-analysis.py"),
+                    "--analysis",
+                    str(no_conflict_analysis),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            incomplete = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/validate-merge-analysis.py"),
+                    "--analysis",
+                    str(valid_analysis),
+                    "--implementation",
+                    str(incomplete_implementation),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+        self.assertEqual(valid.returncode, 0, valid.stdout + valid.stderr)
+        self.assertIn("OK:merge-analysis:analysis+implementation", valid.stdout)
+        self.assertEqual(no_conflict.returncode, 0, no_conflict.stdout + no_conflict.stderr)
+        self.assertNotEqual(unresolved.returncode, 0)
+        self.assertIn("BLOCKED:merge-analysis:", unresolved.stdout)
+        self.assertNotEqual(incomplete.returncode, 0)
+        self.assertIn("D-001", incomplete.stdout)
 
     def test_kanban_shows_only_created_lightweight_workflows(self) -> None:
         with self.fixture_repo() as tmp:
@@ -794,6 +981,12 @@ class WorkflowRefactorTests(unittest.TestCase):
             "帮我把方案拆成开发任务": "task-split-only",
             "这个功能拆成几步做": "task-split-only",
             "WBS修订一下": "task-split-only",
+            "帮我合代码": "merge-code",
+            "把 feature/search 分支合进 main": "merge-code",
+            "合一下分支": "merge-code",
+            "merge 分支到 release": "merge-code",
+            "解决合并冲突": "merge-code",
+            "workflow=merge-code 合并 feature/pay": "merge-code",
             "我要学习 agent 开发": "learning-loop",
             "开始学习智能体开发": "learning-loop",
             "帮我准备资料学习 MCP": "learning-loop",
@@ -878,6 +1071,15 @@ class WorkflowRefactorTests(unittest.TestCase):
                     ("Plans/功能开发/2026-07-03-任务拆分复核-优惠券.md", "task-splitter"),
                 ],
             ),
+            (
+                "merge-code",
+                [
+                    ("Plans/代码重构/2026-07-03-合并预检-功能分支.md", "merge-code-assistant"),
+                    ("Plans/代码重构/2026-07-03-合并意图分析-功能分支.md", "merge-code-assistant"),
+                    ("Plans/代码重构/2026-07-03-代码合并-功能分支.md", "merge-code-assistant"),
+                    ("Plans/代码重构/2026-07-03-合并复核-功能分支.md", "code-review"),
+                ],
+            ),
         ]
         with self.fixture_repo() as tmp:
             for workflow, _plans in cases:
@@ -902,16 +1104,25 @@ class WorkflowRefactorTests(unittest.TestCase):
                             ),
                         )
                         verdict_fm = f"verdict: {verdict_rel}\n"
+                    merge_fm = ""
+                    merge_body = ""
+                    if "合并意图分析" in rel:
+                        merge_fm = "p0_open: 0\n"
+                        merge_body = merge_analysis_sections()
+                    elif "代码合并" in rel:
+                        merge_body = merge_implementation_sections()
                     write_file(
                         tmp / rel,
                         f"""
                         ---
                         status: 已采纳
-                        {verdict_fm}---
+                        {verdict_fm}{merge_fm}---
 
                         # {rel}
 
                         轻流程 fixture。
+
+                        {merge_body}
 
                         {skill_run(skill, rel)}
                         """,
@@ -922,19 +1133,78 @@ class WorkflowRefactorTests(unittest.TestCase):
                     self.assertEqual(data["blockers"], [])
                     self.assertTrue(data["plans_found"], data)
 
+    def test_merge_code_gate_stops_before_merge_when_developer_decision_is_unresolved(self) -> None:
+        with self.fixture_repo() as tmp:
+            preflight_rel = "Plans/代码重构/2026-07-03-合并预检-功能分支.md"
+            analysis_rel = "Plans/代码重构/2026-07-03-合并意图分析-功能分支.md"
+            write_file(
+                tmp / preflight_rel,
+                f"""
+                ---
+                status: 已采纳
+                ---
+
+                # 合并预检
+
+                已确认源分支、目标分支和 merge-base。
+
+                {skill_run("merge-code-assistant", preflight_rel)}
+                """,
+            )
+            write_file(
+                tmp / analysis_rel,
+                f"""
+                ---
+                status: 已采纳
+                p0_open: 0
+                ---
+
+                # 合并意图分析
+
+                {merge_analysis_sections(resolved=False)}
+
+                {skill_run("merge-code-assistant", analysis_rel)}
+                """,
+            )
+
+            data = self.run_gate(tmp, "--workflow", "merge-code", "--json")
+
+        self.assertEqual(data["current_state"], "intent-analysis", data)
+        self.assertTrue(any("mergeAnalysis" in item and "D-001" in item for item in data["blockers"]), data)
+
     def test_workflow_smoke_script_covers_core_workflows(self) -> None:
         proc = subprocess.run(
-            ["python3", "scripts/workflow-smoke-test.py", "ui-change", "bugfix", "task-split-only", "learning-loop"],
+            [
+                "python3",
+                "scripts/workflow-smoke-test.py",
+                "merge-code",
+                "ui-change",
+                "bugfix",
+                "task-split-only",
+                "learning-loop",
+            ],
             cwd=ROOT,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
         )
+        self.assertIn("OK:workflow-smoke-test:merge-code", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:learning-loop", proc.stdout)
+
+    def test_merge_code_real_git_scenario_suite_passes(self) -> None:
+        proc = subprocess.run(
+            ["python3", "scripts/test-merge-code-workflow.py"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        self.assertIn("OK:merge-code-workflow-scenarios:16", proc.stdout)
 
     def test_workflow_smoke_script_can_start_from_utterance(self) -> None:
         proc = subprocess.run(

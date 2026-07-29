@@ -137,6 +137,13 @@
               },
               "devTraceability": {
                 "type": "boolean"
+              },
+              "mergeAnalysis": {
+                "type": "boolean"
+              },
+              "mergeDecisionTraceability": {
+                "type": "string",
+                "minLength": 1
               }
             }
           },

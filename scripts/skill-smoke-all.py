@@ -28,6 +28,7 @@ FIXTURE_EXEMPT = {
     "kanban-restart",        # 运维：重启看板服务，kanban-server.sh + HTTP 健康检查覆盖
     "workflow-evolution-assistant",  # 聚合 skill_run：feedback-aggregate 覆盖
     "feature-dev-assistant",  # 开发编排：产物是 plan/代码，由 workflow gate 覆盖
+    "merge-code-assistant",  # 合并执行：产物是 Git 变更，由 merge-code workflow gate 覆盖
 }
 
 

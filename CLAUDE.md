@@ -34,6 +34,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 |------|-------|
 | 续做 | `resume-assistant` |
 | 全流程 / 新项目 | `workflow-router` → 具体 workflow 蓝图 + `workflow-board-boot.sh` |
+| 合代码 / 合并分支 / 解决合并冲突 | `workflow-router` → `merge-code` → `merge-code-assistant` |
 | 需求/架构/开发/测试/部署/变更 | 见 `.cursorrules` |
 | PM 物料 | `material-prep-assistant` → Contexts |
 | 找 CC 文章 / 周报选题 / 海外资讯 / 分享帖 | `weekly-intel-digest` → `Contexts/情报源/` |

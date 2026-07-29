@@ -985,6 +985,19 @@ def workflows_envelope() -> dict[str, Any]:
 
 TEST_SUITE_CATALOG = [
     {
+        "id": "merge-code-p0-scenarios",
+        "group": "workflow-engine",
+        "object_type": "workflow-engine",
+        "level": "regression",
+        "level_label": "P0 场景回归",
+        "priority": "P0",
+        "name": "代码合并工作流真实场景",
+        "command": "python3 scripts/test-merge-code-workflow.py",
+        "argv": ["python3", "scripts/test-merge-code-workflow.py"],
+        "scope": "快进、重复合并、跨文件、同文件不同区块、权限位、文本冲突、删除/修改、重命名、二进制、同路径新增、文件/目录、脏工作树、无文本业务冲突、决策追踪",
+        "signal": "AI 工作流自身",
+    },
+    {
         "id": "workflow-core-unit",
         "group": "workflow-engine",
         "object_type": "workflow-engine",
@@ -1028,7 +1041,7 @@ TEST_SUITE_CATALOG = [
         "name": "工作流逐阶段 smoke",
         "command": "python3 scripts/workflow-smoke-test.py",
         "argv": ["python3", "scripts/workflow-smoke-test.py"],
-        "scope": "ui-change / bugfix / task-split-only / computer-mgmt / client-dev",
+        "scope": "merge-code / ui-change / bugfix / task-split-only / computer-mgmt / client-dev",
         "signal": "AI 工作流自身",
     },
     {

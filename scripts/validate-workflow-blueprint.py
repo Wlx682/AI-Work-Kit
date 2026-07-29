@@ -100,9 +100,26 @@ def validate_blueprint(path: Path) -> list[str]:
             warnings.append(f"{path}: stage {stage_key}.template 不存在: {template}")
 
     valid_next = set(stage_keys) | {"done"}
+    stage_positions = {key: index for index, key in enumerate(stage_keys)}
     for stage in bp["stages"]:
         next_key = stage["next"]
         require(next_key in valid_next, f"{path}: stage {stage['key']}.next 指向未知阶段: {next_key}")
+        exit_criteria = stage["exitCriteria"]
+        if "mergeAnalysis" in exit_criteria:
+            require(
+                isinstance(exit_criteria["mergeAnalysis"], bool),
+                f"{path}: stage {stage['key']}.exitCriteria.mergeAnalysis 必须是 boolean",
+            )
+        if "mergeDecisionTraceability" in exit_criteria:
+            analysis_stage = exit_criteria["mergeDecisionTraceability"]
+            require(
+                isinstance(analysis_stage, str) and analysis_stage in stage_positions,
+                f"{path}: stage {stage['key']}.exitCriteria.mergeDecisionTraceability 须引用已声明阶段",
+            )
+            require(
+                stage_positions[analysis_stage] < stage_positions[stage["key"]],
+                f"{path}: stage {stage['key']}.mergeDecisionTraceability 只能引用前序阶段",
+            )
 
     trigger_hints = bp.get("triggerHints", [])
     if trigger_hints:

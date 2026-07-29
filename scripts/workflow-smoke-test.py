@@ -6,12 +6,22 @@ import json
 import shutil
 import subprocess
 import tempfile
+import textwrap
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_WORKFLOWS = ["ui-change", "bugfix", "task-split-only", "computer-mgmt", "learning-loop", "client-dev"]
+DEFAULT_WORKFLOWS = [
+    "merge-code",
+    "ui-change",
+    "bugfix",
+    "task-split-only",
+    "computer-mgmt",
+    "learning-loop",
+    "client-dev",
+]
 ROUTE_PHRASES = {
+    "merge-code": "帮我把 feature/search 分支合进 main",
     "ui-change": "帮我改一下 UI",
     "bugfix": "线上报错帮我修bug",
     "task-split-only": "这个技术方案只拆任务",
@@ -156,6 +166,95 @@ def inject_verdicts(tmp: Path, bp: dict) -> None:
             if lines and lines[0].strip() == "---":
                 lines.insert(1, f"verdict: {verdict_path}")
                 plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def merge_analysis_fixture() -> str:
+    return textwrap.dedent(
+        """
+        ## 双边代码意图
+
+        | 意图ID | 分支侧 | 文件/模块 | 代码变化 | 业务目标 | 行为/规则变化 | 证据 | 置信度 |
+        |--------|--------|-----------|----------|----------|---------------|------|--------|
+        | SI-001 | 源分支 | payment/risk.py | 增加自动风险校验 | 降低异常支付 | 提交前增加校验 | commit abc；test_risk.py | 高 |
+        | TI-001 | 目标分支 | payment/review.py | 保留人工审核入口 | 控制高风险订单 | 高风险订单人工审核 | commit def；test_review.py | 高 |
+
+        ## 业务冲突矩阵
+
+        | 冲突ID | 关联意图 | 冲突类型 | 业务影响 | AI结论 | 需开发者决策 | 决策ID |
+        |--------|----------|----------|----------|--------|----------------|--------|
+        | MC-001 | SI-001, TI-001 | 业务规则 | 自动校验可能绕过人工审核 | 需开发者决策：证据不能确定审核优先级 | 是 | D-001 |
+
+        ## 开发者决策清单
+
+        | 决策ID | 待决策问题 | 可选方案及影响 | 开发者结论 | 决策人 | 确认记录 | 状态 |
+        |--------|------------|----------------|------------|--------|----------|------|
+        | D-001 | 自动校验后是否人工审核 | A 保留审核更安全；B 自动放行吞吐更高 | 保留人工审核并增加自动校验 | 支付模块开发负责人 | 2026-07-03 合并评审记录 #42 | 已决策 |
+
+        ## 合并策略与验证映射
+
+        | 冲突ID | 处理策略 | 影响范围 | 验证场景 | 状态 |
+        |--------|----------|----------|----------|------|
+        | MC-001 | 自动校验后高风险订单仍人工审核 | 支付提交与审核队列 | 高风险订单校验通过后仍生成审核任务 | 已规划 |
+        """
+    ).strip()
+
+
+def merge_implementation_fixture() -> str:
+    return textwrap.dedent(
+        """
+        ## 决策落实记录
+
+        | 追踪ID | 影响文件 | 落实方式 | 验证用例 | 状态 |
+        |--------|----------|----------|----------|------|
+        | MC-001 | payment/risk.py | 自动校验不改变人工审核状态 | test_risk_then_review | 已落实 |
+        | D-001 | payment/review.py | 高风险订单进入人工审核队列 | test_high_risk_review_queue | 已落实 |
+
+        ## 验证记录
+
+        | 命令/检查 | 覆盖意图/冲突 | 结果 | 备注 |
+        |-----------|---------------|------|------|
+        | pytest payment | SI-001, TI-001, MC-001, D-001 | pass | 组合场景通过 |
+
+        ## 合并结果
+
+        - 合并后 SHA：abc123
+        - 两边业务意图：均已保留
+        - 开发者决策：已全部落实
+        """
+    ).strip()
+
+
+def inject_merge_fixtures(tmp: Path, bp: dict) -> None:
+    if bp.get("name") != "merge-code":
+        return
+    for stage in bp.get("stages", []):
+        stage_key = stage.get("key", "")
+        if stage_key not in {"intent-analysis", "merge"}:
+            continue
+        folder = tmp / stage.get("planFolder", "")
+        for plan in folder.glob("*.md"):
+            text = plan.read_text(encoding="utf-8")
+            if f"workflow_stage: {stage_key}" not in text:
+                continue
+            rel = plan.relative_to(tmp).as_posix()
+            extra_fm = "p0_open: 0\n" if stage_key == "intent-analysis" else ""
+            body = merge_analysis_fixture() if stage_key == "intent-analysis" else merge_implementation_fixture()
+            write_fixture(
+                plan,
+                f"""---
+status: 已采纳
+{extra_fm}workflow: merge-code
+workflow_stage: {stage_key}
+skill: merge-code-assistant
+---
+
+# {stage.get('label')}：smoke
+
+{body}
+
+{skill_run('merge-code-assistant', rel)}
+""",
+            )
 
 
 def create_client_dev_epic(tmp: Path) -> str:
@@ -569,6 +668,7 @@ def smoke_lightweight_workflow(tmp: Path, workflow: str, bp: dict) -> None:
             ],
         )
         inject_verdicts(tmp, bp)
+        inject_merge_fixtures(tmp, bp)
         next_gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--json"])
         if next_gate.get("current_state") == current and next_gate.get("blockers"):
             raise SmokeError(f"{workflow} 创建 {current} 阶段 plan 后没有推进: {next_gate}")

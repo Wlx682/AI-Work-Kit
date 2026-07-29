@@ -22,6 +22,7 @@ Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环�
 
 ```text
 开始/启动… 或 自然语言或 workflow=client-dev   # 开始一件事（自然语言入口：workflow-router）
+合代码… 或 workflow=merge-code                  # 双边业务意图分析、开发者决策、合并与验证
 /status                           # 看当前卡点（人话摘要：当前 / 卡点 / 下一步 / 继续）
 /resume plan=Plans/... 进度=...    # 续做
 ```
@@ -30,6 +31,8 @@ Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环�
 
 ```bash
 python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow merge-code
+python3 scripts/test-merge-code-workflow.py             # P0：真实 Git 文件合并场景回归
 python3 scripts/workflow-status.py --workflow computer-mgmt
 ```
 

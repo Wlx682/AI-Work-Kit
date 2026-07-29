@@ -1,0 +1,114 @@
+{
+  "name": "merge-code",
+  "label": "代码合并",
+  "version": "1.1.0",
+  "description": "无 Epic 轻量流程：先分析源/目标分支的代码意图与业务语义，再由开发者裁决无法从证据确定的业务冲突，最后执行合并、验证决策落实并复核结果。默认只完成本地合并；push、远程 PR merge、强推和删分支需要用户明确授权。",
+  "usesEpic": false,
+  "planRoot": "Plans/代码重构",
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "triggerHints": [
+    "合代码",
+    "帮我合代码",
+    "合一下代码",
+    "合并代码",
+    "合分支",
+    "合一下分支",
+    "合并分支",
+    "merge代码",
+    "merge 代码",
+    "merge分支",
+    "merge 分支",
+    "分支合进",
+    "分支合入",
+    "分支合到",
+    "把这个分支合进去",
+    "把分支合进来",
+    "解决合并冲突",
+    "merge-code"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "preflight",
+      "label": "合并前预检",
+      "planFolder": "Plans/代码重构",
+      "planPrefix": "合并预检",
+      "skills": [
+        "merge-code-assistant"
+      ],
+      "template": "Templates/代码合并模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "intent-analysis"
+    },
+    {
+      "key": "intent-analysis",
+      "label": "双边代码意图与业务冲突分析",
+      "planFolder": "Plans/代码重构",
+      "planPrefix": "合并意图分析",
+      "skills": [
+        "merge-code-assistant"
+      ],
+      "template": "Templates/代码合并模板.md",
+      "requiredSections": [
+        "双边代码意图",
+        "业务冲突矩阵",
+        "开发者决策清单",
+        "合并策略与验证映射"
+      ],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": [
+          "已采纳"
+        ],
+        "sectionsPresent": true,
+        "mergeAnalysis": true,
+        "skillRun": true
+      },
+      "next": "merge"
+    },
+    {
+      "key": "merge",
+      "label": "代码合并与冲突处理",
+      "planFolder": "Plans/代码重构",
+      "planPrefix": "代码合并",
+      "skills": [
+        "merge-code-assistant"
+      ],
+      "template": "Templates/代码合并模板.md",
+      "requiredSections": [
+        "决策落实记录",
+        "验证记录",
+        "合并结果"
+      ],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "mergeDecisionTraceability": "intent-analysis",
+        "skillRun": true
+      },
+      "next": "review"
+    },
+    {
+      "key": "review",
+      "label": "合并结果复核",
+      "planFolder": "Plans/代码重构",
+      "planPrefix": "合并复核",
+      "skills": [
+        "code-review"
+      ],
+      "template": "Templates/Code-Review模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

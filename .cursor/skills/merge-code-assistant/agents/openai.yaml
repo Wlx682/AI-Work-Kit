@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码合并助手"
+  short_description: "分析双边业务意图，由开发者裁决语义冲突，再安全合并并验证"
+  default_prompt: "Use $merge-code-assistant to analyze both branches' business intent, obtain developer decisions for semantic conflicts, merge safely, and verify traceability."

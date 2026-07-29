@@ -188,6 +188,7 @@ PY
 # exitCriteria helper：查某 json 布尔/值
 crit_has() { python3 -c 'import json,sys; c=json.loads(sys.argv[1]); print("1" if c.get(sys.argv[2]) else "0")' "$1" "$2"; }
 crit_status_list() { python3 -c 'import json,sys; c=json.loads(sys.argv[1]); print("\n".join(c.get("status",[])))' "$1"; }
+crit_value() { python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2],""); print(v if isinstance(v,str) else "")' "$1" "$2"; }
 
 blockers=()
 plans_found=()
@@ -357,6 +358,32 @@ PY
       if [[ "$(crit_has "$s_exit" sectionsPresent)" == "1" && -n "$s_reqsections" && "$s_reqsections" != "[]" ]]; then
         sect_msg="$(python3 "$ROOT/scripts/gate_parse.py" check-sections "$child_file" "$s_reqsections" --msg 2>/dev/null || true)"
         [[ -z "$sect_msg" ]] || stage_blockers+=("${s_label}：交接契约未满足 [${sect_msg}]")
+      fi
+
+      # mergeAnalysis：源/目标分支的代码意图、业务冲突、开发者决策和验证策略须形成结构化事实。
+      # 业务语义不能由“冲突已消除”替代；有待决策项时，缺开发者确认就阻塞。
+      if [[ "$(crit_has "$s_exit" mergeAnalysis)" == "1" ]]; then
+        merge_analysis_check="$(python3 "$ROOT/scripts/validate-merge-analysis.py" --analysis "$child_file" 2>&1 || true)"
+        [[ "$merge_analysis_check" == OK:merge-analysis:* ]] || stage_blockers+=("${s_label}：mergeAnalysis: ${merge_analysis_check#BLOCKED:merge-analysis:}")
+      fi
+
+      # mergeDecisionTraceability：把前序意图分析中的每个冲突/开发者决策追到实际文件和验证用例。
+      if [[ "$(crit_has "$s_exit" mergeDecisionTraceability)" == "1" ]]; then
+        analysis_stage="$(crit_value "$s_exit" mergeDecisionTraceability)"
+        analysis_raw=""
+        for passed_record in "${passed_stage_records[@]:-}"; do
+          if [[ "$passed_record" == "${analysis_stage}:"* ]]; then
+            analysis_raw="${passed_record#*:}"
+            break
+          fi
+        done
+        if [[ -z "$analysis_raw" ]]; then
+          stage_blockers+=("${s_label}：找不到前序 ${analysis_stage} 阶段的分析 plan")
+        else
+          analysis_file="$(resolve_path "$analysis_raw")"
+          merge_trace_check="$(python3 "$ROOT/scripts/validate-merge-analysis.py" --analysis "$analysis_file" --implementation "$child_file" 2>&1 || true)"
+          [[ "$merge_trace_check" == OK:merge-analysis:* ]] || stage_blockers+=("${s_label}：mergeDecisionTraceability: ${merge_trace_check#BLOCKED:merge-analysis:}")
+        fi
       fi
 
 
