@@ -37,6 +37,7 @@ class TeamState(TypedDict):
     handoffs: Annotated[list[dict[str, object]], add]
     execution_session: dict
     pending_approval: dict
+    action_events: list[dict]
 
 
 class TeamGraphRuntime:
@@ -102,6 +103,7 @@ class TeamGraphRuntime:
             "handoffs": [],
             "execution_session": {},
             "pending_approval": {},
+            "action_events": [],
         }
 
         return self._execute_graph(task, run_id, thread_id, initial_state, config, events)
@@ -359,6 +361,7 @@ class TeamGraphRuntime:
                 **update,
                 "execution_session": progress["session"],
                 "pending_approval": progress["proposal"],
+                "action_events": progress.get("actions", []),
             }
 
         results = state["results"] + [progress["result"]]
@@ -367,6 +370,7 @@ class TeamGraphRuntime:
             "results": results,
             "execution_session": {},
             "pending_approval": {},
+            "action_events": progress.get("actions", []),
         }
         if len(results) == len(state["steps"]):
             update["handoffs"] = [self._handoff("Executor", "Reviewer", "result", {
@@ -376,9 +380,22 @@ class TeamGraphRuntime:
         return update
 
     def _approve_tool(self, state: TeamState) -> dict:
-        decision = interrupt(state["pending_approval"])
+        proposal = state["pending_approval"]
+        decision = interrupt(proposal)
         session = self.executor.resolve_approval(state["execution_session"], decision)
-        return {"execution_session": session, "pending_approval": {}}
+        approved = decision is True or (
+            isinstance(decision, dict) and decision.get("approved") is True
+        )
+        return {
+            "execution_session": session,
+            "pending_approval": {},
+            "action_events": [{
+                "action_id": proposal["action_id"],
+                "tool": proposal["tool"],
+                "args": proposal["args"],
+                "status": "called" if approved else "rejected",
+            }],
+        }
 
     def _after_prepare(self, state: TeamState) -> str:
         if state["pending_approval"]:

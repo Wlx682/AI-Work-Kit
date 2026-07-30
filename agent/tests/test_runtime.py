@@ -140,6 +140,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             runtime = self.runtime(memory, TraceStore(directory))
             session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
             proposal = {
+                "action_id": "action-1",
                 "tool_call_id": "call-1",
                 "tool": "run_shell",
                 "args": {"command": "rm -rf scratch"},
@@ -166,6 +167,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
 
             self.assertTrue(paused.is_paused)
             self.assertEqual(paused.interrupts[0]["value"], proposal)
+            self.assertEqual(
+                next(event for event in resumed.events if event.phase == "approve_tool").payload["action_events"][0]["action_id"],
+                "action-1",
+            )
             self.assertTrue(resumed.succeeded)
             self.assertNotEqual(resumed.run_id, paused.run_id)
             self.assertEqual(resumed.thread_id, paused.thread_id)
@@ -185,6 +190,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             trace_store = TraceStore(Path(directory) / "traces")
             session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
             proposal = {
+                "action_id": "action-1",
                 "tool_call_id": "call-1",
                 "tool": "run_shell",
                 "args": {"command": "rm -rf scratch"},

@@ -6,6 +6,7 @@
 
 import json
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from .. import llm
 from .. import safety
@@ -47,6 +48,7 @@ def advance(session: dict, definition: "AgentDefinition | None" = None) -> dict:
     messages = list(session["messages"])
     pending_calls = list(session["pending_calls"])
     tool_rounds = session["tool_rounds"]
+    actions: list[dict] = []
 
     while True:
         if pending_calls:
@@ -57,27 +59,36 @@ def advance(session: dict, definition: "AgentDefinition | None" = None) -> dict:
                     "status": "approval_required",
                     "session": _session(messages, pending_calls, tool_rounds),
                     "proposal": {
+                        "action_id": call["action_id"],
                         "tool_call_id": call["id"],
                         "tool": call["name"],
                         "args": call["args"],
                         "reason": verdict["reason"],
                     },
+                    "actions": actions,
                 }
 
-            tool_result = _execute_with_verdict(call["name"], call["args"], verdict)
+            tool_result = _execute_with_verdict(
+                call["name"], call["args"], verdict, call["action_id"],
+            )
+            actions.append(_action_event(call, verdict))
             messages.append(_tool_message(call["id"], tool_result))
             pending_calls.pop(0)
             continue
 
         if tool_rounds >= MAX_TOOL_ROUNDS:
-            return {"status": "done", "result": "(达到工具调用上限)"}
+            return {"status": "done", "result": "(达到工具调用上限)", "actions": actions}
 
         result = llm.chat(messages, tools=_tool_schemas(definition))
         if result["content"]:
             print(f"   💬 {result['content']}")
 
         if result["finish_reason"] == "stop" or not result["tool_calls"]:
-            return {"status": "done", "result": result["content"] or "(无输出)"}
+            return {
+                "status": "done",
+                "result": result["content"] or "(无输出)",
+                "actions": actions,
+            }
 
         calls = _normalize_tool_calls(result["tool_calls"])
         messages.append(_assistant_message(result["content"], calls))
@@ -100,13 +111,15 @@ def resolve_approval(
         isinstance(decision, dict) and decision.get("approved") is True
     )
     if not approved:
-        safety.log(call["name"], call["args"], "rejected_by_user")
+        safety.log(call["name"], call["args"], "rejected_by_user", call["action_id"])
         tool_result = "用户拒绝执行该操作"
         # Later proposals came from the same model turn and may depend on it.
         pending_calls = []
     else:
         verdict = _tool_verdict(call["name"], call["args"], definition)
-        tool_result = _execute_with_verdict(call["name"], call["args"], verdict)
+        tool_result = _execute_with_verdict(
+            call["name"], call["args"], verdict, call["action_id"],
+        )
 
     messages = list(session["messages"])
     messages.append(_tool_message(call["id"], tool_result))
@@ -125,6 +138,7 @@ def _normalize_tool_calls(tool_calls: list) -> list[dict]:
     calls = []
     for tool_call in tool_calls:
         calls.append({
+            "action_id": uuid4().hex,
             "id": tool_call.id,
             "name": tool_call.function.name,
             "args": json.loads(tool_call.function.arguments),
@@ -162,9 +176,18 @@ def _tool_verdict(name: str, args: dict, definition: "AgentDefinition | None") -
     return safety.check(name, args)
 
 
-def _execute_with_verdict(name: str, args: dict, verdict: dict) -> str:
+def _action_event(call: dict, verdict: dict) -> dict:
+    return {
+        "action_id": call["action_id"],
+        "tool": call["name"],
+        "args": call["args"],
+        "status": "called" if verdict.get("allowed", True) else "blocked",
+    }
+
+
+def _execute_with_verdict(name: str, args: dict, verdict: dict, action_id: str) -> str:
     if not verdict.get("allowed", True):
-        safety.log(name, args, "blocked")
+        safety.log(name, args, "blocked", action_id)
         return f"安全层拒绝: {verdict['reason']}"
     fn = get_function(name)
     if fn is None:
@@ -172,7 +195,7 @@ def _execute_with_verdict(name: str, args: dict, verdict: dict) -> str:
     try:
         print(f"   🔧 {name}({args})")
         out = fn(**args)
-        safety.log(name, args, "executed")
+        safety.log(name, args, "executed", action_id)
         return out
     except Exception as error:
         return f"Error executing {name}: {error}"

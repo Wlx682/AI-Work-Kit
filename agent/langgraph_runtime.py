@@ -31,6 +31,7 @@ class AgentState(TypedDict):
     outcome: str
     execution_session: dict
     pending_approval: dict
+    action_events: list[dict]
 
 
 class LangGraphRuntime:
@@ -84,6 +85,7 @@ class LangGraphRuntime:
             "outcome": "",
             "execution_session": {},
             "pending_approval": {},
+            "action_events": [],
         }
 
         return self._execute_graph(task, run_id, thread_id, initial_state, config, events)
@@ -318,16 +320,38 @@ class LangGraphRuntime:
             session = act.start_step(step, context or "(第一步，暂无上下文)")
         progress = act.advance(session, self.definition)
         if progress["status"] == "approval_required":
-            return {"execution_session": progress["session"], "pending_approval": progress["proposal"]}
+            return {
+                "execution_session": progress["session"],
+                "pending_approval": progress["proposal"],
+                "action_events": progress.get("actions", []),
+            }
 
         result = progress["result"]
         self.memory.working_add({"step": step, "result": result, "summary": result[:100]})
-        return {"results": [result], "execution_session": {}, "pending_approval": {}}
+        return {
+            "results": [result],
+            "execution_session": {},
+            "pending_approval": {},
+            "action_events": progress.get("actions", []),
+        }
 
     def _approve_tool(self, state: AgentState) -> dict:
-        decision = interrupt(state["pending_approval"])
+        proposal = state["pending_approval"]
+        decision = interrupt(proposal)
         session = act.resolve_approval(state["execution_session"], decision, self.definition)
-        return {"execution_session": session, "pending_approval": {}}
+        approved = decision is True or (
+            isinstance(decision, dict) and decision.get("approved") is True
+        )
+        return {
+            "execution_session": session,
+            "pending_approval": {},
+            "action_events": [{
+                "action_id": proposal["action_id"],
+                "tool": proposal["tool"],
+                "args": proposal["args"],
+                "status": "called" if approved else "rejected",
+            }],
+        }
 
     def _after_prepare(self, state: AgentState) -> str:
         if state["pending_approval"]:

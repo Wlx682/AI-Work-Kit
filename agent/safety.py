@@ -33,13 +33,14 @@ def check(tool_name: str, args: dict) -> dict:
     return {"allowed": True}
 
 
-def log(tool_name: str, args: dict, result: str):
+def log(tool_name: str, args: dict, result: str, action_id: str | None = None):
     """记录审计日志。"""
     entry = {
         "time": datetime.datetime.now().isoformat(),
         "tool": tool_name,
         "args": args,
         "result": result,
+        "action_id": action_id,
     }
     _audit_log.append(entry)
 
