@@ -6,4 +6,10 @@ from .shell import register_all as _reg_shell
 _reg_files()
 _reg_shell()
 
-from .registry import get_function, get_all_schemas, list_tools  # noqa: E402
+from .registry import (  # noqa: E402
+    get_all_schemas,
+    get_function,
+    get_output_schema,
+    list_tools,
+    validate_tool_result,
+)

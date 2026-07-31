@@ -58,7 +58,13 @@ class ActionSessionTests(unittest.TestCase):
                 {"allowed": True},
                 {"needs_approval": True, "reason": "危险命令模式: rm -rf"},
             ]),
-            patch("agent.capabilities.act._execute_with_verdict", return_value="contents"),
+            patch("agent.capabilities.act._execute_with_verdict", return_value={
+                "content": [{"type": "text", "text": "contents"}],
+                "structuredContent": {
+                    "path": "notes.txt", "content": "contents", "truncated": False,
+                },
+                "isError": False,
+            }),
         ):
             progress = act.advance(session)
 

@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from .. import llm
 from .. import safety
-from ..tools import get_function, get_all_schemas
+from ..tools import get_all_schemas, get_function, validate_tool_result
 
 if TYPE_CHECKING:
     from ..agent_definition import AgentDefinition
@@ -112,7 +112,10 @@ def resolve_approval(
     )
     if not approved:
         safety.log(call["name"], call["args"], "rejected_by_user", call["action_id"])
-        tool_result = "用户拒绝执行该操作"
+        tool_result = {
+            "content": [{"type": "text", "text": "用户拒绝执行该操作"}],
+            "isError": True,
+        }
         # Later proposals came from the same model turn and may depend on it.
         pending_calls = []
     else:
@@ -164,10 +167,11 @@ def _assistant_message(content: str | None, calls: list[dict]) -> dict:
     }
 
 
-def _tool_message(tool_call_id: str, result: str) -> dict:
-    preview = result[:150] + "..." if len(result) > 150 else result
+def _tool_message(tool_call_id: str, result: dict) -> dict:
+    content = "\n".join(item["text"] for item in result["content"])
+    preview = content[:150] + "..." if len(content) > 150 else content
     print(f"      ← {preview}")
-    return {"role": "tool", "tool_call_id": tool_call_id, "content": result}
+    return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
 
 
 def _tool_verdict(name: str, args: dict, definition: "AgentDefinition | None") -> dict:
@@ -185,20 +189,20 @@ def _action_event(call: dict, verdict: dict) -> dict:
     }
 
 
-def _execute_with_verdict(name: str, args: dict, verdict: dict, action_id: str) -> str:
+def _execute_with_verdict(name: str, args: dict, verdict: dict, action_id: str) -> dict:
     if not verdict.get("allowed", True):
         safety.log(name, args, "blocked", action_id)
-        return f"安全层拒绝: {verdict['reason']}"
+        return {"content": [{"type": "text", "text": f"安全层拒绝: {verdict['reason']}"}], "isError": True}
     fn = get_function(name)
     if fn is None:
-        return f"Error: unknown tool '{name}'"
+        return {"content": [{"type": "text", "text": f"Error: unknown tool '{name}'"}], "isError": True}
     try:
         print(f"   🔧 {name}({args})")
         out = fn(**args)
         safety.log(name, args, "executed", action_id)
-        return out
+        return validate_tool_result(name, out)
     except Exception as error:
-        return f"Error executing {name}: {error}"
+        return {"content": [{"type": "text", "text": f"Error executing {name}: {error}"}], "isError": True}
 
 def _tool_schemas(definition: "AgentDefinition | None") -> list[dict]:
     schemas = get_all_schemas()
