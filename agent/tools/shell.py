@@ -27,7 +27,7 @@ def run_shell(command: str) -> dict:
             text,
         )
     except subprocess.TimeoutExpired:
-        return registry.error("command timed out after 30 seconds")
+        raise registry.ToolResponseUnavailable("command timed out after 30 seconds")
     except Exception as e:
         return registry.error(f"Error running command: {e}")
 

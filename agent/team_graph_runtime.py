@@ -36,8 +36,9 @@ class TeamState(TypedDict):
     outcome: str
     handoffs: Annotated[list[dict[str, object]], add]
     execution_session: dict
-    pending_approval: dict
+    pending_interruption: dict
     action_events: list[dict]
+    failure: str
 
 
 class TeamGraphRuntime:
@@ -102,8 +103,9 @@ class TeamGraphRuntime:
             "outcome": "",
             "handoffs": [],
             "execution_session": {},
-            "pending_approval": {},
+            "pending_interruption": {},
             "action_events": [],
+            "failure": "",
         }
 
         return self._execute_graph(task, run_id, thread_id, initial_state, config, events)
@@ -217,7 +219,9 @@ class TeamGraphRuntime:
                     if node_name == "__interrupt__":
                         payload = self._interrupt_payload(update)
                         interrupts.extend(payload)
-                        events.append(RunEvent(len(events) + 1, run_id, "approval", "paused", {"interrupts": payload}))
+                        kinds = {item["value"].get("kind") for item in payload}
+                        phase = "unknown" if "unknown" in kinds else "input" if "input" in kinds else "approval"
+                        events.append(RunEvent(len(events) + 1, run_id, phase, "paused", {"interrupts": payload}))
                         continue
                     events.append(RunEvent(
                         len(events) + 1,
@@ -235,6 +239,15 @@ class TeamGraphRuntime:
                     recovery_mode=recovery_mode,
                 ))
             state = self.graph.get_state({"configurable": {"thread_id": thread_id}}).values
+            failure = state.get("failure")
+            if failure:
+                events.append(RunEvent(len(events) + 1, run_id, "run", "failed", {"error": failure}))
+                return self._persist_trace(RunResult(
+                    run_id, task, None, tuple(events), failure,
+                    thread_id=thread_id, parent_run_id=parent_run_id,
+                    recovered_from_checkpoint_id=recovered_from_checkpoint_id,
+                    recovery_mode=recovery_mode,
+                ))
             outcome = state.get("outcome") or "(未执行)"
         except Exception as error:
             message = str(error) or error.__class__.__name__
@@ -277,7 +290,7 @@ class TeamGraphRuntime:
         builder.add_node("predict", self._predict)
         builder.add_node("adjust_plan", self._adjust_plan)
         builder.add_node("prepare_action", self._prepare_action)
-        builder.add_node("approve_tool", self._approve_tool)
+        builder.add_node("interrupt_for_human", self._interrupt_for_human)
         builder.add_node("review", self._review)
         builder.add_node("revise_plan", self._revise_plan)
         builder.add_node("save_memory", self._save_memory)
@@ -292,10 +305,15 @@ class TeamGraphRuntime:
         builder.add_edge("adjust_plan", "prepare_action")
         builder.add_conditional_edges("prepare_action", self._after_prepare, {
             "prepare_action": "prepare_action",
-            "approve_tool": "approve_tool",
+            "interrupt_for_human": "interrupt_for_human",
             "review": "review",
+            "end": END,
         })
-        builder.add_edge("approve_tool", "prepare_action")
+        builder.add_conditional_edges("interrupt_for_human", self._after_interruption, {
+            "interrupt_for_human": "interrupt_for_human",
+            "prepare_action": "prepare_action",
+            "end": END,
+        })
         builder.add_conditional_edges("review", self._after_review, {
             "save_memory": "save_memory",
             "revise_plan": "revise_plan",
@@ -312,7 +330,11 @@ class TeamGraphRuntime:
 
     def _plan(self, state: TeamState) -> dict:
         print("\n🧭 [Planner] 正在生成计划...")
-        steps = self.planner.make_plan(state["task"], state["memory_context"])
+        steps = self.planner.make_plan(
+            state["task"],
+            state["memory_context"],
+            self.executor.definition.tools,
+        )
         for index, step in enumerate(steps, 1):
             print(f"   📋 步骤 {index}: {step}")
         return {
@@ -334,7 +356,11 @@ class TeamGraphRuntime:
 
     def _adjust_plan(self, state: TeamState) -> dict:
         print("\n🧭 [Planner] 正在根据风险调整计划...")
-        steps = self.planner.adjust_plan(state["steps"], state["risky"])
+        steps = self.planner.adjust_plan(
+            state["steps"],
+            state["risky"],
+            self.executor.definition.tools,
+        )
         for index, step in enumerate(steps, 1):
             print(f"   📋 调整后步骤 {index}: {step}")
         return {
@@ -356,20 +382,22 @@ class TeamGraphRuntime:
             context = "\n".join(f"[步骤{i + 1}结果] {result}" for i, result in enumerate(state["results"]))
             session = self.executor.start_step(step, context or "(第一步)")
         progress = self.executor.advance_step(session)
-        if progress["status"] == "approval_required":
+        if progress["status"] == "interrupted":
             return {
                 **update,
                 "execution_session": progress["session"],
-                "pending_approval": progress["proposal"],
+                "pending_interruption": progress["interruption"],
                 "action_events": progress.get("actions", []),
             }
+        if progress["status"] == "contract_error":
+            return {**update, "failure": progress["error"], "action_events": progress["actions"]}
 
         results = state["results"] + [progress["result"]]
         update = {
             **update,
             "results": results,
             "execution_session": {},
-            "pending_approval": {},
+            "pending_interruption": {},
             "action_events": progress.get("actions", []),
         }
         if len(results) == len(state["steps"]):
@@ -379,30 +407,47 @@ class TeamGraphRuntime:
             })]
         return update
 
-    def _approve_tool(self, state: TeamState) -> dict:
-        proposal = state["pending_approval"]
-        decision = interrupt(proposal)
-        session = self.executor.resolve_approval(state["execution_session"], decision)
-        approved = decision is True or (
-            isinstance(decision, dict) and decision.get("approved") is True
+    def _interrupt_for_human(self, state: TeamState) -> dict:
+        """Pause once, then pass the resolution to the Executor."""
+        interruption = state["pending_interruption"]
+        resolution = self.executor.resolve_interruption(
+            state["execution_session"],
+            interruption,
+            interrupt(interruption),
         )
+        if resolution["status"] == "interrupted":
+            return {
+                "execution_session": resolution["session"],
+                "pending_interruption": resolution["interruption"],
+                "action_events": resolution["actions"],
+            }
+        if resolution["status"] in {"failed", "contract_error"}:
+            return {
+                "pending_interruption": {},
+                "failure": resolution["error"],
+                "action_events": resolution["actions"],
+            }
         return {
-            "execution_session": session,
-            "pending_approval": {},
-            "action_events": [{
-                "action_id": proposal["action_id"],
-                "tool": proposal["tool"],
-                "args": proposal["args"],
-                "status": "called" if approved else "rejected",
-            }],
+            "execution_session": resolution["session"],
+            "pending_interruption": {},
+            "action_events": resolution["actions"],
         }
 
     def _after_prepare(self, state: TeamState) -> str:
-        if state["pending_approval"]:
-            return "approve_tool"
+        if state["failure"]:
+            return "end"
+        if state["pending_interruption"]:
+            return "interrupt_for_human"
         if len(state["results"]) < len(state["steps"]):
             return "prepare_action"
         return "review"
+
+    def _after_interruption(self, state: TeamState) -> str:
+        if state["failure"]:
+            return "end"
+        if state["pending_interruption"]:
+            return "interrupt_for_human"
+        return "prepare_action"
 
     def _review(self, state: TeamState) -> dict:
         print("\n🔎 [Reviewer] 正在评审结果...")
@@ -441,7 +486,7 @@ class TeamGraphRuntime:
             "steps": steps,
             "results": [],
             "execution_session": {},
-            "pending_approval": {},
+            "pending_interruption": {},
             "handoffs": [self._handoff("Planner", "Executor", "revised_plan", steps)],
         }
 

@@ -9,6 +9,7 @@
 
 import sys
 import os
+import json
 
 from .orchestrator import Orchestrator
 from .memory import Memory
@@ -16,9 +17,14 @@ from .memory import Memory
 
 def report_result(result):
     if result.is_paused:
-        print(f"⏸️  执行暂停，等待审批（run={result.run_id}, thread={result.thread_id}）")
+        kinds = {item["value"].get("kind") for item in result.interrupts}
+        waiting_for = "用户输入" if "input" in kinds else "人工处理" if "unknown" in kinds else "审批"
+        print(f"⏸️  执行暂停，等待{waiting_for}（run={result.run_id}, thread={result.thread_id}）")
         for item in result.interrupts:
-            print(f"   审批请求: {item['value']}")
+            kind = item["value"].get("kind")
+            label = "信息请求" if kind == "input" else "未知执行结果" if kind == "unknown" else "审批请求"
+            print(f"   {label}:")
+            print(json.dumps(item["value"], ensure_ascii=False, indent=2))
         return
     if not result.succeeded:
         print(f"❌ 执行失败（run={result.run_id}, thread={result.thread_id}）：{result.error}")
@@ -59,26 +65,51 @@ def main():
     print("   编排层：Orchestrator 单智能体图 / Team 四角色图")
     print("   📚 记忆 = 工作/情景/语义/程序/纠正")
 
+    pending_result = None
     while True:
         try:
-            task = input("\n📝 请输入任务: ").strip()
+            if pending_result is not None:
+                interruption = pending_result.interrupts[0]["value"]
+                if interruption.get("kind") == "input":
+                    value = input(f"\n📝 {interruption['question']}: ").strip()
+                    if not value:
+                        continue
+                    result = agent.resume(
+                        pending_result.thread_id,
+                        {"value": value},
+                        parent_run_id=pending_result.run_id,
+                    )
+                else:
+                    raw = input("\n📝 请输入 resolution JSON: ").strip()
+                    if not raw:
+                        continue
+                    result = agent.resume(
+                        pending_result.thread_id,
+                        json.loads(raw),
+                        parent_run_id=pending_result.run_id,
+                    )
+            else:
+                task = input("\n📝 请输入任务: ").strip()
+                if not task:
+                    continue
+                if task.lower() in ("quit", "exit", "q"):
+                    print("👋 再见！")
+                    break
+                result = agent.run(task) if use_team else agent.run_with_trace(task)
         except (EOFError, KeyboardInterrupt):
             print("\n👋 再见！")
             break
-
-        if not task:
+        except Exception as error:
+            print(f"\n❌ 错误: {error}")
             continue
-        if task.lower() in ("quit", "exit", "q"):
-            print("👋 再见！")
-            break
 
         try:
-            result = agent.run(task) if use_team else agent.run_with_trace(task)
             report_result(result)
+            pending_result = result if result.is_paused else None
         except KeyboardInterrupt:
             print("\n\n⚠️  用户中断执行。")
-        except Exception as e:
-            print(f"\n❌ 错误: {e}")
+        except Exception as error:
+            print(f"\n❌ 错误: {error}")
 
 
 if __name__ == "__main__":

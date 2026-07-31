@@ -162,6 +162,7 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             runtime = self.runtime(memory, TraceStore(directory))
             session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
             proposal = {
+                "kind": "approval",
                 "action_id": "action-1",
                 "tool_call_id": "call-1",
                 "tool": "run_shell",
@@ -175,10 +176,14 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                 patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
                 patch("agent.roles.executor.act.start_step", return_value=session) as start_step,
                 patch("agent.roles.executor.act.advance", side_effect=[
-                    {"status": "approval_required", "session": session, "proposal": proposal},
+                    {"status": "interrupted", "session": session, "interruption": proposal},
                     {"status": "done", "result": "executed"},
                 ]) as advance,
-                patch("agent.roles.executor.act.resolve_approval", return_value=session) as resolve,
+                patch("agent.roles.executor.act.resolve_interruption", return_value={
+                    "status": "resolved",
+                    "session": session,
+                    "actions": [{"action_id": "action-1", "status": "called"}],
+                }) as resolve,
                 patch("agent.roles.reviewer.reviewing.review", return_value={"verdict": "accept"}),
             ):
                 paused = runtime.run("test task")
@@ -191,7 +196,7 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             self.assertTrue(paused.is_paused)
             self.assertEqual(paused.interrupts[0]["value"], proposal)
             self.assertEqual(
-                next(event for event in resumed.events if event.phase == "approve_tool").payload["action_events"][0]["action_id"],
+                next(event for event in resumed.events if event.phase == "interrupt_for_human").payload["action_events"][0]["action_id"],
                 "action-1",
             )
             self.assertTrue(resumed.succeeded)
@@ -204,6 +209,34 @@ class TeamGraphRuntimeTests(unittest.TestCase):
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)
             self.assertEqual(resumed.outcome, "executed")
+
+    def test_pauses_team_execution_when_an_action_is_unknown(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+        session = {"messages": [], "pending_calls": [], "tool_rounds": 1}
+        unknown = {
+            "kind": "unknown",
+            "action_id": "action-1",
+            "tool": "run_shell",
+            "args": {"command": "sleep 60"},
+            "error": "command timed out after 30 seconds",
+        }
+
+        with (
+            patch("agent.roles.planner.planning.make_plan", return_value=["run step"]),
+            patch("agent.roles.predictor.world_model.predict", return_value=[]),
+            patch("agent.roles.predictor.world_model.has_high_risk", return_value=[]),
+            patch("agent.roles.executor.act.start_step", return_value=session),
+            patch("agent.roles.executor.act.advance", return_value={
+                "status": "interrupted", "session": session, "interruption": unknown,
+                "actions": [{"action_id": "action-1", "status": "unknown"}],
+            }),
+        ):
+            paused = runtime.run("test task")
+
+        self.assertTrue(paused.is_paused)
+        self.assertEqual(paused.interrupts[0]["value"], unknown)
+        self.assertEqual(paused.events[-1].phase, "unknown")
 
 
 if __name__ == "__main__":

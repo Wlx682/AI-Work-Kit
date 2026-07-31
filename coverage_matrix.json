@@ -1,0 +1,192 @@
+{
+  "generated_at": null,
+  "test_files": [
+    {
+      "file": "tests/test_tool_results.py",
+      "size": 2843,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.capabilities",
+        "agent.tools"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_llm.py",
+      "size": 1405,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent",
+        "agent.llm"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_runtime.py",
+      "size": 20706,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.langgraph_runtime",
+        "agent.orchestrator",
+        "agent.runtime",
+        "agent.team_graph_runtime",
+        "agent.trace_store"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/__init__.py",
+      "size": 44,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_agent_definition.py",
+      "size": 2005,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.agent_definition",
+        "agent.capabilities.act"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_team_graph_runtime.py",
+      "size": 11505,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.team_graph_runtime",
+        "agent.trace_store"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_act.py",
+      "size": 9129,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.capabilities",
+        "agent.capabilities.act"
+      ],
+      "assert_counts_per_func": {}
+    },
+    {
+      "file": "tests/test_role_definitions.py",
+      "size": 2110,
+      "test_classes": [],
+      "test_function_count": 0,
+      "test_function_names": [],
+      "inferred_modules": [
+        "agent.agent_definition",
+        "agent.roles"
+      ],
+      "assert_counts_per_func": {}
+    }
+  ],
+  "module_coverage": {
+    "agent": {
+      "test_files": [
+        "tests/test_llm.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.agent_definition": {
+      "test_files": [
+        "tests/test_agent_definition.py",
+        "tests/test_role_definitions.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.capabilities": {
+      "test_files": [
+        "tests/test_act.py",
+        "tests/test_tool_results.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.capabilities.act": {
+      "test_files": [
+        "tests/test_act.py",
+        "tests/test_agent_definition.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.langgraph_runtime": {
+      "test_files": [
+        "tests/test_runtime.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.llm": {
+      "test_files": [
+        "tests/test_llm.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.orchestrator": {
+      "test_files": [
+        "tests/test_runtime.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.roles": {
+      "test_files": [
+        "tests/test_role_definitions.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.runtime": {
+      "test_files": [
+        "tests/test_runtime.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.team_graph_runtime": {
+      "test_files": [
+        "tests/test_runtime.py",
+        "tests/test_team_graph_runtime.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.tools": {
+      "test_files": [
+        "tests/test_tool_results.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    },
+    "agent.trace_store": {
+      "test_files": [
+        "tests/test_runtime.py",
+        "tests/test_team_graph_runtime.py"
+      ],
+      "total_asserts": 0,
+      "test_functions": []
+    }
+  }
+}

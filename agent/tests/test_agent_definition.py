@@ -40,7 +40,7 @@ class AgentDefinitionTests(unittest.TestCase):
                     available_tools={"read_file"},
                 )
 
-    def test_tool_schemas_follow_the_definition_allowlist(self):
+    def test_external_tools_follow_the_definition_allowlist_but_input_is_always_available(self):
         definition = AgentDefinition(
             id="read-only",
             role="reader",
@@ -50,7 +50,10 @@ class AgentDefinitionTests(unittest.TestCase):
             instructions="read only",
         )
 
-        self.assertEqual([schema["function"]["name"] for schema in _tool_schemas(definition)], ["read_file"])
+        self.assertEqual(
+            [schema["function"]["name"] for schema in _tool_schemas(definition)],
+            ["read_file", "request_user_input"],
+        )
 
 
 if __name__ == "__main__":

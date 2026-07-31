@@ -30,8 +30,9 @@ class AgentState(TypedDict):
     should_stop: bool
     outcome: str
     execution_session: dict
-    pending_approval: dict
+    pending_interruption: dict
     action_events: list[dict]
+    failure: str
 
 
 class LangGraphRuntime:
@@ -84,8 +85,9 @@ class LangGraphRuntime:
             "should_stop": False,
             "outcome": "",
             "execution_session": {},
-            "pending_approval": {},
+            "pending_interruption": {},
             "action_events": [],
+            "failure": "",
         }
 
         return self._execute_graph(task, run_id, thread_id, initial_state, config, events)
@@ -199,7 +201,9 @@ class LangGraphRuntime:
                     if node_name == "__interrupt__":
                         payload = self._interrupt_payload(update)
                         interrupts.extend(payload)
-                        events.append(RunEvent(len(events) + 1, run_id, "approval", "paused", {"interrupts": payload}))
+                        kinds = {item["value"].get("kind") for item in payload}
+                        phase = "unknown" if "unknown" in kinds else "input" if "input" in kinds else "approval"
+                        events.append(RunEvent(len(events) + 1, run_id, phase, "paused", {"interrupts": payload}))
                         continue
                     payload = dict(update) if update else {}
                     events.append(RunEvent(
@@ -218,6 +222,15 @@ class LangGraphRuntime:
                     recovery_mode=recovery_mode,
                 ))
             state = self.graph.get_state({"configurable": {"thread_id": thread_id}}).values
+            failure = state.get("failure")
+            if failure:
+                events.append(RunEvent(len(events) + 1, run_id, "run", "failed", {"error": failure}))
+                return self._persist_trace(RunResult(
+                    run_id, task, None, tuple(events), failure,
+                    thread_id=thread_id, parent_run_id=parent_run_id,
+                    recovered_from_checkpoint_id=recovered_from_checkpoint_id,
+                    recovery_mode=recovery_mode,
+                ))
             outcome = state.get("outcome") or "(未执行)"
         except Exception as error:
             message = str(error) or error.__class__.__name__
@@ -260,7 +273,7 @@ class LangGraphRuntime:
         builder.add_node("plan", self._plan)
         builder.add_node("predict", self._predict)
         builder.add_node("prepare_action", self._prepare_action)
-        builder.add_node("approve_tool", self._approve_tool)
+        builder.add_node("interrupt_for_human", self._interrupt_for_human)
         builder.add_node("reflect", self._reflect)
         builder.add_node("save_memory", self._save_memory)
 
@@ -269,11 +282,16 @@ class LangGraphRuntime:
         builder.add_edge("plan", "predict")
         builder.add_edge("predict", "prepare_action")
         builder.add_conditional_edges("prepare_action", self._after_prepare, {
-            "approve_tool": "approve_tool",
+            "interrupt_for_human": "interrupt_for_human",
             "reflect": "reflect",
             "save_memory": "save_memory",
+            "end": END,
         })
-        builder.add_edge("approve_tool", "prepare_action")
+        builder.add_conditional_edges("interrupt_for_human", self._after_interruption, {
+            "interrupt_for_human": "interrupt_for_human",
+            "prepare_action": "prepare_action",
+            "end": END,
+        })
         builder.add_conditional_edges("reflect", self._after_reflect, {
             "prepare_action": "prepare_action",
             "save_memory": "save_memory",
@@ -305,7 +323,11 @@ class LangGraphRuntime:
         for prediction in risky:
             print(f"   ⚠️  {prediction['step']}: {prediction['risk']}")
         print("\n🧭 [规划] 正在根据风险调整计划...")
-        steps = planning.adjust_plan(state["steps"], risky)
+        steps = planning.adjust_plan(
+            state["steps"],
+            risky,
+            execution_tools=self.definition.tools,
+        )
         for index, step in enumerate(steps, 1):
             print(f"   📋 调整后步骤 {index}: {step}")
         return {"steps": steps}
@@ -317,46 +339,70 @@ class LangGraphRuntime:
         if not session:
             print(f"\n⚡ [执行] 步骤 {index + 1}/{len(state['steps'])}: {step}")
             context = "\n".join(f"[步骤{i + 1}结果] {result}" for i, result in enumerate(state["results"]))
-            session = act.start_step(step, context or "(第一步，暂无上下文)")
+            session = act.start_step(
+                step,
+                context or "(第一步，暂无上下文)",
+                self.definition,
+            )
         progress = act.advance(session, self.definition)
-        if progress["status"] == "approval_required":
+        if progress["status"] == "interrupted":
             return {
                 "execution_session": progress["session"],
-                "pending_approval": progress["proposal"],
+                "pending_interruption": progress["interruption"],
                 "action_events": progress.get("actions", []),
             }
+        if progress["status"] == "contract_error":
+            return {"failure": progress["error"], "action_events": progress["actions"]}
 
         result = progress["result"]
         self.memory.working_add({"step": step, "result": result, "summary": result[:100]})
         return {
             "results": [result],
             "execution_session": {},
-            "pending_approval": {},
+            "pending_interruption": {},
             "action_events": progress.get("actions", []),
         }
 
-    def _approve_tool(self, state: AgentState) -> dict:
-        proposal = state["pending_approval"]
-        decision = interrupt(proposal)
-        session = act.resolve_approval(state["execution_session"], decision, self.definition)
-        approved = decision is True or (
-            isinstance(decision, dict) and decision.get("approved") is True
+    def _interrupt_for_human(self, state: AgentState) -> dict:
+        """Pause once, then pass the resolution to the action layer."""
+        interruption = state["pending_interruption"]
+        resolution = act.resolve_interruption(
+            state["execution_session"],
+            interruption,
+            interrupt(interruption),
+            self.definition,
         )
+        if resolution["status"] == "interrupted":
+            return {
+                "execution_session": resolution["session"],
+                "pending_interruption": resolution["interruption"],
+                "action_events": resolution["actions"],
+            }
+        if resolution["status"] in {"failed", "contract_error"}:
+            return {
+                "pending_interruption": {},
+                "failure": resolution["error"],
+                "action_events": resolution["actions"],
+            }
         return {
-            "execution_session": session,
-            "pending_approval": {},
-            "action_events": [{
-                "action_id": proposal["action_id"],
-                "tool": proposal["tool"],
-                "args": proposal["args"],
-                "status": "called" if approved else "rejected",
-            }],
+            "execution_session": resolution["session"],
+            "pending_interruption": {},
+            "action_events": resolution["actions"],
         }
 
     def _after_prepare(self, state: AgentState) -> str:
-        if state["pending_approval"]:
-            return "approve_tool"
+        if state["failure"]:
+            return "end"
+        if state["pending_interruption"]:
+            return "interrupt_for_human"
         return self._after_execute(state)
+
+    def _after_interruption(self, state: AgentState) -> str:
+        if state["failure"]:
+            return "end"
+        if state["pending_interruption"]:
+            return "interrupt_for_human"
+        return "prepare_action"
 
     def _after_execute(self, state: AgentState) -> str:
         if len(state["results"]) >= len(state["steps"]) or len(state["results"]) >= MAX_STEPS:

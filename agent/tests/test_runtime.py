@@ -140,6 +140,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             runtime = self.runtime(memory, TraceStore(directory))
             session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
             proposal = {
+                "kind": "approval",
                 "action_id": "action-1",
                 "tool_call_id": "call-1",
                 "tool": "run_shell",
@@ -153,10 +154,14 @@ class LangGraphRuntimeTests(unittest.TestCase):
                 patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
                 patch("agent.langgraph_runtime.act.start_step", return_value=session) as start_step,
                 patch("agent.langgraph_runtime.act.advance", side_effect=[
-                    {"status": "approval_required", "session": session, "proposal": proposal},
+                    {"status": "interrupted", "session": session, "interruption": proposal},
                     {"status": "done", "result": "executed"},
                 ]) as advance,
-                patch("agent.langgraph_runtime.act.resolve_approval", return_value=session) as resolve,
+                patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                    "status": "resolved",
+                    "session": session,
+                    "actions": [{"action_id": "action-1", "status": "called"}],
+                }) as resolve,
             ):
                 paused = runtime.run("test task")
                 resumed = runtime.resume(
@@ -168,7 +173,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             self.assertTrue(paused.is_paused)
             self.assertEqual(paused.interrupts[0]["value"], proposal)
             self.assertEqual(
-                next(event for event in resumed.events if event.phase == "approve_tool").payload["action_events"][0]["action_id"],
+                next(event for event in resumed.events if event.phase == "interrupt_for_human").payload["action_events"][0]["action_id"],
                 "action-1",
             )
             self.assertTrue(resumed.succeeded)
@@ -180,7 +185,8 @@ class LangGraphRuntimeTests(unittest.TestCase):
             start_step.assert_called_once()
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)
-            self.assertEqual(resolve.call_args.args[1], {"approved": True})
+            self.assertEqual(resolve.call_args.args[1], proposal)
+            self.assertEqual(resolve.call_args.args[2], {"approved": True})
             self.assertEqual(resumed.outcome, "executed")
 
     def test_resumes_from_sqlite_after_creating_a_fresh_runtime(self):
@@ -190,6 +196,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             trace_store = TraceStore(Path(directory) / "traces")
             session = {"messages": [{"role": "user", "content": "step"}], "pending_calls": [], "tool_rounds": 1}
             proposal = {
+                "kind": "approval",
                 "action_id": "action-1",
                 "tool_call_id": "call-1",
                 "tool": "run_shell",
@@ -204,10 +211,14 @@ class LangGraphRuntimeTests(unittest.TestCase):
                 patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
                 patch("agent.langgraph_runtime.act.start_step", return_value=session) as start_step,
                 patch("agent.langgraph_runtime.act.advance", side_effect=[
-                    {"status": "approval_required", "session": session, "proposal": proposal},
+                    {"status": "interrupted", "session": session, "interruption": proposal},
                     {"status": "done", "result": "executed"},
                 ]) as advance,
-                patch("agent.langgraph_runtime.act.resolve_approval", return_value=session) as resolve,
+                patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                    "status": "resolved",
+                    "session": session,
+                    "actions": [{"action_id": "action-1", "status": "called"}],
+                }) as resolve,
             ):
                 paused = runtime.run("test task")
                 runtime.close()
@@ -229,6 +240,161 @@ class LangGraphRuntimeTests(unittest.TestCase):
             self.assertEqual(advance.call_count, 2)
             self.assertEqual(resolve.call_args.args[0], session)
             self.assertEqual(resumed.outcome, "executed")
+
+    def test_pauses_unknown_action_and_continues_from_a_human_result(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+        session = {
+            "messages": [],
+            "pending_calls": [{
+                "action_id": "action-1",
+                "id": "call-1",
+                "name": "read_file",
+                "args": {"path": "notes.txt"},
+            }],
+            "tool_rounds": 1,
+        }
+        unknown = {
+            "kind": "unknown",
+            "action_id": "action-1",
+            "tool": "read_file",
+            "args": {"path": "notes.txt"},
+            "error": "connection lost",
+        }
+        resolved_session = {"messages": [], "pending_calls": [], "tool_rounds": 1}
+
+        with (
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["read step"]),
+            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+            patch("agent.langgraph_runtime.act.start_step", return_value=session),
+            patch("agent.langgraph_runtime.act.advance", side_effect=[
+                {"status": "interrupted", "session": session, "interruption": unknown,
+                 "actions": [{"action_id": "action-1", "status": "unknown"}]},
+                {"status": "done", "result": "finished"},
+            ]),
+            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                "status": "resolved",
+                "session": resolved_session,
+                "actions": [{"action_id": "action-1", "status": "succeeded"}],
+            }) as resolve_interruption,
+        ):
+            paused = runtime.run("test task")
+            resumed = runtime.resume(
+                paused.thread_id,
+                {"resolution": "succeeded", "tool_result": {}},
+                parent_run_id=paused.run_id,
+            )
+
+        self.assertTrue(paused.is_paused)
+        self.assertEqual(paused.interrupts[0]["value"], unknown)
+        self.assertEqual(paused.events[-1].phase, "unknown")
+        self.assertTrue(resumed.succeeded)
+        self.assertEqual(resumed.outcome, "finished")
+        self.assertEqual(resolve_interruption.call_args.args[0], session)
+        self.assertEqual(resolve_interruption.call_args.args[1], unknown)
+
+    def test_pauses_for_user_input_and_resumes_the_same_session(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+        session = {"messages": [], "pending_calls": [], "tool_rounds": 1}
+        interruption = {
+            "kind": "input",
+            "tool_call_id": "input-1",
+            "question": "请提供城市",
+            "resolution_schema": {"type": "object"},
+        }
+
+        with (
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["weather step"]),
+            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+            patch("agent.langgraph_runtime.act.start_step", return_value=session),
+            patch("agent.langgraph_runtime.act.advance", side_effect=[
+                {"status": "interrupted", "session": session, "interruption": interruption},
+                {"status": "done", "result": "weather ready"},
+            ]),
+            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                "status": "resolved", "session": session, "actions": [],
+            }) as resolve_interruption,
+        ):
+            paused = runtime.run("test task")
+            resumed = runtime.resume(
+                paused.thread_id,
+                {"value": "杭州"},
+                parent_run_id=paused.run_id,
+            )
+
+        self.assertTrue(paused.is_paused)
+        self.assertEqual(paused.events[-1].phase, "input")
+        self.assertTrue(resumed.succeeded)
+        self.assertEqual(resolve_interruption.call_args.args[1], interruption)
+        self.assertEqual(resolve_interruption.call_args.args[2], {"value": "杭州"})
+
+    def test_reenters_the_same_human_interrupt_node_without_replaying_an_action(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+        session = {"messages": [], "pending_calls": [], "tool_rounds": 1}
+        approval = {
+            "kind": "approval",
+            "action_id": "action-1",
+            "tool_call_id": "call-1",
+            "tool": "run_shell",
+            "args": {"command": "touch report.txt"},
+            "reason": "write requires approval",
+        }
+        unknown = {
+            "kind": "unknown",
+            "action_id": "action-1",
+            "tool": "run_shell",
+            "args": {"command": "touch report.txt"},
+            "error": "connection closed before response",
+        }
+
+        with (
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["write step"]),
+            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+            patch("agent.langgraph_runtime.act.start_step", return_value=session),
+            patch("agent.langgraph_runtime.act.advance", return_value={
+                "status": "interrupted", "session": session, "interruption": approval,
+            }) as advance,
+            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                "status": "interrupted", "session": session, "interruption": unknown,
+                "actions": [{"action_id": "action-1", "status": "unknown"}],
+            }),
+        ):
+            first_pause = runtime.run("test task")
+            second_pause = runtime.resume(
+                first_pause.thread_id,
+                {"approved": True},
+                parent_run_id=first_pause.run_id,
+            )
+
+        self.assertTrue(first_pause.is_paused)
+        self.assertTrue(second_pause.is_paused)
+        self.assertEqual(second_pause.interrupts[0]["value"], unknown)
+        self.assertEqual(advance.call_count, 1)
+
+    def test_stops_when_a_tool_response_violates_its_output_contract(self):
+        memory = FakeMemory()
+        runtime = self.runtime(memory)
+
+        with (
+            patch("agent.langgraph_runtime.planning.make_plan", return_value=["read step"]),
+            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
+            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
+            patch("agent.langgraph_runtime.act.advance", return_value={
+                "status": "contract_error",
+                "error": "tool output contract error for read_file: missing content",
+                "actions": [{"action_id": "action-1", "status": "contract_error"}],
+            }),
+        ):
+            result = runtime.run("test task")
+
+        self.assertFalse(result.succeeded)
+        self.assertIn("tool output contract error", result.error)
+        self.assertEqual(result.events[-1].status, "failed")
 
     def test_replays_and_forks_from_a_selected_checkpoint(self):
         memory = FakeMemory()
@@ -291,11 +457,11 @@ class LangGraphRuntimeTests(unittest.TestCase):
         ):
             original = runtime.run("test task")
             checkpoint = runtime.checkpoint_history(original.thread_id)[0]
-            with self.assertRaisesRegex(ValueError, "pending_approval"):
+            with self.assertRaisesRegex(ValueError, "pending_interruption"):
                 runtime.recover(
                     original.thread_id,
                     checkpoint.checkpoint_id,
-                    state_patch={"pending_approval": {}},
+                    state_patch={"pending_interruption": {}},
                     parent_run_id=original.run_id,
                 )
 

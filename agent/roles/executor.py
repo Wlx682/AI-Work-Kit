@@ -10,12 +10,12 @@ class Executor(BaseAgent):
 
     def start_step(self, step: str, context: str = "") -> dict:
         """Create a checkpointable tool-use session for one assigned step."""
-        return act.start_step(step, context)
+        return act.start_step(step, context, self.definition)
 
     def advance_step(self, session: dict) -> dict:
         """Propose or run safe tool calls until approval or completion."""
         return act.advance(session, self.definition)
 
-    def resolve_approval(self, session: dict, decision: object) -> dict:
-        """Apply a decision to the exact proposal stored in graph state."""
-        return act.resolve_approval(session, decision, self.definition)
+    def resolve_interruption(self, session: dict, interruption: dict, resolution: object) -> dict:
+        """Apply one human resolution to the interruption saved in graph state."""
+        return act.resolve_interruption(session, interruption, resolution, self.definition)

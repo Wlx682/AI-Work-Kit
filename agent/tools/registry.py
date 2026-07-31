@@ -13,6 +13,10 @@ _schemas: list[dict] = []
 _output_schemas: dict[str, dict] = {}
 
 
+class ToolResponseUnavailable(RuntimeError):
+    """The adapter cannot determine whether a tool invocation reached its effect."""
+
+
 def register(
     name: str,
     description: str,

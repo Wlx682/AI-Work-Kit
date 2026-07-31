@@ -1,12 +1,14 @@
 """Tests for MCP-style local tool results and outputSchema validation."""
 
 import os
+import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
 from agent.capabilities import act
 from agent.tools import get_function, validate_tool_result
+from agent.tools import ToolResponseUnavailable
 
 
 class ToolResultTests(unittest.TestCase):
@@ -47,13 +49,20 @@ class ToolResultTests(unittest.TestCase):
             patch("agent.capabilities.act.get_function", return_value=lambda **_: invalid_result),
             patch("agent.capabilities.act.safety.log") as log,
         ):
-            result = act._execute_with_verdict(
-                "read_file", {"path": "notes.txt"}, {"allowed": True}, "action-1",
-            )
+            with self.assertRaisesRegex(act.ActionContractError, "required property"):
+                act._execute_with_verdict(
+                    "read_file", {"path": "notes.txt"}, {"allowed": True}, "action-1",
+                )
 
-        self.assertTrue(result["isError"])
-        self.assertIn("Error executing read_file", result["content"][0]["text"])
         log.assert_called_once_with("read_file", {"path": "notes.txt"}, "executed", "action-1")
+
+    def test_shell_timeout_reports_an_unavailable_tool_response(self):
+        with patch(
+            "agent.tools.shell.subprocess.run",
+            side_effect=subprocess.TimeoutExpired("sleep 60", 30),
+        ):
+            with self.assertRaisesRegex(ToolResponseUnavailable, "timed out"):
+                get_function("run_shell")("sleep 60")
 
 
 if __name__ == "__main__":
