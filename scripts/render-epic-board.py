@@ -101,7 +101,9 @@ def build_derivation(epic: pathlib.Path):
     for s in stages:
         key = s.get("key")
         for n in s.get("wbsSlices", []) or []:
-            slice_stage[int(n)] = key
+            raw = str(n)
+            if raw.isdigit():
+                slice_stage[int(raw)] = key
         # 子 Plan 直接从 Epic frontmatter 的 plans.<epicField> 解析——不依赖 gate
         # 的 plans_found（后者在首个受阻 stage 处 break、会截断后续 stage 的子 Plan）。
         epic_field = s.get("epicField", "")
