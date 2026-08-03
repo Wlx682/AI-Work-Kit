@@ -11,8 +11,8 @@ import sys
 import os
 import json
 
-from .orchestrator import Orchestrator
-from .memory import Memory
+from .cognition.memory import Memory
+from .orchestration.orchestrator import Orchestrator
 
 
 def report_result(result):
@@ -47,7 +47,7 @@ def main():
     args = [a for a in args if a != "--team"]
 
     if use_team:
-        from .team_graph_runtime import TeamGraphRuntime
+        from .orchestration.team_graph import TeamGraphRuntime
         agent = TeamGraphRuntime(Memory())
     else:
         agent = Orchestrator(Memory())

@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from agent.agent_definition import AgentDefinition
+from agent.core.definition import AgentDefinition
 from agent.capabilities import planning
 
 

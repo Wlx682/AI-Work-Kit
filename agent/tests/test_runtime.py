@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from agent.langgraph_runtime import LangGraphRuntime
-from agent.orchestrator import Orchestrator
-from agent.trace_store import TraceStore
+from agent.orchestration.langgraph import LangGraphRuntime
+from agent.orchestration.orchestrator import Orchestrator
+from agent.infrastructure.traces import TraceStore
 
 
 class FakeMemory:
@@ -51,10 +51,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
             orchestrator = Orchestrator(memory, self.runtime(memory, store))
 
             with (
-                patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
-                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-                patch("agent.langgraph_runtime.act.advance", return_value={"status": "done", "result": "done"}),
+                patch("agent.orchestration.langgraph.planning.make_plan", return_value=["only step"]),
+                patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+                patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+                patch("agent.orchestration.langgraph.act.advance", return_value={"status": "done", "result": "done"}),
             ):
                 result = orchestrator.run_with_trace("test task")
 
@@ -73,20 +73,20 @@ class LangGraphRuntimeTests(unittest.TestCase):
             self.assertIsInstance(orchestrator.runtime, LangGraphRuntime)
 
             with (
-                patch("agent.langgraph_runtime.planning.make_plan", return_value=["first", "second"]),
-                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-                patch("agent.langgraph_runtime.act.advance", side_effect=[
+                patch("agent.orchestration.langgraph.planning.make_plan", return_value=["first", "second"]),
+                patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+                patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+                patch("agent.orchestration.langgraph.act.advance", side_effect=[
                     {"status": "done", "result": "first result"},
                     {"status": "done", "result": "final result"},
                 ]),
-                patch("agent.langgraph_runtime.reviewing.reflect", return_value={
+                patch("agent.orchestration.langgraph.reviewing.reflect", return_value={
                     "action": "replan",
                     "new_steps": ["second revised"],
                     "has_lesson": True,
                 }),
-                patch("agent.langgraph_runtime.self_improve.distill", return_value={}),
-                patch("agent.langgraph_runtime.self_improve.consolidate", return_value=0),
+                patch("agent.orchestration.langgraph.self_improve.distill", return_value={}),
+                patch("agent.orchestration.langgraph.self_improve.consolidate", return_value=0),
             ):
                 result = orchestrator.run_with_trace("test task")
 
@@ -108,7 +108,7 @@ class LangGraphRuntimeTests(unittest.TestCase):
             store = TraceStore(directory)
             orchestrator = Orchestrator(memory, self.runtime(memory, store))
 
-            with patch("agent.langgraph_runtime.planning.make_plan", side_effect=RuntimeError("LLM unavailable")):
+            with patch("agent.orchestration.langgraph.planning.make_plan", side_effect=RuntimeError("LLM unavailable")):
                 result = orchestrator.run_with_trace("test task")
 
             self.assertFalse(result.succeeded)
@@ -123,10 +123,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
 
         with (
             patch.object(runtime.trace_store, "save", side_effect=OSError("disk full")),
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.advance", return_value={"status": "done", "result": "done"}),
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["only step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.advance", return_value={"status": "done", "result": "done"}),
         ):
             result = orchestrator.run_with_trace("test task")
 
@@ -149,15 +149,15 @@ class LangGraphRuntimeTests(unittest.TestCase):
             }
 
             with (
-                patch("agent.langgraph_runtime.planning.make_plan", return_value=["sensitive step"]),
-                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-                patch("agent.langgraph_runtime.act.start_step", return_value=session) as start_step,
-                patch("agent.langgraph_runtime.act.advance", side_effect=[
+                patch("agent.orchestration.langgraph.planning.make_plan", return_value=["sensitive step"]),
+                patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+                patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+                patch("agent.orchestration.langgraph.act.start_step", return_value=session) as start_step,
+                patch("agent.orchestration.langgraph.act.advance", side_effect=[
                     {"status": "interrupted", "session": session, "interruption": proposal},
                     {"status": "done", "result": "executed"},
                 ]) as advance,
-                patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                patch("agent.orchestration.langgraph.act.resolve_interruption", return_value={
                     "status": "resolved",
                     "session": session,
                     "actions": [{"action_id": "action-1", "status": "called"}],
@@ -206,15 +206,15 @@ class LangGraphRuntimeTests(unittest.TestCase):
             runtime = LangGraphRuntime(memory, trace_store, checkpoint_path=str(checkpoint_path))
 
             with (
-                patch("agent.langgraph_runtime.planning.make_plan", return_value=["sensitive step"]),
-                patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-                patch("agent.langgraph_runtime.act.start_step", return_value=session) as start_step,
-                patch("agent.langgraph_runtime.act.advance", side_effect=[
+                patch("agent.orchestration.langgraph.planning.make_plan", return_value=["sensitive step"]),
+                patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+                patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+                patch("agent.orchestration.langgraph.act.start_step", return_value=session) as start_step,
+                patch("agent.orchestration.langgraph.act.advance", side_effect=[
                     {"status": "interrupted", "session": session, "interruption": proposal},
                     {"status": "done", "result": "executed"},
                 ]) as advance,
-                patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+                patch("agent.orchestration.langgraph.act.resolve_interruption", return_value={
                     "status": "resolved",
                     "session": session,
                     "actions": [{"action_id": "action-1", "status": "called"}],
@@ -264,16 +264,16 @@ class LangGraphRuntimeTests(unittest.TestCase):
         resolved_session = {"messages": [], "pending_calls": [], "tool_rounds": 1}
 
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["read step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.start_step", return_value=session),
-            patch("agent.langgraph_runtime.act.advance", side_effect=[
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["read step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.start_step", return_value=session),
+            patch("agent.orchestration.langgraph.act.advance", side_effect=[
                 {"status": "interrupted", "session": session, "interruption": unknown,
                  "actions": [{"action_id": "action-1", "status": "unknown"}]},
                 {"status": "done", "result": "finished"},
             ]),
-            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+            patch("agent.orchestration.langgraph.act.resolve_interruption", return_value={
                 "status": "resolved",
                 "session": resolved_session,
                 "actions": [{"action_id": "action-1", "status": "succeeded"}],
@@ -306,15 +306,15 @@ class LangGraphRuntimeTests(unittest.TestCase):
         }
 
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["weather step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.start_step", return_value=session),
-            patch("agent.langgraph_runtime.act.advance", side_effect=[
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["weather step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.start_step", return_value=session),
+            patch("agent.orchestration.langgraph.act.advance", side_effect=[
                 {"status": "interrupted", "session": session, "interruption": interruption},
                 {"status": "done", "result": "weather ready"},
             ]),
-            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+            patch("agent.orchestration.langgraph.act.resolve_interruption", return_value={
                 "status": "resolved", "session": session, "actions": [],
             }) as resolve_interruption,
         ):
@@ -352,14 +352,14 @@ class LangGraphRuntimeTests(unittest.TestCase):
         }
 
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["write step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.start_step", return_value=session),
-            patch("agent.langgraph_runtime.act.advance", return_value={
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["write step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.start_step", return_value=session),
+            patch("agent.orchestration.langgraph.act.advance", return_value={
                 "status": "interrupted", "session": session, "interruption": approval,
             }) as advance,
-            patch("agent.langgraph_runtime.act.resolve_interruption", return_value={
+            patch("agent.orchestration.langgraph.act.resolve_interruption", return_value={
                 "status": "interrupted", "session": session, "interruption": unknown,
                 "actions": [{"action_id": "action-1", "status": "unknown"}],
             }),
@@ -381,10 +381,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
         runtime = self.runtime(memory)
 
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["read step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.advance", return_value={
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["read step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.advance", return_value={
                 "status": "contract_error",
                 "error": "tool output contract error for read_file: missing content",
                 "actions": [{"action_id": "action-1", "status": "contract_error"}],
@@ -403,10 +403,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
             runtime = self.runtime(memory, store)
 
             with (
-                patch("agent.langgraph_runtime.planning.make_plan", return_value=["original step"]),
-                patch("agent.langgraph_runtime.world_model.predict", return_value=[]) as predict,
-                patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]) as has_high_risk,
-                patch("agent.langgraph_runtime.act.advance", side_effect=[
+                patch("agent.orchestration.langgraph.planning.make_plan", return_value=["original step"]),
+                patch("agent.orchestration.langgraph.world_model.predict", return_value=[]) as predict,
+                patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]) as has_high_risk,
+                patch("agent.orchestration.langgraph.act.advance", side_effect=[
                     {"status": "done", "result": "original result"},
                     {"status": "done", "result": "replayed result"},
                     {"status": "done", "result": "forked result"},
@@ -450,10 +450,10 @@ class LangGraphRuntimeTests(unittest.TestCase):
         memory = FakeMemory()
         runtime = self.runtime(memory)
         with (
-            patch("agent.langgraph_runtime.planning.make_plan", return_value=["only step"]),
-            patch("agent.langgraph_runtime.world_model.predict", return_value=[]),
-            patch("agent.langgraph_runtime.world_model.has_high_risk", return_value=[]),
-            patch("agent.langgraph_runtime.act.advance", return_value={"status": "done", "result": "done"}),
+            patch("agent.orchestration.langgraph.planning.make_plan", return_value=["only step"]),
+            patch("agent.orchestration.langgraph.world_model.predict", return_value=[]),
+            patch("agent.orchestration.langgraph.world_model.has_high_risk", return_value=[]),
+            patch("agent.orchestration.langgraph.act.advance", return_value={"status": "done", "result": "done"}),
         ):
             original = runtime.run("test task")
             checkpoint = runtime.checkpoint_history(original.thread_id)[0]

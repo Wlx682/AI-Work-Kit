@@ -10,8 +10,8 @@ from uuid import uuid4
 
 from jsonschema import ValidationError
 
-from .. import llm
-from .. import safety
+from ..guardrails import safety
+from ..infrastructure import llm
 from ..tools import (
     ToolResponseUnavailable,
     get_all_schemas,
@@ -21,7 +21,7 @@ from ..tools import (
 )
 
 if TYPE_CHECKING:
-    from ..agent_definition import AgentDefinition
+    from ..core.definition import AgentDefinition
 
 ACT_PROMPT = """\
 你会收到一个具体的执行步骤，请调用工具完成它。

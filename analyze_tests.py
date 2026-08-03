@@ -10,18 +10,18 @@ TEST_DIR = os.path.join(BASE, "tests")
 
 TARGET_MODULES = [
     "agent.capabilities.act",
-    "agent.agent_definition",
-    "agent.llm",
+    "agent.core.definition",
+    "agent.infrastructure.llm",
     "agent.roles",
-    "agent.langgraph_runtime",
-    "agent.orchestrator",
-    "agent.team_graph_runtime",
-    "agent.trace_store",
+    "agent.orchestration.langgraph",
+    "agent.orchestration.orchestrator",
+    "agent.orchestration.team_graph",
+    "agent.infrastructure.traces",
     "agent.tools",
     "agent.capabilities",
-    "agent.runtime",
-    "agent.world_model",
-    "agent.self_improve",
+    "agent.core.models",
+    "agent.cognition.world_model",
+    "agent.cognition.self_improve",
 ]
 
 def short_module(m):

@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 
 from jsonschema import Draft202012Validator, ValidationError
 
-from .. import llm
+from ..infrastructure import llm
 
 if TYPE_CHECKING:
-    from ..agent_definition import AgentDefinition
+    from ..core.definition import AgentDefinition
 
 PLAN_PROMPT = """\
 你的职责是把用户的任务拆解成具体的执行步骤。

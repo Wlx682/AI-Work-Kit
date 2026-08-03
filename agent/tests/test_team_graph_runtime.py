@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from agent.team_graph_runtime import TeamGraphRuntime
-from agent.trace_store import TraceStore
+from agent.orchestration.team_graph import TeamGraphRuntime
+from agent.infrastructure.traces import TraceStore
 
 
 class FakeMemory:
@@ -98,8 +98,8 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                 patch("agent.roles.planner.planning.revise_plan", return_value={
                     "decision": "tweak", "steps": ["revised"],
                 }),
-                patch("agent.team_graph_runtime.self_improve.distill", return_value={}),
-                patch("agent.team_graph_runtime.self_improve.consolidate", return_value=0),
+                patch("agent.orchestration.team_graph.self_improve.distill", return_value={}),
+                patch("agent.orchestration.team_graph.self_improve.consolidate", return_value=0),
             ):
                 result = runtime.run("test task", max_retries=1)
 
@@ -145,8 +145,8 @@ class TeamGraphRuntimeTests(unittest.TestCase):
                     "verdict": "revise", "reason": "incomplete", "suggestion": "fix it",
                 }),
                 patch("agent.roles.planner.planning.revise_plan") as revise_plan,
-                patch("agent.team_graph_runtime.self_improve.distill", return_value={}) as distill,
-                patch("agent.team_graph_runtime.self_improve.consolidate", return_value=0),
+                patch("agent.orchestration.team_graph.self_improve.distill", return_value={}) as distill,
+                patch("agent.orchestration.team_graph.self_improve.consolidate", return_value=0),
             ):
                 result = runtime.run("test task", max_retries=0)
 

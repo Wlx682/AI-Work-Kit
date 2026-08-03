@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from agent import llm
+from agent.infrastructure import llm
 
 
 class ChatJsonTests(unittest.TestCase):
@@ -11,7 +11,7 @@ class ChatJsonTests(unittest.TestCase):
         malformed = '[{"step": "inspect", "risk": "missing comma" "suggestion": "retry"}]'
         repaired = '[{"step": "inspect", "risk": "missing comma", "suggestion": "retry"}]'
 
-        with patch("agent.llm.chat", side_effect=[
+        with patch("agent.infrastructure.llm.chat", side_effect=[
             {"content": malformed},
             {"content": repaired},
         ]) as chat:
@@ -24,7 +24,7 @@ class ChatJsonTests(unittest.TestCase):
         self.assertIn("只修复 JSON 语法", repair_messages[-1]["content"])
 
     def test_reports_failure_after_one_repair_attempt(self):
-        with patch("agent.llm.chat", side_effect=[
+        with patch("agent.infrastructure.llm.chat", side_effect=[
             {"content": "{invalid"},
             {"content": "still invalid"},
         ]):

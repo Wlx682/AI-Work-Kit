@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
-from agent.agent_definition import AgentDefinition
+from agent.core.definition import AgentDefinition
 from agent.capabilities import act
 
 

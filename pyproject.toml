@@ -7,7 +7,8 @@ dependencies = [
     "langgraph==1.2.9",
     "langgraph-checkpoint-sqlite==3.1.0",
     "openai==2.52.0",
+    "python-dotenv>=1.2.2",
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent*"]
+include = ["agent*", "knowledge_graph_learning*"]

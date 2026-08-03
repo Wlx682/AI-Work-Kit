@@ -1,6 +1,6 @@
 """Predictor：预测者 Agent。独立第三方视角预测计划风险。"""
 
-from .. import world_model
+from ..cognition import world_model
 from .base import BaseAgent
 
 

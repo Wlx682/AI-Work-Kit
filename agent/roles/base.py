@@ -1,6 +1,6 @@
 """角色基类。角色只持有身份定义，不承担 Team 的路由职责。"""
 
-from ..agent_definition import AgentDefinition, load_agent_definition
+from ..core.definition import AgentDefinition, load_agent_definition
 
 
 class BaseAgent:

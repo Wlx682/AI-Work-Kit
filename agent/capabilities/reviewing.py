@@ -7,7 +7,7 @@
 以前单智能体反思和 Reviewer 评审分散实现；现在统一到评审能力层。
 """
 
-from .. import llm
+from ..infrastructure import llm
 
 REFLECT_PROMPT = """\
 你会看到已完成步骤的执行结果和剩余步骤。

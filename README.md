@@ -2,6 +2,12 @@
 
 Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环、plan 续做。
 
+## 可运行代码
+
+- [`agent/`](agent/README.md)：通用智能体底座。
+- [`knowledge_graph_learning/`](knowledge_graph_learning/README.md)：R4 知识图谱驱动学习产品（Python 后端 + Flutter 客户端）。
+- `.runtime/`：本地运行数据，已忽略；`tmp/` 只保留实验和静态原型。
+
 ## 读文档（按顺序）
 
 1. **[Kit 核心原则](Contexts/决策/Kit核心原则.md)** — 真理源（放哪 / 不放哪 / 做完怎么办）

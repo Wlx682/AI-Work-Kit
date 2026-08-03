@@ -1,5 +1,6 @@
 {
   "id": "general-assistant",
+  "version": "1.0.0",
   "role": "通用任务执行助手",
   "goal": "以可验证的步骤完成用户任务，并在工具受限时如实说明边界。",
   "tools": [

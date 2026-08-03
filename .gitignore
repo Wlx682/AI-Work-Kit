@@ -10,6 +10,11 @@
 .cursor/figma.env
 .mcp.json
 
+# Local secrets; keep only the safe example in Git
+.env
+.env.*
+!.env.example
+
 # Claude Code / Codex 个人配置与同步产物（skills 由 scripts/sync-claude-skills.sh 生成）
 # .claude/workflows/*.js 为 Claude 专属引擎脚本，纳入版本库；蓝图真源在 .workflows/blueprints/
 CLAUDE.local.md
@@ -46,6 +51,9 @@ agent/**/__pycache__/
 agent/.memory/
 agent/traces/
 agent/.checkpoints/
+
+# 产品与 Agent 的统一本地运行数据
+.runtime/
 
 # Plans/ 纳入版本库（进行中任务可同步；发布前检查敏感信息）
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from agent.agent_definition import AgentDefinition, load_agent_definition
+from agent.core.definition import AgentDefinition, load_agent_definition
 from agent.capabilities.act import _tool_schemas
 
 
@@ -24,6 +24,7 @@ class AgentDefinitionTests(unittest.TestCase):
             prompts.mkdir()
             (definitions / "test-agent.json").write_text(json.dumps({
                 "id": "test-agent",
+                "version": "1.0.0",
                 "role": "tester",
                 "goal": "test",
                 "tools": ["unknown_tool"],
@@ -54,6 +55,24 @@ class AgentDefinitionTests(unittest.TestCase):
             [schema["function"]["name"] for schema in _tool_schemas(definition)],
             ["read_file", "request_user_input"],
         )
+
+    def test_default_definition_exposes_policy_version_in_prompt_context(self):
+        definition = load_agent_definition()
+
+        self.assertEqual(definition.version, "1.0.0")
+        self.assertIn("策略版本：1.0.0", definition.prompt_context())
+
+    def test_rejects_non_semantic_policy_version(self):
+        with self.assertRaisesRegex(ValueError, "MAJOR.MINOR.PATCH"):
+            AgentDefinition(
+                id="invalid-version",
+                role="tester",
+                goal="test",
+                tools=(),
+                acceptance=("finish",),
+                instructions="test",
+                version="latest",
+            )
 
 
 if __name__ == "__main__":
