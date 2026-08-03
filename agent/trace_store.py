@@ -25,11 +25,11 @@ class TraceStore:
         self.directory.mkdir(parents=True, exist_ok=True)
         path = self._path(result.run_id)
         temporary_path = path.with_suffix(".json.tmp")
-        document = {
+        document = _encode_tuples({
             "schema_version": TRACE_SCHEMA_VERSION,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "result": asdict(result),
-        }
+        })
         temporary_path.write_text(
             json.dumps(document, ensure_ascii=False, indent=2, default=str),
             encoding="utf-8",
@@ -38,7 +38,7 @@ class TraceStore:
         return path
 
     def load(self, run_id: str) -> RunResult:
-        document = json.loads(self._path(run_id).read_text(encoding="utf-8"))
+        document = _decode_tuples(json.loads(self._path(run_id).read_text(encoding="utf-8")))
         if document.get("schema_version") != TRACE_SCHEMA_VERSION:
             raise ValueError(f"unsupported trace schema: {document.get('schema_version')}")
         result = document["result"]
@@ -61,3 +61,23 @@ class TraceStore:
         if not run_id or Path(run_id).name != run_id:
             raise ValueError("run_id must be a simple filename")
         return self.directory / f"{run_id}.json"
+
+
+def _encode_tuples(value):
+    if isinstance(value, tuple):
+        return {"__tuple__": [_encode_tuples(item) for item in value]}
+    if isinstance(value, list):
+        return [_encode_tuples(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _encode_tuples(item) for key, item in value.items()}
+    return value
+
+
+def _decode_tuples(value):
+    if isinstance(value, dict) and set(value) == {"__tuple__"}:
+        return tuple(_decode_tuples(item) for item in value["__tuple__"])
+    if isinstance(value, list):
+        return [_decode_tuples(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _decode_tuples(item) for key, item in value.items()}
+    return value
