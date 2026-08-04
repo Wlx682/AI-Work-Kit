@@ -15,7 +15,7 @@ p0_open: 0
 plans:
   requirement: Plans/需求分析/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
   architecture: Plans/技术方案/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
-  test: null
+  test: Plans/自动化测试/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
   development: Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
 relations:
   depends_on:
@@ -128,7 +128,7 @@ flutter build web
 |------|------|--------|
 | 需求分析（事件风暴+实例化） | `Plans/需求分析/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md` | ⬜ |
 | 技术方案 + ADR | `Plans/技术方案/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md` | ⬜ |
-| 验收测试先行 | — | ⬜ |
+| 验收测试先行 | `Plans/自动化测试/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md` | ✅ |
 | 拆分任务 | — | ⬜ |
 | 功能开发 | `Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md` | ⬜ |
 | Bug 排查 | — | — |
@@ -158,6 +158,8 @@ flutter build web
 | 5 | 原子任务拆分（主 plan + 子任务） | split | task-splitter | 子任务边界清晰、可独立验收 |
 | 6 | Domain / UseCase 实现 | development | feature-dev-assistant | 单测过 |
 | 7 | Data / API 实现与联调 | development | feature-dev-assistant | 真实接口替换假数据 |
+| 7d | 本地模型 Runtime 与 GGUF 接入 | development | feature-dev-assistant | 模型生命周期、真实本地推理 adapter、失败恢复与 fake backend 测试 |
+| 7e | Agent 增强编排与工具契约 | development | feature-dev-assistant | 结构化提取、evaluate_case 确定性工具、缺字段追问、fallback 与 trace；独立法条/文书工具待接 |
 | 8 | UI 骨架 + 静态设计走查 | development | figma-ui | 静态布局走查通过 |
 | 9 | 交互 + 全 Variant（空/错误态） | development | figma-ui | 交互走查 + 边界示例可覆盖 |
 | 10 | 单元测试补充与回归（内层 TDD） | development | test-generator | CI 单测全绿 |
@@ -167,15 +169,19 @@ flutter build web
 [ ] 1.  事件风暴工作坊（领域事件墙 / 热点 / 角色-系统）
 [ ] 2.  实例化需求（≥10 组 Given-When-Then + 线框草图）
 [ ] 3.  技术方案 + ADR + 领域模型草图
-[ ] 4.  验收测试先行（外层 TDD，先红）
-[ ] 5.  原子任务拆分（主 plan + 子任务）
-[ ] 6.  Domain / UseCase 实现（单测过）
-[ ] 7.  Data / API 实现与联调
+[x] 4.  验收测试先行（外层 TDD，先红）
+[x] 5.  原子任务拆分（主 plan + 子任务）
+[x] 6.  Domain / UseCase 实现（单测过）
+[x] 7.  Data / API 实现与联调
 [ ] 8.  UI 骨架 + 静态设计走查
 [ ] 9.  交互 + 全 Variant（空态 / 错误态）
-[ ] 10. 单元测试补充与回归（内层 TDD）
+[x] 10. 单元测试补充与回归（内层 TDD）
 [ ] 11. 真机联调 + 集成设计走查
 ```
+
+### 本轮执行顺序调整
+
+WBS 编号保持兼容，但实施顺序调整为：UI Shell/入口先行 → 7d 本地模型 Runtime → 7e Agent 工具编排 → Domain/Data/文书工具接入 → 全状态与回归。UI 先行指可运行页面和状态容器，不等同于 Figma 像素级对稿；模型/Agent 先用 fake backend 固定契约，再接真实 GGUF。
 
 ---
 
@@ -200,6 +206,7 @@ flutter build web
 | 日期 | 变更类型 | 影响阶段 | 重开切片 | 确认人 | 说明 |
 |------|----------|----------|----------|--------|------|
 | 2026-08-04 | 创建 Epic | — | — | 用户 | 从 client-dev 母版实例化，补走开发工作流 |
+| 2026-08-04 | 范围调整 | development | 8,9,11 | 用户 | 暂缓 Android、Figma/UI 视觉对稿；本轮以稳定 Key 驱动行为测试、业务回归和 iOS 集成为完成口径 |
 
 ---
 
@@ -225,4 +232,82 @@ skill_run:
       reason: 用于实例化 client-dev Epic 的 frontmatter、WBS 与续做格式。
   contexts_missing: []
   contexts_stale: []
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  plan: Plans/Epic/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+  date: 2026-08-04
+  contexts_used:
+    - path: Plans/自动化测试/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 本次续做完成了 test-first 验收测试计划，并以该文件事实推进工作流到 split。
+    - path: Plans/需求分析/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于恢复 AC1-AC12、边界和异常流程，确认测试追溯范围。
+    - path: Plans/技术方案/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于恢复上次停点和测试类型、组件映射及移动端验收边界。
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: 用于按协议追加本次续做的合法 skill_run 记录。
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  plan: Plans/Epic/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+  date: 2026-08-04
+  contexts_used:
+    - path: Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于恢复开发切片状态并继续 UI 自动化与真机验收收口。
+    - path: Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App-子任务05-移动端界面与全状态.md
+      utility: high
+      reason: 用于将关键 UI 行为定位从文案选择器升级为集中式稳定 Key。
+    - path: Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App-子任务07-真机集成验收.md
+      utility: high
+      reason: 用于复跑 iOS 模拟器的输入、评估、持久化、报告、历史和清理闭环。
+    - path: Plans/自动化测试/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于记录 ID 驱动 E2E 与截图视觉证据之间的职责边界。
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: 用于按协议追加本次续做的合法 skill_run 记录。
+  contexts_missing:
+    - 正式 Figma 设计稿与 node-id。
+    - Android SDK、AVD 或可用 Android 设备。
+  contexts_stale: []
+  outcome_status: partial
+  friction: "iOS ID 驱动 E2E 已通过；Figma 视觉对稿与 Android 真机验收仍受外部环境阻塞。"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  plan: Plans/Epic/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+  date: 2026-08-04
+  contexts_used:
+    - path: Plans/功能开发/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于按用户确认的范围继续业务自动化收口，并区分暂缓项与实际失败。
+    - path: Plans/自动化测试/2026-08-04-Flutter版劳动仲裁生成式智能助手App.md
+      utility: high
+      reason: 用于确认 VM、Chrome、Web build 和 iOS integration_test 的最新回归事实。
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: 用于按协议追加本次续做反馈。
+  contexts_missing:
+    - 正式 Figma 设计稿与 node-id（本轮暂缓）。
+    - Android SDK、AVD 或可用 Android 设备（本轮暂缓）。
+  contexts_stale: []
+  outcome_status: pass
+  friction: "本轮范围内无业务测试阻塞；平台与视觉项按用户确认延期。"
+  revisit_needed: true
 ```

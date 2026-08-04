@@ -821,12 +821,12 @@ flowchart TB
 | 1 | 技术方案 + ADR + 数据模型定稿 | 已完成 | 本 Plan status=已采纳 |
 | 2 | 验收测试先行 | 0.5-1 天 | AC1-AC12 映射为测试计划，先红/可运行 |
 | 3 | 任务拆分 | 0.5 天 | WBS 6-11 拆为可独立验收子任务 |
-| 4 | Domain / UseCase 加固 | 1-2 天 | 计算、Agent、法条检索单测过 |
-| 5 | Data / Persistence 接入 | 1-2 天 | SQLite/Hive/secure storage 合同测试过 |
-| 6 | 文书与文件能力加固 | 1 天 | 两类 docx 真机生成并可分享 |
-| 7 | 移动端 UI 与边界态 | 1-2 天 | 缺字段、模型不可用、模板失败、分享取消覆盖 |
-| 8 | Spike：flutter_llama + sqlite_vector | 2-3 天 | 输出真机性能结论，不阻塞 P0 |
-| 9 | 真机回归和种子用户试用 | 1-2 天 | iOS/Android golden path 通过 |
+| 4 | UI Shell 与交互容器先行 | 1 天 | 四页入口、导航、fake Provider、AppTestIds 和基础空/加载态可运行 |
+| 5 | 本地模型 Runtime 与 GGUF 接入（WBS 7d） | 2-3 天 | Runtime 生命周期、fake backend、iOS 本地推理与失败恢复可验证；不改变 P0 降级链路 |
+| 6 | Agent 增强编排与工具契约（WBS 7e） | 2-3 天 | Prompt/JSON Schema、缺字段追问、工具调用、fallback 和 trace 测试通过 |
+| 7 | Domain / Data / 文书工具接入 | 2-3 天 | 计算器、法条、持久化、两类 docx 作为 Agent 工具可调用且各自保持单一权威 |
+| 8 | 全状态联调与回归 | 1-2 天 | 缺字段、模型不可用、模板失败、分享取消覆盖 |
+| 9 | 真机回归和种子用户试用 | 1-2 天 | iOS golden path 通过；Android 按范围恢复后补验 |
 
 ---
 
