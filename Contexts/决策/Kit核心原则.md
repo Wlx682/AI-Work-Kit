@@ -1,8 +1,9 @@
 ---
 tags: [决策, 原则, 工作流]
 date: 2026-06-20
-updated: 2026-07-06
+updated: 2026-08-05
 key_points:
+  - AI-Work-Kit 优先原则：所有工作流先由 Kit 路由，项目仓库流程只能作为被选中的执行参考
   - 少而精原则：工作流文档只保留能指导执行和判断的内容
   - 真理源原则：Plans 承载执行事实，Contexts 承载长期决策，Templates 承载复用骨架
   - 生命周期原则：Plans 做完即归档或删除，不保留任务残留
@@ -33,6 +34,15 @@ relations:
 
 ---
 # Kit 核心原则
+
+## AI-Work-Kit 优先原则
+
+AI-Work-Kit 是跨仓库任务的统一工作流真源。任务进入项目后，先由 AI-Work-Kit 选择、启动并解释工作流；项目仓库中的 `CLAUDE.md`、`AGENTS.md`、`.workflows`、Skill 和脚本，只能作为已选工作流的执行参考，不得自行替换或抢占入口。
+
+- AI-Work-Kit 与项目流程冲突时，以 AI-Work-Kit 的工作流定义为准。
+- AI-Work-Kit 没有对应 workflow 时，必须明确报告缺失，不得静默回退到项目自定义流程。
+- 项目仓库文档可以提供业务和代码上下文，但不能单独触发 workflow、看板、Epic 或 Plan。
+- 系统/开发者指令和用户当前明确指令仍高于本原则。
 
 ## 少而精原则
 

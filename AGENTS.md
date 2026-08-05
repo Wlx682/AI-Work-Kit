@@ -7,6 +7,8 @@
 **只认** [[Contexts/决策/Kit核心原则]]：`Plans/` 任务临时 · `Contexts/` 通用固定 · 做完删 plan。  
 YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-Kit工作流总览]]。
 
+**工作流优先级**：AI-Work-Kit 是跨仓库 workflow 的唯一入口与真源；项目仓库的工作流文档、Skill、脚本和门禁只在 Kit 选定 workflow 后作为执行参考，不得自行抢占入口。
+
 ## 多仓库
 
 - Vault：本仓库。代码：Codex 当前工作目录。仅 Vault 时向用户要代码路径。
