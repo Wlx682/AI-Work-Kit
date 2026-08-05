@@ -956,7 +956,7 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 BLUEPRINT_DIR = ROOT / ".workflows" / "blueprints"
-ORPHAN_FEEDBACK = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+ORPHAN_FEEDBACK = ROOT / "进化" / "孤立反馈记录.md"
 
 
 def read_blueprints() -> list[dict[str, Any]]:

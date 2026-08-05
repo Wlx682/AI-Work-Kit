@@ -72,7 +72,7 @@ if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/validate-skill-run
 fi
 
 # 8b. 文档脚本引用一致性（防止文档说 .sh、实际是 .py 这类漂移）
-#     协议：见 Contexts/决策/孤立反馈记录.md → scripts/doc-script-refs-check.py
+#     协议：见 进化/孤立反馈记录.md → scripts/doc-script-refs-check.py
 if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/scripts/doc-script-refs-check.py" ]]; then
   if ! python3 "$ROOT/scripts/doc-script-refs-check.py" --quiet "$PLAN" >&2; then
     fail "文档脚本引用校验未通过（见上方日志）"

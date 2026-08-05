@@ -165,7 +165,7 @@ class WorkflowRefactorTests(unittest.TestCase):
     def test_feedback_aggregate_reads_open_candidates_from_pending_section(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
-            orphan = tmp / "Contexts/决策/孤立反馈记录.md"
+            orphan = tmp / "进化/孤立反馈记录.md"
             write_file(
                 orphan,
                 """
@@ -204,7 +204,7 @@ class WorkflowRefactorTests(unittest.TestCase):
     def test_kanban_reads_evolution_candidates_from_pending_section(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
-            orphan = tmp / "Contexts/决策/孤立反馈记录.md"
+            orphan = tmp / "进化/孤立反馈记录.md"
             write_file(
                 orphan,
                 """
@@ -250,7 +250,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.ROOT = tmp
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             initial = mod.board_revision()
             content = epic.read_bytes()
@@ -306,7 +306,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             data = mod.scan_epic(tmp / "Plans/Epic/fixture.md")
             th = data["test_health"]
@@ -331,7 +331,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             data = mod.scan_epic(tmp / "Plans/Epic/trace.md")
             th = data["test_health"]
@@ -353,7 +353,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             data = mod.tests_envelope()
 
@@ -395,7 +395,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             suite = mod.run_test_from_board("suite", "blueprint-schema")
             task = mod.run_test_from_board("task", "Plans/Epic/fixture.md")
@@ -665,7 +665,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             data = mod.board_envelope()
             write_file(
@@ -698,7 +698,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             mod.RUN_DIR = tmp / ".workflows/runs"
             mod.EVENT_DIR = tmp / ".workflows/events"
             mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
-            mod.ORPHAN_FEEDBACK = tmp / "Contexts/决策/孤立反馈记录.md"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
 
             write_file(
                 tmp / "Plans/Epic/learning.md",

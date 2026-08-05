@@ -29,7 +29,7 @@
 | 门禁问题 | workflow-gate 放行/阻塞不符合事实 | `.workflows/blueprints/`、`scripts/workflow-gate.sh`、`scripts/gate_parse.py` |
 | 模板问题 | plan 字段缺失、AC/WBS/skill_run 无法校验 | `Templates/`、阶段 Skill |
 | 工具问题 | 脚本名漂移、命令输出太噪、缺状态摘要 | `scripts/`、`Contexts/决策/` |
-| 反馈问题 | skill_run 缺失、不合规、孤立反馈长期未归位 | `Contexts/决策/孤立反馈记录.md`、`feedback-aggregate.py`、`vault-evolve.py` |
+| 反馈问题 | skill_run 缺失、不合规、孤立反馈长期未归位 | `进化/孤立反馈记录.md`、`feedback-aggregate.py`、`vault-evolve.py` |
 
 ## 工作流自身测试优先级
 
@@ -45,7 +45,7 @@
 
 优先读用户指定材料；若用户只说「进化一下工作流」，按以下顺序找证据：
 
-1. `Contexts/决策/孤立反馈记录.md` 的 `## 待整理` 未归位候选。
+1. `进化/孤立反馈记录.md` 的 `## 待整理` 未归位候选。
 2. 最近的 `Contexts/决策/反馈聚合-YYYY-MM.md`。
 3. `python3 scripts/feedback-aggregate.py --dry-run --month YYYY-MM`。
 4. `scripts/workflow-status.py` 或 `scripts/workflow-gate.sh --json` 输出。
@@ -88,7 +88,7 @@
 6. **收口**
    - 告知已改文件与验证结果。
    - 若本次服务某个进化 plan，把 `skill_run` 追加到该 plan 末尾。
-   - 若无 plan，不写完整过程小票：未落地的进化项写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`；已落地的只在 `## 已归位` 补一行摘要。
+   - 若无 plan，不写完整过程小票：未落地的进化项写入 `进化/孤立反馈记录.md` 的 `## 待整理`；已落地的只在 `## 已归位` 补一行摘要。
    - 孤立反馈只保存“以后怎么用/还要做什么”，不保存“这次我是怎么操作的”。
 
 ## 输出模板
@@ -128,7 +128,7 @@
 按 `Contexts/决策/Skill反馈协议.md` 收口：
 
 - 有进化 plan：在 plan 末尾追加 `## 反馈（skill_run）`。
-- 无 plan 且产生未落地候选：写入 `Contexts/决策/孤立反馈记录.md` 的 `## 待整理`，标题用 `### 进化候选：...` 或 `### 待整理：...`。
+- 无 plan 且产生未落地候选：写入 `进化/孤立反馈记录.md` 的 `## 待整理`，标题用 `### 进化候选：...` 或 `### 待整理：...`。
 - 无 plan 且本次已落地：只在 `## 已归位` 补一行摘要，指向落点与验证方式。
 
 禁止把无 plan 执行过程以完整 `skill_run` YAML 小票写入孤立反馈；过程细节会累计太快，且会污染候选区。

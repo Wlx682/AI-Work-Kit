@@ -160,7 +160,7 @@ def count_skill_run_refs() -> Counter:
                     if um.group(1).strip() == "high":
                         counter[current_path] += 1
                     current_path = None
-    orphan = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+    orphan = ROOT / "进化" / "孤立反馈记录.md"
     if orphan.exists():
         text = orphan.read_text(encoding="utf-8")
         current_path = None

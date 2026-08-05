@@ -51,4 +51,4 @@
 
 ## 反馈回路
 
-任务结束按 [[Contexts/决策/Skill反馈协议]] 输出 `skill_run` YAML 块；无 plan → 追加到 `Contexts/决策/孤立反馈记录.md`。运维类无实际内容产出时 `utility` 可填 `not-needed`。
+任务结束按 [[Contexts/决策/Skill反馈协议]] 输出 `skill_run` YAML 块；无 plan → 追加到 `进化/孤立反馈记录.md`。运维类无实际内容产出时 `utility` 可填 `not-needed`。

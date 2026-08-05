@@ -59,7 +59,7 @@
 # 反馈回路（硬规则）
 任务结束**必须**输出 `skill_run` YAML 块，否则视为未完成：
 - 有 plan → 追加到该 plan 文件**末尾**
-- 无 plan → 追加到 `Contexts/决策/孤立反馈记录.md` **顶部**
+- 无 plan → 追加到 `进化/孤立反馈记录.md` **顶部**
 - `utility` 二选一：`high`（必给一句话理由）/ `not-needed`
 - 协议：`Contexts/决策/Skill反馈协议.md` § 三（schema）+ § 四（字段约束）
 - 校验：`scripts/plan-gate-check.sh` 自动校验存在性与合法性

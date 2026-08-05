@@ -5,7 +5,7 @@ feedback-aggregate.py — 月度聚合 skill_run 反馈块
 扫描：
   - Plans/**/*.meta.yaml（人类卷/AI卷分离后的 AI 卷，优先）
   - Plans/**/*.md 末尾的 skill_run 块（取 last per file；已有同名 .meta.yaml 则跳过去重）
-  - Contexts/决策/孤立反馈记录.md 所有 skill_run yaml 块
+  - 进化/孤立反馈记录.md 所有 skill_run yaml 块
 
 输出：Contexts/决策/反馈聚合-YYYY-MM.md（或 --dry-run 输出到 stdout）
 
@@ -153,7 +153,7 @@ def scan_all_skill_runs() -> list[dict]:
                     continue  # 已有对应 .meta.yaml，跳过报告内块避免重复
                 sr["_source_file"] = str(p.relative_to(ROOT))
                 runs.append(sr)
-    orphan = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+    orphan = ROOT / "进化" / "孤立反馈记录.md"
     if orphan.exists():
         text = orphan.read_text(encoding="utf-8")
         for body in find_all_skill_run_blocks(text):
@@ -169,7 +169,7 @@ def scan_open_evolution_candidates() -> list[str]:
     """扫孤立反馈记录『待整理』区里标题含『进化候选』的条目标题。
     这些候选写在正文散文里、不进任何可聚合字段，故本函数单独捞出，
     避免『统计表全空』被误读为『无待办』。『已归位』区不计。"""
-    orphan = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
+    orphan = ROOT / "进化" / "孤立反馈记录.md"
     if not orphan.exists():
         return []
     titles: list[str] = []

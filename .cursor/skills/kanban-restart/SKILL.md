@@ -53,4 +53,4 @@ description: 重启 Epic Web 看板服务（kanban-server）。用户说「重�
 
 ## 反馈回路
 
-任务结束按 `Contexts/决策/Skill反馈协议.md` 输出 `skill_run` YAML 块（无 plan → 追加到 `Contexts/决策/孤立反馈记录.md` 顶部）。
+任务结束按 `Contexts/决策/Skill反馈协议.md` 输出 `skill_run` YAML 块（无 plan → 追加到 `进化/孤立反馈记录.md` 顶部）。
