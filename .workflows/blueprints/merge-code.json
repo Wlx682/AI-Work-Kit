@@ -7,6 +7,11 @@
   "planRoot": "Plans/代码重构",
   "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-merge-code-workflow.py",
+    "priority": "P0",
+    "scope": "merge-code 真实 Git 合并场景、业务冲突决策和决策落实追踪"
+  },
   "triggerHints": [
     "合代码",
     "帮我合代码",

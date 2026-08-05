@@ -31,6 +31,16 @@
 | 工具问题 | 脚本名漂移、命令输出太噪、缺状态摘要 | `scripts/`、`Contexts/决策/` |
 | 反馈问题 | skill_run 缺失、不合规、孤立反馈长期未归位 | `Contexts/决策/孤立反馈记录.md`、`feedback-aggregate.py`、`vault-evolve.py` |
 
+## 工作流自身测试优先级
+
+创建或维护任意工作流时，必须先处理该工作流自己的 P0 行为回归，不能只跑 schema、通用 smoke 或全量 `test-workflow-refactor.py`：
+
+1. 先识别受影响 workflow，并确认对应蓝图声明 `dedicatedRegression`。
+2. 若缺少专属回归，先补 `dedicatedRegression.command` 与专项脚本/用例；命令必须显式包含 workflow 名，且不得指向 `workflow-smoke-test.py`、`test-workflow-refactor.py` 或 `validate-workflow-blueprint.py`。
+3. 验证顺序固定为：`python3 scripts/workflow-dedicated-regression-gate.py <workflow>` → 蓝图 schema → 路由/门禁 → 通用 workflow smoke/全量回归 → Skill 多端一致性。
+4. 专属回归缺失或失败时立即停止同步、发布或归位；通用回归通过不得替代专项失败。
+5. 新增 workflow 时必须在蓝图、专项回归脚本和看板测试目录里同时登记，避免只有文档约定没有机器校验。
+
 ## 输入材料
 
 优先读用户指定材料；若用户只说「进化一下工作流」，按以下顺序找证据：
@@ -64,12 +74,14 @@
    - 改长期 `Contexts/` 前必须用户确认；用户明确说「存档到 Contexts」除外。
 
 5. **验证**
-   根据改动类型运行最小校验集：
+   根据改动类型运行最小校验集；涉及 workflow 蓝图、路由、门禁、模板或脚本时，必须先跑受影响 workflow 的专属回归：
    ```bash
+   python3 scripts/workflow-dedicated-regression-gate.py <workflow>
    bash scripts/sync-agent-skills.sh --check
    python3 scripts/validate-workflow-blueprint.py .workflows/blueprints/<name>.json
    python3 scripts/workflow-router-check.py "<utterance>"
    bash scripts/workflow-gate.sh --workflow <name> --json
+   python3 scripts/workflow-smoke-test.py <workflow>
    python3 scripts/test-workflow-refactor.py
    ```
 

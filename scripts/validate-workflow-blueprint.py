@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -95,6 +96,21 @@ def validate_blueprint(path: Path) -> list[str]:
         template = stage.get("template")
         if template and not (ROOT / template).exists():
             warnings.append(f"{path}: stage {stage_key}.template 不存在: {template}")
+
+    dedicated = bp.get("dedicatedRegression")
+    require(isinstance(dedicated, dict), f"{path}: 缺少 dedicatedRegression 专属回归声明")
+    command = dedicated.get("command") if isinstance(dedicated, dict) else None
+    require(isinstance(command, str) and command.strip(), f"{path}: dedicatedRegression.command 必须是非空字符串")
+    tokens = shlex.split(command)
+    require(len(tokens) >= 2, f"{path}: dedicatedRegression.command 必须是可执行脚本命令")
+    script = tokens[1] if tokens[0] in {"python3", "python", "bash", "sh"} and len(tokens) > 1 else tokens[0]
+    require(script.startswith("scripts/"), f"{path}: dedicatedRegression.command 必须指向 scripts/ 下的专属脚本")
+    require((ROOT / script).exists(), f"{path}: dedicatedRegression.command 脚本不存在: {script}")
+    forbidden_scripts = {"scripts/test-workflow-refactor.py", "scripts/workflow-smoke-test.py", "scripts/validate-workflow-blueprint.py"}
+    require(script not in forbidden_scripts, f"{path}: dedicatedRegression.command 不能用通用回归替代专属回归: {script}")
+    require(name in command, f"{path}: dedicatedRegression.command 必须显式包含当前 workflow 名称: {name}")
+    require(isinstance(dedicated.get("priority"), str) and dedicated["priority"] == "P0", f"{path}: dedicatedRegression.priority 必须是 P0")
+    require(isinstance(dedicated.get("scope"), str) and dedicated["scope"].strip(), f"{path}: dedicatedRegression.scope 必须说明覆盖的工作流行为")
 
     valid_next = set(stage_keys) | {"done"}
     stage_positions = {key: index for index, key in enumerate(stage_keys)}

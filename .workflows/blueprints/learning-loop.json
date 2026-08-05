@@ -17,6 +17,11 @@
   },
   "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-workflow-dedicated-regression.py learning-loop",
+    "priority": "P0",
+    "scope": "learning-loop 学习 Epic 强制启动、hyphenated stage key、WBS 4a/4b 与记录沉淀契约"
+  },
   "triggerHints": [
     "我要学习",
     "我想学习",

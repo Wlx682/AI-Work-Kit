@@ -16,6 +16,11 @@
   },
   "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-client-dev-workflow.py",
+    "priority": "P0",
+    "scope": "client-dev 敏捷故事流、Story TDD 证据、集成报告和门禁派生行为"
+  },
   "triggerHints": [
     "客户端", "功能开发", "功能", "做个功能", "做一个功能", "开发功能",
     "开发一个客户端功能", "客户端项目", "做个客户端项目", "帮我开发", "新需求",

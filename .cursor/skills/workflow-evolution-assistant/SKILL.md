@@ -47,6 +47,12 @@ Vault：AI-Work-Kit 根目录
    - 反馈：`python3 scripts/validate-skill-run.py --require <plan-or-feedback-file>`
    - 全量工作流回归：`python3 scripts/test-workflow-refactor.py`
 
+8. **工作流自身测试优先级**
+   - 触及 workflow 蓝图、路由、门禁、模板、看板或工作流脚本时，先确认蓝图有 `dedicatedRegression`。
+   - 若缺专项回归，先补专项脚本/用例和蓝图声明；命令必须显式包含 workflow 名。
+   - 先跑 `python3 scripts/workflow-dedicated-regression-gate.py <workflow>`，再跑 schema、路由/门禁、通用 smoke、全量回归和 Skill 多端检查。
+   - `workflow-smoke-test.py`、`test-workflow-refactor.py`、`validate-workflow-blueprint.py` 不得替代专项回归；专项缺失或失败时停止同步、发布或归位。
+
 ## 产出格式
 
 建议模式：

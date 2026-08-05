@@ -419,6 +419,23 @@ class WorkflowRefactorTests(unittest.TestCase):
         for scenario in ["权限位", "文本冲突", "删除/修改", "重命名", "二进制", "文件/目录", "脏工作树", "无文本业务冲突"]:
             self.assertIn(scenario, suite["scope"])
 
+    def test_kanban_catalog_exposes_dedicated_workflow_regressions_as_p0(self) -> None:
+        spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+        self.assertIsNotNone(spec)
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(mod)
+
+        suites = {suite["id"]: suite for suite in mod.TEST_SUITE_CATALOG}
+        self.assertEqual(suites["client-dev-p0-scenarios"]["priority"], "P0")
+        self.assertEqual(suites["client-dev-p0-scenarios"]["argv"], ["python3", "scripts/test-client-dev-workflow.py"])
+        dedicated = suites["workflow-dedicated-regression"]
+        self.assertEqual(dedicated["priority"], "P0")
+        self.assertEqual(dedicated["argv"][:2], ["python3", "scripts/workflow-dedicated-regression-gate.py"])
+        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+            self.assertIn(workflow, dedicated["argv"])
+            self.assertIn(workflow, dedicated["scope"])
+
     def test_workflow_blueprints_validate(self) -> None:
         proc = subprocess.run(
             ["python3", "scripts/validate-workflow-blueprint.py"],
@@ -431,6 +448,99 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/client-dev.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/merge-code.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/computer-mgmt.json", proc.stdout)
+
+    def test_workflow_blueprints_require_dedicated_regression_before_generic_smoke(self) -> None:
+        forbidden = {
+            "scripts/test-workflow-refactor.py",
+            "scripts/workflow-smoke-test.py",
+            "scripts/validate-workflow-blueprint.py",
+        }
+        for path in sorted((ROOT / ".workflows/blueprints").glob("*.json")):
+            bp = json.loads(path.read_text(encoding="utf-8"))
+            if bp.get("kind") == "engine-index":
+                continue
+            regression = bp.get("dedicatedRegression")
+            self.assertIsInstance(regression, dict, f"{path.name} 缺 dedicatedRegression")
+            command = regression["command"]
+            self.assertEqual(regression["priority"], "P0")
+            self.assertIn(bp["name"], command)
+            for generic in forbidden:
+                self.assertNotIn(generic, command, f"{path.name} 不得用通用回归冒充专项")
+            self.assertTrue(regression["scope"].strip())
+
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            bad = json.loads((ROOT / ".workflows/blueprints/ui-change.json").read_text(encoding="utf-8"))
+            bad.pop("dedicatedRegression")
+            missing = tmp / "ui-change.json"
+            missing.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+            missing_proc = subprocess.run(
+                ["python3", "scripts/validate-workflow-blueprint.py", str(missing)],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(missing_proc.returncode, 0)
+            self.assertIn("缺少 dedicatedRegression", missing_proc.stderr)
+
+            bad["dedicatedRegression"] = {
+                "command": "python3 scripts/workflow-smoke-test.py ui-change",
+                "priority": "P0",
+                "scope": "通用 smoke 冒充专项",
+            }
+            generic = tmp / "ui-change.json"
+            generic.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+            generic_proc = subprocess.run(
+                ["python3", "scripts/validate-workflow-blueprint.py", str(generic)],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(generic_proc.returncode, 0)
+            self.assertIn("不能用通用回归替代专属回归", generic_proc.stderr)
+
+    def test_workflow_dedicated_regression_script_covers_lightweight_and_learning_workflows(self) -> None:
+        proc = subprocess.run(
+            [
+                "python3",
+                "scripts/test-workflow-dedicated-regression.py",
+                "bugfix",
+                "ui-change",
+                "task-split-only",
+                "computer-mgmt",
+                "learning-loop",
+            ],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+            self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
+
+    def test_workflow_dedicated_regression_gate_runs_declared_blueprint_commands(self) -> None:
+        proc = subprocess.run(
+            [
+                "python3",
+                "scripts/workflow-dedicated-regression-gate.py",
+                "bugfix",
+                "ui-change",
+                "task-split-only",
+                "computer-mgmt",
+                "learning-loop",
+            ],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+            self.assertIn(f"OK:workflow-dedicated-regression-gate:{workflow}", proc.stdout)
+            self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
 
     def test_merge_code_blueprint_requires_business_intent_and_decision_traceability(self) -> None:
         bp = json.loads((ROOT / ".workflows/blueprints/merge-code.json").read_text(encoding="utf-8"))
