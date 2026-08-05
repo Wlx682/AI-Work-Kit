@@ -1,0 +1,70 @@
+{
+  "name": "story-split-only",
+  "label": "只做 Story 拆分",
+  "version": "1.0.0",
+  "description": "无 Epic 轻量开发流程：用于已有需求、Backlog 或技术方案的纵向用户故事拆分，只产出故事点、Scope、.stories.json 与 Story 子 Plan，不进入代码实现。开发流程不再使用 WBS/原子任务语义。",
+  "usesEpic": false,
+  "planRoot": "Plans/功能开发",
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "enablement": {
+    "requires": ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"],
+    "preflight": "python3 scripts/workflow-install.py check --workflow story-split-only"
+  },
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-workflow-dedicated-regression.py story-split-only",
+    "priority": "P0",
+    "scope": "story-split-only 只拆分不实现、Story Scope 文件事实、task-splitter 自检契约"
+  },
+  "triggerHints": [
+    "只拆 Story",
+    "只拆Story",
+    "Story 拆分",
+    "Story拆分",
+    "用户故事拆分",
+    "方案拆成用户故事",
+    "拆成几个用户故事",
+    "几个用户故事",
+    "拆成用户故事",
+    "拆成开发故事",
+    "故事点",
+    "确认 Scope",
+    "确认Scope",
+    "Story Scope",
+    "story-split-only",
+    "story splitter"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "story-split",
+      "label": "纵向用户故事拆分 + 故事点 + Scope",
+      "planFolder": "Plans/功能开发",
+      "planPrefix": "Story拆分",
+      "skills": ["task-splitter"],
+      "template": "Templates/用户故事拆分模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "storyScopeReady": true,
+        "skillRun": true
+      },
+      "next": "story-check"
+    },
+    {
+      "key": "story-check",
+      "label": "Story Scope 自检",
+      "planFolder": "Plans/功能开发",
+      "planPrefix": "Story拆分复核",
+      "skills": ["task-splitter"],
+      "template": "Templates/用户故事拆分模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

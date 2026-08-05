@@ -19,6 +19,7 @@ STATE_LABELS = {
     "prioritization": "需求排序",
     "architecture": "技术方案",
     "story-split": "纵向 Story 拆分/故事点",
+    "story-check": "Story Scope 自检",
     "story-development": "逐 Story TDD 开发",
     "integration-test": "全量集成测试",
     "test-first": "验收测试先行",

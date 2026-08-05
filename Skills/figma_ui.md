@@ -11,7 +11,7 @@
 以下语义命中时**强制本 Skill**，`feature-dev-assistant` **不得**替代：
 
 - 「界面」「对稿」「还原」「Figma」「1:1」「自检表」
-- Epic WBS 或子 plan **Skill 列**标明 `figma-ui` 的切片
+- Story 子 Plan、UI 子任务或子 plan **Skill 列**标明 `figma-ui`
 
 误路由时主动纠正：「这是 UI 还原任务，应走 figma-ui（MCP 度量 + 自检表），不能用 feature-dev 手写布局。」
 

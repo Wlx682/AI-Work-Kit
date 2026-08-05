@@ -251,6 +251,9 @@ class MergeCodeWorkflowScenarioTests(unittest.TestCase):
             blueprint["stages"][2]["exitCriteria"]["mergeDecisionTraceability"],
             "intent-analysis",
         )
+        self.assertEqual(blueprint["enablement"]["preflight"], "python3 scripts/workflow-install.py check --workflow merge-code")
+        for capability in ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"]:
+            self.assertIn(capability, blueprint["enablement"]["requires"])
         smoke = run(["python3", "scripts/workflow-smoke-test.py", "merge-code"], cwd=ROOT)
         self.assertIn("OK:workflow-smoke-test:merge-code", smoke.stdout)
 

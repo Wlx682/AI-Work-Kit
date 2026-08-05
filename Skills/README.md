@@ -89,7 +89,7 @@
 | `.claude/workflows/workflow-engine.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
 | `scripts/workflow-status.py` | 日常看状态：当前 / 卡点 / 下一步 / 继续 |
 | `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
-| `scripts/workflow-plan-init.py` | 为 `merge-code` / `ui-change` / `bugfix` / `task-split-only` 等无 Epic 轻流程创建阶段 plan |
+| `scripts/workflow-plan-init.py` | 为 `merge-code` / `ui-change` / `bugfix` / `story-split-only` 等无 Epic 轻流程创建阶段 plan |
 | `scripts/workflow-smoke-test.py` | 一条命令测试轻流程能路由、阻塞、补齐后 done |
 
 全文见各 `Skills/*.md`。

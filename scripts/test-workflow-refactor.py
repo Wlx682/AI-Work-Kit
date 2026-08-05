@@ -432,7 +432,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         dedicated = suites["workflow-dedicated-regression"]
         self.assertEqual(dedicated["priority"], "P0")
         self.assertEqual(dedicated["argv"][:2], ["python3", "scripts/workflow-dedicated-regression-gate.py"])
-        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
             self.assertIn(workflow, dedicated["argv"])
             self.assertIn(workflow, dedicated["scope"])
 
@@ -448,6 +448,36 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/client-dev.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/merge-code.json", proc.stdout)
         self.assertIn("OK:workflow-blueprint:.workflows/blueprints/computer-mgmt.json", proc.stdout)
+
+    def test_workflow_blueprints_require_enablement_preflight(self) -> None:
+        manifest = json.loads((ROOT / ".workflows/install.json").read_text(encoding="utf-8"))
+        capabilities = manifest["capabilities"]
+        for path in sorted((ROOT / ".workflows/blueprints").glob("*.json")):
+            bp = json.loads(path.read_text(encoding="utf-8"))
+            if bp.get("kind") == "engine-index":
+                continue
+            enablement = bp.get("enablement")
+            self.assertIsInstance(enablement, dict, f"{path.name} 缺 enablement")
+            self.assertEqual(enablement["preflight"], f"python3 scripts/workflow-install.py check --workflow {bp['name']}")
+            for capability in ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"]:
+                self.assertIn(capability, enablement["requires"], f"{path.name} 缺安装能力 {capability}")
+                self.assertIn(capability, capabilities)
+
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            bad = json.loads((ROOT / ".workflows/blueprints/ui-change.json").read_text(encoding="utf-8"))
+            bad.pop("enablement")
+            missing = tmp / "ui-change.json"
+            missing.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "scripts/validate-workflow-blueprint.py", str(missing)],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("缺少 enablement", proc.stderr)
 
     def test_workflow_blueprints_require_dedicated_regression_before_generic_smoke(self) -> None:
         forbidden = {
@@ -508,7 +538,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "scripts/test-workflow-dedicated-regression.py",
                 "bugfix",
                 "ui-change",
-                "task-split-only",
+                "story-split-only",
                 "computer-mgmt",
                 "learning-loop",
             ],
@@ -518,7 +548,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             check=True,
         )
-        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
             self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
 
     def test_workflow_dedicated_regression_gate_runs_declared_blueprint_commands(self) -> None:
@@ -528,7 +558,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "scripts/workflow-dedicated-regression-gate.py",
                 "bugfix",
                 "ui-change",
-                "task-split-only",
+                "story-split-only",
                 "computer-mgmt",
                 "learning-loop",
             ],
@@ -538,7 +568,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             check=True,
         )
-        for workflow in ["bugfix", "ui-change", "task-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
             self.assertIn(f"OK:workflow-dedicated-regression-gate:{workflow}", proc.stdout)
             self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
 
@@ -927,10 +957,9 @@ class WorkflowRefactorTests(unittest.TestCase):
             "修一下这个 bug": "bugfix",
             "按钮点不动，帮我排查": "bugfix",
             "这个异常不生效": "bugfix",
-            "这个技术方案只拆任务": "task-split-only",
-            "帮我把方案拆成开发任务": "task-split-only",
-            "这个功能拆成几步做": "task-split-only",
-            "WBS修订一下": "task-split-only",
+            "这个技术方案只拆 Story": "story-split-only",
+            "帮我把方案拆成用户故事": "story-split-only",
+            "这个功能拆成几个用户故事": "story-split-only",
             "帮我合代码": "merge-code",
             "把 feature/search 分支合进 main": "merge-code",
             "合一下分支": "merge-code",
@@ -967,6 +996,12 @@ class WorkflowRefactorTests(unittest.TestCase):
             "帮我做代码 review",
             "部署检查清单生成一下",
             "复盘一下这个项目",
+            "WBS修订一下",
+            "改WBS",
+            "只拆任务",
+            "拆任务",
+            "任务拆分",
+            "拆成开发任务",
             "workflow=unknown 启动项目",
             "工作流：not-exist 帮我清理电脑",
         ]
@@ -1014,10 +1049,10 @@ class WorkflowRefactorTests(unittest.TestCase):
                 ],
             ),
             (
-                "task-split-only",
+                "story-split-only",
                 [
-                    ("Plans/功能开发/2026-07-03-任务拆分-优惠券.md", "task-splitter"),
-                    ("Plans/功能开发/2026-07-03-任务拆分复核-优惠券.md", "task-splitter"),
+                    ("Plans/功能开发/2026-07-03-Story拆分-优惠券.md", "task-splitter"),
+                    ("Plans/功能开发/2026-07-03-Story拆分复核-优惠券.md", "task-splitter"),
                 ],
             ),
             (
@@ -1060,12 +1095,50 @@ class WorkflowRefactorTests(unittest.TestCase):
                         merge_body = merge_analysis_sections()
                     elif "代码合并" in rel:
                         merge_body = merge_implementation_sections()
+                    story_fm = ""
+                    if "Story拆分-" in rel:
+                        index_rel = rel.replace(".md", ".stories.json")
+                        story_rel = "Plans/功能开发/2026-07-03-US-001-优惠券选择.md"
+                        write_file(
+                            tmp / index_rel,
+                            json.dumps(
+                                {
+                                    "scope_confirmed": True,
+                                    "stories": [{
+                                        "id": "US-001",
+                                        "title": "用户可以选择优惠券",
+                                        "path": story_rel,
+                                        "story_points": 3,
+                                        "estimate_confirmed": True,
+                                        "priority": "P0",
+                                        "sprint_scope": True,
+                                        "dependencies": [],
+                                        "acceptance_criteria": ["AC1"],
+                                        "architecture_refs": ["ADR-001"],
+                                        "vertical_slice": True,
+                                    }],
+                                },
+                                ensure_ascii=False,
+                            ),
+                        )
+                        write_file(
+                            tmp / story_rel,
+                            """
+                            ---
+                            story_id: US-001
+                            status: 待开发
+                            ---
+
+                            # US-001
+                            """,
+                        )
+                        story_fm = f"story_index: {index_rel}\n"
                     write_file(
                         tmp / rel,
                         f"""
                         ---
                         status: 已采纳
-                        {verdict_fm}{merge_fm}---
+                        {story_fm}{verdict_fm}{merge_fm}---
 
                         # {rel}
 
@@ -1129,7 +1202,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "merge-code",
                 "ui-change",
                 "bugfix",
-                "task-split-only",
+                "story-split-only",
                 "learning-loop",
             ],
             cwd=ROOT,
@@ -1141,7 +1214,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:merge-code", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:ui-change", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
-        self.assertIn("OK:workflow-smoke-test:task-split-only", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:story-split-only", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:learning-loop", proc.stdout)
 
     def test_merge_code_real_git_scenario_suite_passes(self) -> None:
@@ -1224,7 +1297,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "python3",
                     "scripts/workflow-plan-init.py",
                     "--workflow",
-                    "task-split-only",
+                    "story-split-only",
                     "--title",
                     "优惠券",
                     "--date",
@@ -1238,7 +1311,42 @@ class WorkflowRefactorTests(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 check=True,
             )
-            gate = self.run_gate(tmp, "--workflow", "task-split-only", "--json")
+            index_rel = "Plans/功能开发/2026-07-03-Story拆分-优惠券.stories.json"
+            story_rel = "Plans/功能开发/2026-07-03-US-001-优惠券选择.md"
+            write_file(
+                tmp / index_rel,
+                json.dumps(
+                    {
+                        "scope_confirmed": True,
+                        "stories": [{
+                            "id": "US-001",
+                            "title": "用户可以选择优惠券",
+                            "path": story_rel,
+                            "story_points": 3,
+                            "estimate_confirmed": True,
+                            "priority": "P0",
+                            "sprint_scope": True,
+                            "dependencies": [],
+                            "acceptance_criteria": ["AC1"],
+                            "architecture_refs": ["ADR-001"],
+                            "vertical_slice": True,
+                        }],
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+            write_file(
+                tmp / story_rel,
+                """
+                ---
+                story_id: US-001
+                status: 待开发
+                ---
+
+                # US-001
+                """,
+            )
+            gate = self.run_gate(tmp, "--workflow", "story-split-only", "--json")
             self.assertEqual(gate["current_state"], "done", gate)
 
     def test_workflow_gate_reaches_done_for_complete_client_dev_fixture(self) -> None:

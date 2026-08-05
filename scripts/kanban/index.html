@@ -277,7 +277,7 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
+    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
     function boardContentSignature(data) {
@@ -550,9 +550,9 @@
       const ptl = (ph.recent || []).map(ev => `
         <li class="progress-event">
           <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span></div>
-          <div class="tl-reason">WBS ${esc(ev.slice)} → ${esc(ev.state)}${ev.previous_state ? `（原 ${esc(ev.previous_state)}）` : ''}</div>
+          <div class="tl-reason">${storyMode ? 'Story' : 'WBS'} ${esc(ev.slice)} → ${esc(ev.state)}${ev.previous_state ? `（原 ${esc(ev.previous_state)}）` : ''}</div>
           <div class="tl-commit">${esc(ev.label || '')}${ev.operator ? ` · ${esc(ev.operator)}` : ''}</div>
-        </li>`).join('') || '<li>暂无 WBS 进度事件</li>';
+        </li>`).join('') || `<li>暂无 ${storyMode ? 'Story' : 'WBS'} 进度事件</li>`;
 
       $('app').innerHTML = `
         <button class="ghost back" id="backBtn">← 返回纵览</button>
@@ -589,7 +589,7 @@
               <ul class="timeline">${tl}</ul>
             </div>
             <div class="spanel fade-in">
-              <h3>WBS 进度事件</h3>
+              <h3>${storyMode ? 'Story 进度事件' : 'WBS 进度事件'}</h3>
               <ul class="timeline">${ptl}</ul>
             </div>
           </aside>

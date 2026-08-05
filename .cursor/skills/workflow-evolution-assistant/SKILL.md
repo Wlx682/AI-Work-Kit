@@ -37,7 +37,7 @@ Vault：AI-Work-Kit 根目录
    - 工具问题：脚本名漂移、命令太噪、缺少人话状态。
    - 反馈问题：skill_run 缺失、utility 不合规、孤立反馈未归位。
 4. **提出改进**：每条改进必须包含证据、改动位置、验收方式；避免只给口号。
-5. **落地改动**：若用户已要求「做/沉淀/修/进化」，直接改文件；涉及 WBS 修订或阶段重排时走 `task-splitter` 或先让用户确认。
+5. **落地改动**：若用户已要求「做/沉淀/修/进化」，直接改文件；涉及 Story/Scope 修订、开发拆分或阶段重排时走 `task-splitter` 或先让用户确认。
 6. **同步多端**：改 Skill 时同步 `Skills/<name>.md` 与 `.cursor/.claude/.codex/skills/<name>/SKILL.md`；运行 `bash scripts/sync-agent-skills.sh --check`。
 7. **验证**：按改动类型运行最小校验：
    - Skill/多端：`bash scripts/sync-agent-skills.sh --check`

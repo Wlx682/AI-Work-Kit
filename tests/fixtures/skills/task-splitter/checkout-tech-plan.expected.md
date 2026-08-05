@@ -2,20 +2,24 @@
 
 ## 期望断言
 
-用于检查 `task-splitter` 输出是否具备原子任务拆分结构。
+用于检查 `task-splitter` 输出是否具备纵向用户故事拆分结构。
 
 ## 必须包含
 
-- 输入
-- 输出
-- 验收
-- 依赖
-- 任务
-- 7a
-- [-]
-- optionalWbsSlices
+- 用户故事
+- story_points
+- vertical_slice
+- scope_confirmed
+- .stories.json
+- 子 Plan
+- AC
+- Scope
 
 ## 禁止包含
 
+- 原子任务
+- WBS
+- optionalWbsSlices
+- 7a
 - 推荐 A/B/C
 - 我建议选 A

@@ -1,6 +1,6 @@
 export const meta = {
   name: 'dev-lifecycle-audit',
-  description: '审计 Plans/Epic/ 各 Epic 声称阶段与子 plan 证据（需求 P0、方案采纳、门禁、WBS、测试/部署 plan）的一致性',
+  description: '审计 Plans/Epic/ 各 Epic 声称阶段与子 plan、Story/Scope、门禁、测试证据的一致性',
   whenToUse: '用户要求「开发流程审计」「Epic 审计」「检查全流程进度真实性」「dev-lifecycle-audit」时',
   phases: [
     { title: '机械取证', detail: '运行 dev-lifecycle-audit-collect.sh' },
@@ -27,7 +27,7 @@ const DIM_SCHEMA = {
   type: 'object',
   required: ['dimension', 'epic_findings', 'verdict', 'details'],
   properties: {
-    dimension: { type: 'string', enum: ['A-Epic元信息', 'B-需求P0', 'C-技术方案', 'D-WBS进度', 'E-测试部署'] },
+    dimension: { type: 'string', enum: ['A-Epic元信息', 'B-需求P0', 'C-技术方案', 'D-Story进度', 'E-测试部署'] },
     epic_findings: {
       type: 'array',
       items: {
@@ -61,11 +61,11 @@ const [dimA, dimB, dimC, dimD, dimE] = await parallel([
     { label: 'audit:C-architecture', phase: '并行维度审计', schema: DIM_SCHEMA }
   ),
   () => agent(
-    `维度 D：WBS 进度。对比 lifecycle_state 与 WBS 勾选（wbs_done_total）；development 阶段但 WBS 1–2 未勾 → 偏差；gate_development 非 OK → block。\n\n${mechanical}`,
-    { label: 'audit:D-wbs', phase: '并行维度审计', schema: DIM_SCHEMA }
+    `维度 D：Story 进度。对比 lifecycle_state 与 workflow-gate 派生阶段、.stories.json Scope、Story 子 Plan 与 tdd_evidence；story-development 阶段但 Scope Story 缺 TDD 证据 → block；gate_development 非 OK → block。\n\n${mechanical}`,
+    { label: 'audit:D-story', phase: '并行维度审计', schema: DIM_SCHEMA }
   ),
   () => agent(
-    `维度 E：测试/部署。lifecycle 为 test/deploy 或 WBS≥11 时，test/deploy plan 应存在；缺子 plan 标 warn/block。\n\n${mechanical}`,
+    `维度 E：测试/部署。lifecycle 为 integration-test/done 或 workflow-gate 已通过 story-development 时，integration-test plan 与 integration_report 应存在；缺子 plan 标 warn/block。\n\n${mechanical}`,
     { label: 'audit:E-test-deploy', phase: '并行维度审计', schema: DIM_SCHEMA }
   ),
 ])
@@ -97,7 +97,7 @@ const report = await agent(
   `写入 ${reportFolder}/<日期>-开发流程审计报告.md。结构：\n` +
   `1. frontmatter tags: [决策, 审计报告, Epic, workflow]\n` +
   `2. 综合结论一段\n` +
-  `3. ## 总览 表格：Epic | lifecycle | WBS | 门禁 | 缺子plan | 一致性\n` +
+  `3. ## 总览 表格：Epic | lifecycle | Story/Scope | 门禁 | 缺子plan | 一致性\n` +
   `4. ## 维度 A–E 摘要\n` +
   `5. ## ⚠️ 不一致项\n` +
   `6. ## 下一步建议（可链 /resume 与 kanban）\n` +

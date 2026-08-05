@@ -7,6 +7,10 @@
   "planRoot": "Plans/代码重构",
   "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
+  "enablement": {
+    "requires": ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"],
+    "preflight": "python3 scripts/workflow-install.py check --workflow merge-code"
+  },
   "dedicatedRegression": {
     "command": "python3 scripts/test-merge-code-workflow.py",
     "priority": "P0",

@@ -135,7 +135,7 @@
   <script>
     const $ = id => document.getElementById(id);
     function esc(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
-    const STAGE_ZH = { requirement: '需求分析', design: '架构设计', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '完成', diagnose: '复现定位', fix: '修复', regress: '回归', 'ui-impl': 'UI 还原', verify: '验收', locate: '定位' };
+    const STAGE_ZH = { requirement: '需求分析', design: '架构设计', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '完成', diagnose: '复现定位', fix: '修复', regress: '回归', 'ui-impl': 'UI 还原', verify: '验收', locate: '定位' };
     const zh = k => STAGE_ZH[k] || k || '—';
     const EXIT_ZH = { childPlanExists: '子Plan存在', status: '状态达标', p0Open: 'P0闭环', planGateCheck: '开发门禁', skillRun: 'skill_run', verdictPass: '视觉裁决', sectionsPresent: '交接章节', backlogPrioritized: 'Backlog已确认', storyScopeReady: 'Story Scope已确认', storyTddComplete: 'Story TDD已完成', integrationReportPass: '集成报告已通过' };
     const ex = k => EXIT_ZH[k] || k;

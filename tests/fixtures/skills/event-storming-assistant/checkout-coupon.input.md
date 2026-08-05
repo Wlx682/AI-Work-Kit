@@ -7,7 +7,7 @@ case: checkout-coupon
 
 ## 输入
 
-- workflow: client-dev，WBS 1 需求阶段第 1 步。
+- workflow: client-dev，requirement 阶段第一个活动。
 - 场景：收银台优惠券模块，从进入收银台到提交订单。
 - 参与角色：用户、收银台系统、优惠券服务、价格服务。
 - 已知分歧：多券叠加规则、过期券是否上墙、价格不一致的兜底事件。

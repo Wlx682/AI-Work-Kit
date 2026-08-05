@@ -19,7 +19,7 @@ description: >-
 以下语义命中时**强制本 Skill**，`feature-dev-assistant` **不得**替代：
 
 - 「界面」「对稿」「还原」「Figma」「1:1」「自检表」
-- Epic WBS 或子 plan **Skill 列**标明 `figma-ui` 的切片
+- Story 子 Plan、UI 子任务或子 plan **Skill 列**标明 `figma-ui`
 
 ## ✋ 业务逻辑门禁（接手前必判）
 

@@ -31,6 +31,14 @@ def require(condition: bool, message: str) -> None:
         raise RegressionError(message)
 
 
+def require_enablement(bp: dict[str, Any]) -> None:
+    enablement = bp.get("enablement")
+    require(isinstance(enablement, dict), f"{bp['name']}: 缺少 enablement 安装声明")
+    require(enablement.get("preflight") == f"python3 scripts/workflow-install.py check --workflow {bp['name']}", f"{bp['name']}: preflight 命令不正确")
+    for capability in ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"]:
+        require(capability in enablement.get("requires", []), f"{bp['name']}: enablement.requires 缺 {capability}")
+
+
 def stage_keys(bp: dict[str, Any]) -> list[str]:
     return [stage["key"] for stage in bp["stages"]]
 
@@ -47,6 +55,7 @@ def require_no_epic_lightweight(bp: dict[str, Any], plan_root: str) -> None:
 
 def assert_bugfix() -> None:
     bp = load_blueprint("bugfix")
+    require_enablement(bp)
     require_no_epic_lightweight(bp, "Plans/Bug排查")
     require(stage_keys(bp) == ["reproduce", "diagnose", "fix", "regression"], "bugfix: 阶段必须保持复现→定位→修复→回归")
     stages = stage_map(bp)
@@ -59,6 +68,7 @@ def assert_bugfix() -> None:
 
 def assert_ui_change() -> None:
     bp = load_blueprint("ui-change")
+    require_enablement(bp)
     require_no_epic_lightweight(bp, "Plans/界面开发")
     require(stage_keys(bp) == ["ui-scope", "ui-implement", "ui-review"], "ui-change: 阶段必须保持范围→实现→复核")
     stages = stage_map(bp)
@@ -70,19 +80,32 @@ def assert_ui_change() -> None:
         require(hint in bp["triggerHints"], f"ui-change: 缺少触发词 {hint}")
 
 
-def assert_task_split_only() -> None:
-    bp = load_blueprint("task-split-only")
+def assert_story_split_only() -> None:
+    bp = load_blueprint("story-split-only")
+    require_enablement(bp)
     require_no_epic_lightweight(bp, "Plans/功能开发")
-    require(stage_keys(bp) == ["split", "check"], "task-split-only: 阶段必须只包含拆分与自检")
-    for key, stage in stage_map(bp).items():
-        require(stage["skills"] == ["task-splitter"], f"task-split-only:{key}: 必须只走 task-splitter")
-        require(stage["exitCriteria"]["childPlanExists"] is True, f"task-split-only:{key}: 必须产出子 Plan")
-        require(stage["exitCriteria"]["skillRun"] is True, f"task-split-only:{key}: 必须留下 skill_run")
-    require("WBS修订" in bp["triggerHints"] and "改WBS" in bp["triggerHints"], "task-split-only: 必须覆盖 WBS 修订入口")
+    require(stage_keys(bp) == ["story-split", "story-check"], "story-split-only: 阶段必须只包含 Story 拆分与 Scope 自检")
+    stages = stage_map(bp)
+    split = stages["story-split"]
+    require(split["skills"] == ["task-splitter"], "story-split-only: Story 拆分必须只走 task-splitter")
+    require(split["template"] == "Templates/用户故事拆分模板.md", "story-split-only: 必须使用用户故事拆分模板")
+    require(split["exitCriteria"]["childPlanExists"] is True, "story-split-only: 必须产出拆分 Plan")
+    require(split["exitCriteria"]["storyScopeReady"] is True, "story-split-only: 必须校验 .stories.json 与 Scope")
+    require(split["exitCriteria"]["skillRun"] is True, "story-split-only: 必须留下 skill_run")
+    check = stages["story-check"]
+    require(check["skills"] == ["task-splitter"], "story-split-only: Scope 自检必须只走 task-splitter")
+    require(check["exitCriteria"]["childPlanExists"] is True, "story-split-only: 必须产出复核 Plan")
+    require(check["exitCriteria"]["skillRun"] is True, "story-split-only: 复核必须留下 skill_run")
+    for hint in ["用户故事拆分", "故事点", "确认Scope"]:
+        require(hint in bp["triggerHints"], f"story-split-only: 缺少 Story 触发词 {hint}")
+    for hint in ["只拆任务", "拆任务", "任务拆分", "拆成任务", "拆成开发任务", "拆一下任务"]:
+        require(hint not in bp["triggerHints"], f"story-split-only: 不得保留旧任务拆分入口 {hint}")
+    require("WBS修订" not in bp["triggerHints"] and "改WBS" not in bp["triggerHints"], "story-split-only: 不得保留 WBS 修订开发入口")
 
 
 def assert_computer_mgmt() -> None:
     bp = load_blueprint("computer-mgmt")
+    require_enablement(bp)
     require_no_epic_lightweight(bp, "Plans/电脑管理")
     require(stage_keys(bp) == ["inventory", "cleanup", "backup", "harden", "review"], "computer-mgmt: 阶段必须保持盘点→清理→备份→加固→复核")
     stages = stage_map(bp)
@@ -97,6 +120,7 @@ def assert_computer_mgmt() -> None:
 
 def assert_learning_loop() -> None:
     bp = load_blueprint("learning-loop")
+    require_enablement(bp)
     require(bp["usesEpic"] is True and bp["epicRequired"] is True, "learning-loop: 必须先创建学习 Epic")
     require(bp["epicTemplate"] == "Templates/Epic模板-learning-loop.md", "learning-loop: 必须使用学习 Epic 模板")
     require(bp["startup"]["requireEpicBeforeBoot"] is True, "learning-loop: 启动看板前必须有 Epic")
@@ -124,7 +148,7 @@ def assert_learning_loop() -> None:
 REGRESSIONS = {
     "bugfix": assert_bugfix,
     "ui-change": assert_ui_change,
-    "task-split-only": assert_task_split_only,
+    "story-split-only": assert_story_split_only,
     "computer-mgmt": assert_computer_mgmt,
     "learning-loop": assert_learning_loop,
 }

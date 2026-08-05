@@ -15,7 +15,7 @@ DEFAULT_WORKFLOWS = [
     "merge-code",
     "ui-change",
     "bugfix",
-    "task-split-only",
+    "story-split-only",
     "computer-mgmt",
     "learning-loop",
     "client-dev",
@@ -24,7 +24,7 @@ ROUTE_PHRASES = {
     "merge-code": "帮我把 feature/search 分支合进 main",
     "ui-change": "帮我改一下 UI",
     "bugfix": "线上报错帮我修bug",
-    "task-split-only": "这个技术方案只拆任务",
+    "story-split-only": "这个技术方案只拆 Story",
     "computer-mgmt": "帮我清理电脑缓存",
     "learning-loop": "我要学习 agent 开发",
     "client-dev": "全流程开发一下支付收银台",
@@ -263,6 +263,44 @@ skill: merge-code-assistant
 {skill_run('merge-code-assistant', rel)}
 """,
             )
+
+
+def inject_story_split_fixtures(tmp: Path, bp: dict, stage_key: str) -> None:
+    if bp.get("name") != "story-split-only" or stage_key != "story-split":
+        return
+    folder = tmp / "Plans/功能开发"
+    for plan in folder.glob("*Story拆分*.md"):
+        text = plan.read_text(encoding="utf-8")
+        if "workflow_stage: story-split" not in text:
+            continue
+        rel = plan.relative_to(tmp).as_posix()
+        index_rel = rel[:-3] + ".stories.json"
+        story_rel = "Plans/功能开发/smoke-us-001.md"
+        if "story_index:" not in text:
+            lines = text.splitlines()
+            if lines and lines[0].strip() == "---":
+                lines.insert(1, f"story_index: {index_rel}")
+                plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (tmp / index_rel).write_text(json.dumps({
+            "scope_confirmed": True,
+            "stories": [{
+                "id": "US-001", "title": "用户可以完成 smoke 能力", "path": story_rel,
+                "story_points": 3, "estimate_confirmed": True, "priority": "P0",
+                "sprint_scope": True, "dependencies": [], "acceptance_criteria": ["AC1"],
+                "architecture_refs": ["ADR-001"], "vertical_slice": True,
+            }],
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        write_fixture(
+            tmp / story_rel,
+            """
+            ---
+            story_id: US-001
+            status: 待开发
+            ---
+
+            # US-001
+            """,
+        )
 
 
 def create_client_dev_epic(tmp: Path) -> str:
@@ -826,6 +864,7 @@ def smoke_lightweight_workflow(tmp: Path, workflow: str, bp: dict) -> None:
         )
         inject_verdicts(tmp, bp)
         inject_merge_fixtures(tmp, bp)
+        inject_story_split_fixtures(tmp, bp, str(current))
         next_gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--json"])
         if next_gate.get("current_state") == current and next_gate.get("blockers"):
             raise SmokeError(f"{workflow} 创建 {current} 阶段 plan 后没有推进: {next_gate}")

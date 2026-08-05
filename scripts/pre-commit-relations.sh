@@ -127,7 +127,7 @@ for hub in "${touched_hubs[@]}"; do
   if [ -n "$deps" ]; then
     count=$(echo "$deps" | grep -c . || true)
     echo ""
-    echo "依赖 $hub（共 $count 个 dependents）："
+    echo "依赖 ${hub}（共 ${count} 个 dependents）："
     while IFS= read -r dep; do
       [ -z "$dep" ] && continue
       echo "  · $dep"

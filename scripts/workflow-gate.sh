@@ -205,11 +205,16 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
       child_raw="$(read_plan_key "$EPIC_FILE" "$s_epicfield")"
       [[ -n "$child_raw" && "$child_raw" != "null" ]] && plans_found+=("$s_key:$child_raw")
     elif [[ "$USES_EPIC" != "1" && -n "$s_folder" ]]; then
-      # 无 Epic：按 planFolder（+planPrefix）找子 Plan
+      # 无 Epic：按 planFolder（+planPrefix）找子 Plan；优先匹配脚本生成的 -planPrefix-，避免短前缀吞掉复核阶段。
       shopt -s nullglob
       cands=("$ROOT/$s_folder"/*"${s_prefix}"*.md)
+      exact_cands=("$ROOT/$s_folder"/*-"${s_prefix}"-*.md)
+      if [[ ${#exact_cands[@]} -gt 0 ]]; then
+        cands=("${exact_cands[@]}")
+      fi
       if [[ ${#cands[@]} -gt 0 ]]; then
-        child_raw="${s_folder}/$(basename "${cands[-1]}")"
+        last_idx=$((${#cands[@]} - 1))
+        child_raw="${s_folder}/$(basename "${cands[$last_idx]}")"
         plans_found+=("$s_key:$child_raw")
       fi
     fi

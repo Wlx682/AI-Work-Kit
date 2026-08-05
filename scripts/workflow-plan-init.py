@@ -56,13 +56,14 @@ def stage_by_key(bp: dict[str, Any], key: str) -> dict[str, Any] | None:
     return None
 
 
-def skill_run(skill: str, plan: str) -> str:
+def skill_run(skill: str, plan: str, stage: str | None = None) -> str:
+    stage_line = f"  workflow_stage: {stage}\n" if stage else ""
     return f"""## 反馈（skill_run）
 
 ```yaml
 skill_run:
   skill: {skill}
-  plan: {plan}
+{stage_line}  plan: {plan}
   date: {date.today().isoformat()}
   contexts_used:
     - path: Contexts/决策/Skill反馈协议.md
@@ -84,7 +85,12 @@ def render_plan(workflow: str, stage: dict[str, Any], title: str, rel_path: str,
         for item in required_sections
     )
     gate_lines = "\n".join(f"- `{key}`: {value}" for key, value in gates.items())
-    feedback = "\n\n" + skill_run(skill, rel_path) if include_feedback else ""
+    extra_frontmatter = ""
+    if gates.get("storyScopeReady"):
+        story_index = f"{rel_path[:-3]}.stories.json" if rel_path.endswith(".md") else f"{rel_path}.stories.json"
+        extra_frontmatter = f"story_index: {story_index}\n"
+    feedback = "\n\n" + skill_run(skill, rel_path, stage["key"]) if include_feedback else ""
+
     required_section_text = f"\n\n{section_blocks}" if section_blocks else ""
     return f"""---
 tags: [工作流, {workflow}]
@@ -95,7 +101,7 @@ date: {date.today().isoformat()}
 workflow: {workflow}
 workflow_stage: {stage['key']}
 skill: {skill}
----
+{extra_frontmatter}---
 
 # {stage['label']}：{title}
 
@@ -177,7 +183,7 @@ def create_plans(args: argparse.Namespace) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="为无 Epic 轻流程创建阶段 plan 骨架。")
-    parser.add_argument("--workflow", required=True, help="轻流程名，如 ui-change / bugfix / task-split-only")
+    parser.add_argument("--workflow", required=True, help="轻流程名，如 ui-change / bugfix / story-split-only")
     parser.add_argument("--title", required=True, help="任务标题，会进入文件名")
     parser.add_argument("--date", default=date.today().isoformat(), help="文件名前缀日期，默认今天")
     parser.add_argument("--all", action="store_true", help="创建所有阶段 plan；默认只创建当前阶段 plan")

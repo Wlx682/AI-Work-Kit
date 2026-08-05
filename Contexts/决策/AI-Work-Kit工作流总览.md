@@ -60,7 +60,7 @@ relations:
 | `computer-mgmt`   | 否        | 电脑管理（盘点→清理→备份→加固→复核），无 Epic 轻量清单 | `Templates/电脑管理清单模板.md`           |
 | `ui-change`       | 否        | 纯 UI 小改（范围确认→实现自检→复核）            | `workflow-plan-init.py` 生成阶段 plan |
 | `bugfix`          | 否        | Bug 修复（复现→定位→修复→回归）              | `workflow-plan-init.py` 生成阶段 plan |
-| `task-split-only` | 否        | 只拆任务（拆分→复核），不进入代码实现              | `workflow-plan-init.py` 生成阶段 plan |
+| `story-split-only` | 否        | 只做 Story 拆分（故事点→Scope→复核），不进入代码实现 | `workflow-plan-init.py` 生成阶段 plan |
 
 新增蓝图：在 `.workflows/blueprints/` 新建 `<name>.json`，声明 `stages` / `epicMapping` / `usesEpic` / `triggerHints`（自然语言路由信号），并跑 `python3 scripts/validate-workflow-blueprint.py`。
 
@@ -90,7 +90,7 @@ stateDiagram-v2
 |------|------|------|
 | Bug | `workflow=bugfix` 或 `python3 scripts/workflow-plan-init.py --workflow bugfix --title xxx` | `Plans/Bug排查/` |
 | 纯 UI 小改 | `workflow=ui-change` 或 `python3 scripts/workflow-plan-init.py --workflow ui-change --title xxx` | `Plans/界面开发/` |
-| 只拆任务 | `workflow=task-split-only` 或 `python3 scripts/workflow-plan-init.py --workflow task-split-only --title xxx` | `Plans/功能开发/` |
+| 只做 Story 拆分 | `workflow=story-split-only` 或 `python3 scripts/workflow-plan-init.py --workflow story-split-only --title xxx` | `Plans/功能开发/` |
 | PM 对照表 | `/material-prep` | **Contexts/**（通用） |
 
 ---

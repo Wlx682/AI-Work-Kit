@@ -1,6 +1,6 @@
 ---
 name: task-splitter
-description: 将已排序需求和已采纳架构拆成可独立演示、验收的纵向用户故事，为每个故事给出故事点并确认本轮 Scope。触发词：任务拆分、拆任务、拆用户故事、故事点、task-splitter；不再按 Domain/Data/UI 横向拆成交付任务。
+description: 将已排序需求和已采纳架构拆成可独立演示、验收的纵向用户故事，为每个故事给出故事点并确认本轮 Scope。触发词：Story 拆分、用户故事拆分、拆用户故事、故事点、Scope、task-splitter；不再按 Domain/Data/UI 横向拆成交付任务。
 ---
 
 # 用户故事拆分与故事点

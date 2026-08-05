@@ -47,6 +47,9 @@ class ClientDevWorkflowTests(unittest.TestCase):
     def test_ac01_ac03_ac12_blueprint_stage_chain_and_gates(self) -> None:
         bp = json.loads((ROOT / ".workflows/blueprints/client-dev.json").read_text(encoding="utf-8"))
         self.assertEqual(bp["name"], "client-dev")
+        self.assertEqual(bp["enablement"]["preflight"], "python3 scripts/workflow-install.py check --workflow client-dev")
+        for capability in ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"]:
+            self.assertIn(capability, bp["enablement"]["requires"])
         stages = bp["stages"]
         self.assertEqual(
             [stage["key"] for stage in stages],

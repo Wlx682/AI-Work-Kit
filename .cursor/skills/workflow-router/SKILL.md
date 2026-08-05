@@ -1,12 +1,12 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、合代码、合并分支、解决合并冲突、帮我清理电脑、做界面、修 bug、只拆任务、我要学习、准备学习资料、学习复盘、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做具体阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、Story 拆分、用户故事拆分、合代码、合并分支、解决合并冲突、帮我清理电脑、做界面、修 bug、我要学习、准备学习资料、学习复盘、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做具体阶段工作。
 ---
 
 # 工作流路由器
 
 定位：**入口 Skill / 路由器**，不是业务执行 Skill。  
-职责：自然语言 → 选择具体 workflow 蓝图 → 启动执行器 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
+职责：自然语言 → 选择具体 workflow 蓝图 → 运行 `workflow-install.py check` 做启用前置检查 → 启动执行器 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
 
 ## 触发
 
@@ -14,10 +14,10 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 - 帮我看一下电脑空间、电脑管理、清理电脑、整理电脑、磁盘满了、磁盘空间、释放空间、备份/加固/复核电脑
 - 做界面、Figma 对稿、页面视觉不对齐、样式调整
 - 修 bug、线上报错、崩溃、按钮点不动、问题排查
-- 只拆任务、方案拆成开发任务、WBS 修订
+- Story 拆分、用户故事拆分、方案拆成用户故事、只拆 Story
 - 合代码、合并代码、合分支、merge 分支、把这个分支合进去、解决合并冲突
 - 我要学习、我想学习、帮我准备资料、学完实践、实践完验证、学习复盘、学习记录、总结知识图谱
-- `workflow=client-dev`、`workflow=merge-code`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=task-split-only`、`workflow=learning-loop`
+- `workflow=client-dev`、`workflow=merge-code`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=story-split-only`、`workflow=learning-loop`
 
 ## 不触发
 
@@ -45,18 +45,22 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
    - 不把抽象执行器当成业务 workflow，也不用它给 `client-dev` 兜底
    - 语义判断只选择现有业务蓝图；一句话同时像多个蓝图时先问清楚
-2. 启动看板：
+2. 启用前置检查：
+   - 选定蓝图后先运行 `python3 scripts/workflow-install.py check --workflow <name>`
+   - 若出现 `BLOCK`，先处理 Skill 多端入口、全局工作流优先级、pre-commit hook、看板端口互斥或缺失脚本
+   - 可自动修复的本地 hook 用 `python3 scripts/workflow-install.py apply --workflow <name>`；Skill 全局同步需用户明确授权再加 `--sync-skills`
+3. 启动看板:
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
    - `usesEpic=true` 的蓝图必须先有 Epic；`client-dev` 用 `Templates/Epic模板-client-dev.md`，`learning-loop` 用 `Templates/Epic模板-learning-loop.md`
    - 已有/刚创建 Epic：`bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`
    - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
-3. 看状态：
+4. 看状态：
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
    - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`；代码/分支合并使用 `merge-code`
    - 学习循环：`python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md`
    - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
-4. 根据 `recommended_skill` 调用真正阶段 Skill；若 `usesEpic=true` 的蓝图阻塞为缺 Epic，必须先调用 `template-generator` 创建对应 Epic，然后重新 `boot --epic` 打开具体看板。
+5. 根据 `recommended_skill` 调用真正阶段 Skill；若 `usesEpic=true` 的蓝图阻塞为缺 Epic，必须先调用 `template-generator` 创建对应 Epic，然后重新 `boot --epic` 打开具体看板。
    - `usesEpic=false` 且当前阶段缺子 Plan 时，先运行 `python3 scripts/workflow-plan-init.py --workflow <name> --title <任务标题>`，只创建当前阶段，不使用 `--all`。
 
 ## 输出
@@ -73,7 +77,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 新增或调整触发词后，先跑自然语言样本检查：
 
 ```bash
-python3 scripts/workflow-router-check.py '全流程开发一下支付收银台' '帮我合代码' '帮我清理电脑缓存'
+python3 scripts/workflow-router-check.py '全流程开发一下支付收银台' '帮我合代码' '这个方案拆成用户故事'
 python3 scripts/test-workflow-refactor.py
 ```
 

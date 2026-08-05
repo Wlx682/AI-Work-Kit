@@ -15,7 +15,7 @@
 
 - 具体需求、架构、开发、测试执行 → 对应阶段 Skill
 - 日报、周报、项目复盘 → `report-assistant`
-- WBS 修订 / 拆任务 → `task-splitter` 或用户确认
+- Story/Scope 修订 / 开发拆分 → `task-splitter` 或用户确认
 
 ## 职责
 

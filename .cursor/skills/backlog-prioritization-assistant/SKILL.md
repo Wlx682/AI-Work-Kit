@@ -1,6 +1,6 @@
 ---
 name: backlog-prioritization-assistant
-description: 对已澄清需求按业务价值、紧迫度、风险验证价值和依赖排序，生成团队确认的有序 Backlog。用于 client-dev 的 prioritization 阶段，或用户说需求排序、Backlog 排序、排优先级、确认本轮先做什么；不做技术架构、故事点或任务拆分。
+description: 对已澄清需求按业务价值、紧迫度、风险验证价值和依赖排序，生成团队确认的有序 Backlog。用于 client-dev 的 prioritization 阶段，或用户说需求排序、Backlog 排序、排优先级、确认本轮先做什么；不做技术架构、故事点或 Story 拆分。
 ---
 
 # Backlog 需求排序

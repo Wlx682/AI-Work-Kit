@@ -1,0 +1,74 @@
+{
+  "name": "ai-work-kit-workflow-install",
+  "version": "0.1.0",
+  "description": "Workflow enablement contract: checks local tools, agent entrypoints, hooks, global workflow priority, and runtime conflicts before a workflow starts.",
+  "capabilities": {
+    "core-tools": {
+      "label": "核心命令与脚本",
+      "commands": ["python3", "bash", "git"],
+      "paths": [
+        {"path": ".workflows/blueprints", "type": "dir"},
+        {"path": ".workflows/schemas/workflow-blueprint.schema.json", "type": "file"},
+        {"path": "scripts/validate-workflow-blueprint.py", "type": "file"},
+        {"path": "scripts/workflow-gate.sh", "type": "file"},
+        {"path": "scripts/workflow-status.py", "type": "file"},
+        {"path": "scripts/workflow-plan-init.py", "type": "file"}
+      ]
+    },
+    "skills": {
+      "label": "Skill 多端入口",
+      "paths": [
+        {"path": ".cursor/skills", "type": "dir"},
+        {"path": ".claude/skills", "type": "dir"},
+        {"path": ".codex/skills", "type": "dir"},
+        {"path": "Skills", "type": "dir"}
+      ],
+      "syncCheckCommand": "bash scripts/sync-agent-skills.sh --check",
+      "syncCommand": "bash scripts/sync-agent-skills.sh --sync"
+    },
+    "tool-entrypoints": {
+      "label": "各工具工作流启动入口",
+      "paths": [
+        {"path": ".cursor/skills/workflow-router/SKILL.md", "type": "file"},
+        {"path": ".claude/skills/workflow-router/SKILL.md", "type": "file"},
+        {"path": ".codex/skills/workflow-router/SKILL.md", "type": "file"},
+        {"path": ".claude/workflows/workflow-engine.js", "type": "file"},
+        {"path": ".claude/workflows/dev-lifecycle-audit.js", "type": "file"}
+      ]
+    },
+    "global-instructions": {
+      "label": "全局工作流优先级",
+      "globalFiles": [
+        {
+          "path": "~/.claude/CLAUDE.md",
+          "contains": [
+            "AI-WORK-KIT 是唯一的工作流来源",
+            "用户当前指令始终高于 AI-WORK-KIT"
+          ]
+        }
+      ]
+    },
+    "pre-commit-hook": {
+      "label": "提交前派生事实门禁",
+      "hook": {
+        "source": "scripts/pre-commit-relations.sh",
+        "target": ".git/hooks/pre-commit",
+        "executable": true
+      }
+    },
+    "kanban-board": {
+      "label": "看板服务与端口互斥",
+      "paths": [
+        {"path": "scripts/workflow-board-boot.sh", "type": "file"},
+        {"path": "scripts/kanban-server.py", "type": "file"},
+        {"path": "scripts/kanban/workflows.html", "type": "file"}
+      ],
+      "portGuard": {
+        "host": "127.0.0.1",
+        "port": 7777,
+        "probePath": "/api/workflows",
+        "expectedJsonKeys": ["blueprints", "stats"]
+      }
+    }
+  }
+}

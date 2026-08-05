@@ -8,7 +8,7 @@
 - 「帮我看一下电脑空间」「电脑管理」「清理电脑」「整理电脑」「磁盘满了」「磁盘空间」「释放空间」「备份电脑」「系统加固」
 - 「做界面」「Figma 对稿」「页面视觉不对齐」「样式调整」
 - 「修 bug」「线上报错」「崩溃」「按钮点不动」「问题排查」
-- 「只拆任务」「方案拆成开发任务」「WBS 修订」
+- 「Story 拆分」「用户故事拆分」「方案拆成用户故事」「只拆 Story」
 - 「合代码」「合并代码」「合分支」「merge 分支」「把这个分支合进去」「解决合并冲突」
 - 「我要学习」「我想学习」「帮我准备资料」「学完实践」「实践完验证」「学习复盘」「学习记录」「总结知识图谱」
 
@@ -23,10 +23,11 @@
 只做：
 
 1. 选择 workflow 蓝图
-2. 确保客户端开发 Epic 存在并启动看板
-3. 运行 `workflow-status.py` 输出人话状态
-4. 必要时再查看 `workflow-gate.sh --json` 详情
-5. 无 Epic 轻流程缺当前阶段 plan 时，用 `workflow-plan-init.py` 只创建当前阶段 plan，再交给推荐 Skill
+2. 运行蓝图 `enablement.preflight`，确认工具入口、hook、全局优先级与互斥环境可用
+3. 确保客户端开发 Epic 存在并启动看板
+4. 运行 `workflow-status.py` 输出人话状态
+5. 必要时再查看 `workflow-gate.sh --json` 详情
+6. 无 Epic 轻流程缺当前阶段 plan 时，用 `workflow-plan-init.py` 只创建当前阶段 plan，再交给推荐 Skill
 
 不做：
 
@@ -58,7 +59,7 @@
 | 电脑空间、电脑管理、清理电脑、磁盘满了、释放空间、备份电脑、加固 | `computer-mgmt` |
 | 做界面、Figma 对稿、还原设计稿、样式调整 | `ui-change` |
 | 修 bug、线上报错、崩溃、问题排查 | `bugfix` |
-| 只拆任务、方案拆成开发任务、WBS 修订 | `task-split-only` |
+| Story 拆分、用户故事拆分、方案拆成用户故事、只拆 Story | `story-split-only` |
 | 合代码、合并代码、合分支、解决合并冲突 | `merge-code` |
 | 我要学习、准备学习资料、实践验证、学习复盘、学习记录、知识图谱 | `learning-loop` |
 
@@ -69,6 +70,20 @@
 ```bash
 python3 scripts/workflow-router-check.py '全流程开发一下支付收银台' '帮我合代码' '帮我清理电脑缓存'
 python3 scripts/test-workflow-refactor.py
+```
+
+## 启用前置检查
+
+选定蓝图后，启动看板或创建阶段 plan 前先执行蓝图声明的 preflight：
+
+```bash
+python3 scripts/workflow-install.py check --workflow <name>
+```
+
+若输出 `BLOCK`，先处理安装项：Skill 多端入口、全局工作流优先级、pre-commit hook、看板端口互斥或缺失脚本。可自动修复的本地 hook 用：
+
+```bash
+python3 scripts/workflow-install.py apply --workflow <name>
 ```
 
 ## client-dev Epic 硬门禁

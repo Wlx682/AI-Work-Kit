@@ -11,6 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 BLUEPRINT_DIR = ROOT / ".workflows" / "blueprints"
+INSTALL_MANIFEST = ROOT / ".workflows" / "install.json"
 
 
 class ValidationError(Exception):
@@ -64,6 +65,25 @@ def validate_blueprint(path: Path) -> list[str]:
     for script_key in ["bootScript", "gateScript"]:
         if bp.get(script_key):
             require((ROOT / bp[script_key]).exists(), f"{path}: {script_key} 不存在: {bp[script_key]}")
+
+    enablement = bp.get("enablement")
+    require(isinstance(enablement, dict), f"{path}: 缺少 enablement 工作流安装/启用声明")
+    requires = enablement.get("requires")
+    require(
+        isinstance(requires, list) and requires and all(isinstance(item, str) and item.strip() for item in requires),
+        f"{path}: enablement.requires 必须是非空字符串数组",
+    )
+    preflight = enablement.get("preflight")
+    expected_preflight = f"python3 scripts/workflow-install.py check --workflow {name}"
+    require(preflight == expected_preflight, f"{path}: enablement.preflight 必须为: {expected_preflight}")
+    require(INSTALL_MANIFEST.exists(), f"{path}: 安装清单不存在: .workflows/install.json")
+    manifest = load_json(INSTALL_MANIFEST)
+    capabilities = manifest.get("capabilities")
+    require(isinstance(capabilities, dict) and capabilities, f"{path}: .workflows/install.json 缺少 capabilities")
+    for capability in requires:
+        require(capability in capabilities, f"{path}: enablement.requires 引用了未知安装能力: {capability}")
+    if bp.get("bootScript"):
+        require("kanban-board" in requires, f"{path}: 声明 bootScript 时 enablement.requires 必须包含 kanban-board")
 
     stage_keys: list[str] = []
     for index, stage in enumerate(bp["stages"], start=1):
