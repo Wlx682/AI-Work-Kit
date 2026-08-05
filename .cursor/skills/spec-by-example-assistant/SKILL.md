@@ -1,6 +1,6 @@
 ---
 name: spec-by-example-assistant
-description: 实例化需求。用于 client-dev 需求阶段第 2 步，输出 ≥10 组 Given-When-Then、反例、线框位与可测验收标准。触发词：实例化需求、GWT、Given-When-Then、验收标准、WBS 2。
+description: 实例化需求。用于 client-dev requirement 阶段，在事件风暴后输出 ≥10 组 Given-When-Then、反例、线框位与可测验收标准。触发词：实例化需求、GWT、Given-When-Then、验收标准。
 ---
 
 # 实例化需求助手
@@ -21,7 +21,7 @@ Plan：`Plans/需求分析/YYYY-MM-DD-模块名.md`
 ## 汇报
 
 ```text
-📌 当前阶段：[requirement / 实例化需求] | 产出：Plans/需求分析/xxx.md | 下一阶段：[architecture-design-assistant] | 如需中断：/resume plan=Plans/需求分析/xxx.md
+📌 当前阶段：[requirement / 实例化需求] | 产出：Plans/需求分析/xxx.md | 下一阶段：[requirement-analyst 完成需求评审，然后 backlog-prioritization-assistant] | 如需中断：/resume plan=Plans/需求分析/xxx.md
 ```
 
 真理源：`Skills/spec_by_example_assistant.md`

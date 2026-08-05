@@ -16,7 +16,11 @@ EVENT_DIR = ROOT / ".workflows" / "events"
 
 STATE_LABELS = {
     "requirement": "需求分析",
+    "prioritization": "需求排序",
     "architecture": "技术方案",
+    "story-split": "纵向 Story 拆分/故事点",
+    "story-development": "逐 Story TDD 开发",
+    "integration-test": "全量集成测试",
     "test-first": "验收测试先行",
     "development": "功能开发",
     "verify": "非功能验证",
@@ -36,10 +40,11 @@ SKILL_ACTIONS = {
     "event-storming-assistant": "补需求分析 plan",
     "spec-by-example-assistant": "补实例化需求与验收标准",
     "requirement-analyst": "闭环需求 P0",
+    "backlog-prioritization-assistant": "按价值/紧迫度/依赖排序并确认 Backlog",
     "architecture-design-assistant": "补技术方案并评审采纳",
-    "test-generator": "补自动化测试 plan 的用例映射",
-    "task-splitter": "拆功能开发任务并补覆盖 AC",
-    "feature-dev-assistant": "继续功能开发实现",
+    "test-generator": "执行全量集成测试并写回归报告",
+    "task-splitter": "拆纵向 Story、估故事点并确认 Scope",
+    "feature-dev-assistant": "继续当前 Story 的 Red→Green→Refactor",
     "figma-ui": "继续 Figma/UI 子任务",
     "nfr-assistant": "补非功能验证",
     "review-assistant": "补 Review 结论",
@@ -76,26 +81,9 @@ def label_state(state: str) -> str:
 
 
 def simplify_blocker(blocker: str) -> str:
-    text = re.sub(r"\b(?:BLOCKED|WARN):traceability:", "", blocker.strip())
-    ac_ids = sorted(set(re.findall(r"AC[0-9A-Za-z_]+(?:-反)?", text)))
+    text = blocker.strip()
     if "无 Epic plan" in text:
         return "还没有 Epic，需要先创建项目总 plan"
-    if "testTraceability" in text:
-        acs = "、".join(ac_ids)
-        suffix = f"：{acs}" if acs else ""
-        return f"验收标准缺测试覆盖{suffix}"
-    if "无测试覆盖" in text:
-        acs = "、".join(ac_ids)
-        suffix = f"：{acs}" if acs else ""
-        return f"验收标准缺测试覆盖{suffix}"
-    if "devTraceability" in text:
-        acs = "、".join(ac_ids)
-        suffix = f"：{acs}" if acs else ""
-        return f"P0 验收标准缺功能开发任务覆盖{suffix}"
-    if "无开发任务覆盖" in text:
-        acs = "、".join(ac_ids)
-        suffix = f"：{acs}" if acs else ""
-        return f"P0 验收标准缺功能开发任务覆盖{suffix}"
     if "skill_run" in text:
         return "任务完成反馈缺失或格式不合法"
     if "WBS 切片" in text:
@@ -114,26 +102,14 @@ def simplify_blocker(blocker: str) -> str:
 
 
 def merge_blockers(blockers: list[str]) -> list[str]:
-    grouped: dict[str, set[str]] = {
-        "验收标准缺测试覆盖": set(),
-        "P0 验收标准缺功能开发任务覆盖": set(),
-    }
-    other: list[str] = []
+    seen: set[str] = set()
+    unique: list[str] = []
     for blocker in blockers:
-        matched = False
-        for prefix in grouped:
-            if blocker == prefix or blocker.startswith(prefix + "："):
-                matched = True
-                if "：" in blocker:
-                    grouped[prefix].update(item for item in blocker.split("：", 1)[1].split("、") if item)
-                break
-        if not matched:
-            other.append(blocker)
-    merged = []
-    for prefix, acs in grouped.items():
-        if acs:
-            merged.append(f"{prefix}：{'、'.join(sorted(acs))}")
-    return merged + other
+        if blocker in seen:
+            continue
+        seen.add(blocker)
+        unique.append(blocker)
+    return unique
 
 
 def current_plan(gate: dict[str, Any]) -> str | None:
@@ -238,7 +214,6 @@ def summarize(gate: dict[str, Any], replay: dict[str, Any] | None = None) -> dic
         "next": next_step(gate),
         "recommended_skill": gate.get("recommended_skill"),
         "resume": resume_hint(gate),
-        "constitution": gate.get("constitution", {}).get("status"),
         "details": {
             "epic": gate.get("epic"),
             "raw_state": gate.get("current_state"),
@@ -260,8 +235,6 @@ def print_human(summary: dict[str, Any]) -> None:
         print("卡点：无")
     print(f"下一步：{summary['next']}")
     print(f"继续：{summary['resume']}")
-    if summary.get("constitution"):
-        print(f"规则：constitution {summary['constitution']}")
     hist = summary.get("history")
     if hist and hist.get("last_gate"):
         lg = hist["last_gate"]

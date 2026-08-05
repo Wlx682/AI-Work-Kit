@@ -2,7 +2,8 @@
 """
 render-epic-board.py — 从「文件系统事实」派生并写回 Epic §三 WBS 看板的勾选标记。
 
-三层架构下 Epic 是**被动数据聚合根**：§三 看板的 `[ ]/[~]/[-]/[x]` 不再手写，
+client-dev 使用 `.stories.json` + Story 子 Plan/TDD 证据动态投影，不需要本脚本；
+其他含 WBS 的 Epic 仍可使用。三层架构下 Epic 是**被动数据聚合根**：§三看板的 `[ ]/[~]/[-]/[x]` 不再手写，
 而是单向从子 Plan 事实派生。每个切片的标记来源（防第三份真理源）：
   - 该切片「归属 stage」的子 Plan 若有 fenced `[N.]` checklist 行 → 直接采其状态
     （复用 gate_parse.wbs_slice_status，与 workflow-gate / kanban-server 同一读法）。

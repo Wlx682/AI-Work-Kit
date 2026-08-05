@@ -81,7 +81,7 @@ for line in open(epic, encoding="utf-8"):
 
 derived = g.get("current_state", "unknown")
 print(f"workflow: {g.get('workflow','')}")
-print(f"derived_status: {derived}  # 由 WBS 勾选 + 子 Plan status 派生（文件系统事实）")
+print(f"derived_status: {derived}  # 由蓝图 + 子 Plan/结构化证据派生（文件系统事实）")
 print(f"next_state: {g.get('next_state','')}")
 print(f"lifecycle_state_frontmatter: {lc or '(无)'}  # 仅对照，引擎不采用")
 if lc and lc != derived:

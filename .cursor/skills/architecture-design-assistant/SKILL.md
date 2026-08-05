@@ -23,13 +23,15 @@ Vault：AI-Work-Kit 根目录
 - 「**全流程开发**」→ `workflow-engine`（蓝图 manifest）
 - 「**开发 / 写代码**」（方案已定）→ `feature-dev-assistant`
 
-必读：`Plans/需求分析/` 关联 plan（真理源）  
+必读：`Plans/需求分析/` 关联 plan（真理源）与 `Plans/需求排序/` 已确认 Backlog。
 模板：`Templates/技术方案模板.md`  
 产出：`Plans/技术方案/`
 
-1. 门禁：需求 P0 闭环；缺边界/异常/验收 → 提醒用 `需求分析-带验收标准模板`  
-2. **必输出**：模块边界、ER 图+字段、API Schema+错误码  
-3. frontmatter 可保留 `lifecycle_state: architecture` 作兼容展示；`status: 已采纳` 后由 `workflow-gate.sh` 派生下一阶段（通常进入 `test-first`）
+1. 门禁：需求 P0 闭环，需求排序阶段已采纳；缺边界/异常/验收则回需求分析。
+2. **必输出**：模块边界、ER 图+字段、状态机、API Schema+错误码、非功能约束、ADR、需求影响矩阵。
+3. 架构设计是 client-dev 正式必经阶段；它约束系统如何组织，不把交付任务拆成 Domain/Data/UI。
+4. `status: 已采纳` 后由 `workflow-gate.sh` 派生到 `story-split`。
+5. 最后一个 `skill_run` 增加 `workflow_stage: architecture`。
 
 同步：`Skills/architecture_design_assistant.md`
 

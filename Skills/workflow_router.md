@@ -133,10 +133,10 @@ bash scripts/workflow-gate.sh --workflow client-dev --epic Plans/Epic/xxx.md --j
 ## 输出
 
 ```text
-当前：验收测试先行
-卡点：P0 反例 AC1-反 还没有测试用例
-下一步：补自动化测试 plan 的用例映射
-继续：/resume plan=Plans/自动化测试/xxx.md
+当前：需求排序
+卡点：Backlog 尚未由团队确认
+下一步：按价值、紧迫度和依赖排序
+继续：/resume plan=Plans/需求排序/xxx.md
 ```
 
 若 `blockers` 里提示缺 Epic，下一步是 `template-generator` 创建 Epic；创建后必须重新 `boot --epic`。不要手写 `lifecycle_state` 试图推进。

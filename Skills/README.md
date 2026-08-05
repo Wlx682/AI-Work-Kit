@@ -49,12 +49,13 @@
 | 事件风暴、领域事件、事件墙 | event-storming-assistant | `/event-storming-assistant` | `Plans/需求分析/` |
 | 实例化需求、GWT、验收标准 | spec-by-example-assistant | `/spec-by-example-assistant` | `Plans/需求分析/` |
 | PRD 评审、需求分析、查 PRD 漏洞 | requirement-analyst | `/req` `/requirement-analyst` | `Plans/需求分析/` |
+| 需求排序、Backlog 优先级、确认本轮先做什么 | backlog-prioritization-assistant | `/backlog-prioritization-assistant` | `Plans/需求排序/` + `.backlog.json` |
 | 系统架构、模块边界、ER 图、数据模型 | architecture-design-assistant | `/arch` `/architecture-design-assistant` | 技术方案 plan |
-| 拆任务、子任务拆分、WBS | task-splitter | `/split` `/task-splitter` | 主 plan + 子任务 |
+| 拆纵向 Story、故事点、Scope | task-splitter | `/split` `/task-splitter` | `.stories.json` + Story 子 Plan |
 | 开发 [模块] 功能、实现 [目标]、写代码 | feature-dev-assistant | `/dev` `/feature-dev-assistant` | `Plans/功能开发/` |
 | 合代码、合并分支、处理合并冲突 | merge-code-assistant | `workflow=merge-code`；先分析双边业务意图，语义冲突由开发者决策 | `Plans/代码重构/` |
 | Figma 还原、对稿、纯界面开发 | figma-ui | `/ui` `/figma-ui` | UI plan |
-| 写测试、生成测试用例 | test-generator | `/test` `/test-generator` | `Plans/自动化测试/` |
+| 全量集成测试、回归报告 | test-generator | `/test` `/test-generator` | `Plans/自动化测试/` + `integration_report` |
 | Code Review、review diff、审查 PR、UI 复核 | code-review | `/code-review` `/review` | Findings-first（`Plans/代码重构/`） |
 | 需求变了、改个东西、Scope 调整 | change-impact-analysis | `/change-impact-analysis` | 变更影响 |
 | 检查 Epic 进度、审计版本状态、这个需求做完了吗 | dev-lifecycle-audit-assistant | `/dev-lifecycle-audit` | 审计报告 |

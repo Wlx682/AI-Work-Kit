@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backlog Prioritization"
+  short_description: "需求价值、依赖与优先级排序，形成团队确认的有序 Backlog"
+  default_prompt: "Use $backlog-prioritization-assistant to rank this backlog by value, urgency, dependencies, and risk."

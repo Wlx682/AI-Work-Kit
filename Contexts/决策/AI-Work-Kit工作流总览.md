@@ -31,7 +31,7 @@ relations:
 4. **轻流程建 plan** → `python3 scripts/workflow-plan-init.py --workflow ui-change --title 卡片`；需要一次生成全部阶段则加 `--all`。
 5. **续做** → `/resume plan=Plans/... 进度=...`。
 6. **看当前卡点** → `python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md`。
-7. **看 WBS** → `./scripts/workflow-board-boot.sh` → http://127.0.0.1:7777/
+7. **看故事/阶段** → `./scripts/workflow-board-boot.sh` → http://127.0.0.1:7777/
 
 ---
 
@@ -45,18 +45,18 @@ relations:
 | **状态外壳**（UX 层） | `workflow-status.py` | 把 `workflow-gate --json` 翻译成「当前 / 卡点 / 下一步 / 继续」 |
 | **积木**（执行层） | 各子 Skill（requirement-analyst 等） | 读写 Plan 文件，干具体活 |
 | **状态机**（控制层） | 具体 workflow 蓝图 + 通用执行器 | 读 `.workflows/blueprints/<name>.json` 决定下一阶段调哪个 Skill；维护 workflow run 游标 |
-| **数据上下文**（持久层） | Epic Plan（`Plans/Epic/`） | **只存不驱动**：子 Plan 路径映射、WBS 人工确认板、里程碑摘要 |
+| **数据上下文**（持久层） | Epic Plan（`Plans/Epic/`） | **只存不驱动**：子 Plan 路径映射、动态 Story 摘要、里程碑摘要 |
 
 **Epic 的硬边界**：
-- ✅ 存 `plans.*` 路径索引、WBS 勾选、交付摘要。
+- ✅ 存 `plans.*` 路径索引、动态 Story 摘要、交付摘要。
 - ❌ **不驱动阶段跳转**、不承担门禁逻辑、不记录执行游标。
-- `lifecycle_state` 不参与路由：阶段由 `scripts/workflow-gate.sh` 依子 Plan 事实判定；如需整体阶段跑 `scripts/derive-epic-status.sh` 从 WBS + 子 Plan status 派生。
+- `lifecycle_state` 不参与路由：阶段由 `scripts/workflow-gate.sh` 依子 Plan/结构化证据判定。
 
 ### 已有蓝图
 
 | 蓝图                | usesEpic | 说明                               | Epic 母版                           |
 | ----------------- | -------- | -------------------------------- | --------------------------------- |
-| `client-dev`      | 是        | 客户端功能开发（需求→架构→测试先行→拆分→开发）          | `Templates/Epic模板-client-dev.md`  |
+| `client-dev`      | 是        | 客户端功能开发（需求→排序→架构→纵向 Story/点数→逐 Story TDD→全量集成） | `Templates/Epic模板-client-dev.md`  |
 | `computer-mgmt`   | 否        | 电脑管理（盘点→清理→备份→加固→复核），无 Epic 轻量清单 | `Templates/电脑管理清单模板.md`           |
 | `ui-change`       | 否        | 纯 UI 小改（范围确认→实现自检→复核）            | `workflow-plan-init.py` 生成阶段 plan |
 | `bugfix`          | 否        | Bug 修复（复现→定位→修复→回归）              | `workflow-plan-init.py` 生成阶段 plan |
@@ -66,20 +66,21 @@ relations:
 
 ### client-dev 阶段链
 
-需求(事件风暴+实例化 1-2) → 架构+ADR(3) → 验收测试先行(4) → 拆分任务(5) → 开发(Domain/Data/UI/交互/单测/联调 6-11)。详见 `Templates/Epic模板-client-dev.md` §三。
+需求分析 → 需求排序/团队确认 → 正式架构设计 → 纵向功能 Story 拆分与故事点/Scope 确认 → 每个 Scope Story 内 Red→Green→Refactor → 当前 commit 全量集成测试 → Done。不含发布阶段。
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> requirement
-    requirement --> architecture: 已采纳/P0=0
-    architecture --> test_first: 方案已采纳
-    test_first --> split: WBS 4 ✅
-    split --> development: 子任务已拆
-    development --> [*]
+    requirement --> prioritization: 已采纳/P0=0
+    prioritization --> architecture: Backlog 已确认
+    architecture --> story_split: 方案已采纳
+    story_split --> story_development: Story/点数/Scope 已确认
+    story_development --> integration_test: 全部 Scope Story TDD 完成
+    integration_test --> [*]: 全量集成通过
 ```
 
-新建 client-dev Epic：复制 `Templates/Epic模板-client-dev.md` → `Plans/Epic/`。
+新建 client-dev Epic：复制 `Templates/Epic模板-client-dev.md` → `Plans/Epic/`。`client-dev` 只有这一套正式蓝图，不按 Epic 版本分流。
 
 ---
 
@@ -113,8 +114,7 @@ python3 scripts/workflow-plan-init.py --workflow ui-change --title 卡片
 | `workflow-gate.sh` | **通用**工作流阶段门禁（读蓝图，只看子 Plan 事实） |
 | `workflow-plan-init.py` | 为无 Epic 轻流程创建当前阶段/全部阶段 plan 骨架 |
 | `workflow-smoke-test.py` | 隔离验证工作流：路由、空态阻塞、补齐阶段 plan 后 done |
-| `derive-epic-status.sh` | 从 WBS+子 Plan status 派生 `derived_status`（只读，不写回） |
-| `workflow-gate.sh` | 兼容封装：等价转发到 `workflow-gate.sh --workflow client-dev`；新引用直接使用 `workflow-gate.sh` |
+| `derive-epic-status.sh` | 通过 gate 从子 Plan/结构化证据派生 `derived_status`（只读） |
 | `plan-gate-check.sh` | 写代码前（与蓝图正交，不动） |
 | `kanban-sync.sh` | Agent 改进度 |
 | `generate-pipeline-status.sh --write` | 刷新 [[索引]] 进度表 |
@@ -125,7 +125,6 @@ UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员�
 | 取值 | 缺 `verdict:` 字段时 | 用在哪 |
 |------|------|------|
 | `"required"` / `true` | BLOCK（纯 UI 流程必须有裁决） | `ui-change` 的 `ui-implement` |
-| `"ifPresent"` | 豁免（figma-ui 写了 verdict 才强制，纯逻辑开发不误伤） | `client-dev` 的 `development` |
 
 条件触发用「子 Plan 运行时有无 `verdict:` 字段」这一**文件事实**判定，不在静态蓝图里预编码「切片→Skill」——守「文件即状态」原则。三段结构与 prompt 模板见 `Skills/figma_ui.md`。
 
@@ -133,7 +132,7 @@ UI 还原阶段的还原质量，不再靠 figma-ui「自评≥9」（运动员�
 
 ## 五、Skill 速查
 
-开发主线：`workflow-router` · `requirement-analyst` · `architecture-design-assistant` · `test-generator` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `code-review` · `change-impact-analysis`
+开发主线：`workflow-router` · `requirement-analyst` · `backlog-prioritization-assistant` · `architecture-design-assistant` · `task-splitter` · `feature-dev-assistant` · `figma-ui` · `test-generator` · `code-review` · `change-impact-analysis`
 
 通用：`resume-assistant` · `template-generator` · `report-assistant` · `material-prep-assistant`
 

@@ -6,13 +6,12 @@ last_verified: 2026-07-31
 relations:
   depends_on:
     - Contexts/智能体开发/02-Agent-Loop与运行时流程.md
-  dependents:
-    - Contexts/智能体开发/08-Trace-Eval与可观测性.md
+  dependents: []
   supersedes: []
   superseded_by: []
   conflicts: []
----
 
+---
 # 上下文工程、RAG与记忆
 
 ## 一、问题：聊天历史不是可靠记忆

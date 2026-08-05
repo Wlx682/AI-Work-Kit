@@ -1,8 +1,8 @@
 {
   "name": "client-dev",
   "label": "客户端功能开发",
-  "version": "3.0.0",
-  "description": "客户端功能开发工作流蓝图（精简版：需求分析→架构设计→验收测试先行→拆分任务→写代码）。客户端开发必须先创建 Epic；引擎读本蓝图 stages 驱动阶段推进；门禁只看子 Plan 文件系统事实，不读 Epic lifecycle_state。",
+  "version": "4.0.0",
+  "description": "敏捷客户端功能开发：需求分析→需求排序→正式架构→纵向功能故事拆分与故事点→逐故事 TDD→全量集成测试。集成通过后直接完成，不包含发布阶段。",
   "usesEpic": true,
   "epicRequired": true,
   "epicTemplate": "Templates/Epic模板-client-dev.md",
@@ -16,35 +16,19 @@
   },
   "bootScript": "scripts/workflow-board-boot.sh",
   "gateScript": "scripts/workflow-gate.sh",
-  "constitution": ".workflows/constitution.json",
   "triggerHints": [
-    "客户端",
-    "功能开发",
-    "功能",
-    "做个功能",
-    "做一个功能",
-    "开发功能",
-    "开发一个客户端功能",
-    "客户端项目",
-    "做个客户端项目",
-    "帮我开发",
-    "新需求",
-    "从0到1",
-    "完整流程",
-    "走完整流程",
-    "全流程开发",
-    "全流程闭环",
-    "启动全流程",
-    "开始做这个项目",
-    "启动项目",
-    "一条龙"
+    "客户端", "功能开发", "功能", "做个功能", "做一个功能", "开发功能",
+    "开发一个客户端功能", "客户端项目", "做个客户端项目", "帮我开发", "新需求",
+    "从0到1", "完整流程", "走完整流程", "全流程开发", "全流程闭环",
+    "启动全流程", "开始做这个项目", "启动项目", "一条龙"
   ],
   "epicMapping": {
     "requirement": "requirement",
+    "prioritization": "prioritization",
     "architecture": "architecture",
-    "test-first": "test",
-    "split": "development",
-    "development": "development"
+    "story-split": "development",
+    "story-development": "development",
+    "integration-test": "integration"
   },
   "stages": [
     {
@@ -52,125 +36,90 @@
       "label": "需求分析（事件风暴 + 实例化需求）",
       "planFolder": "Plans/需求分析",
       "epicField": "requirement",
-      "skills": [
-        "event-storming-assistant",
-        "spec-by-example-assistant",
-        "requirement-analyst"
-      ],
+      "skills": ["event-storming-assistant", "spec-by-example-assistant", "requirement-analyst"],
       "template": "Templates/需求分析-带验收标准模板.md",
-      "wbsSlices": [
-        1,
-        2
-      ],
-      "requiredSections": [
-        "边界情况清单",
-        "异常流程矩阵",
-        "验收标准"
-      ],
+      "requiredSections": ["边界情况清单", "异常流程矩阵", "验收标准"],
       "exitCriteria": {
         "childPlanExists": true,
-        "status": [
-          "已采纳"
-        ],
+        "status": ["已采纳"],
         "p0Open": 0,
         "sectionsPresent": true,
         "skillRun": true
+      },
+      "next": "prioritization"
+    },
+    {
+      "key": "prioritization",
+      "label": "需求排序与 Backlog 确认",
+      "planFolder": "Plans/需求排序",
+      "epicField": "prioritization",
+      "skills": ["backlog-prioritization-assistant"],
+      "template": "Templates/需求排序模板.md",
+      "requiredSections": ["排序原则", "需求排序", "团队确认"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": ["已采纳"],
+        "sectionsPresent": true,
+        "backlogPrioritized": true,
+        "skillRunStage": true
       },
       "next": "architecture"
     },
     {
       "key": "architecture",
-      "label": "技术方案 + ADR",
+      "label": "正式架构设计 + ADR",
       "planFolder": "Plans/技术方案",
       "epicField": "architecture",
-      "skills": [
-        "architecture-design-assistant"
-      ],
+      "skills": ["architecture-design-assistant"],
       "template": "Templates/技术方案模板.md",
-      "wbsSlices": [
-        3
-      ],
-      "requiredSections": [
-        "模块边界",
-        "数据模型",
-        "API Schema"
-      ],
-      "onlyIf": {
-        "含业务逻辑": "是"
-      },
+      "requiredSections": ["模块边界", "数据模型", "API Schema", "非功能约束", "ADR", "需求影响矩阵"],
       "exitCriteria": {
         "childPlanExists": true,
-        "status": [
-          "已采纳"
-        ],
+        "status": ["已采纳"],
         "sectionsPresent": true,
-        "skillRun": true
+        "skillRunStage": true
       },
-      "next": "test-first"
+      "next": "story-split"
     },
     {
-      "key": "test-first",
-      "label": "验收测试先行（外层 TDD）",
+      "key": "story-split",
+      "label": "纵向功能故事拆分 + 故事点 + Scope",
+      "planFolder": "Plans/功能开发",
+      "epicField": "development",
+      "skills": ["task-splitter"],
+      "template": "Templates/用户故事拆分模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "storyScopeReady": true,
+        "skillRunStage": true
+      },
+      "next": "story-development"
+    },
+    {
+      "key": "story-development",
+      "label": "逐用户故事 TDD 开发",
+      "planFolder": "Plans/功能开发",
+      "epicField": "development",
+      "skills": ["feature-dev-assistant", "figma-ui"],
+      "template": "Templates/用户故事TDD模板.md",
+      "exitCriteria": {
+        "childPlanExists": true,
+        "storyTddComplete": true,
+        "skillRunStage": true
+      },
+      "next": "integration-test"
+    },
+    {
+      "key": "integration-test",
+      "label": "全量集成测试",
       "planFolder": "Plans/自动化测试",
-      "epicField": "test",
-      "skills": [
-        "test-generator"
-      ],
-      "template": "Templates/自动化测试模板.md",
-      "wbsSlices": [
-        4
-      ],
-      "mode": "先行",
+      "epicField": "integration",
+      "skills": ["test-generator"],
+      "template": "Templates/集成测试模板.md",
       "exitCriteria": {
         "childPlanExists": true,
-        "wbsDone": true,
-        "testTraceability": true,
-        "skillRun": true
-      },
-      "next": "split"
-    },
-    {
-      "key": "split",
-      "label": "原子任务拆分",
-      "planFolder": "Plans/功能开发",
-      "epicField": "development",
-      "skills": [
-        "task-splitter"
-      ],
-      "wbsSlices": [
-        5
-      ],
-      "exitCriteria": {
-        "childPlanExists": true,
-        "skillRun": true
-      },
-      "next": "development"
-    },
-    {
-      "key": "development",
-      "label": "功能开发（Domain/Data/UI/交互/单测/联调）",
-      "planFolder": "Plans/功能开发",
-      "epicField": "development",
-      "skills": [
-        "feature-dev-assistant",
-        "figma-ui"
-      ],
-      "wbsSlices": [
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ],
-      "gate": "plan-gate-check",
-      "exitCriteria": {
-        "childPlanExists": true,
-        "planGateCheck": true,
-        "wbsDone": true,
-        "devTraceability": true,
-        "verdictPass": "ifPresent",
-        "skillRun": true
+        "integrationReportPass": true,
+        "skillRunStage": true
       },
       "next": "done"
     }

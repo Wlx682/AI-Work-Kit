@@ -24,14 +24,14 @@ ALLOWED_OUTCOME = {"pass", "blocked", "partial"}
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
-def find_last_skill_run_block(content: str) -> str | None:
+def find_skill_run_blocks(content: str) -> list[str]:
     pattern = re.compile(r"```yaml\s*\n(.*?)\n```", re.DOTALL)
-    matches = list(pattern.finditer(content))
-    for m in reversed(matches):
+    blocks = []
+    for m in pattern.finditer(content):
         body = m.group(1)
         if re.match(r"^\s*skill_run\s*:", body):
-            return body
-    return None
+            blocks.append(body)
+    return blocks
 
 
 def strip_inline_comment(line: str) -> str:
@@ -143,6 +143,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("plan", help="plan 文件路径")
     ap.add_argument("--require", action="store_true", help="缺失 skill_run 块时视为失败")
+    ap.add_argument("--stage", help="要求最后一个 skill_run.workflow_stage 与当前 workflow stage 一致")
     args = ap.parse_args()
 
     plan_path = pathlib.Path(args.plan).resolve()
@@ -150,7 +151,18 @@ def main() -> None:
         fail(f"plan 文件不存在: {args.plan}")
 
     content = plan_path.read_text(encoding="utf-8")
-    body = find_last_skill_run_block(content)
+    blocks = find_skill_run_blocks(content)
+    body = blocks[-1] if blocks else None
+
+    # 同一 Plan 可承载多个 workflow stage（如 story-split / story-development）。
+    # 指定 --stage 时选择最后一个匹配该 stage 的反馈，而不是要求它恰好是整份文件最后一块。
+    if args.stage:
+        body = None
+        for candidate in reversed(blocks):
+            parsed_candidate = parse_skill_run(candidate)
+            if parsed_candidate and parsed_candidate.get("skill_run", {}).get("workflow_stage") == args.stage:
+                body = candidate
+                break
 
     if body is None:
         if args.require:
@@ -163,6 +175,9 @@ def main() -> None:
         fail("YAML 块顶层缺 skill_run 键，或缩进不符合协议（必须 2-空格 / 4-空格 / 6-空格）")
 
     sr = parsed["skill_run"]
+
+    if args.stage and sr.get("workflow_stage") != args.stage:
+        fail(f"找不到 workflow_stage={args.stage!r} 的合法 skill_run")
 
     for k in ("skill", "plan", "date", "contexts_used"):
         if k not in sr:

@@ -39,9 +39,6 @@
     "gateScript": {
       "type": "string"
     },
-    "constitution": {
-      "type": "string"
-    },
     "triggerHints": {
       "type": "array",
       "items": {
@@ -132,10 +129,19 @@
             "type": "object",
             "minProperties": 1,
             "properties": {
-              "testTraceability": {
+              "backlogPrioritized": {
                 "type": "boolean"
               },
-              "devTraceability": {
+              "storyScopeReady": {
+                "type": "boolean"
+              },
+              "storyTddComplete": {
+                "type": "boolean"
+              },
+              "integrationReportPass": {
+                "type": "boolean"
+              },
+              "skillRunStage": {
                 "type": "boolean"
               },
               "mergeAnalysis": {

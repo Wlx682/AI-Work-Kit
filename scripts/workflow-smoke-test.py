@@ -44,6 +44,13 @@ def copy_runtime(tmp: Path) -> None:
     (tmp / "Contexts/决策/AI-Work-Kit工作流总览.md").write_text("# AI-Work-Kit工作流总览\n", encoding="utf-8")
     (tmp / "Contexts/决策/Kit核心原则.md").write_text("# Kit核心原则\n", encoding="utf-8")
     (tmp / "Contexts/决策/母子plan投影规则.md").write_text("# 母子plan投影规则\n", encoding="utf-8")
+    # 路由检查会校验全部蓝图，因此 smoke 隔离库要提前建立全部阶段目录。
+    for blueprint in (tmp / ".workflows/blueprints").glob("*.json"):
+        try:
+            data = json.loads(blueprint.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        ensure_plan_folders(tmp, data)
 
 
 def run_json(tmp: Path, cmd: list[str]) -> dict:
@@ -77,13 +84,14 @@ def write_fixture(path: Path, content: str) -> None:
     path.write_text(content.strip() + "\n", encoding="utf-8")
 
 
-def skill_run(skill: str, plan: str) -> str:
+def skill_run(skill: str, plan: str, stage: str | None = None) -> str:
+    stage_line = f"  workflow_stage: {stage}\n" if stage else ""
     return f"""## 反馈（skill_run）
 
 ```yaml
 skill_run:
   skill: {skill}
-  plan: {plan}
+{stage_line}  plan: {plan}
   date: 2026-07-03
   contexts_used:
     - path: Contexts/决策/Skill反馈协议.md
@@ -95,7 +103,7 @@ skill_run:
 """
 
 
-def wbs_table(rows: list[int]) -> str:
+def wbs_table(rows: list[int | str]) -> str:
     lines = "\n".join(f"[x] {n}. smoke fixture" for n in rows)
     return "## 三、WBS\n\n```\n" + lines + "\n```\n"
 
@@ -269,28 +277,17 @@ workflow: client-dev
 p0_open: 0
 plans:
   requirement: Plans/需求分析/smoke.md
+  prioritization: Plans/需求排序/smoke.md
   architecture: Plans/技术方案/smoke.md
-  test: Plans/自动化测试/smoke.md
   development: Plans/功能开发/smoke.md
+  integration: Plans/自动化测试/smoke.md
 ---
 
 # Smoke Epic
 
-## 三、WBS
+## 三、动态用户故事看板
 
-```
-[ ] 1. 事件风暴完成
-[ ] 2. 实例化需求完成
-[ ] 3. 技术方案完成
-[ ] 4. 验收测试先行完成
-[ ] 5. Domain 完成
-[ ] 6. Data 完成
-[ ] 7. UI 完成
-[ ] 8. 交互完成
-[ ] 9. 单测完成
-[ ] 10. 联调完成
-[ ] 11. 非功能验证完成
-```
+故事真理源：`Plans/功能开发/smoke.stories.json`。
 """,
     )
     return epic_rel
@@ -319,31 +316,38 @@ LEARNING_STAGE_FIXTURES = [
         3,
     ),
     (
-        "practice",
-        "Plans/学习循环/smoke-practice.md",
+        "design",
+        "Plans/学习循环/smoke-design.md",
         "feature-dev-assistant",
-        ["七、实践任务", "八、实践产物"],
-        4,
+        ["七、设计决策"],
+        "4a",
+    ),
+    (
+        "code",
+        "Plans/学习循环/smoke-code.md",
+        "feature-dev-assistant",
+        ["八、编码实现", "九、代码产物"],
+        "4b",
     ),
     (
         "verify",
         "Plans/学习循环/smoke-verify.md",
         "test-generator",
-        ["九、验证清单", "十、验证结论"],
+        ["十、验证清单", "十一、验证结论"],
         5,
     ),
     (
         "retro",
         "Plans/学习循环/smoke-retro.md",
         "report-assistant",
-        ["十一、复盘", "十二、下一步建议"],
+        ["十二、复盘", "十三、下一步建议"],
         6,
     ),
     (
         "record",
         "Plans/学习循环/smoke-record.md",
         "material-prep-assistant",
-        ["十三、学习记录", "十四、知识图谱增量", "十五、用户确认"],
+        ["十四、学习记录", "十五、知识图谱增量", "十六、用户确认"],
         7,
     ),
 ]
@@ -371,7 +375,8 @@ plans:
 [ ] 1. 确认学习主题与完成门槛
 [ ] 2. AI 准备资料与最小概念树
 [ ] 3. 用户学习与答疑
-[ ] 4. 实践任务
+[ ] 4a. 设计决策
+[ ] 4b. 编码实现
 [ ] 5. AI 验证
 [ ] 6. 学习复盘
 [ ] 7. 学习记录与知识图谱增量
@@ -381,7 +386,7 @@ plans:
     return epic_rel
 
 
-def create_learning_stage_plan(tmp: Path, epic_rel: str, rel: str, stage: str, skill: str, sections: list[str], slice_n: int) -> None:
+def create_learning_stage_plan(tmp: Path, epic_rel: str, rel: str, stage: str, skill: str, sections: list[str], slice_n: int | str) -> None:
     section_blocks = "\n\n".join(f"## {title}\n\nsmoke {title}" for title in sections)
     write_fixture(
         tmp / rel,
@@ -440,9 +445,48 @@ epic: {epic_rel}
 
 {wbs_table([1, 2])}
 
-{skill_run("requirement-analyst", "Plans/需求分析/smoke.md")}
+{skill_run("requirement-analyst", "Plans/需求分析/smoke.md", "requirement")}
 """,
     )
+
+
+def create_client_prioritization(tmp: Path, epic_rel: str) -> None:
+    plan_rel = "Plans/需求排序/smoke.md"
+    index_rel = "Plans/需求排序/smoke.backlog.json"
+    write_fixture(
+        tmp / plan_rel,
+        f"""
+---
+status: 已采纳
+epic: {epic_rel}
+backlog_index: {index_rel}
+---
+
+# 需求排序 smoke
+
+## 排序原则
+
+业务价值、紧迫度与依赖分开评估。
+
+## 需求排序
+
+REQ-001 为 P0。
+
+## 团队确认
+
+已确认本迭代顺序。
+
+{skill_run("backlog-prioritization-assistant", plan_rel, "prioritization")}
+""",
+    )
+    (tmp / index_rel).write_text(json.dumps({
+        "confirmed": True,
+        "requirements": [{
+            "id": "REQ-001", "title": "完成支付", "business_value": "high",
+            "urgency": "high", "dependencies": [], "priority": "P0",
+            "reason": "核心收银路径", "confirmed": True,
+        }],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def create_client_architecture(tmp: Path, epic_rel: str) -> None:
@@ -473,9 +517,23 @@ epic: {epic_rel}
 - `workflow-gate.sh --workflow client-dev --epic <path> --json`
 - `workflow-run.py gate --run <path>`
 
+## 五、非功能约束
+
+门禁判定必须可重复、无状态。
+
+## 六、ADR
+
+ADR-001：选择文件系统事实作为唯一权威源。
+
+## 七、需求影响矩阵
+
+| 需求 | 模块 | ADR |
+|------|------|-----|
+| REQ-001 | Gate | ADR-001 |
+
 {wbs_table([3])}
 
-{skill_run("architecture-design-assistant", "Plans/技术方案/smoke.md")}
+{skill_run("architecture-design-assistant", "Plans/技术方案/smoke.md", "architecture")}
 """,
     )
 
@@ -538,6 +596,103 @@ p0_open: 0
 {skill_run(skill, "Plans/功能开发/smoke.md")}
 """,
     )
+
+
+def create_client_story_scope(tmp: Path, epic_rel: str) -> None:
+    dev_rel = "Plans/功能开发/smoke.md"
+    index_rel = "Plans/功能开发/smoke.stories.json"
+    story_rel = "Plans/功能开发/smoke-us-001.md"
+    write_fixture(
+        tmp / dev_rel,
+        f"""
+---
+epic: {epic_rel}
+story_index: {index_rel}
+---
+
+# 用户故事拆分 smoke
+
+## 迭代 Scope
+
+US-001 将端到端交付“用户完成支付”能力。
+
+{skill_run("task-splitter", dev_rel, "story-split")}
+""",
+    )
+    (tmp / index_rel).write_text(json.dumps({
+        "scope_confirmed": True,
+        "stories": [{
+            "id": "US-001", "title": "用户可以完成支付", "path": story_rel,
+            "story_points": 5, "estimate_confirmed": True, "priority": "P0",
+            "sprint_scope": True, "dependencies": [], "acceptance_criteria": ["AC1"],
+            "architecture_refs": ["ADR-001"], "vertical_slice": True,
+        }],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_fixture(
+        tmp / story_rel,
+        f"""
+---
+story_id: US-001
+status: 待开发
+tdd_evidence: Plans/功能开发/smoke-us-001.tdd.json
+---
+
+# US-001
+""",
+    )
+
+
+def complete_client_story_tdd(tmp: Path) -> None:
+    story_rel = "Plans/功能开发/smoke-us-001.md"
+    evidence_rel = "Plans/功能开发/smoke-us-001.tdd.json"
+    write_fixture(
+        tmp / story_rel,
+        f"""
+---
+story_id: US-001
+status: 已完成
+tdd_evidence: {evidence_rel}
+---
+
+# US-001
+""",
+    )
+    (tmp / evidence_rel).write_text(json.dumps({
+        "story_id": "US-001", "commit": "smoke123",
+        "red": {"command": "pytest story", "exit_code": 1, "reason": "功能尚未实现", "at": "t1"},
+        "green": {"command": "pytest story", "exit_code": 0, "at": "t2"},
+        "refactor": {"command": "pytest story", "exit_code": 0, "at": "t3"},
+        "integration_smoke": {"command": "pytest smoke", "exit_code": 0, "at": "t4"},
+        "acceptance": [{"ac_id": "AC1", "pass": True}],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    dev = tmp / "Plans/功能开发/smoke.md"
+    dev.write_text(dev.read_text(encoding="utf-8") + "\n" + skill_run(
+        "feature-dev-assistant", "Plans/功能开发/smoke.md", "story-development"
+    ), encoding="utf-8")
+
+
+def create_client_integration(tmp: Path, epic_rel: str) -> None:
+    plan_rel = "Plans/自动化测试/smoke.md"
+    report_rel = "Plans/自动化测试/smoke.integration.json"
+    write_fixture(
+        tmp / plan_rel,
+        f"""
+---
+epic: {epic_rel}
+story_index: Plans/功能开发/smoke.stories.json
+target_commit: smoke123
+integration_report: {report_rel}
+---
+
+# 全量集成测试 smoke
+
+{skill_run("test-generator", plan_rel, "integration-test")}
+""",
+    )
+    (tmp / report_rel).write_text(json.dumps({
+        "commit": "smoke123", "all_scope_stories_completed": True,
+        "suites": [{"name": "cross-story", "command": "pytest integration", "exit_code": 0}],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def smoke_learning_workflow(tmp: Path, workflow: str, bp: dict) -> None:
@@ -605,23 +760,25 @@ def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
 
     create_client_requirement(tmp, epic_rel)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+    assert_gate_state(gate, workflow, "prioritization")
+
+    create_client_prioritization(tmp, epic_rel)
+    gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
     assert_gate_state(gate, workflow, "architecture")
 
     create_client_architecture(tmp, epic_rel)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
-    assert_gate_state(gate, workflow, "test-first")
+    assert_gate_state(gate, workflow, "story-split")
 
-    create_client_test_plan(tmp, epic_rel)
+    create_client_story_scope(tmp, epic_rel)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
-    assert_gate_state(gate, workflow, "split")
+    assert_gate_state(gate, workflow, "story-development")
 
-    write_client_development(tmp, epic_rel, [5], "task-splitter")
+    complete_client_story_tdd(tmp)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
-    assert_gate_state(gate, workflow, "development")
-    if not any("WBS 切片" in item for item in gate.get("blockers", [])):
-        raise SmokeError(f"{workflow} 拆分后应阻塞在开发 WBS: {gate}")
+    assert_gate_state(gate, workflow, "integration-test")
 
-    write_client_development(tmp, epic_rel, [5, 6, 7, 8, 9, 10, 11], "feature-dev-assistant")
+    create_client_integration(tmp, epic_rel)
     done = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
     assert_gate_state(done, workflow, "done")
     if done.get("blockers"):

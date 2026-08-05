@@ -1,6 +1,6 @@
 ---
 name: event-storming-assistant
-description: 事件风暴工作坊。用于 client-dev 需求阶段第 1 步，先梳理领域事件墙、热点、角色-系统交互，再进入实例化需求。触发词：事件风暴、领域事件、事件墙、业务事件、WBS 1。
+description: 事件风暴工作坊。用于 client-dev requirement 阶段的第一个活动，先梳理领域事件墙、热点、角色-系统交互，再进入实例化需求。触发词：事件风暴、领域事件、事件墙、业务事件。
 ---
 
 # 事件风暴助手
@@ -11,7 +11,7 @@ Plan：`Plans/需求分析/YYYY-MM-DD-模块名.md`
 
 ## 执行
 
-1. 读取 Epic 与已有需求输入；确认 `workflow: client-dev` 时对应 WBS 1。
+1. 读取 Epic 与已有需求输入；确认 `workflow: client-dev` 时归属 `requirement` 阶段。
 2. 按 `Templates/事件风暴模板.md` 输出领域事件墙、热点与角色-系统交互。
 3. 事件必须用过去式；每个关键事件尽量补触发命令、聚合/对象、上下游。
 4. 热点表只保留会影响需求/方案/测试的分歧，标 P0/P1 或待确认。

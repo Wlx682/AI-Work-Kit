@@ -79,19 +79,8 @@
     .arrow { align-self: center; color: var(--faint); font-size: 1rem; }
     .flow.empty-flow { color: var(--faint); font-size: 0.8rem; }
 
-    /* constitution + monitor split */
-    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,320px),1fr)); gap: clamp(14px,2vw,20px); }
     .panel { padding: clamp(14px,1.8vw,20px); background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); }
     .panel h3 { margin: 0 0 0.9rem; font-size: 0.9rem; color: var(--muted); }
-    .rule { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px dashed var(--stroke); }
-    .rule:last-child { border: none; }
-    .rule .r-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .rule .r-dot.enforced { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .rule .r-dot.indexed { background: var(--amber); }
-    .rule .r-body { flex: 1; }
-    .rule .r-title { font-size: 0.84rem; }
-    .rule .r-meta { font-size: 0.68rem; color: var(--faint); font-family: ui-monospace, monospace; }
-    .rule .r-badge { font-size: 0.62rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--muted); }
 
     .timeline { list-style: none; margin: 0; padding: 0 0 0 1.1rem; position: relative; }
     .timeline::before { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(var(--stroke-strong), transparent); }
@@ -148,7 +137,7 @@
     function esc(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
     const STAGE_ZH = { requirement: '需求分析', design: '架构设计', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '完成', diagnose: '复现定位', fix: '修复', regress: '回归', 'ui-impl': 'UI 还原', verify: '验收', locate: '定位' };
     const zh = k => STAGE_ZH[k] || k || '—';
-    const EXIT_ZH = { childPlanExists: '子Plan存在', status: '状态达标', wbsDone: 'WBS完成', p0Open: 'P0闭环', planGateCheck: '开发门禁', skillRun: 'skill_run', verdictPass: '视觉裁决', sectionsPresent: '交接章节', testTraceability: '测试追溯', devTraceability: '开发追溯' };
+    const EXIT_ZH = { childPlanExists: '子Plan存在', status: '状态达标', p0Open: 'P0闭环', planGateCheck: '开发门禁', skillRun: 'skill_run', verdictPass: '视觉裁决', sectionsPresent: '交接章节', backlogPrioritized: 'Backlog已确认', storyScopeReady: 'Story Scope已确认', storyTddComplete: 'Story TDD已完成', integrationReportPass: '集成报告已通过' };
     const ex = k => EXIT_ZH[k] || k;
 
     function countUp(el) {
@@ -201,15 +190,7 @@
           </div>`;
       }).join('');
 
-      // 2. 宪法
-      const rules = (d.constitution || []).map(r => `
-        <div class="rule">
-          <span class="r-dot ${r.status}"></span>
-          <div class="r-body"><div class="r-title">${esc(r.title)}</div><div class="r-meta">${esc(r.id)} · ${esc(r.checked_by || '—')}</div></div>
-          <span class="r-badge">${r.status === 'enforced' ? '硬门禁' : '延迟索引'}</span>
-        </div>`).join('') || '<div class="empty">未配置宪法</div>';
-
-      // 3. 运行态
+      // 2. 运行态
       const tl = (d.events || []).slice(0, 12).map(ev => `
         <li class="${ev.result}">
           <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${esc(zh(ev.stage))}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}</div>
@@ -223,7 +204,7 @@
           <div class="w-reason">${esc(w.reason || '')}</div>
         </div>`).join('') || '<div class="empty">🎉 无连续 fail，工作流运转顺畅</div>';
 
-      // 4. 进化（未归位待办 + 已归位历史，分开展示）
+      // 3. 进化（未归位待办 + 已归位历史，分开展示）
       const evoData = d.evolution || {};
       const pend = (evoData.pending || []).map(e => `
         <div class="evo-card fade-in"><div class="e-title">🧬 ${esc(e.title)}</div><div class="e-sum">${esc(e.summary || '')}</div></div>`).join('')
@@ -248,17 +229,11 @@
         </div>
         ${evoSection}
         <div class="section">
-          <div class="split">
-            <div class="panel fade-in">
-              <h3>📜 门禁宪法（constitution）</h3>
-              ${rules}
-            </div>
-            <div class="panel fade-in">
-              <h3>🚨 连续 fail 告警</h3>
-              ${warns}
-              <h3 style="margin-top:1.2rem">🎯 门禁卡点 Top 5</h3>
-              <ul class="topfail" style="list-style:none;margin:0;padding:0">${topfail}</ul>
-            </div>
+          <div class="panel fade-in">
+            <h3>🚨 连续 fail 告警</h3>
+            ${warns}
+            <h3 style="margin-top:1.2rem">🎯 门禁卡点 Top 5</h3>
+            <ul class="topfail" style="list-style:none;margin:0;padding:0">${topfail}</ul>
           </div>
         </div>
         <div class="section">

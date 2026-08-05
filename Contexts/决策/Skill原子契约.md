@@ -108,10 +108,10 @@ skill_contract:
 
 | 字段 | 内容 |
 |------|------|
-| 输入 | 已采纳技术方案、Epic 或明确目标范围 |
-| 输出 | 5-10 个原子任务，必要时写主 plan 与子任务 plan |
-| 门禁 | 每个任务有输入、输出、验收、依赖；不混职责 |
-| 越界 | WBS 方案不明确时请求用户确认，不擅自推荐 A/B/C |
+| 输入 | 已采纳需求、已确认 Backlog、已采纳架构 |
+| 输出 | 纵向用户 Story 索引、团队确认的故事点/Scope、每 Story 子 Plan |
+| 门禁 | Story 可独立演示验收；覆盖 AC/架构引用；不按 Domain/Data/UI 横向切交付 |
+| 越界 | Scope/点数由团队确认；不换算工时或个人绩效 |
 | fixture | `tests/fixtures/skills/task-splitter/checkout-tech-plan.input.md` |
 
 ### `code-review`

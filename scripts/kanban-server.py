@@ -309,8 +309,10 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
     plans: list[dict[str, Any]] = []
     stage_map = {
         "requirement": "需求分析",
+        "prioritization": "需求排序",
         "architecture": "技术方案",
         "development": "功能开发",
+        "integration": "全量集成测试",
         "test": "自动化测试",
         "deploy": "部署",
         "topic-intake": "学习主题确认",
@@ -487,7 +489,134 @@ def _parse_plan_fact(rel: str | None, parser) -> Any:
         return {}
 
 
+def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """读 client-dev 动态 Story index，并从每个故事子 Plan/TDD 证据派生状态。
+
+    JSON 是故事范围/点数的真理源；子 Plan 是开发完成的真理源。
+    看板只读投影，不在 Epic 中复制状态。
+    """
+    if not dev_rel:
+        return [], {}
+    try:
+        dev = resolve_plan(dev_rel)
+    except ValueError:
+        return [], {"error": "development plan 路径非法"}
+    if not dev.is_file():
+        return [], {}
+    dev_fm, _, _ = read_frontmatter(dev)
+    index_raw = _clean_scalar(dev_fm.get("story_index"))
+    if not index_raw:
+        return [], {}
+    try:
+        index_path = resolve_plan(index_raw)
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        return [], {"error": f"Story index 不可用: {exc}"}
+
+    cards: list[dict[str, Any]] = []
+    done_statuses = {"已完成", "done", "completed"}
+    for raw in payload.get("stories", []) if isinstance(payload, dict) else []:
+        if not isinstance(raw, dict):
+            continue
+        path_raw = str(raw.get("path") or "").strip()
+        child_status = ""
+        tdd_complete = False
+        if path_raw:
+            try:
+                child = resolve_plan(path_raw)
+                if child.is_file():
+                    child_fm, _, _ = read_frontmatter(child)
+                    child_status = _clean_scalar(child_fm.get("status"))
+                    evidence_raw = _clean_scalar(child_fm.get("tdd_evidence"))
+                    if evidence_raw:
+                        evidence_path = resolve_plan(evidence_raw)
+                        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+                        phases = ["green", "refactor", "integration_smoke"]
+                        tdd_complete = (
+                            child_status in done_statuses
+                            and evidence.get("red", {}).get("exit_code") not in (None, 0)
+                            and all(evidence.get(k, {}).get("exit_code") == 0 for k in phases)
+                            and bool(evidence.get("commit"))
+                        )
+            except (ValueError, OSError, json.JSONDecodeError):
+                pass
+        if tdd_complete:
+            state = "done"
+        elif child_status in {"进行中", "评审中", "in_progress"}:
+            state = "running"
+        else:
+            state = "todo"
+        cards.append(
+            {
+                "id": str(raw.get("id") or ""),
+                "title": str(raw.get("title") or ""),
+                "story_points": raw.get("story_points"),
+                "priority": str(raw.get("priority") or ""),
+                "sprint_scope": raw.get("sprint_scope") is True,
+                "dependencies": raw.get("dependencies") if isinstance(raw.get("dependencies"), list) else [],
+                "path": path_raw,
+                "status": child_status,
+                "tdd_complete": tdd_complete,
+                "state": state,
+            }
+        )
+    meta = {
+        "index": str(index_path.relative_to(ROOT)) if index_path.is_relative_to(ROOT) else str(index_path),
+        "scope_confirmed": payload.get("scope_confirmed") is True,
+    }
+    return cards, meta
+
+
+def _integration_pass(plan_by_stage: dict[str, str]) -> bool:
+    rel = plan_by_stage.get("integration")
+    if not rel:
+        return False
+    try:
+        plan = resolve_plan(rel)
+        fm, _, _ = read_frontmatter(plan)
+        report = resolve_plan(_clean_scalar(fm.get("integration_report")))
+        data = json.loads(report.read_text(encoding="utf-8"))
+    except (ValueError, OSError, json.JSONDecodeError):
+        return False
+    suites = data.get("suites")
+    return (
+        bool(_clean_scalar(fm.get("target_commit")))
+        and data.get("commit") == _clean_scalar(fm.get("target_commit"))
+        and data.get("all_scope_stories_completed") is True
+        and isinstance(suites, list)
+        and bool(suites)
+        and all(isinstance(s, dict) and s.get("exit_code") == 0 for s in suites)
+    )
+
+
 def _test_health(plan_by_stage: dict[str, str], plans: list[dict[str, Any]]) -> dict[str, Any]:
+    if "integration" in plan_by_stage or "prioritization" in plan_by_stage:
+        stories, _ = _load_story_cards(plan_by_stage.get("development"))
+        scoped = [s for s in stories if s.get("sprint_scope")]
+        done = [s for s in scoped if s.get("tdd_complete")]
+        integration_ok = _integration_pass(plan_by_stage)
+        blockers = []
+        if not scoped:
+            blockers.append("未确认迭代 Scope")
+        if scoped and len(done) < len(scoped):
+            blockers.append(f"Scope Story TDD {len(done)}/{len(scoped)}")
+        if scoped and len(done) == len(scoped) and not integration_ok:
+            blockers.append("全量集成测试未通过")
+        return {
+            "health": "green" if integration_ok else ("amber" if scoped else "red"),
+            "requirement_plan": plan_by_stage.get("requirement"),
+            "test_plan": plan_by_stage.get("integration"),
+            "development_plan": plan_by_stage.get("development"),
+            "story_total": len(scoped),
+            "story_done": len(done),
+            "story_points_total": sum(int(s.get("story_points") or 0) for s in scoped),
+            "story_points_done": sum(int(s.get("story_points") or 0) for s in done),
+            "integration_pass": integration_ok,
+            "coverage_pct": round(len(done) / len(scoped) * 100) if scoped else None,
+            "ac_total": len(scoped),
+            "ac_covered": len(done),
+            "blockers": blockers,
+        }
     req_rel = plan_by_stage.get("requirement")
     test_rel = plan_by_stage.get("test")
     dev_rel = plan_by_stage.get("development")
@@ -551,11 +680,14 @@ def scan_epic(path: Path) -> dict[str, Any]:
     fm, _, _ = read_frontmatter(path)
     rel = str(path.relative_to(ROOT))
     workflow = fm.get("workflow")
+    effective_workflow = _clean_scalar(workflow, "client-dev")
+    is_client_dev = effective_workflow == "client-dev"
     slices = parse_wbs_slices(path)
     wbs_table = parse_wbs_table(path)
     plans = parse_plans_block(path)
     plan_by_stage = {p["stage_key"]: p.get("path") for p in plans if p.get("path")}
     test_health = _test_health(plan_by_stage, plans)
+    stories, story_meta = _load_story_cards(plan_by_stage.get("development")) if is_client_dev else ([], {})
     slice_stage = _slice_stage_map(fm.get("workflow"))
     enriched: list[dict[str, Any]] = []
     for s in slices:
@@ -592,8 +724,30 @@ def scan_epic(path: Path) -> dict[str, Any]:
     ph = progress_history_for(rel)
     done_cnt = sum(1 for e in enriched if e["done"])
     total_cnt = len(enriched)
-    # 当前阶段：第一个未完成切片所属 stage_key；全完成则 done。
-    cur_stage = next((e["stage_key"] for e in enriched if not e["done"]), "done")
+    if is_client_dev:
+        scoped = [s for s in stories if s.get("sprint_scope")]
+        story_done = [s for s in scoped if s.get("tdd_complete")]
+        status_by_stage = {p.get("stage_key"): p.get("status") for p in plans}
+        adopted = {"已采纳", "已完成", "done", "completed"}
+        if status_by_stage.get("requirement") not in adopted:
+            cur_stage = "requirement"
+        elif status_by_stage.get("prioritization") not in adopted:
+            cur_stage = "prioritization"
+        elif status_by_stage.get("architecture") not in adopted:
+            cur_stage = "architecture"
+        elif not stories or not story_meta.get("scope_confirmed"):
+            cur_stage = "story-split"
+        elif not scoped or len(story_done) < len(scoped):
+            cur_stage = "story-development"
+        elif not _integration_pass(plan_by_stage):
+            cur_stage = "integration-test"
+        else:
+            cur_stage = "done"
+        done_cnt = len(story_done)
+        total_cnt = len(scoped)
+    else:
+        # 含 WBS 的其他工作流：第一个未完成切片所属 stage key。
+        cur_stage = next((e["stage_key"] for e in enriched if not e["done"]), "done")
     consec = (gh or {}).get("consecutive_fails", 0)
     p0 = int(fm.get("p0_open", "0") or "0")
     # 健康等级（指挥官排序依据）：archived 已归档（置灰，排最后）；
@@ -609,19 +763,26 @@ def scan_epic(path: Path) -> dict[str, Any]:
     else:
         health = "blue"
     blocker = ""
-    if first_open is not None:
+    if is_client_dev and cur_stage != "done":
+        running = next((s for s in stories if s.get("state") == "running"), None)
+        pending = next((s for s in stories if s.get("sprint_scope") and not s.get("tdd_complete")), None)
+        blocker = (running or pending or {}).get("title") or cur_stage
+    elif first_open is not None:
         blocker = next((e["title"] for e in enriched if e["n"] == first_open), f"WBS {first_open}")
     return {
         "file": rel,
         "name": path.stem,
         "epic_id": fm.get("epic_id", ""),
         "workflow": workflow,
+        "effective_workflow": effective_workflow,
         "status": fm.get("status", ""),
         "lifecycle_state": fm.get("lifecycle_state", ""),
         "p0_open": p0,
         "repo": fm.get("repo", ""),
         "branch": fm.get("branch", ""),
         "slices": enriched,
+        "stories": stories,
+        "story_meta": story_meta,
         "plans": plans,
         "test_health": test_health,
         "next_slice": first_open,
@@ -631,6 +792,8 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "current_stage": cur_stage,
         "slices_done": done_cnt,
         "slices_total": total_cnt,
+        "story_points_done": sum(int(s.get("story_points") or 0) for s in stories if s.get("sprint_scope") and s.get("tdd_complete")),
+        "story_points_total": sum(int(s.get("story_points") or 0) for s in stories if s.get("sprint_scope")),
         "blocker_hint": blocker,
     }
 
@@ -654,7 +817,7 @@ def board_revision() -> str:
     wf_globs = [
         BLUEPRINT_DIR.glob("*.json"),
         EVENT_DIR.glob("*.events.jsonl"),
-        [CONSTITUTION_FILE, ORPHAN_FEEDBACK],
+        [ORPHAN_FEEDBACK],
     ]
     for group in wf_globs:
         files.extend(f for f in sorted(group, key=lambda p: p.name) if f.is_file())
@@ -793,17 +956,7 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 BLUEPRINT_DIR = ROOT / ".workflows" / "blueprints"
-CONSTITUTION_FILE = ROOT / ".workflows" / "constitution.json"
 ORPHAN_FEEDBACK = ROOT / "Contexts" / "决策" / "孤立反馈记录.md"
-
-_RULE_ZH = {
-    "tdd_first": "验收测试先行（外层 TDD 先红）",
-    "skill_run_required": "阶段完成须输出 skill_run 反馈",
-    "epic_required": "功能开发须先有 Epic",
-    "traceability": "需求 AC → 测试/开发任务可追溯",
-    "figma_forced": "含界面/对稿 → 强制 figma-ui skill",
-    "wbs_single_truth": "WBS 单一权威源（子 Plan fenced checklist）",
-}
 
 
 def read_blueprints() -> list[dict[str, Any]]:
@@ -841,31 +994,6 @@ def read_blueprints() -> list[dict[str, Any]]:
             }
         )
     return out
-
-
-def read_constitution() -> list[dict[str, Any]]:
-    """读工作流宪法规则 + 判定其执行形态（enforced 硬门禁 / indexed 延迟索引）。"""
-    if not CONSTITUTION_FILE.is_file():
-        return []
-    try:
-        d = json.loads(CONSTITUTION_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    rules = []
-    for r in d.get("rules", []):
-        rid = str(r.get("id", ""))
-        checked_by = str(r.get("checkedBy", ""))
-        status = "indexed" if checked_by.startswith("deferred:") else "enforced"
-        rules.append(
-            {
-                "id": rid,
-                "title": _RULE_ZH.get(rid, rid),
-                "checked_by": checked_by,
-                "status": status,
-                "severity": r.get("severity", ""),
-            }
-        )
-    return rules
 
 
 def all_gate_events() -> list[dict[str, Any]]:
@@ -969,7 +1097,6 @@ def workflows_envelope() -> dict[str, Any]:
     return {
         "updated_at": datetime.now().isoformat(timespec="seconds"),
         "blueprints": blueprints,
-        "constitution": read_constitution(),
         "events": events[:40],
         "top_blockers": [{"stage": s, "count": c} for s, c in stage_fail.most_common(5)],
         "warnings": warn,
@@ -1157,6 +1284,10 @@ def _task_level_summary(th: dict[str, Any]) -> list[dict[str, Any]]:
     p0_dev_covered = int(th.get("p0_dev_covered") or 0)
     coverage_pct = th.get("coverage_pct")
     health = th.get("health") or "none"
+    story_mode = "story_total" in th
+    story_total = int(th.get("story_total") or 0)
+    story_done = int(th.get("story_done") or 0)
+    integration_pass = bool(th.get("integration_pass"))
     unit_status = "ready" if case_count else "not-connected"
     unit_summary = f"{case_count} 个任务级用例" if case_count else "测试 plan 暂无可识别用例"
     return [
@@ -1172,19 +1303,23 @@ def _task_level_summary(th: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "acceptance",
             "title": "验收测试",
             "status": health,
-            "summary": f"AC 覆盖 {coverage_pct if coverage_pct is not None else '—'}%，P0 {p0_covered}/{p0_total}",
-            "count": p0_covered,
-            "total": p0_total,
+            "summary": (
+                f"Scope Story TDD {story_done}/{story_total}"
+                if story_mode
+                else f"AC 覆盖 {coverage_pct if coverage_pct is not None else '—'}%，P0 {p0_covered}/{p0_total}"
+            ),
+            "count": story_done if story_mode else p0_covered,
+            "total": story_total if story_mode else p0_total,
             "coverage_pct": coverage_pct,
             "runnable": True,
         },
         {
             "id": "integration",
             "title": "集成测试",
-            "status": "not-connected",
-            "summary": "尚未接入任务级集成测试命令",
-            "count": 0,
-            "runnable": False,
+            "status": "green" if integration_pass else "not-connected",
+            "summary": "全量集成测试已通过" if integration_pass else "尚未通过全量集成测试",
+            "count": 1 if integration_pass else 0,
+            "runnable": story_mode,
         },
         {
             "id": "e2e",
@@ -1197,10 +1332,14 @@ def _task_level_summary(th: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "id": "regression",
             "title": "回归测试",
-            "status": "ready" if p0_dev_covered else "not-connected",
-            "summary": f"P0 开发覆盖 {p0_dev_covered}/{p0_total}" if p0_total else "暂无 P0 开发覆盖数据",
-            "count": p0_dev_covered,
-            "total": p0_total,
+            "status": "ready" if (integration_pass or p0_dev_covered) else "not-connected",
+            "summary": (
+                "集成报告已覆盖当前目标 commit"
+                if story_mode and integration_pass
+                else (f"P0 开发覆盖 {p0_dev_covered}/{p0_total}" if p0_total else "暂无 P0 开发覆盖数据")
+            ),
+            "count": 1 if story_mode and integration_pass else p0_dev_covered,
+            "total": 1 if story_mode else p0_total,
             "runnable": False,
         },
     ]
@@ -1309,6 +1448,30 @@ def run_test_from_board(kind: str, test_id: str) -> dict[str, Any]:
         epic = next((e for e in board_payload() if e.get("file") == test_id), None)
         if not epic:
             raise ValueError("unknown epic")
+        if epic.get("effective_workflow") == "client-dev":
+            th = epic.get("test_health") or {}
+            dev_plan = th.get("development_plan")
+            integration_plan = th.get("test_plan")
+            if not dev_plan or not integration_plan:
+                return {
+                    "ok": False,
+                    "returncode": 1,
+                    "command": "python3 scripts/validate-client-dev.py",
+                    "output": "BLOCKED:client-dev: 看板缺少 Story 开发或集成测试 Plan",
+                }
+            dev_argv = ["python3", "scripts/validate-client-dev.py", "story-development", "--plan", dev_plan]
+            integration_argv = ["python3", "scripts/validate-client-dev.py", "integration", "--plan", integration_plan]
+            result = _run_allowed_command(dev_argv)
+            integration_result = _run_allowed_command(integration_argv)
+            result["ok"] = bool(result["ok"] and integration_result["ok"])
+            result["returncode"] = 0 if result["ok"] else 1
+            result["command"] += " && " + integration_result["command"]
+            result["output"] = (
+                result.get("output", "")
+                + "\n\n--- integration ---\n"
+                + integration_result.get("output", "")
+            ).strip()[-16000:]
+            return result
         argv = ["python3", "scripts/traceability-check.py", "--epic", test_id, "--check", "test"]
         result = _run_allowed_command(argv)
         dev_argv = ["python3", "scripts/traceability-check.py", "--epic", test_id, "--check", "dev"]
@@ -1336,7 +1499,10 @@ def append_change_log(epic: Path, change_type: str, stage: str, slices: str, ope
     text = epic.read_text(encoding="utf-8")
     today = datetime.now().strftime("%Y-%m-%d")
     row = f"| {today} | {change_type} | {stage} | {slices} | {operator} | {note} |"
-    marker = "## 四、变更日志" if "## 四、变更日志" in text else "## 变更日志"
+    marker = next(
+        (m for m in ("## 四、变更日志", "## 四、变更与迁移", "## 变更日志") if m in text),
+        "## 变更日志",
+    )
     if marker not in text:
         text = (
             text.rstrip()
@@ -1443,16 +1609,37 @@ def suggest_trigger(epic_file: str) -> dict[str, str]:
     epic = resolve_plan(epic_file)
     data = scan_epic(epic)
     ns = data.get("next_slice")
-    lc = data.get("lifecycle_state", "development")
+    lc = data.get("current_stage") or data.get("lifecycle_state", "development")
     skill_map = {
         "requirement": "requirement-analyst",
+        "prioritization": "backlog-prioritization-assistant",
         "architecture": "architecture-design-assistant",
+        "story-split": "task-splitter",
+        "story-development": "feature-dev-assistant",
+        "integration-test": "test-generator",
         "development": "feature-dev-assistant",
         "test": "test-generator",
         "deploy": "deployment-assistant",
     }
     dev_plan = next((p["path"] for p in data.get("plans", []) if p.get("stage_key") == "development" and p.get("path")), None)
-    if lc == "development" and dev_plan and ns:
+    pending_story = next(
+        (s for s in data.get("stories", []) if s.get("sprint_scope") and not s.get("tdd_complete")),
+        None,
+    )
+    plan_by_stage = {p.get("stage_key"): p.get("path") for p in data.get("plans", [])}
+    stage_plan_key = {
+        "requirement": "requirement",
+        "prioritization": "prioritization",
+        "architecture": "architecture",
+        "story-split": "development",
+        "story-development": "development",
+        "integration-test": "integration",
+    }.get(lc)
+    if lc == "story-development" and pending_story and pending_story.get("path"):
+        cmd = f"/resume plan={pending_story['path']} 进度={pending_story.get('id')} 待做"
+    elif stage_plan_key and plan_by_stage.get(stage_plan_key):
+        cmd = f"/resume plan={plan_by_stage[stage_plan_key]} 进度={lc} 待做"
+    elif lc == "development" and dev_plan and ns:
         cmd = f"/resume plan={dev_plan} 进度=WBS{ns} 待做"
     elif ns:
         cmd = f"/resume plan={epic_file} 进度=WBS{ns} 待做"

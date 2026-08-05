@@ -15,6 +15,8 @@ feedback-aggregate.py — 月度聚合 skill_run 反馈块
   - 漂移告警: contexts_stale 同 path 累计 ≥ 2 次
   - 补全候选: contexts_missing 同字符串去重后累计 ≥ 2 次
 """
+from __future__ import annotations
+
 import argparse
 import pathlib
 import re

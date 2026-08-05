@@ -69,7 +69,7 @@ flowchart TB
 
 ### 主线 A · 业务开发线（蓝图 + Epic 数据上下文）
 
-入口 `workflow-router`（自然语言或显式 `workflow=<name>`），先选具体蓝图；`client-dev` 建 `Plans/Epic/`，Epic 只存子 Plan 路径、WBS 和摘要，不驱动流程。阶段由 `workflow-gate.sh` 读蓝图和子 Plan 文件事实派生。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
+入口 `workflow-router`（自然语言或显式 `workflow=<name>`），先选具体蓝图；`client-dev` 建 `Plans/Epic/`，Epic 只存子 Plan 路径、动态 Story 摘要和里程碑，不驱动流程。Story/Scope/点数由 `.stories.json` 管理，开发完成由每个 Story 子 Plan 与 TDD 证据管理。阶段由 `workflow-gate.sh` 读蓝图和文件事实派生。Skill 分工与路由细则见 [[Contexts/决策/AI-Work-Kit工作流总览]]，决策树见 [[Contexts/决策/新手引导与最佳实践]] 地图③。
 
 防越界是这条线的设计灵魂：**互斥锁**（单阶段词不准被劫持成全流程）、**降级兜底**（≥3 个 Skill 命中 → 转 `resume-assistant` 问用户）、**禁止擅自下 A/B/C 结论**、**figma-ui 与 feature-dev 互斥**（含"界面/对稿/Figma"强制走 figma-ui）。一句话概括：**把"Agent 替用户拿主意"当头号风险来防**。
 

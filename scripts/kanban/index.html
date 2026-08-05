@@ -277,7 +277,7 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
+    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '任务拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
     function boardContentSignature(data) {
@@ -359,7 +359,10 @@
 
       const wall = epics.map(e => {
         const gh = e.gate_history || {};
-        const pct = e.slices_total ? Math.round(e.slices_done / e.slices_total * 100) : 0;
+        const storyMode = e.effective_workflow === 'client-dev';
+        const pct = storyMode
+          ? (e.story_points_total ? Math.round(e.story_points_done / e.story_points_total * 100) : 0)
+          : (e.slices_total ? Math.round(e.slices_done / e.slices_total * 100) : 0);
         const consec = gh.consecutive_fails || 0;
         const badge = e.health === 'archived'
           ? '<span class="arch-tag">✓ 已归档</span>'
@@ -369,7 +372,9 @@
         const hint = e.blocker_hint && e.current_stage !== 'done'
           ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
         const th = e.test_health || {};
-        const testLabel = th.coverage_pct == null ? '未建测试' : `测试 ${th.ac_covered || 0}/${th.ac_total || 0} AC`;
+        const testLabel = storyMode
+          ? (th.integration_pass ? '全量集成已通过' : `TDD ${th.story_done || 0}/${th.story_total || 0} Story`)
+          : (th.coverage_pct == null ? '未建测试' : `测试 ${th.ac_covered || 0}/${th.ac_total || 0} AC`);
         const testChip = `<div class="test-chip ${esc(th.health || '')}">🧪 ${esc(testLabel)}</div>`;
         return `
           <button class="ecard ${e.health} fade-in" data-file="${esc(e.file)}">
@@ -382,7 +387,7 @@
             </div>
             <div class="progress">
               <div class="bar"><i data-w="${pct}"></i></div>
-              <div class="meta"><span>${e.slices_done}/${e.slices_total} 切片</span><span>${pct}%</span></div>
+              <div class="meta"><span>${storyMode ? `${e.story_points_done || 0}/${e.story_points_total || 0} 点` : `${e.slices_done}/${e.slices_total} 切片`}</span><span>${pct}%</span></div>
             </div>
             ${hint}
             ${testChip}
@@ -496,10 +501,12 @@
     function renderDetail() {
       const e = envelope.epics.find(x => x.file === currentFile);
       if (!e) { view = 'overview'; return renderOverview(); }
+      const storyMode = e.effective_workflow === 'client-dev';
       const nextN = e.next_slice;
       const cols = { todo: [], running: [], done: [] };
-      (e.slices || []).forEach(s => {
-        if (s.done) cols.done.push(s);
+      (storyMode ? (e.stories || []) : (e.slices || [])).forEach(s => {
+        if (storyMode) cols[s.state || 'todo'].push(s);
+        else if (s.done) cols.done.push(s);
         else if (s.n === nextN) cols.running.push(s);
         else cols.todo.push(s);
       });
@@ -508,14 +515,16 @@
           <h4>${title} <span class="n">${arr.length}</span></h4>
           ${arr.map(s => `
             <div class="card ${cls} ${s.skipped ? 'skipped' : ''}">
-              <h5>WBS ${s.n} · ${s.skipped ? '已跳过 · ' : ''}${esc(s.title)}</h5>
-              ${s.summary ? `<p class="sub">${esc(s.summary)}</p>` : ''}
+              <h5>${storyMode ? `${esc(s.id)} · ${esc(s.title)}` : `WBS ${s.n} · ${s.skipped ? '已跳过 · ' : ''}${esc(s.title)}`}</h5>
+              ${storyMode
+                ? `<p class="sub">${esc(s.priority)} · ${esc(s.story_points)} 点 · ${s.sprint_scope ? 'Scope 内' : 'Scope 外'}${s.dependencies?.length ? ` · 依赖 ${esc(s.dependencies.join(', '))}` : ''}</p>`
+                : (s.summary ? `<p class="sub">${esc(s.summary)}</p>` : '')}
               <div class="row-actions">
-                <button data-detail="${s.n}">细节</button>
-                ${s.done
+                ${storyMode ? `<button data-story="${esc(s.id)}">证据</button>` : `<button data-detail="${s.n}">细节</button>`}
+                ${storyMode ? '' : (s.done
                   ? `<button data-slice="${s.n}" data-state="open">${s.skipped ? '恢复' : '重开'}</button>`
-                  : `<button data-slice="${s.n}" data-state="done">完成</button>`}
-                ${!s.done && s.optional ? `<button data-slice="${s.n}" data-state="skipped">跳过</button>` : ''}
+                  : `<button data-slice="${s.n}" data-state="done">完成</button>`)}
+                ${!storyMode && !s.done && s.optional ? `<button data-slice="${s.n}" data-state="skipped">跳过</button>` : ''}
               </div>
             </div>`).join('') || '<p class="sub">无</p>'}
         </div>`;
@@ -551,7 +560,7 @@
           <div class="brand">
             <span class="light ${e.health}"></span>
             <div><h1 style="font-size:clamp(16px,1.5vw,20px)">${esc(e.name)}</h1>
-            <div class="ver">阶段 ${zhStage(e.current_stage)} · ${e.slices_done}/${e.slices_total} 切片 · ${esc(e.repo || '')} / ${esc(e.branch || '')}</div></div>
+            <div class="ver">阶段 ${zhStage(e.current_stage)} · ${storyMode ? `${e.story_points_done || 0}/${e.story_points_total || 0} 故事点` : `${e.slices_done}/${e.slices_total} 切片`} · ${esc(e.repo || '')} / ${esc(e.branch || '')}</div></div>
           </div>
           <div class="actions">
             <button class="primary" id="triggerBtn">复制续做命令</button>
@@ -563,7 +572,7 @@
         </div>
         <div class="stage">
           <div>
-            <div class="section-title"><span>WBS 作战看板</span></div>
+            <div class="section-title"><span>${storyMode ? '动态用户故事看板' : 'WBS 作战看板'}</span></div>
             <div class="grid4">
               ${colHtml('待开始', cols.todo, 'todo')}
               ${colHtml('进行中', cols.running, 'running')}
@@ -597,6 +606,10 @@
       document.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => {
         const s = e.slices.find(x => x.n === +b.dataset.detail);
         toast(`WBS ${s.n} · 验收：${s.acceptance || '—'} · skill：${s.skill || '—'}`);
+      });
+      document.querySelectorAll('[data-story]').forEach(b => b.onclick = () => {
+        const s = e.stories.find(x => x.id === b.dataset.story);
+        toast(`${s.id} · ${s.story_points} 点 · ${s.tdd_complete ? 'TDD 证据完整' : 'TDD 证据未完整'} · ${s.path || '未建子 Plan'}`);
       });
       document.querySelectorAll('.statusSel').forEach(sel => sel.onchange = () => setStatus(sel.dataset.plan, sel.value, e.file));
       const archiveBtn = $('archiveBtn'), reactivateBtn = $('reactivateBtn'), deleteBtn = $('deleteBtn');

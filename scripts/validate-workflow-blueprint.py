@@ -64,9 +64,6 @@ def validate_blueprint(path: Path) -> list[str]:
         if bp.get(script_key):
             require((ROOT / bp[script_key]).exists(), f"{path}: {script_key} 不存在: {bp[script_key]}")
 
-    if bp.get("constitution"):
-        require((ROOT / bp["constitution"]).exists(), f"{path}: constitution 不存在: {bp['constitution']}")
-
     stage_keys: list[str] = []
     for index, stage in enumerate(bp["stages"], start=1):
         require(isinstance(stage, dict), f"{path}: stages[{index}] 必须是 object")

@@ -21,12 +21,13 @@ relations:
   depends_on:
     - Templates/模板约定.md
     - Templates/学习循环模板.md
-  dependents: []
+  dependents:
+    - Templates/学习循环模板.md
   supersedes: []
   superseded_by: []
   conflicts: []
----
 
+---
 # 学习 Epic：{{title}}（工作流：learning-loop）
 
 **创建日期**：{{date}}  

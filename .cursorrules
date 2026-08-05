@@ -19,7 +19,7 @@
 # Epic 入口（硬规则）
 新模块/含业务逻辑 → `/full-cycle` 建 Epic；禁止无 Epic 建功能**主** plan。写代码前 `plan-gate-check.sh`。
 纯 UI 小改例外见 `Templates/模板约定.md` §Epic 入口。
-**积木框架**：`full-cycle` 是通用引擎，读工具中性蓝图 `.workflows/blueprints/<name>.json`（client-dev 15 步 / computer-mgmt）。Epic 是**数据上下文，不驱动流程**——阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件系统事实判定；`lifecycle_state` 不参与路由（`derive-epic-status.sh` 派生整体阶段，引擎不读）。其它工作流用自然语言或 `workflow=<name>` 触发。
+**积木框架**：`full-cycle` 是通用引擎，读工具中性蓝图 `.workflows/blueprints/<name>.json`。`client-dev` 按“需求→排序→架构→纵向 Story/故事点→逐 Story TDD→全量集成”推进，不含发布阶段。Epic 是**数据上下文，不驱动流程**——阶段由 `scripts/workflow-gate.sh` 依子 Plan 文件事实判定。
 
 # 知识库使用
 1. 「查一下」「根据计划」→ 搜 `Plans/` + `Contexts/`（MCP 可用则 `obsidian_search`）。
@@ -40,7 +40,7 @@
 
 # Skill 路由硬规则
 - **界面 / 对稿 / 还原 / Figma / 1:1**：强制 `figma-ui`；Epic WBS 或子 plan 标明 Skill=`figma-ui` 时同理。**禁止**用 `feature-dev-assistant` 手写布局替代 UI 还原与自检表验收。
-- **WBS 修订 / 拆解任务 / 计划切片**：须经 `task-splitter` 产出 plan **或向用户确认**；边界不清时列出待确认项。**禁止**擅自输出「我推荐 A/B/C」式单方面定论；不会拆就找用户。
+- **Story / Scope 修订、任务拆解**：须经 `task-splitter` 产出 plan **或向用户确认**；client-dev 必须按可独立验收的纵向功能 Story 拆分并由团队确认故事点，不按 Domain/Data/UI 横向交付。
 - 学习 → `learn-assistant`（`learning-progress-read.sh` / `snapshot.sh` stdout，不写 Contexts）
 - 学习审计 → `learning-audit-assistant` → `Contexts/LLM学习/笔记/*审计报告*`
 - PM 物料 → `material-prep-assistant` → `Contexts/`（通用对照表）

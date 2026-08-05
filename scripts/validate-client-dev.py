@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+import gate_parse
+
+
+POINTS = {1, 2, 3, 5, 8, 13}
+DONE_STATUSES = {"已完成", "done", "completed"}
+TIME_ESTIMATE_KEYS = {"estimated_hours", "estimate_hours", "hours", "days", "duration_hours"}
+
+
+class ValidationError(Exception):
+    pass
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValidationError(message)
+
+
+def resolve(root: Path, raw: str, label: str) -> Path:
+    require(bool(raw), f"缺少 {label} 路径")
+    path = Path(raw)
+    if not path.is_absolute():
+        path = root / path
+    path = path.resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValidationError(f"{label} 超出工作区: {raw}") from exc
+    require(path.exists(), f"{label} 不存在: {raw}")
+    return path
+
+
+def load_json(path: Path, label: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValidationError(f"{label} JSON 非法: {exc}") from exc
+    require(isinstance(payload, dict), f"{label} 顶层必须是 object")
+    return payload
+
+
+def fm(path: Path) -> dict[str, str]:
+    require(path.exists(), f"plan 不存在: {path}")
+    return gate_parse.read_frontmatter(path)
+
+
+def no_time_estimates(value: Any, where: str) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            require(key not in TIME_ESTIMATE_KEYS, f"{where} 禁止故事点换算工时字段: {key}")
+            no_time_estimates(item, where)
+    elif isinstance(value, list):
+        for item in value:
+            no_time_estimates(item, where)
+
+
+def validate_backlog(root: Path, plan: Path) -> None:
+    frontmatter = fm(plan)
+    index = resolve(root, frontmatter.get("backlog_index", ""), "backlog_index")
+    payload = load_json(index, "Backlog")
+    require(payload.get("confirmed") is True, "Backlog 尚未由团队确认")
+    requirements = payload.get("requirements")
+    require(isinstance(requirements, list) and requirements, "Backlog requirements 必须是非空数组")
+    ids: set[str] = set()
+    for pos, item in enumerate(requirements, 1):
+        require(isinstance(item, dict), f"requirement #{pos} 必须是 object")
+        rid = str(item.get("id", "")).strip()
+        require(rid and rid not in ids, f"requirement #{pos} id 缺失或重复: {rid}")
+        ids.add(rid)
+        for key in ["title", "business_value", "urgency", "priority", "reason"]:
+            require(bool(str(item.get(key, "")).strip()), f"{rid} 缺少 {key}")
+        require(isinstance(item.get("dependencies"), list), f"{rid}.dependencies 必须是数组")
+        require(item.get("confirmed") is True, f"{rid} 尚未确认")
+    no_time_estimates(payload, "Backlog")
+
+
+def story_index(root: Path, plan: Path) -> tuple[Path, dict[str, Any]]:
+    frontmatter = fm(plan)
+    index = resolve(root, frontmatter.get("story_index", ""), "story_index")
+    return index, load_json(index, "Story index")
+
+
+def validate_story_metadata(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    require(payload.get("scope_confirmed") is True, "迭代 Scope 尚未由团队确认")
+    stories = payload.get("stories")
+    require(isinstance(stories, list) and stories, "stories 必须是非空数组")
+    ids: set[str] = set()
+    for pos, story in enumerate(stories, 1):
+        require(isinstance(story, dict), f"story #{pos} 必须是 object")
+        sid = str(story.get("id", "")).strip()
+        require(sid and sid not in ids, f"story #{pos} id 缺失或重复: {sid}")
+        ids.add(sid)
+        require(bool(str(story.get("title", "")).strip()), f"{sid} 缺少 title")
+        require(story.get("vertical_slice") is True, f"{sid} 不是可独立验收的纵向功能故事")
+        require(isinstance(story.get("path"), str) and story["path"].strip(), f"{sid} 缺少子 Plan path")
+        points = story.get("story_points")
+        require(points in POINTS, f"{sid}.story_points={points!r}，须为 1/2/3/5/8/13")
+        require(story.get("estimate_confirmed") is True, f"{sid} 故事点尚未由团队确认")
+        require(bool(str(story.get("priority", "")).strip()), f"{sid} 缺少 priority")
+        require(isinstance(story.get("sprint_scope"), bool), f"{sid}.sprint_scope 必须是 boolean")
+        require(isinstance(story.get("dependencies"), list), f"{sid}.dependencies 必须是数组")
+        require(isinstance(story.get("acceptance_criteria"), list) and story["acceptance_criteria"], f"{sid} 缺少 AC")
+        require(isinstance(story.get("architecture_refs"), list) and story["architecture_refs"], f"{sid} 缺少架构引用")
+        if story.get("sprint_scope") is True and points == 13:
+            require(
+                bool(str(story.get("estimate_waiver", "")).strip()) and story.get("waiver_confirmed") is True,
+                f"{sid} 为 13 点，须继续拆分或提供团队确认的 estimate_waiver",
+            )
+    no_time_estimates(payload, "Story index")
+    return stories
+
+
+def validate_story_scope(root: Path, plan: Path) -> None:
+    _, payload = story_index(root, plan)
+    validate_story_metadata(payload)
+
+
+def require_run(evidence: dict[str, Any], key: str, expect_zero: bool) -> None:
+    run = evidence.get(key)
+    require(isinstance(run, dict), f"TDD evidence 缺少 {key}")
+    require(bool(str(run.get("command", "")).strip()), f"{key}.command 为空")
+    require(isinstance(run.get("exit_code"), int), f"{key}.exit_code 必须是整数")
+    require(bool(str(run.get("at", "")).strip()), f"{key}.at 为空")
+    if expect_zero:
+        require(run["exit_code"] == 0, f"{key} 未通过（exit_code={run['exit_code']}）")
+    else:
+        require(run["exit_code"] != 0, "Red 阶段必须先失败")
+        require(bool(str(run.get("reason", "")).strip()), "red.reason 必须说明失败仅因功能尚未实现")
+
+
+def validate_story_evidence(root: Path, story: dict[str, Any]) -> None:
+    sid = str(story["id"])
+    plan = resolve(root, str(story["path"]), f"{sid} 子 Plan")
+    frontmatter = fm(plan)
+    require(frontmatter.get("story_id") == sid, f"{sid} 子 Plan story_id 不匹配")
+    require(frontmatter.get("status") in DONE_STATUSES, f"{sid} status 未完成")
+    evidence_path = resolve(root, frontmatter.get("tdd_evidence", ""), f"{sid}.tdd_evidence")
+    evidence = load_json(evidence_path, f"{sid} TDD evidence")
+    require(evidence.get("story_id") == sid, f"{sid} TDD evidence.story_id 不匹配")
+    require(bool(str(evidence.get("commit", "")).strip()), f"{sid} TDD evidence 缺少 commit")
+    require_run(evidence, "red", expect_zero=False)
+    require_run(evidence, "green", expect_zero=True)
+    require_run(evidence, "refactor", expect_zero=True)
+    require_run(evidence, "integration_smoke", expect_zero=True)
+    acceptance = evidence.get("acceptance")
+    require(isinstance(acceptance, list), f"{sid}.acceptance 必须是数组")
+    passed = {str(item.get("ac_id")) for item in acceptance if isinstance(item, dict) and item.get("pass") is True}
+    missing = sorted(set(str(item) for item in story["acceptance_criteria"]) - passed)
+    require(not missing, f"{sid} 缺少通过的 AC: {', '.join(missing)}")
+
+
+def validate_story_development(root: Path, plan: Path) -> None:
+    _, payload = story_index(root, plan)
+    stories = validate_story_metadata(payload)
+    scoped = [story for story in stories if story.get("sprint_scope") is True]
+    require(scoped, "Scope 内至少需要一个用户故事")
+    for story in scoped:
+        validate_story_evidence(root, story)
+
+
+def validate_integration(root: Path, plan: Path) -> None:
+    frontmatter = fm(plan)
+    target_commit = frontmatter.get("target_commit", "").strip()
+    require(target_commit, "集成测试 Plan 缺少 target_commit")
+    report_path = resolve(root, frontmatter.get("integration_report", ""), "integration_report")
+    report = load_json(report_path, "Integration report")
+    require(report.get("commit") == target_commit, "集成报告 commit 与 target_commit 不一致")
+    require(report.get("all_scope_stories_completed") is True, "并非全部 Scope 故事均已完成")
+    suites = report.get("suites")
+    require(isinstance(suites, list) and suites, "integration suites 必须是非空数组")
+    for pos, suite in enumerate(suites, 1):
+        require(isinstance(suite, dict), f"suite #{pos} 必须是 object")
+        require(bool(str(suite.get("name", "")).strip()), f"suite #{pos} 缺少 name")
+        require(bool(str(suite.get("command", "")).strip()), f"suite #{pos} 缺少 command")
+        require(suite.get("exit_code") == 0, f"suite {suite.get('name', pos)} 未通过")
+
+    # 非空 story index 时，最终集成门禁再次核对所有 Scope 故事的 TDD 文件事实。
+    _, payload = story_index(root, plan)
+    stories = payload.get("stories")
+    require(isinstance(stories, list), "Story index.stories 必须是数组")
+    if stories:
+        validate_story_metadata(payload)
+        for story in stories:
+            if story.get("sprint_scope") is True:
+                validate_story_evidence(root, story)
+
+
+COMMANDS = {
+    "backlog": validate_backlog,
+    "story-scope": validate_story_scope,
+    "story-development": validate_story_development,
+    "integration": validate_integration,
+}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="校验 client-dev 敏捷工作流文件事实。")
+    parser.add_argument("command", choices=sorted(COMMANDS))
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
+    parser.add_argument("--plan", required=True)
+    args = parser.parse_args()
+
+    root = Path(args.root).resolve()
+    plan = Path(args.plan)
+    if not plan.is_absolute():
+        plan = root / plan
+    try:
+        COMMANDS[args.command](root, plan.resolve())
+    except (ValidationError, OSError) as exc:
+        print(f"BLOCKED:client-dev:{args.command}:{exc}", file=sys.stderr)
+        return 1
+    print(f"OK:client-dev:{args.command}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

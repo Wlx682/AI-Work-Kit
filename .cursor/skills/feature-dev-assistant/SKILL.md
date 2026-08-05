@@ -1,53 +1,25 @@
 ---
 name: feature-dev-assistant
-description: >-
-  功能/模块开发（方案已定后落地写代码）。须挂 Epic；无 Epic 改走 workflow-router。
-  触发词：开发[模块]功能、实现[目标]、写[模块]代码、开始写代码、做这个功能、落地这个方案、做功能、开发模块、功能开发、/dev、/feature-dev-assistant。
-  不响应：全流程开发→workflow-router；需求/PRD→requirement-analyst；架构/技术方案→architecture-design-assistant；仅 UI→figma-ui。
+description: 在已确认架构和 Scope 下实现一个纵向用户故事，并完成 Red→Green→Refactor→故事验收的 TDD 闭环。触发词：开发用户故事、实现这个故事、开始写代码、功能开发、/dev；纯 UI 仍转 figma-ui，全流程入口转 workflow-router。
 ---
 
-# 功能开发助手
+# 逐用户故事 TDD 开发
 
-Vault：AI-Work-Kit · 代码：**当前 Cursor 工作区**
+输入：带 `story_id/story_points/sprint_scope` 的用户故事子 Plan、需求 AC 和架构引用。
+输出：故事实现、测试、故事 Plan 与 `tdd_evidence` JSON。
 
-## 触发条件
+## 执行
 
-当用户说以下任一时执行（**方案已定、需要落地写代码**的场景）：
+1. 确认故事是 Scope 内的纵向用户能力；UI 子任务按 `figma-ui` 规则执行，但仍归属于当前故事。
+2. **Red**：先从 AC 写测试并运行，保存命令、非零退出码、时间和“仅因尚未实现”的原因。
+3. **Green**：最小实现使同一测试通过，保存命令、零退出码和 commit。
+4. **Refactor**：重构后再次运行并保持通过。
+5. 合并前运行 `integration_smoke`，避免等到最终阶段才首次集成。
+6. 把全部证据写到 Plan 的 `tdd_evidence` JSON；AC 必须逐条 `pass: true`。
+7. 运行 `python3 scripts/validate-client-dev.py story-development --plan Plans/功能开发/父Plan.md`。
+8. 故事完成后 `status: 已完成`；主 Plan 最后一个 `skill_run` 写 `workflow_stage: story-development`。
 
-- 「**开发 [模块] 功能**」「**实现 [目标]**」「**写 [模块] 代码**」「**开始写代码**」「**做这个功能**」「**落地这个方案**」
-- `/feature-dev-assistant` / `/dev` 命令
+## 边界
 
-**不响应**：
-
-- 「全流程开发 / 启动项目」→ `workflow-engine`（蓝图 manifest）
-- 「需求分析 / PRD」→ `requirement-analyst`
-- 「架构 / 技术方案」→ `architecture-design-assistant`
-- 「只做界面 / 还原 Figma」→ `figma-ui`（无业务逻辑时）
-
-## ✋ UI 子任务门禁（硬规则）
-
-以下任一命中 → **立即转交** `figma-ui`，禁止用本 Skill 手写布局冒充还原：
-
-- 用户描述含「界面 / 对稿 / 还原 / Figma / 1:1」
-- Epic WBS 或子 plan **Skill 列**为 `figma-ui`
-- 验收标准为 Figma 自检表 ≥9/10
-
-## Epic 治理
-
-见 [[Contexts/决策/Kit核心原则]] 的 Gate 原则 · [[Templates/模板约定]] §Epic 入口。
-
-**前置**：`requirement-analyst` P0 闭环或用户声明 PRD 已评审。
-
-- 模板：`Templates/客户端功能开发模板.md`
-- Plan：`Plans/功能开发/`
-- 续做：`/resume plan=Plans/功能开发/xxx.md 进度=...`
-
-仅 UI → `figma-ui` 或模板设含业务逻辑=否。
-
-同步：`Skills/feature_dev_assistant.md`
-
-## 反馈回路（skill_run）
-
-完成任务的最后一步**必须**输出 `skill_run` 反馈（协议：`Contexts/决策/Skill反馈协议.md`）：
-追加到本次 功能开发 plan（`Plans/功能开发/`） **末尾**的 `## 反馈（skill_run）` 节（fenced ```yaml`，非裸 frontmatter）。
-`contexts_used[].utility` 二选一：`high`（附一句话 `reason`）或 `not-needed`；必填 `skill: feature-dev-assistant` / `plan` / `date` / `contexts_used` / `contexts_missing` / `contexts_stale`。缺则 `plan-gate-check.sh` 报失败。
+- checklist、代码存在或 skill_run 不能替代可执行 Red/Green/Refactor 证据。
+- 不在单故事阶段宣告全量集成完成。

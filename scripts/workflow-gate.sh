@@ -82,61 +82,6 @@ find_epic() {
   [[ -n "$best" ]] && echo "$best"
 }
 
-wbs_slice_status() {
-  local f="$1" n="$2"
-  python3 "$ROOT/scripts/gate_parse.py" wbs-slice-status "$f" "$n" 2>/dev/null || true
-}
-
-csv_has() {
-  local csv="$1" needle="$2"
-  local item
-  IFS=',' read -ra _csv_items <<<"$csv"
-  for item in "${_csv_items[@]:-}"; do
-    [[ "$item" == "$needle" ]] && return 0
-  done
-  return 1
-}
-
-wbs_slice_satisfied() {
-  local f="$1" n="$2" optional_csv="$3"
-  local status
-  status="$(wbs_slice_status "$f" "$n")"
-  if [[ "$status" == "x" ]]; then
-    return 0
-  fi
-  if [[ "$status" == "-" ]] && csv_has "$optional_csv" "$n"; then
-    return 0
-  fi
-  return 1
-}
-
-wbs_slices_done() {
-  # $1=file, $2=optional slice csv, remaining args = slice numbers
-  local f="$1" optional_csv="$2"; shift 2
-  local n
-  for n in "$@"; do
-    wbs_slice_satisfied "$f" "$n" "$optional_csv" || return 1
-  done
-  return 0
-}
-
-wbs_missing_slices() {
-  local f="$1" optional_csv="$2"; shift 2
-  local n missing=()
-  for n in "$@"; do
-    wbs_slice_satisfied "$f" "$n" "$optional_csv" || missing+=("$n")
-  done
-  local IFS=','
-  echo "${missing[*]}"
-}
-
-emit_json() {
-  python3 - "$@" <<'PY'
-import json, sys
-print(json.dumps(json.loads(sys.argv[1]), ensure_ascii=False, indent=2))
-PY
-}
-
 # --- 解析蓝图：默认从 Epic frontmatter workflow 读，再默认 client-dev ---
 BP_DEFAULT="client-dev"
 if [[ -z "$WORKFLOW" ]]; then
@@ -318,6 +263,13 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
         [[ "$skill_run_check" == OK:* ]] || stage_blockers+=("${s_label}：skill_run 校验未通过: ${skill_run_check#BLOCKED:skill_run:}")
       fi
 
+      # skillRunStage：client-dev 同一主 Plan 跨 story-split / story-development 复用时，
+      # 最后一个反馈必须显式绑定当前 stage，防拆分阶段小票被开发阶段误复用。
+      if [[ "$(crit_has "$s_exit" skillRunStage)" == "1" ]]; then
+        skill_run_stage_check="$(python3 "$ROOT/scripts/validate-skill-run.py" --require --stage "$s_key" "$child_file" 2>&1 || true)"
+        [[ "$skill_run_stage_check" == OK:* ]] || stage_blockers+=("${s_label}：skillRunStage: ${skill_run_stage_check#BLOCKED:skill_run:}")
+      fi
+
       # verdictPass（对抗式视觉验证裁决）：读子 Plan frontmatter 的 verdict: 路径，
       # 要求裁决文件存在、JSON 合法、pass==true 且 reviewed==true（经主控复核，防原始误报直接放行）。
       # 门禁只读文件事实，不实时跑验证子 Agent。
@@ -386,27 +338,22 @@ PY
         fi
       fi
 
-
-      if [[ "$(crit_has "$s_exit" testTraceability)" == "1" ]]; then
-        traceability_check="$(python3 "$ROOT/scripts/traceability-check.py" --epic "$EPIC_FILE" --check test 2>&1 || true)"
-        [[ "$traceability_check" == *"OK:traceability"* ]] || stage_blockers+=("${s_label}：testTraceability: ${traceability_check#BLOCKED:traceability:}")
+      # client-dev 敏捷文件事实：排序、故事 Scope、逐故事 TDD、最终集成报告。
+      if [[ "$(crit_has "$s_exit" backlogPrioritized)" == "1" ]]; then
+        agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" backlog --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：backlogPrioritized: ${agile_check#BLOCKED:client-dev:backlog:}")
       fi
-
-      # devTraceability：需求 P0 AC → 功能开发任务覆盖闭环。
-      if [[ "$(crit_has "$s_exit" devTraceability)" == "1" ]]; then
-        traceability_check="$(python3 "$ROOT/scripts/traceability-check.py" --epic "$EPIC_FILE" --check dev 2>&1 || true)"
-        [[ "$traceability_check" == *"OK:traceability"* ]] || stage_blockers+=("${s_label}：devTraceability: ${traceability_check#BLOCKED:traceability:}")
+      if [[ "$(crit_has "$s_exit" storyScopeReady)" == "1" ]]; then
+        agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" story-scope --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：storyScopeReady: ${agile_check#BLOCKED:client-dev:story-scope:}")
       fi
-    fi
-
-    # wbsDone：本 stage 覆盖的 WBS 切片全勾。Epic 只是投影，门禁只读子 Plan。
-    if [[ "$(crit_has "$s_exit" wbsDone)" == "1" && -n "$s_slices" ]]; then
-      if [[ -n "$child_file" && -f "$child_file" ]]; then
-        IFS=',' read -ra slice_arr <<<"$s_slices"
-        if ! wbs_slices_done "$child_file" "$s_optional_slices" "${slice_arr[@]}"; then
-          missing_slices="$(wbs_missing_slices "$child_file" "$s_optional_slices" "${slice_arr[@]}")"
-          stage_blockers+=("${s_label}：WBS 切片 ${s_slices} 未全部完成（缺: ${missing_slices:-未知}）")
-        fi
+      if [[ "$(crit_has "$s_exit" storyTddComplete)" == "1" ]]; then
+        agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" story-development --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：storyTddComplete: ${agile_check#BLOCKED:client-dev:story-development:}")
+      fi
+      if [[ "$(crit_has "$s_exit" integrationReportPass)" == "1" ]]; then
+        agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" integration --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：integrationReportPass: ${agile_check#BLOCKED:client-dev:integration:}")
       fi
     fi
 
@@ -559,59 +506,12 @@ fi
 
 bl_json="$(printf '%s\n' "${blockers[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
 pf_json="$(printf '%s\n' "${plans_found[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
-constitution_json="$(python3 - "$ROOT" "$BLUEPRINT" "$bl_json" <<'PY'
-import json
-import pathlib
-import sys
-
-root = pathlib.Path(sys.argv[1])
-blueprint = pathlib.Path(sys.argv[2])
-blockers = json.loads(sys.argv[3])
-bp = json.loads(blueprint.read_text(encoding="utf-8"))
-raw = bp.get("constitution")
-if not raw:
-    print(json.dumps({"configured": False, "path": None, "status": "not-configured", "rules": []}, ensure_ascii=False))
-    raise SystemExit
-path = pathlib.Path(raw)
-if not path.is_absolute():
-    path = root / path
-rules = []
-status = "blocked" if blockers else "ok"
-if path.exists():
-    data = json.loads(path.read_text(encoding="utf-8"))
-    for rule in data.get("rules", []):
-        item = dict(rule)
-        checked_by = str(rule.get("checkedBy", ""))
-        rule_id = str(rule.get("id", ""))
-        if checked_by.startswith("deferred:"):
-            item["status"] = "indexed"
-        elif not blockers:
-            item["status"] = "ok"
-        else:
-            needles = {
-                "tdd_first": ["验收测试先行", "WBS 切片 4"],
-                "skill_run_required": ["skill_run"],
-                "epic_required": ["无 Epic"],
-                "traceability": ["testTraceability", "devTraceability", "traceability"],
-                "wbs_single_truth": ["母子 plan 投影", "epic-projection"],
-            }.get(rule_id, [rule_id])
-            item["status"] = "blocked" if any(any(needle in b for needle in needles) for b in blockers) else "delegated"
-        rules.append(item)
-print(json.dumps({
-    "configured": True,
-    "path": str(path.relative_to(root)),
-    "status": status,
-    "rules": rules,
-}, ensure_ascii=False))
-PY
-)"
-
 if [[ "$JSON" -eq 1 ]]; then
-  python3 - "$WORKFLOW" "$USES_EPIC" "${epic_rel:-}" "${lc_hint:-}" "$current_state" "$next_state" "$recommended_skill" "$gate_development" "$bl_json" "$pf_json" "$constitution_json" <<'PY'
+  python3 - "$WORKFLOW" "$USES_EPIC" "${epic_rel:-}" "${lc_hint:-}" "$current_state" "$next_state" "$recommended_skill" "$gate_development" "$bl_json" "$pf_json" <<'PY'
 import json
 import sys
 
-workflow, uses_epic, epic, lc_hint, current_state, next_state, recommended_skill, gate_development, blockers, plans_found, constitution = sys.argv[1:]
+workflow, uses_epic, epic, lc_hint, current_state, next_state, recommended_skill, gate_development, blockers, plans_found = sys.argv[1:]
 payload = {
     "workflow": workflow,
     "uses_epic": uses_epic == "1",
@@ -623,7 +523,6 @@ payload = {
     "gate_development": gate_development,
     "blockers": json.loads(blockers),
     "plans_found": json.loads(plans_found),
-    "constitution": json.loads(constitution),
 }
 print(json.dumps(payload, ensure_ascii=True, indent=2))
 PY
@@ -643,21 +542,6 @@ fi
 echo "current_state: ${current_state}（${current_label}）"
 echo "next_state: $next_state"
 echo "recommended_skill: $recommended_skill"
-echo ""
-python3 - "$constitution_json" <<'PY'
-import json
-import sys
-
-constitution = json.loads(sys.argv[1])
-print("constitution:")
-if not constitution.get("configured"):
-    print("  not-configured")
-else:
-    print(f"  path: {constitution['path']}")
-    print(f"  status: {constitution['status']}")
-    for rule in constitution.get("rules", []):
-        print(f"  - {rule['id']}: {rule['status']}")
-PY
 echo ""
 echo "plans_found:"
 if [[ ${#plans_found[@]} -eq 0 ]]; then

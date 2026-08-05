@@ -48,6 +48,7 @@ def write_run_file(path: Path, payload: dict[str, Any]) -> None:
     lines = [
         f"run_id: {yaml_scalar(payload['run_id'])}",
         f"workflow_id: {yaml_scalar(payload['workflow_id'])}",
+        f"blueprint_id: {yaml_scalar(payload.get('blueprint_id') or payload['workflow_id'])}",
         f"workflow_version: {yaml_scalar(payload['workflow_version'])}",
         f"epic: {yaml_scalar(payload.get('epic'))}",
         f"project: {yaml_scalar(payload.get('project'))}",
@@ -170,7 +171,8 @@ def update_run(path: Path, payload: dict[str, Any], event_type: str, **event_ext
 
 
 def start_run(args: argparse.Namespace) -> int:
-    blueprint = load_blueprint(args.workflow)
+    blueprint_id = args.workflow
+    blueprint = load_blueprint(blueprint_id)
     first_stage = blueprint["stages"][0]["key"]
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     label = args.project or (Path(args.epic).stem if args.epic else blueprint["name"])
@@ -184,7 +186,8 @@ def start_run(args: argparse.Namespace) -> int:
     now = now_iso()
     payload = {
         "run_id": run_id,
-        "workflow_id": blueprint["name"],
+        "workflow_id": args.workflow,
+        "blueprint_id": blueprint_id,
         "workflow_version": blueprint["version"],
         "epic": args.epic,
         "project": args.project,
@@ -202,7 +205,8 @@ def start_run(args: argparse.Namespace) -> int:
     event = {
         "type": "workflow_run_started",
         "run_id": run_id,
-        "workflow_id": blueprint["name"],
+        "workflow_id": args.workflow,
+        "blueprint_id": blueprint_id,
         "workflow_version": blueprint["version"],
         "current_stage": first_stage,
         "epic": args.epic,
@@ -222,7 +226,7 @@ def advance_run(args: argparse.Namespace) -> int:
     if payload.get("status") == "done":
         raise SystemExit("BLOCKED:workflow-run: run 已完成")
 
-    blueprint = load_blueprint(str(payload["workflow_id"]))
+    blueprint = load_blueprint(str(payload.get("blueprint_id") or payload["workflow_id"]))
     from_stage = str(payload["current_stage"])
     to_stage = args.stage or next_stage(blueprint, from_stage)
     validate_stage(blueprint, to_stage)

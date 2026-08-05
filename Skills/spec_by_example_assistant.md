@@ -1,6 +1,6 @@
 # 实例化需求助手 Skill
 
-用于 `client-dev` 蓝图需求阶段第 2 步：把事件风暴结果转成可测的 Given-When-Then 场景、验收标准和线框/状态位。
+用于 `client-dev` 蓝图 `requirement` 阶段：在事件风暴后，把领域结果转成可测的 Given-When-Then 场景、验收标准和线框/状态位。
 
 ## 触发时机
 
