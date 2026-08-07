@@ -27,7 +27,7 @@
 3. 确保客户端开发 Epic 存在并启动看板
 4. 运行 `workflow-status.py` 输出人话状态
 5. 必要时再查看 `workflow-gate.sh --json` 详情
-6. 无 Epic 轻流程缺当前阶段 plan 时，用 `workflow-plan-init.py` 只创建当前阶段 plan，再交给推荐 Skill
+6. 任一工作流缺当前阶段 plan 时，用 `workflow-plan-init.py` 创建当前阶段 plan；Epic 工作流传 `--epic` 并严格写入 `plans.<epicField>` 指定路径
 
 不做：
 
@@ -39,7 +39,7 @@
 
 ## 蓝图选择
 
-硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill 或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，先运行 `workflow-plan-init.py` 创建当前阶段 plan；禁止跳过这一步直接修代码。
+硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，Epic 工作流运行 `workflow-plan-init.py --workflow <name> --epic <path>`，轻流程运行 `workflow-plan-init.py --workflow <name> --title <标题>`；禁止跳过这一步直接执行阶段工作。
 
 优先级：
 

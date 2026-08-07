@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
 import importlib.util
 import shutil
@@ -53,7 +54,7 @@ class ClientDevWorkflowTests(unittest.TestCase):
         stages = bp["stages"]
         self.assertEqual(
             [stage["key"] for stage in stages],
-            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test"],
+            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test-plan", "integration-test"],
         )
         by_key = {stage["key"]: stage for stage in stages}
         self.assertTrue(by_key["prioritization"]["exitCriteria"]["backlogPrioritized"])
@@ -63,6 +64,10 @@ class ClientDevWorkflowTests(unittest.TestCase):
         self.assertTrue(by_key["implementation-design"]["exitCriteria"]["implementationDesignReady"])
         self.assertEqual(by_key["implementation-design"]["skills"], ["implementation-design-assistant"])
         self.assertTrue(by_key["story-development"]["exitCriteria"]["storyTddComplete"])
+        self.assertEqual(by_key["story-development"]["next"], "integration-test-plan")
+        self.assertTrue(by_key["integration-test-plan"]["exitCriteria"]["testPlanApproved"])
+        self.assertEqual(by_key["integration-test-plan"]["next"], "integration-test")
+        self.assertTrue(by_key["integration-test"]["exitCriteria"]["approvedTestPlan"])
         self.assertTrue(by_key["integration-test"]["exitCriteria"]["integrationReportPass"])
         self.assertEqual(by_key["integration-test"]["next"], "done")
         self.assertFalse({"release", "deploy"} & {stage["key"] for stage in stages})
@@ -217,11 +222,57 @@ class ClientDevWorkflowTests(unittest.TestCase):
                 ---
                 target_commit: abc123
                 story_index: Plans/功能开发/demo.stories.json
+                approved_test_plan: Plans/自动化测试/integration-plan.md
                 integration_report: Plans/自动化测试/integration.report.json
                 ---
                 # 集成测试
             """)
-            self.dump(root / "Plans/功能开发/demo.stories.json", {"scope_confirmed": True, "stories": []})
+            self.dump(root / "Plans/功能开发/demo.stories.json", {"scope_confirmed": True, "stories": [{
+                "id": "US-1", "title": "用户完成核心路径", "path": "Plans/功能开发/us-1.md",
+                "story_points": 5, "estimate_confirmed": True, "priority": "P0", "sprint_scope": True,
+                "dependencies": [], "acceptance_criteria": ["AC1"], "architecture_refs": ["ADR-1"],
+                "vertical_slice": True,
+            }]})
+            self.write(root / "Plans/功能开发/us-1.md", """
+                ---
+                story_id: US-1
+                status: 已完成
+                tdd_evidence: Plans/功能开发/us-1.tdd.json
+                ---
+                # US-1
+            """)
+            self.dump(root / "Plans/功能开发/us-1.tdd.json", {
+                "story_id": "US-1", "commit": "abc123",
+                "red": {"command": "pytest story", "exit_code": 1, "reason": "功能尚未实现", "at": "t1"},
+                "green": {"command": "pytest story", "exit_code": 0, "at": "t2"},
+                "refactor": {"command": "pytest story", "exit_code": 0, "at": "t3"},
+                "integration_smoke": {"command": "pytest smoke", "exit_code": 0, "at": "t4"},
+                "acceptance": [{"ac_id": "AC1", "pass": True}],
+            })
+            approved = self.write(root / "Plans/自动化测试/integration-plan.md", """
+                ---
+                status: 已采纳
+                target_commit: abc123
+                story_index: Plans/功能开发/demo.stories.json
+                test_case_index: Plans/自动化测试/integration.cases.json
+                test_review: Plans/自动化测试/integration.review.json
+                ---
+                # 集成测试计划
+            """)
+            case_index = self.dump(root / "Plans/自动化测试/integration.cases.json", {
+                "target_commit": "abc123", "cases": [{
+                    "id": "IT-001", "title": "核心路径", "priority": "P0", "type": "cross-story",
+                    "preconditions": ["已登录"], "test_data": ["有效数据"], "steps": ["执行核心路径"],
+                    "expected_results": ["成功"], "automation": "automated", "suite": "cross-story",
+                    "ac_refs": [{"story_id": "US-1", "ac_id": "AC1"}],
+                }],
+            })
+            self.dump(root / "Plans/自动化测试/integration.review.json", {
+                "approved": True, "reviewer": "QA", "reviewed_at": "2026-08-07T10:00:00+08:00",
+                "target_commit": "abc123", "case_index_sha256": hashlib.sha256(case_index.read_bytes()).hexdigest(),
+                "unresolved_comments": 0,
+            })
+            self.run_validator(root, "test-plan", approved, ok=True)
             report = root / "Plans/自动化测试/integration.report.json"
             self.dump(report, {
                 "commit": "stale456", "all_scope_stories_completed": True,
@@ -241,7 +292,7 @@ class ClientDevWorkflowTests(unittest.TestCase):
             ".cursor/skills/task-splitter/SKILL.md": ["用户故事", "story_points", "vertical_slice"],
             ".cursor/skills/implementation-design-assistant/SKILL.md": ["implementation_design", "代码落点", "Red"],
             ".cursor/skills/feature-dev-assistant/SKILL.md": ["Red", "Green", "implementation_design", "tdd_evidence"],
-            ".cursor/skills/test-generator/SKILL.md": ["integration-test", "integration_report"],
+            ".cursor/skills/test-generator/SKILL.md": ["integration-test-plan", "test_review", "integration_report"],
         }
         for rel, needles in expected.items():
             path = ROOT / rel
@@ -424,11 +475,57 @@ skill_run:
             development.write_text(development.read_text(encoding="utf-8") + receipt(
                 "feature-dev-assistant", "Plans/功能开发/demo.md", "story-development"
             ), encoding="utf-8")
+            self.assertEqual(gate()["current_state"], "integration-test-plan")
+
+            init = subprocess.run(
+                ["python3", "scripts/workflow-plan-init.py", "--workflow", "client-dev", "--epic", str(epic)],
+                cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            self.assertEqual(init.returncode, 0, init.stderr or init.stdout)
+            self.assertIn("created: Plans/自动化测试/demo-集成测试计划.md", init.stdout)
+            self.assertIn("integration_plan: Plans/自动化测试/demo-集成测试计划.md", epic.read_text(encoding="utf-8"))
+            self.assertIn("# 集成测试计划：demo", (root / "Plans/自动化测试/demo-集成测试计划.md").read_text(encoding="utf-8"))
+
+            test_plan = self.write(root / "Plans/自动化测试/demo-集成测试计划.md", """
+                ---
+                status: 已采纳
+                story_index: Plans/功能开发/demo.stories.json
+                target_commit: abc123
+                test_case_index: Plans/自动化测试/demo.cases.json
+                test_review: Plans/自动化测试/demo.review.json
+                ---
+                # 集成测试计划
+                ## 测试策略
+                覆盖核心路径、异常和恢复。
+                ## 测试用例
+                IT-001 覆盖创建草稿。
+                ## 需求与用例覆盖
+                US-1/AC1 → IT-001。
+                ## 测试审核
+                QA 已审核。
+            """)
+            test_plan.write_text(test_plan.read_text(encoding="utf-8") + receipt(
+                "test-generator", "Plans/自动化测试/demo-集成测试计划.md", "integration-test-plan"
+            ), encoding="utf-8")
+            case_index = self.dump(root / "Plans/自动化测试/demo.cases.json", {
+                "target_commit": "abc123", "cases": [{
+                    "id": "IT-001", "title": "创建草稿", "priority": "P0", "type": "cross-story",
+                    "preconditions": ["已登录"], "test_data": ["草稿数据"], "steps": ["创建草稿"],
+                    "expected_results": ["草稿创建成功"], "automation": "automated", "suite": "cross-story",
+                    "ac_refs": [{"story_id": "US-1", "ac_id": "AC1"}],
+                }],
+            })
+            self.dump(root / "Plans/自动化测试/demo.review.json", {
+                "approved": True, "reviewer": "QA", "reviewed_at": "2026-08-07T10:00:00+08:00",
+                "target_commit": "abc123", "case_index_sha256": hashlib.sha256(case_index.read_bytes()).hexdigest(),
+                "unresolved_comments": 0,
+            })
             self.assertEqual(gate()["current_state"], "integration-test")
 
             integration = self.write(root / "Plans/自动化测试/demo.md", """
                 ---
                 story_index: Plans/功能开发/demo.stories.json
+                approved_test_plan: Plans/自动化测试/demo-集成测试计划.md
                 target_commit: abc123
                 integration_report: Plans/自动化测试/demo.integration.json
                 ---
@@ -442,7 +539,7 @@ skill_run:
                 "suites": [{"name": "cross-story", "command": "pytest integration", "exit_code": 0}],
             })
             self.assertEqual(gate()["current_state"], "done")
-            self.assertTrue(all(path.exists() for path in [requirement, prioritization, architecture, development, integration]))
+            self.assertTrue(all(path.exists() for path in [requirement, prioritization, architecture, development, test_plan, integration]))
 
     def test_epic_without_version_uses_client_dev_directly(self) -> None:
         with tempfile.TemporaryDirectory(prefix="client-dev-unversioned-") as raw:
@@ -510,6 +607,7 @@ skill_run:
                   prioritization: Plans/需求排序/demo.md
                   architecture: Plans/技术方案/demo.md
                   development: Plans/功能开发/demo.md
+                  integration_plan: Plans/自动化测试/demo-plan.md
                   integration: Plans/自动化测试/demo.md
                 ---
                 # Demo
@@ -560,13 +658,32 @@ skill_run:
             mod.RUN_DIR = root / ".workflows/runs"
             mod.EVENT_DIR = root / ".workflows/events"
             mod.BLUEPRINT_DIR = root / ".workflows/blueprints"
+            self.write(root / ".workflows/events/demo.events.jsonl", """
+                {"stage":"integration-test","result":"fail","reason":"旧结构下子 Plan 不存在","at":"2026-08-07"}
+            """)
             data = mod.scan_epic(epic)
             self.assertEqual(data["effective_workflow"], "client-dev")
-            self.assertEqual(data["current_stage"], "integration-test")
+            self.assertEqual(data["current_stage"], "integration-test-plan")
             self.assertEqual(data["story_points_total"], 5)
             self.assertEqual(data["story_points_done"], 5)
             self.assertEqual(data["stories"][0]["state"], "done")
             self.assertEqual(data["slices"], [])
+            flow = data["workflow_map"]
+            self.assertEqual(flow["name"], "client-dev")
+            self.assertEqual(flow["version"], "4.2.0")
+            self.assertEqual(flow["current_stage"], "integration-test-plan")
+            self.assertEqual(flow["completed_stages"], 6)
+            self.assertEqual(len(flow["stages"]), 8)
+            self.assertEqual(
+                [stage["state"] for stage in flow["stages"]],
+                ["completed", "completed", "completed", "completed", "completed", "completed", "blocked", "upcoming"],
+            )
+            current = flow["stages"][-2]
+            self.assertEqual(current["key"], "integration-test-plan")
+            self.assertFalse(current["plan"]["exists"])
+            self.assertIn("子 Plan 不存在", current["blocker"])
+            self.assertEqual(current["skills"], ["test-generator"])
+            self.assertIsNone(flow["stages"][-1]["gate"])
 
 
 if __name__ == "__main__":

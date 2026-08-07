@@ -10,7 +10,7 @@ description: 续做任意 plan。标准命令 /resume plan=Plans/... 进度=...�
 1. 若 plan 含 `epic:`，先读 Epic 母 plan（workflow + plans 子 Plan 索引）；再跑 `scripts/workflow-gate.sh --workflow <name> --epic <epic>` 派生当前阶段。
 2. **回放优先**：跑 `python3 scripts/workflow-status.py --workflow <name> --epic <epic>` 从事件流读门禁历史（最近门禁 pass/fail + 原因、连续判不过告警）；答「上次为何卡住」先读历史，别只凭当前快照猜。
 3. 对 `Plans/功能开发/` plan，开发阶段先跑 `bash scripts/plan-gate-check.sh <plan> --stage development`；`BLOCKED` 时只建议补文档。
-4. 按 `workflow-gate.sh` 的 `recommended_skill` 推荐下一步；`story-split` 走 `task-splitter`，`implementation-design` 走 `implementation-design-assistant`，`story-development` 读 `.stories.json` 中尚未完成的 Scope Story、Story 子 Plan、`implementation_design` 与 `tdd_evidence`。
+4. 按 `workflow-gate.sh` 的 `recommended_skill` 推荐下一步；`story-split` 走 `task-splitter`，`implementation-design` 走 `implementation-design-assistant`，`story-development` 读 `.stories.json` 中尚未完成的 Scope Story、Story 子 Plan、`implementation_design` 与 `tdd_evidence`；`integration-test-plan` 走 `test-generator` 生成用例并等待测试审核，`integration-test` 只执行已审核计划。
 5. 用户要改故事拆分、故事点或 Scope → 路由 `task-splitter` 或列待确认项；禁止擅自推荐 A/B/C 方案。
 
 兼容 `续做，plan=分类/文件.md，进度=...`

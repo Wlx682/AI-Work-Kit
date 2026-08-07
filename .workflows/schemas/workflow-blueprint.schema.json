@@ -107,6 +107,10 @@
           "planPrefix": {
             "type": "string"
           },
+          "planSuffix": {
+            "type": "string",
+            "minLength": 1
+          },
           "epicField": {
             "type": "string"
           },
@@ -158,6 +162,12 @@
                 "type": "boolean"
               },
               "integrationReportPass": {
+                "type": "boolean"
+              },
+              "testPlanApproved": {
+                "type": "boolean"
+              },
+              "approvedTestPlan": {
                 "type": "boolean"
               },
               "skillRunStage": {

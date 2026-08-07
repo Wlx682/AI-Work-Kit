@@ -77,7 +77,7 @@ for f in "${files[@]}"; do
   echo ""
 
   while IFS= read -r line; do
-    [[ "$line" =~ ^[[:space:]]+(requirement|architecture|development|test|deploy):[[:space:]]+(.+)$ ]] || continue
+    [[ "$line" =~ ^[[:space:]]+(requirement|prioritization|architecture|development|integration_plan|integration|test|deploy):[[:space:]]+(.+)$ ]] || continue
     stage="${BASH_REMATCH[1]}"
     raw="${BASH_REMATCH[2]}"
     raw="${raw%%#*}"
@@ -98,6 +98,10 @@ for f in "${files[@]}"; do
       echo "  plan_${stage}_status: ${st:-（无）}"
       echo "  plan_${stage}_lifecycle: ${sub_lc:-（无）}"
       [[ -n "$sub_p0" ]] && echo "  plan_${stage}_p0_open: $sub_p0"
+      if [[ "$stage" == "integration_plan" ]]; then
+        echo "  plan_${stage}_test_case_index: $(read_fm test_case_index "$sub")"
+        echo "  plan_${stage}_test_review: $(read_fm test_review "$sub")"
+      fi
     else
       echo "  plan_${stage}: $raw"
       echo "  plan_${stage}_exists: false"

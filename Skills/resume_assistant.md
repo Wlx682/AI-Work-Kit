@@ -27,6 +27,7 @@
 | story-split | `task-splitter` | Story 拆分、故事点、Scope、`.stories.json` |
 | implementation-design | `implementation-design-assistant` | Scope Story 子 Plan、`implementation_design` |
 | story-development | `feature-dev-assistant` / `figma-ui` | Scope Story 子 Plan、`implementation_design`、`tdd_evidence` |
+| integration-test-plan | `test-generator` | Scope Story / AC、结构化用例索引与测试审核证据 |
 | integration-test | `test-generator` | 全部 Scope Story TDD 完成后的集成报告 |
 
 **Story/Scope 修订**：用户要改故事拆分、故事点或 Scope → 路由 `task-splitter` 或列待确认项找用户；禁止擅自推荐 A/B/C 方案。

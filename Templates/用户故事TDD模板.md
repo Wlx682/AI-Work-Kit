@@ -17,6 +17,7 @@ relations:
     - Templates/客户端功能开发模板.md
   dependents:
     - Templates/客户端功能开发模板.md
+    - Templates/集成测试计划模板.md
   supersedes: []
   superseded_by: []
   conflicts: []

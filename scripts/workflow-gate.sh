@@ -360,6 +360,20 @@ PY
         agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" story-development --root "$ROOT" --plan "$child_file" 2>&1 || true)"
         [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：storyTddComplete: ${agile_check#BLOCKED:client-dev:story-development:}")
       fi
+      if [[ "$(crit_has "$s_exit" testPlanApproved)" == "1" ]]; then
+        agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" test-plan --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：testPlanApproved: ${agile_check#BLOCKED:client-dev:test-plan:}")
+      fi
+      if [[ "$(crit_has "$s_exit" approvedTestPlan)" == "1" ]]; then
+        approved_plan_raw="$(read_fm approved_test_plan "$child_file" || true)"
+        if [[ -z "$approved_plan_raw" || "$approved_plan_raw" == "null" ]]; then
+          stage_blockers+=("${s_label}：缺少 approved_test_plan")
+        else
+          approved_plan_file="$(resolve_path "$approved_plan_raw")"
+          approved_check="$(python3 "$ROOT/scripts/validate-client-dev.py" test-plan --root "$ROOT" --plan "$approved_plan_file" 2>&1 || true)"
+          [[ "$approved_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：approvedTestPlan: ${approved_check#BLOCKED:client-dev:test-plan:}")
+        fi
+      fi
       if [[ "$(crit_has "$s_exit" integrationReportPass)" == "1" ]]; then
         agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" integration --root "$ROOT" --plan "$child_file" 2>&1 || true)"
         [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：integrationReportPass: ${agile_check#BLOCKED:client-dev:integration:}")

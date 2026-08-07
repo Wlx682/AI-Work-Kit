@@ -217,6 +217,86 @@
     select { font: inherit; color: var(--text); background: var(--panel-solid); border: 1px solid var(--stroke); border-radius: 8px; padding: 0.3rem; }
     .back { display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem; }
 
+    /* ---- workflow map detail ---- */
+    .flow-summary {
+      display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.55fr) minmax(260px, 0.9fr);
+      gap: 1px; overflow: hidden; margin-bottom: 1.2rem;
+      background: var(--stroke); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .flow-summary > div { background: var(--panel-solid); padding: clamp(16px, 2.2vw, 24px); }
+    .flow-summary .eyebrow { color: var(--faint); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .flow-summary h2 { margin: 0.35rem 0 0.3rem; font-size: clamp(20px, 2.3vw, 30px); }
+    .flow-summary .flow-desc { color: var(--muted); font-size: 0.78rem; max-width: 70ch; }
+    .flow-kpi { display: flex; flex-direction: column; justify-content: center; }
+    .flow-kpi strong { font-size: clamp(30px, 4vw, 44px); line-height: 1; font-variant-numeric: tabular-nums; }
+    .flow-kpi span { color: var(--muted); font-size: 0.72rem; margin-top: 0.45rem; }
+    .flow-alert { display: flex; flex-direction: column; justify-content: center; border-left: 3px solid var(--amber); }
+    .flow-alert.blocked { border-left-color: var(--red); background: linear-gradient(135deg, rgba(255,84,112,0.11), var(--panel-solid)); }
+    .flow-alert.done { border-left-color: var(--green); background: linear-gradient(135deg, rgba(53,224,138,0.08), var(--panel-solid)); }
+    .flow-alert b { margin: 0.25rem 0; font-size: 0.9rem; }
+    .flow-alert span { color: var(--muted); font-size: 0.74rem; }
+    .flow-map-shell { overflow-x: auto; padding: 0.15rem 0 0.7rem; scrollbar-color: var(--stroke-strong) transparent; }
+    .flow-map {
+      --stage-count: 8; display: grid; grid-template-columns: repeat(var(--stage-count), minmax(158px, 1fr));
+      gap: 12px; min-width: max(100%, calc(var(--stage-count) * 170px)); align-items: stretch;
+    }
+    .flow-stage {
+      position: relative; min-height: 238px; padding: 0; text-align: left; overflow: visible;
+      background: rgba(12,15,27,0.72); border: 1px solid var(--stroke); border-radius: 14px;
+      transform: none;
+    }
+    .flow-stage:not(:last-child)::after {
+      content: ""; position: absolute; z-index: 0; right: -13px; top: 34px; width: 13px; height: 2px; background: var(--stroke-strong);
+    }
+    .flow-stage:hover { transform: translateY(-2px); border-color: var(--stroke-strong); }
+    .flow-stage.selected { box-shadow: 0 0 0 2px rgba(77,124,255,0.45), 0 14px 38px rgba(0,0,0,0.38); }
+    .flow-stage.completed { border-color: rgba(53,224,138,0.26); }
+    .flow-stage.active { border-color: rgba(77,156,255,0.52); }
+    .flow-stage.blocked { border-color: rgba(255,84,112,0.62); background: linear-gradient(180deg, rgba(255,84,112,0.09), rgba(12,15,27,0.8)); }
+    .flow-stage.upcoming { opacity: 0.58; }
+    .flow-stage-head { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.78rem 0.58rem; border-bottom: 1px solid var(--stroke); }
+    .flow-step { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.05); color: var(--muted); font-size: 0.7rem; font-weight: 800; }
+    .completed .flow-step { background: rgba(53,224,138,0.16); color: var(--green); }
+    .active .flow-step { background: rgba(77,156,255,0.18); color: var(--blue); }
+    .blocked .flow-step { background: rgba(255,84,112,0.18); color: var(--red); }
+    .flow-state { font-size: 0.63rem; padding: 2px 7px; border-radius: 999px; color: var(--muted); background: rgba(255,255,255,0.04); }
+    .completed .flow-state { color: var(--green); background: rgba(53,224,138,0.1); }
+    .active .flow-state { color: var(--blue); background: rgba(77,156,255,0.1); }
+    .blocked .flow-state { color: var(--red); background: rgba(255,84,112,0.1); }
+    .flow-stage-body { padding: 0.72rem 0.78rem 0.85rem; }
+    .flow-stage-body h4 { margin: 0; font-size: 0.88rem; line-height: 1.35; min-height: 2.4em; }
+    .flow-stage-body .summary { margin: 0.55rem 0; color: var(--muted); font-size: 0.7rem; min-height: 2.1em; }
+    .flow-plan { margin: 0.55rem 0; padding: 0.45rem 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.23); border: 1px solid var(--stroke); font-size: 0.66rem; color: var(--muted); }
+    .flow-plan.exists { color: var(--neon-c); }
+    .flow-plan.missing { color: var(--red); border-color: rgba(255,84,112,0.28); }
+    .flow-gate { display: flex; gap: 0.35rem; align-items: center; color: var(--faint); font-size: 0.66rem; }
+    .flow-gate.pass { color: var(--green); } .flow-gate.fail { color: var(--red); }
+    .skill-list { display: flex; flex-wrap: wrap; gap: 0.28rem; margin-top: 0.58rem; }
+    .skill-tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); background: rgba(154,92,255,0.09); border: 1px solid rgba(154,92,255,0.22); padding: 1px 5px; border-radius: 5px; font: 0.6rem ui-monospace, monospace; }
+    .flow-details { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.65fr); gap: clamp(14px, 2vw, 22px); margin-top: 1.2rem; align-items: start; }
+    .flow-workbench, .flow-audit { padding: clamp(16px, 2vw, 22px); background: var(--panel); border: 1px solid var(--stroke); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .flow-workbench-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .flow-workbench h3, .flow-audit h3 { margin: 0; font-size: 1rem; }
+    .flow-workbench .lead { color: var(--muted); font-size: 0.76rem; margin: 0.3rem 0 0; }
+    .stage-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; }
+    .stage-fact { background: rgba(0,0,0,0.2); border: 1px solid var(--stroke); border-radius: 10px; padding: 0.7rem; }
+    .stage-fact .label { color: var(--faint); font-size: 0.66rem; margin-bottom: 0.25rem; }
+    .stage-fact code { color: var(--neon-c); font-size: 0.68rem; word-break: break-all; }
+    .criteria-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+    .criteria-list span { font-size: 0.66rem; color: var(--muted); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--stroke); }
+    .flow-blocker { margin-top: 0.8rem; padding: 0.7rem 0.8rem; color: var(--red); background: rgba(255,84,112,0.08); border: 1px solid rgba(255,84,112,0.28); border-radius: 10px; font-size: 0.76rem; }
+    .story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.65rem; margin-top: 1rem; }
+    .story-card { padding: 0.72rem; border-radius: 10px; background: var(--panel-solid); border: 1px solid var(--stroke); }
+    .story-card.done { border-color: rgba(53,224,138,0.25); }
+    .story-card h4 { margin: 0 0 0.35rem; font-size: 0.78rem; }
+    .story-card p { margin: 0; color: var(--muted); font-size: 0.68rem; }
+    .story-card button { margin-top: 0.55rem; padding: 0.28rem 0.55rem; font-size: 0.66rem; }
+    .flow-audit .timeline { margin-top: 1rem; }
+    @media (max-width: 900px) {
+      .flow-summary, .flow-details { grid-template-columns: 1fr; }
+      .flow-alert { border-left-width: 0; border-top: 3px solid var(--amber); }
+    }
+
     .empty { text-align: center; color: var(--muted); padding: 4rem 1rem; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%); background: var(--panel-solid); border: 1px solid var(--stroke-strong); padding: 0.7rem 1.2rem; border-radius: 12px; box-shadow: var(--shadow); transition: 0.3s; z-index: 50; }
     .toast.show { transform: translateX(-50%) translateY(0); }
@@ -268,6 +348,7 @@
     let envelope = null;      // {epics, kpi, revision, updated_at}
     let view = 'overview';    // 'overview' | 'detail'
     let currentFile = null;   // epic.file in detail view
+    let selectedFlowStage = null;
     let filter = 'all';       // all | attention | healthy
     let searchQ = '';
 
@@ -277,8 +358,15 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'implementation-design': '实现落点设计', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
+    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'implementation-design': '实现落点设计', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test-plan': '集成测试计划/审核', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
+    const FLOW_STATE_ZH = { completed: '已通过', active: '进行中', blocked: '阻塞', upcoming: '未开始' };
+    const CRITERIA_ZH = {
+      childPlanExists: '子 Plan 存在', status: '状态达标', p0Open: 'P0 清零', sectionsPresent: '必填章节齐全',
+      skillRun: 'Skill 反馈齐全', skillRunStage: '阶段反馈齐全', backlogPrioritized: 'Backlog 已确认',
+      storyScopeReady: 'Story Scope 已确认', implementationDesignReady: '落点设计完整',
+      storyTddComplete: 'Story TDD 完整', testPlanApproved: '测试审核通过', approvedTestPlan: '已审核计划未漂移', integrationReportPass: '集成报告通过'
+    };
 
     function boardContentSignature(data) {
       const { revision, updated_at, ...content } = data || {};
@@ -461,7 +549,7 @@
 
       applyFilterAndSearch();
       // 交互绑定
-      document.querySelectorAll('.ecard').forEach(c => c.onclick = () => { currentFile = c.dataset.file; view = 'detail'; window.scrollTo(0, 0); draw(); });
+      document.querySelectorAll('.ecard').forEach(c => c.onclick = () => { currentFile = c.dataset.file; selectedFlowStage = null; view = 'detail'; window.scrollTo(0, 0); draw(); });
       document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filter = c.dataset.f; draw(); });
       // 动画：进度条 + count-up
       requestAnimationFrame(() => {
@@ -489,9 +577,159 @@
     }
 
     /* ============ Level 2: Detail ============ */
+    function renderWorkflowDetail(e) {
+      const storyMode = e.effective_workflow === 'client-dev';
+      const flow = e.workflow_map;
+      const stages = flow.stages || [];
+      const current = stages.find(stage => stage.state === 'blocked' || stage.state === 'active') || stages[stages.length - 1];
+      if (!selectedFlowStage || !stages.some(stage => stage.key === selectedFlowStage)) {
+        selectedFlowStage = current?.key || stages[0]?.key;
+      }
+      const selected = stages.find(stage => stage.key === selectedFlowStage) || current || {};
+      const currentBlocked = current?.state === 'blocked';
+      const currentTitle = e.current_stage === 'done' ? '全流程已完成' : `当前：${zhStage(e.current_stage)}`;
+      const currentMessage = e.current_stage === 'done'
+        ? '所有阶段和出口门禁已通过'
+        : (current?.blocker || current?.summary || '待推进');
+
+      const stageCards = stages.map(stage => {
+        const plan = stage.plan || {};
+        const gate = stage.gate;
+        const planLabel = plan.exists ? (plan.path?.split('/').pop() || '子 Plan 已就绪') : '子 Plan 缺失';
+        const gateLabel = gate ? (gate.result === 'pass' ? '门禁通过' : '门禁未过') : '暂无门禁判定';
+        return `
+          <button class="flow-stage ${esc(stage.state)} ${stage.key === selected.key ? 'selected' : ''}" data-flow-stage="${esc(stage.key)}">
+            <div class="flow-stage-head">
+              <span class="flow-step">${esc(stage.index)}</span>
+              <span class="flow-state">${FLOW_STATE_ZH[stage.state] || stage.state}</span>
+            </div>
+            <div class="flow-stage-body">
+              <h4>${esc(stage.label)}</h4>
+              <div class="summary">${esc(stage.summary)}</div>
+              <div class="flow-plan ${plan.exists ? 'exists' : 'missing'}">${plan.exists ? '◇' : '⚠'} ${esc(planLabel)}</div>
+              <div class="flow-gate ${gate?.result || ''}">${gate?.result === 'pass' ? '●' : (gate?.result === 'fail' ? '▲' : '○')} ${esc(gateLabel)}</div>
+              <div class="skill-list">${(stage.skills || []).map(skill => `<span class="skill-tag">${esc(skill)}</span>`).join('')}</div>
+            </div>
+          </button>`;
+      }).join('');
+
+      const selectedPlan = selected.plan || {};
+      const criteria = (selected.exit_criteria || []).map(key => `<span>${esc(CRITERIA_ZH[key] || key)}</span>`).join('');
+      const selectedEvents = ((e.gate_history || {}).recent || []).filter(event => event.stage === selected.key);
+      const timeline = selectedEvents.map(event => `
+        <li class="${event.result}">
+          <div class="tl-top"><span class="tl-at">${esc(event.at)}</span> <span class="tl-stage"><code>${zhStage(event.stage)}</code></span> ${event.result === 'pass' ? '✅' : '⚠'}</div>
+          <div class="tl-reason">${event.result === 'pass' ? '门禁通过' : esc(event.reason || '未过')}</div>
+          ${event.git_commit ? `<div class="tl-commit">commit ${esc(event.git_commit)}</div>` : ''}
+        </li>`).join('') || '<li>该阶段暂无门禁事件</li>';
+
+      let workspace = '';
+      if (storyMode && ['story-split', 'implementation-design', 'story-development'].includes(selected.key)) {
+        workspace = `<div class="story-grid">${(e.stories || []).map(story => {
+          const done = selected.key === 'story-split' ? story.sprint_scope
+            : (selected.key === 'implementation-design' ? story.implementation_design_ready : story.tdd_complete);
+          const stateLabel = selected.key === 'story-split' ? (story.sprint_scope ? 'Scope 内' : 'Scope 外')
+            : (selected.key === 'implementation-design' ? (story.implementation_design_ready ? '落点完整' : '缺落点') : (story.tdd_complete ? 'TDD 完整' : 'TDD 待完成'));
+          return `<div class="story-card ${done ? 'done' : ''}">
+            <h4>${esc(story.id)} · ${esc(story.title)}</h4>
+            <p>${esc(story.priority)} · ${esc(story.story_points)} 点 · ${esc(stateLabel)}${story.dependencies?.length ? ` · 依赖 ${esc(story.dependencies.join(', '))}` : ''}</p>
+            <button data-story="${esc(story.id)}">查看证据</button>
+          </div>`;
+        }).join('') || '<div class="empty">暂无 Story</div>'}</div>`;
+      } else if (storyMode && selected.key === 'integration-test-plan') {
+        const health = e.test_health || {};
+        workspace = `<div class="stage-facts" style="margin-top:1rem">
+          <div class="stage-fact"><div class="label">测试用例</div><b>${health.test_case_count || 0}</b></div>
+          <div class="stage-fact"><div class="label">审核状态</div><b style="color:${health.test_plan_approved ? 'var(--green)' : 'var(--red)'}">${health.test_plan_approved ? '已通过' : '待审核'}</b></div>
+          <div class="stage-fact"><div class="label">审核人</div><b>${esc(health.test_reviewer || '—')}</b></div>
+        </div>`;
+      } else if (storyMode && selected.key === 'integration-test') {
+        const health = e.test_health || {};
+        workspace = `<div class="stage-facts" style="margin-top:1rem">
+          <div class="stage-fact"><div class="label">Scope Story</div><b>${health.story_done || 0}/${health.story_total || 0}</b></div>
+          <div class="stage-fact"><div class="label">故事点</div><b>${health.story_points_done || 0}/${health.story_points_total || 0}</b></div>
+          <div class="stage-fact"><div class="label">集成结果</div><b style="color:${health.integration_pass ? 'var(--green)' : 'var(--red)'}">${health.integration_pass ? '已通过' : '未通过'}</b></div>
+        </div>`;
+      } else if (!storyMode) {
+        const slices = (e.slices || []).filter(slice => slice.stage_key === selected.key);
+        workspace = `<div class="story-grid">${slices.map(slice => `<div class="story-card ${slice.done ? 'done' : ''}">
+          <h4>WBS ${slice.n} · ${esc(slice.title)}</h4><p>${esc(slice.summary || slice.acceptance || '—')}</p>
+          <button data-detail="${slice.n}">细节</button>
+          ${slice.done ? `<button data-slice="${slice.n}" data-state="open">重开</button>` : `<button data-slice="${slice.n}" data-state="done">完成</button>`}
+        </div>`).join('') || '<div class="empty">该阶段暂无 WBS 切片</div>'}</div>`;
+      }
+
+      $('app').innerHTML = `
+        <button class="ghost back" id="backBtn">← 返回纵览</button>
+        <div class="topbar" style="margin-bottom:1.2rem">
+          <div class="brand">
+            <span class="light ${e.health}"></span>
+            <div><h1 style="font-size:clamp(16px,1.5vw,20px)">${esc(e.name)}</h1>
+            <div class="ver">${esc(flow.label || e.effective_workflow)} v${esc(flow.version || '—')} · ${esc(e.repo || '')} / ${esc(e.branch || '')}</div></div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="triggerBtn">复制续做命令</button>
+            ${e.health === 'archived' ? '<button class="ghost" id="reactivateBtn">↻ 重新激活</button>' : '<button class="ghost" id="archiveBtn">✓ 结束归档</button>'}
+            <button class="danger" id="deleteBtn">🗑 删除 Epic</button>
+          </div>
+        </div>
+        <div class="flow-summary fade-in">
+          <div><div class="eyebrow">Epic workflow map</div><h2>${esc(currentTitle)}</h2><div class="flow-desc">${esc(flow.description || '以蓝图和文件事实派生的完整工作流')}</div></div>
+          <div class="flow-kpi"><strong>${flow.completed_stages || 0}/${flow.total_stages || 0}</strong><span>阶段已通过 · ${flow.progress_pct || 0}%</span></div>
+          <div class="flow-alert ${e.current_stage === 'done' ? 'done' : (currentBlocked ? 'blocked' : '')}">
+            <span>${e.current_stage === 'done' ? '交付状态' : (currentBlocked ? '当前阻塞' : '当前作业')}</span><b>${esc(currentMessage)}</b>
+            <span>${e.current_stage === 'done' ? '可结束归档' : `下一步由 ${esc((current?.skills || [])[0] || 'resume-assistant')} 继续`}</span>
+          </div>
+        </div>
+        <div class="section-title"><span>全流程地图</span><span class="badge-low">点击阶段查看产物与门禁</span></div>
+        <div class="flow-map-shell fade-in"><div class="flow-map" style="--stage-count:${Math.max(stages.length, 1)}">${stageCards}</div></div>
+        <div class="flow-details">
+          <section class="flow-workbench fade-in">
+            <div class="flow-workbench-head">
+              <div><div class="eyebrow">当前阶段作业面 · STEP ${esc(selected.index || '—')}</div><h3>${esc(selected.label || '暂无阶段')}</h3><p class="lead">${esc(selected.summary || '—')}</p></div>
+              <span class="flow-state">${FLOW_STATE_ZH[selected.state] || selected.state || '—'}</span>
+            </div>
+            <div class="stage-facts">
+              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>${selectedPlan.exists ? '' : '<div style="color:var(--red);margin-top:0.25rem">文件不存在</div>'}` : '<b style="color:var(--red)">未创建</b>'}</div>
+              <div class="stage-fact"><div class="label">Plan 状态</div>${selectedPlan.exists ? `<select class="statusSel" data-plan="${esc(selectedPlan.path)}">${['草稿','进行中','评审中','已采纳','搁置'].map(option => `<option ${option === selectedPlan.status ? 'selected' : ''}>${option}</option>`).join('')}</select>` : '<b style="color:var(--red)">未创建</b>'}</div>
+              <div class="stage-fact"><div class="label">产物模板</div><code>${esc(selected.template || '—')}</code></div>
+              <div class="stage-fact"><div class="label">执行 Skill</div><code>${esc((selected.skills || []).join(' → ') || '—')}</code></div>
+            </div>
+            ${criteria ? `<div class="criteria-list">${criteria}</div>` : ''}
+            ${selected.blocker ? `<div class="flow-blocker">⚠ ${esc(selected.blocker)}</div>` : ''}
+            ${workspace}
+          </section>
+          <aside class="flow-audit fade-in"><h3>${zhStage(selected.key)} · 门禁记录</h3><ul class="timeline">${timeline}</ul></aside>
+        </div>`;
+
+      $('backBtn').onclick = () => { view = 'overview'; currentFile = null; selectedFlowStage = null; window.scrollTo(0, 0); draw(); };
+      $('triggerBtn').onclick = async () => {
+        const response = await fetch('/api/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: e.file }) });
+        const data = await response.json();
+        try { await navigator.clipboard.writeText(data.command); } catch (_) {}
+        toast(`已复制：${data.command}`);
+      };
+      document.querySelectorAll('[data-flow-stage]').forEach(button => button.onclick = () => { selectedFlowStage = button.dataset.flowStage; renderWorkflowDetail(e); observeFades(false); });
+      document.querySelectorAll('[data-slice]').forEach(button => button.onclick = () => setSliceState(e.file, +button.dataset.slice, button.dataset.state));
+      document.querySelectorAll('[data-detail]').forEach(button => button.onclick = () => {
+        const slice = e.slices.find(item => item.n === +button.dataset.detail);
+        toast(`WBS ${slice.n} · 验收：${slice.acceptance || '—'} · skill：${slice.skill || '—'}`);
+      });
+      document.querySelectorAll('[data-story]').forEach(button => button.onclick = () => {
+        const story = e.stories.find(item => item.id === button.dataset.story);
+        toast(`${story.id} · ${story.story_points} 点 · ${story.tdd_complete ? 'TDD 证据完整' : 'TDD 证据未完整'} · ${story.path || '未建子 Plan'}`);
+      });
+      document.querySelectorAll('.statusSel').forEach(select => select.onchange = () => setStatus(select.dataset.plan, select.value, e.file));
+      const archiveBtn = $('archiveBtn'), reactivateBtn = $('reactivateBtn'), deleteBtn = $('deleteBtn');
+      if (archiveBtn) archiveBtn.onclick = () => archiveEpic(e.file, true);
+      if (reactivateBtn) reactivateBtn.onclick = () => archiveEpic(e.file, false);
+      if (deleteBtn) deleteBtn.onclick = () => confirmDelete(e);
+    }
+
     function renderDetail() {
       const e = envelope.epics.find(x => x.file === currentFile);
       if (!e) { view = 'overview'; return renderOverview(); }
+      if (e.workflow_map?.stages?.length) return renderWorkflowDetail(e);
       const storyMode = e.effective_workflow === 'client-dev';
       const nextN = e.next_slice;
       const cols = { todo: [], running: [], done: [] };

@@ -24,7 +24,7 @@ description: >-
 ## 执行
 
 1. `./scripts/dev-lifecycle-audit-collect.sh Plans/Epic`
-2. 五维度 A–E 交叉比对（见 `Skills/dev_lifecycle_audit_assistant.md`）
+2. 五维度 A–E 交叉比对（见 `Skills/dev_lifecycle_audit_assistant.md`）；测试维度必须区分 `integration-test-plan` 的用例审核证据与 `integration-test` 的执行报告，执行不得绕过审核或引用漂移版本
 3. **写入** `Contexts/决策/YYYY-MM-DD-开发流程审计报告.md`
 4. 回复路径 + summary + Epic 待办
 

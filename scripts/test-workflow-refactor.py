@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import importlib.util
 import os
 import shutil
@@ -148,12 +149,15 @@ class WorkflowRefactorTests(unittest.TestCase):
         stages = {stage["key"]: stage for stage in bp["stages"]}
         self.assertEqual(
             list(stages),
-            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test"],
+            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test-plan", "integration-test"],
         )
         self.assertEqual(stages["prioritization"]["epicField"], "prioritization")
         self.assertEqual(stages["story-split"]["epicField"], "development")
         self.assertEqual(stages["implementation-design"]["epicField"], "development")
         self.assertEqual(stages["story-development"]["epicField"], "development")
+        self.assertEqual(stages["story-development"]["next"], "integration-test-plan")
+        self.assertEqual(stages["integration-test-plan"]["epicField"], "integration_plan")
+        self.assertTrue(stages["integration-test-plan"]["exitCriteria"]["testPlanApproved"])
         self.assertEqual(stages["integration-test"]["epicField"], "integration")
         self.assertEqual(stages["architecture"]["planFolder"], "Plans/技术方案")
         self.assertEqual(stages["implementation-design"]["skills"], ["implementation-design-assistant"])
@@ -276,6 +280,15 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("await loadBoard({ animate: false, skipUnchanged: true })", html)
         self.assertIn("function observeFades(animate = true)", html)
         self.assertIn("if (!animate) {", html)
+
+    def test_kanban_detail_uses_workflow_map_as_the_primary_story(self) -> None:
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+
+        self.assertIn("全流程地图", html)
+        self.assertIn("e.workflow_map", html)
+        self.assertIn('class="flow-map"', html)
+        self.assertIn('data-flow-stage=', html)
+        self.assertIn("当前阶段作业面", html)
 
 
 
@@ -1440,6 +1453,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             ("story-split", "gate_pass"),
             ("implementation-design", "gate_pass"),
             ("story-development", "gate_pass"),
+            ("integration-test-plan", "gate_pass"),
             ("integration-test", "gate_fail"),
         ])
         requirement_pass = next(
@@ -1804,6 +1818,7 @@ class WorkflowRefactorTests(unittest.TestCase):
           prioritization: Plans/需求排序/fixture.md
           architecture: Plans/技术方案/fixture.md
           development: Plans/功能开发/fixture.md
+          integration_plan: Plans/自动化测试/fixture-plan.md
           integration: Plans/自动化测试/fixture.md
         ---
         # Fixture Epic
@@ -1928,9 +1943,55 @@ class WorkflowRefactorTests(unittest.TestCase):
             "acceptance": [{"ac_id": "AC1", "pass": True}, {"ac_id": "AC1-反", "pass": True}],
         }, ensure_ascii=False, indent=2))
 
+        case_index = root / "Plans/自动化测试/fixture.cases.json"
+        write_file(case_index, json.dumps({
+            "target_commit": "abc123",
+            "cases": [
+                {
+                    "id": "IT-001", "title": "完整流程", "priority": "P0", "type": "cross-story",
+                    "preconditions": ["fixture ready"], "test_data": ["valid fixture"],
+                    "steps": ["执行完整流程"], "expected_results": ["流程完成"],
+                    "automation": "automated", "suite": "cross-story",
+                    "ac_refs": [{"story_id": "US-1", "ac_id": "AC1"}],
+                },
+                {
+                    "id": "IT-002", "title": "Epic 隔离", "priority": "P0", "type": "isolation",
+                    "preconditions": ["存在两个 Epic"], "test_data": ["两个 Epic fixture"],
+                    "steps": ["读取目标 Epic"], "expected_results": ["不串其它 Epic"],
+                    "automation": "automated", "suite": "cross-story",
+                    "ac_refs": [{"story_id": "US-1", "ac_id": "AC1-反"}],
+                },
+            ],
+        }, ensure_ascii=False, indent=2))
+        write_file(root / "Plans/自动化测试/fixture.review.json", json.dumps({
+            "approved": True, "reviewer": "QA", "reviewed_at": "2026-08-07T10:00:00+08:00",
+            "target_commit": "abc123", "case_index_sha256": hashlib.sha256(case_index.read_bytes()).hexdigest(),
+            "unresolved_comments": 0,
+        }, ensure_ascii=False, indent=2))
+        write_file(root / "Plans/自动化测试/fixture-plan.md", f"""
+        ---
+        status: 已采纳
+        story_index: Plans/功能开发/fixture.stories.json
+        target_commit: abc123
+        test_case_index: Plans/自动化测试/fixture.cases.json
+        test_review: Plans/自动化测试/fixture.review.json
+        ---
+        # 集成测试计划
+        ## 测试策略
+        覆盖完整流程和 Epic 隔离风险。
+        ## 测试用例
+        IT-001 与 IT-002。
+        ## 需求与用例覆盖
+        US-1/AC1 和 US-1/AC1-反均已覆盖。
+        ## 测试审核
+        QA 已审核通过。
+        {skill_run("test-generator", "Plans/自动化测试/fixture-plan.md", "integration-test-plan")}
+        """)
+
         write_file(root / "Plans/自动化测试/fixture.md", f"""
         ---
         story_index: Plans/功能开发/fixture.stories.json
+        approved_test_plan: Plans/自动化测试/fixture-plan.md
         target_commit: abc123
         integration_report: Plans/自动化测试/fixture.integration.json
         ---

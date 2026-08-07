@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -353,6 +354,7 @@ plans:
   prioritization: Plans/需求排序/smoke.md
   architecture: Plans/技术方案/smoke.md
   development: Plans/功能开发/smoke.md
+  integration_plan: Plans/自动化测试/smoke-plan.md
   integration: Plans/自动化测试/smoke.md
 ---
 
@@ -778,6 +780,7 @@ def create_client_integration(tmp: Path, epic_rel: str) -> None:
 ---
 epic: {epic_rel}
 story_index: Plans/功能开发/smoke.stories.json
+approved_test_plan: Plans/自动化测试/smoke-plan.md
 target_commit: smoke123
 integration_report: {report_rel}
 ---
@@ -791,6 +794,57 @@ integration_report: {report_rel}
         "commit": "smoke123", "all_scope_stories_completed": True,
         "suites": [{"name": "cross-story", "command": "pytest integration", "exit_code": 0}],
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def create_client_integration_plan(tmp: Path, epic_rel: str) -> None:
+    plan_rel = "Plans/自动化测试/smoke-plan.md"
+    case_rel = "Plans/自动化测试/smoke.cases.json"
+    review_rel = "Plans/自动化测试/smoke.review.json"
+    case_path = tmp / case_rel
+    case_path.write_text(json.dumps({
+        "target_commit": "smoke123",
+        "cases": [{
+            "id": "IT-001", "title": "完整蓝图", "priority": "P0", "type": "cross-story",
+            "preconditions": ["Smoke fixture 已就绪"], "test_data": ["有效 fixture"],
+            "steps": ["执行完整流程"], "expected_results": ["流程完成"],
+            "automation": "automated", "suite": "cross-story",
+            "ac_refs": [{"story_id": "US-001", "ac_id": "AC1"}],
+        }],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (tmp / review_rel).write_text(json.dumps({
+        "approved": True, "reviewer": "Smoke QA", "reviewed_at": "2026-08-07T10:00:00+08:00",
+        "target_commit": "smoke123", "case_index_sha256": hashlib.sha256(case_path.read_bytes()).hexdigest(),
+        "unresolved_comments": 0,
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_fixture(
+        tmp / plan_rel,
+        f"""
+---
+status: 已采纳
+epic: {epic_rel}
+story_index: Plans/功能开发/smoke.stories.json
+target_commit: smoke123
+test_case_index: {case_rel}
+test_review: {review_rel}
+---
+
+# 集成测试计划 smoke
+
+## 测试策略
+覆盖完整流程、异常和恢复。
+
+## 测试用例
+IT-001 覆盖完整流程。
+
+## 需求与用例覆盖
+US-001/AC1 → IT-001。
+
+## 测试审核
+Smoke QA 已审核。
+
+{skill_run("test-generator", plan_rel, "integration-test-plan")}
+""",
+    )
 
 
 def smoke_learning_workflow(tmp: Path, workflow: str, bp: dict) -> None:
@@ -877,6 +931,10 @@ def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
     assert_gate_state(gate, workflow, "story-development")
 
     complete_client_story_tdd(tmp)
+    gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+    assert_gate_state(gate, workflow, "integration-test-plan")
+
+    create_client_integration_plan(tmp, epic_rel)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
     assert_gate_state(gate, workflow, "integration-test")
 

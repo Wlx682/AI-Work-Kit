@@ -22,6 +22,7 @@ STATE_LABELS = {
     "implementation-design": "实现落点设计",
     "story-check": "Story Scope 自检",
     "story-development": "逐 Story TDD 开发",
+    "integration-test-plan": "集成测试计划与审核",
     "integration-test": "全量集成测试",
     "test-first": "验收测试先行",
     "development": "功能开发",
@@ -44,7 +45,7 @@ SKILL_ACTIONS = {
     "requirement-analyst": "闭环需求 P0",
     "backlog-prioritization-assistant": "按价值/紧迫度/依赖排序并确认 Backlog",
     "architecture-design-assistant": "补技术方案并评审采纳",
-    "test-generator": "执行全量集成测试并写回归报告",
+    "test-generator": "按当前阶段生成并送审测试计划，或执行已审核计划并写回归报告",
     "task-splitter": "拆纵向 Story、估故事点并确认 Scope",
     "implementation-design-assistant": "规划代码落点、文件目录、文件名和 Red 测试位置",
     "feature-dev-assistant": "继续当前 Story 的 Red→Green→Refactor",
@@ -92,7 +93,7 @@ def simplify_blocker(blocker: str) -> str:
     if "WBS 切片" in text:
         m = re.search(r"缺:\s*([^)）]+)", text)
         return f"WBS 还有未完成切片：{m.group(1)}" if m else "WBS 切片未完成"
-    if "子 Plan 未创建" in text:
+    if "子 Plan 未创建" in text or "子 Plan 不存在" in text:
         m = re.search(r"（([^）]+)）", text)
         return f"还没有创建子 plan：{m.group(1)}" if m else "还没有创建当前阶段子 plan"
     if "status 须为" in text:
@@ -129,7 +130,15 @@ def current_plan(gate: dict[str, Any]) -> str | None:
 
 
 def needs_child_plan(blockers: list[str]) -> bool:
-    return any("子 Plan 未创建" in blocker for blocker in blockers)
+    return any("子 Plan 未创建" in blocker or "子 Plan 不存在" in blocker for blocker in blockers)
+
+
+def plan_init_command(gate: dict[str, Any]) -> str:
+    workflow = gate.get("workflow") or "<name>"
+    epic = gate.get("epic")
+    if epic:
+        return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --epic {epic}"
+    return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
 
 
 def next_step(gate: dict[str, Any]) -> str:
@@ -137,20 +146,18 @@ def next_step(gate: dict[str, Any]) -> str:
         return "归档或蒸馏可复用结论"
     blockers = gate.get("blockers", []) or []
     if needs_child_plan([str(item) for item in blockers]):
-        workflow = gate.get("workflow") or "<name>"
-        return f"创建当前阶段 plan：python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
+        return f"创建当前阶段 plan：{plan_init_command(gate)}"
     skill = gate.get("recommended_skill") or ""
     return SKILL_ACTIONS.get(skill, f"调用 {skill}" if skill else "查看 blocker 后补齐当前阶段")
 
 
 def resume_hint(gate: dict[str, Any]) -> str:
+    blockers = gate.get("blockers", []) or []
+    if needs_child_plan([str(item) for item in blockers]):
+        return plan_init_command(gate)
     plan = current_plan(gate)
     if plan:
         return f"/resume plan={plan} 进度={label_state(gate.get('current_state', ''))}"
-    blockers = gate.get("blockers", []) or []
-    if needs_child_plan([str(item) for item in blockers]):
-        workflow = gate.get("workflow") or "<name>"
-        return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
     if gate.get("recommended_skill") == "template-generator":
         return "/start 或 template-generator 创建 Epic"
     return "/status 查看最新状态"

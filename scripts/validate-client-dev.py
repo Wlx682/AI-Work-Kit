@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -14,6 +15,8 @@ import gate_parse
 POINTS = {1, 2, 3, 5, 8, 13}
 DONE_STATUSES = {"已完成", "done", "completed"}
 TIME_ESTIMATE_KEYS = {"estimated_hours", "estimate_hours", "hours", "days", "duration_hours"}
+TEST_PRIORITIES = {"P0", "P1", "P2"}
+AUTOMATION_STATES = {"automated", "manual", "planned"}
 
 
 class ValidationError(Exception):
@@ -167,10 +170,79 @@ def validate_story_development(root: Path, plan: Path) -> None:
         validate_story_evidence(root, story)
 
 
+def validate_test_plan(root: Path, plan: Path) -> None:
+    frontmatter = fm(plan)
+    target_commit = frontmatter.get("target_commit", "").strip()
+    require(target_commit, "集成测试计划缺少 target_commit")
+    _, story_payload = story_index(root, plan)
+    stories = validate_story_metadata(story_payload)
+    scoped = [story for story in stories if story.get("sprint_scope") is True]
+    require(scoped, "Scope 内至少需要一个用户故事")
+
+    case_index_path = resolve(root, frontmatter.get("test_case_index", ""), "test_case_index")
+    case_index = load_json(case_index_path, "Test case index")
+    require(case_index.get("target_commit") == target_commit, "用例索引 target_commit 与测试计划不一致")
+    cases = case_index.get("cases")
+    require(isinstance(cases, list) and cases, "测试用例 cases 必须是非空数组")
+
+    case_ids: set[str] = set()
+    covered: set[tuple[str, str]] = set()
+    for pos, case in enumerate(cases, 1):
+        require(isinstance(case, dict), f"测试用例 #{pos} 必须是 object")
+        case_id = str(case.get("id", "")).strip()
+        require(case_id and case_id not in case_ids, f"测试用例 #{pos} id 缺失或重复: {case_id}")
+        case_ids.add(case_id)
+        require(bool(str(case.get("title", "")).strip()), f"{case_id} 缺少 title")
+        require(case.get("priority") in TEST_PRIORITIES, f"{case_id}.priority 须为 P0/P1/P2")
+        require(bool(str(case.get("type", "")).strip()), f"{case_id} 缺少 type")
+        require(isinstance(case.get("preconditions"), list), f"{case_id}.preconditions 必须是数组")
+        require(isinstance(case.get("test_data"), list), f"{case_id}.test_data 必须是数组")
+        require(isinstance(case.get("steps"), list) and case["steps"], f"{case_id}.steps 必须是非空数组")
+        require(
+            isinstance(case.get("expected_results"), list) and case["expected_results"],
+            f"{case_id}.expected_results 必须是非空数组",
+        )
+        require(case.get("automation") in AUTOMATION_STATES, f"{case_id}.automation 取值非法")
+        require(bool(str(case.get("suite", "")).strip()), f"{case_id} 缺少 suite")
+        ac_refs = case.get("ac_refs")
+        require(isinstance(ac_refs, list) and ac_refs, f"{case_id}.ac_refs 必须是非空数组")
+        for ref in ac_refs:
+            require(isinstance(ref, dict), f"{case_id}.ac_refs 每项必须是 object")
+            story_id = str(ref.get("story_id", "")).strip()
+            ac_id = str(ref.get("ac_id", "")).strip()
+            require(story_id and ac_id, f"{case_id}.ac_refs 缺少 story_id/ac_id")
+            covered.add((story_id, ac_id))
+
+    required_ac = {
+        (str(story["id"]), str(ac_id))
+        for story in scoped
+        for ac_id in story.get("acceptance_criteria", [])
+    }
+    missing = sorted(required_ac - covered)
+    require(
+        not missing,
+        "Scope Story/AC 缺测试用例覆盖: " + ", ".join(f"{story}/{ac}" for story, ac in missing),
+    )
+
+    review_path = resolve(root, frontmatter.get("test_review", ""), "test_review")
+    review = load_json(review_path, "Test review")
+    require(review.get("approved") is True, "测试审核尚未通过")
+    require(bool(str(review.get("reviewer", "")).strip()), "测试审核缺少 reviewer")
+    require(bool(str(review.get("reviewed_at", "")).strip()), "测试审核缺少 reviewed_at")
+    require(review.get("target_commit") == target_commit, "测试审核 target_commit 与测试计划不一致")
+    actual_sha = hashlib.sha256(case_index_path.read_bytes()).hexdigest()
+    require(review.get("case_index_sha256") == actual_sha, "测试审核对应的用例索引已发生漂移")
+    require(review.get("unresolved_comments") == 0, "测试审核仍有未解决意见")
+
+
 def validate_integration(root: Path, plan: Path) -> None:
     frontmatter = fm(plan)
     target_commit = frontmatter.get("target_commit", "").strip()
     require(target_commit, "集成测试 Plan 缺少 target_commit")
+    approved_plan = resolve(root, frontmatter.get("approved_test_plan", ""), "approved_test_plan")
+    validate_test_plan(root, approved_plan)
+    approved_frontmatter = fm(approved_plan)
+    require(approved_frontmatter.get("target_commit", "").strip() == target_commit, "执行 target_commit 与已审核测试计划不一致")
     report_path = resolve(root, frontmatter.get("integration_report", ""), "integration_report")
     report = load_json(report_path, "Integration report")
     require(report.get("commit") == target_commit, "集成报告 commit 与 target_commit 不一致")
@@ -217,6 +289,7 @@ COMMANDS = {
     "implementation-design": validate_implementation_design,
     "story-scope": validate_story_scope,
     "story-development": validate_story_development,
+    "test-plan": validate_test_plan,
     "integration": validate_integration,
 }
 

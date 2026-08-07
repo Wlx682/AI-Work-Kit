@@ -56,7 +56,7 @@
 | 开发 [模块] 功能、实现 [目标]、写代码 | feature-dev-assistant | `/dev` `/feature-dev-assistant` | `Plans/功能开发/` |
 | 合代码、合并分支、处理合并冲突 | merge-code-assistant | `workflow=merge-code`；先分析双边业务意图，语义冲突由开发者决策 | `Plans/代码重构/` |
 | Figma 还原、对稿、纯界面开发 | figma-ui | `/ui` `/figma-ui` | UI plan |
-| 全量集成测试、回归报告 | test-generator | `/test` `/test-generator` | `Plans/自动化测试/` + `integration_report` |
+| 集成测试用例计划、测试审核、全量回归 | test-generator | `/test` `/test-generator` | `test_case_index` + `test_review` + `integration_report` |
 | Code Review、review diff、审查 PR、UI 复核 | code-review | `/code-review` `/review` | Findings-first（`Plans/代码重构/`） |
 | 需求变了、改个东西、Scope 调整 | change-impact-analysis | `/change-impact-analysis` | 变更影响 |
 | 检查 Epic 进度、审计版本状态、这个需求做完了吗 | dev-lifecycle-audit-assistant | `/dev-lifecycle-audit` | 审计报告 |
@@ -90,7 +90,7 @@
 | `.claude/workflows/workflow-engine.js` / `AGENTS.md` | 读取工作流蓝图，组合各子 Skill 执行多工作流 |
 | `scripts/workflow-status.py` | 日常看状态：当前 / 卡点 / 下一步 / 继续 |
 | `scripts/workflow-gate.sh` | 底层门禁详情：按蓝图与子 Plan 文件事实派生阶段 |
-| `scripts/workflow-plan-init.py` | 为 `merge-code` / `ui-change` / `bugfix` / `story-split-only` 等无 Epic 轻流程创建阶段 plan |
+| `scripts/workflow-plan-init.py` | 按蓝图创建当前阶段 Plan；Epic 工作流读取/补充 `plans.<epicField>`，轻流程按目录和前缀生成 |
 | `scripts/workflow-smoke-test.py` | 一条命令测试轻流程能路由、阻塞、补齐后 done |
 
 全文见各 `Skills/*.md`。

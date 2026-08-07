@@ -16,6 +16,7 @@ plans:
   prioritization: Plans/需求排序/{{date}}-{{title}}.md
   architecture: Plans/技术方案/{{date}}-{{title}}.md
   development: Plans/功能开发/{{date}}-{{title}}.md
+  integration_plan: Plans/自动化测试/{{date}}-{{title}}-集成测试计划.md
   integration: Plans/自动化测试/{{date}}-{{title}}-集成测试.md
 relations:
   depends_on:
@@ -23,6 +24,7 @@ relations:
     - Templates/需求排序模板.md
     - Templates/技术方案模板.md
     - Templates/客户端功能开发模板.md
+    - Templates/集成测试计划模板.md
     - Templates/集成测试模板.md
   dependents: []
   supersedes: []
@@ -47,6 +49,7 @@ relations:
 | 功能故事拆分与故事点 | story-split | `Plans/功能开发/{{date}}-{{title}}.md` | ⬜ |
 | 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ⬜ |
 | 逐故事 TDD | story-development | 同上及动态故事子 Plan | ⬜ |
+| 集成测试计划与审核 | integration-test-plan | `Plans/自动化测试/{{date}}-{{title}}-集成测试计划.md` | ⬜ |
 | 全量集成测试 | integration-test | `Plans/自动化测试/{{date}}-{{title}}-集成测试.md` | ⬜ |
 
 ## 二、阶段门禁
@@ -59,6 +62,7 @@ relations:
 | story-split | 每个 Scope 故事可独立验收、有故事点、AC 和架构引用 |
 | implementation-design | 每个 Scope 故事有实现落点 JSON，明确代码证据、目标文件、分层边界和 Red 测试位置 |
 | story-development | 每个 Scope 故事 Red/Green/Refactor/冒烟/AC 证据齐全 |
+| integration-test-plan | Scope 内每个 Story/AC 都有结构化测试用例；测试审核通过且审核证据与用例版本一致 |
 | integration-test | 当前目标 commit 的全量集成报告通过；随后直接 Done |
 
 ## 三、动态用户故事看板
