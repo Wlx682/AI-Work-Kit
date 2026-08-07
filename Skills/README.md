@@ -52,6 +52,7 @@
 | 需求排序、Backlog 优先级、确认本轮先做什么 | backlog-prioritization-assistant | `/backlog-prioritization-assistant` | `Plans/需求排序/` + `.backlog.json` |
 | 系统架构、模块边界、ER 图、数据模型 | architecture-design-assistant | `/arch` `/architecture-design-assistant` | 技术方案 plan |
 | 拆纵向 Story、故事点、Scope | task-splitter | `/split` `/task-splitter` | `.stories.json` + Story 子 Plan |
+| 实现落点设计、代码落点、文件目录规划、文件名规划 | implementation-design-assistant | `/implementation-design` | Story / bugfix implementation design JSON |
 | 开发 [模块] 功能、实现 [目标]、写代码 | feature-dev-assistant | `/dev` `/feature-dev-assistant` | `Plans/功能开发/` |
 | 合代码、合并分支、处理合并冲突 | merge-code-assistant | `workflow=merge-code`；先分析双边业务意图，语义冲突由开发者决策 | `Plans/代码重构/` |
 | Figma 还原、对稿、纯界面开发 | figma-ui | `/ui` `/figma-ui` | UI plan |

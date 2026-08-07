@@ -19,6 +19,7 @@ STATE_LABELS = {
     "prioritization": "需求排序",
     "architecture": "技术方案",
     "story-split": "纵向 Story 拆分/故事点",
+    "implementation-design": "实现落点设计",
     "story-check": "Story Scope 自检",
     "story-development": "逐 Story TDD 开发",
     "integration-test": "全量集成测试",
@@ -45,6 +46,7 @@ SKILL_ACTIONS = {
     "architecture-design-assistant": "补技术方案并评审采纳",
     "test-generator": "执行全量集成测试并写回归报告",
     "task-splitter": "拆纵向 Story、估故事点并确认 Scope",
+    "implementation-design-assistant": "规划代码落点、文件目录、文件名和 Red 测试位置",
     "feature-dev-assistant": "继续当前 Story 的 Red→Green→Refactor",
     "figma-ui": "继续 Figma/UI 子任务",
     "nfr-assistant": "补非功能验证",
@@ -126,9 +128,17 @@ def current_plan(gate: dict[str, Any]) -> str | None:
     return None
 
 
+def needs_child_plan(blockers: list[str]) -> bool:
+    return any("子 Plan 未创建" in blocker for blocker in blockers)
+
+
 def next_step(gate: dict[str, Any]) -> str:
     if gate.get("current_state") == "done":
         return "归档或蒸馏可复用结论"
+    blockers = gate.get("blockers", []) or []
+    if needs_child_plan([str(item) for item in blockers]):
+        workflow = gate.get("workflow") or "<name>"
+        return f"创建当前阶段 plan：python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
     skill = gate.get("recommended_skill") or ""
     return SKILL_ACTIONS.get(skill, f"调用 {skill}" if skill else "查看 blocker 后补齐当前阶段")
 
@@ -137,6 +147,10 @@ def resume_hint(gate: dict[str, Any]) -> str:
     plan = current_plan(gate)
     if plan:
         return f"/resume plan={plan} 进度={label_state(gate.get('current_state', ''))}"
+    blockers = gate.get("blockers", []) or []
+    if needs_child_plan([str(item) for item in blockers]):
+        workflow = gate.get("workflow") or "<name>"
+        return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
     if gate.get("recommended_skill") == "template-generator":
         return "/start 或 template-generator 创建 Epic"
     return "/status 查看最新状态"

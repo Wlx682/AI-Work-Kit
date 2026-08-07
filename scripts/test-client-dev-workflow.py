@@ -53,12 +53,15 @@ class ClientDevWorkflowTests(unittest.TestCase):
         stages = bp["stages"]
         self.assertEqual(
             [stage["key"] for stage in stages],
-            ["requirement", "prioritization", "architecture", "story-split", "story-development", "integration-test"],
+            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test"],
         )
         by_key = {stage["key"]: stage for stage in stages}
         self.assertTrue(by_key["prioritization"]["exitCriteria"]["backlogPrioritized"])
         self.assertEqual(by_key["architecture"]["next"], "story-split")
+        self.assertEqual(by_key["story-split"]["next"], "implementation-design")
         self.assertTrue(by_key["story-split"]["exitCriteria"]["storyScopeReady"])
+        self.assertTrue(by_key["implementation-design"]["exitCriteria"]["implementationDesignReady"])
+        self.assertEqual(by_key["implementation-design"]["skills"], ["implementation-design-assistant"])
         self.assertTrue(by_key["story-development"]["exitCriteria"]["storyTddComplete"])
         self.assertTrue(by_key["integration-test"]["exitCriteria"]["integrationReportPass"])
         self.assertEqual(by_key["integration-test"]["next"], "done")
@@ -124,6 +127,50 @@ class ClientDevWorkflowTests(unittest.TestCase):
             self.dump(index, {"scope_confirmed": True, "stories": [invalid_hours]})
             self.run_validator(root, "story-scope", plan, ok=False)
 
+    def test_implementation_design_requires_codebase_placement_facts(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="client-dev-impl-design-") as raw:
+            root = Path(raw)
+            plan = self.write(root / "Plans/功能开发/demo.md", """
+                ---
+                story_index: Plans/功能开发/demo.stories.json
+                ---
+                # 用户故事开发
+            """)
+            self.write(root / "src/features/draft/view.ts", "export const existing = true")
+            self.write(root / "Plans/功能开发/us-1.md", """
+                ---
+                story_id: US-1
+                status: 待开发
+                implementation_design: Plans/功能开发/us-1.impl.json
+                ---
+                # US-1
+            """)
+            self.dump(root / "Plans/功能开发/demo.stories.json", {
+                "scope_confirmed": True,
+                "stories": [{
+                    "id": "US-1", "title": "用户可以创建草稿", "path": "Plans/功能开发/us-1.md",
+                    "story_points": 5, "estimate_confirmed": True, "priority": "P0",
+                    "sprint_scope": True, "dependencies": [], "acceptance_criteria": ["AC1"],
+                    "architecture_refs": ["ADR-1"], "vertical_slice": True,
+                }],
+            })
+            self.run_validator(root, "implementation-design", plan, ok=False)
+            self.dump(root / "Plans/功能开发/us-1.impl.json", {
+                "story_id": "US-1",
+                "codebase_available": True,
+                "codebase_read": [{"path": "src/features/draft/view.ts", "reason": "同模块分层和命名参考"}],
+                "target_files": {
+                    "modify": [{"path": "src/features/draft/view.ts", "purpose": "接入创建草稿入口", "layer": "Presentation"}],
+                    "create": [{"path": "src/features/draft/use-case.ts", "reason": "现有模块没有创建用例", "naming_basis": "沿用 use-case 命名", "layer": "Domain"}],
+                },
+                "module_boundary": {"layer": "Presentation/Domain", "dependency_rule": "Presentation 只依赖 Domain"},
+                "tests": {"red": [{"path": "tests/draft.test.ts", "command": "pytest tests/draft.test.ts"}]},
+                "risks": [],
+                "blocked_questions": [],
+                "confirmed": True,
+            })
+            self.run_validator(root, "implementation-design", plan, ok=True)
+
     def test_ac08_ac09_ac11_development_requires_each_story_tdd_evidence(self) -> None:
         with tempfile.TemporaryDirectory(prefix="client-dev-tdd-") as raw:
             root = Path(raw)
@@ -137,6 +184,7 @@ class ClientDevWorkflowTests(unittest.TestCase):
                 ---
                 story_id: US-1
                 status: 已完成
+                implementation_design: Plans/功能开发/us-1.impl.json
                 tdd_evidence: Plans/功能开发/us-1.tdd.json
                 ---
                 # US-1
@@ -191,7 +239,8 @@ class ClientDevWorkflowTests(unittest.TestCase):
             ".cursor/skills/backlog-prioritization-assistant/SKILL.md": ["business_value", "confirmed"],
             ".cursor/skills/architecture-design-assistant/SKILL.md": ["需求排序", "story-split"],
             ".cursor/skills/task-splitter/SKILL.md": ["用户故事", "story_points", "vertical_slice"],
-            ".cursor/skills/feature-dev-assistant/SKILL.md": ["Red", "Green", "tdd_evidence"],
+            ".cursor/skills/implementation-design-assistant/SKILL.md": ["implementation_design", "代码落点", "Red"],
+            ".cursor/skills/feature-dev-assistant/SKILL.md": ["Red", "Green", "implementation_design", "tdd_evidence"],
             ".cursor/skills/test-generator/SKILL.md": ["integration-test", "integration_report"],
         }
         for rel, needles in expected.items():
@@ -329,16 +378,37 @@ skill_run:
                 ---
                 story_id: US-1
                 status: 待开发
+                implementation_design: Plans/功能开发/us-1.impl.json
                 tdd_evidence: Plans/功能开发/us-1.tdd.json
                 ---
                 # US-1
             """)
+            self.assertEqual(gate()["current_state"], "implementation-design")
+            self.write(root / "src/features/draft/view.ts", "export const existing = true")
+            self.dump(root / "Plans/功能开发/us-1.impl.json", {
+                "story_id": "US-1",
+                "codebase_available": True,
+                "codebase_read": [{"path": "src/features/draft/view.ts", "reason": "同模块分层和命名参考"}],
+                "target_files": {
+                    "modify": [{"path": "src/features/draft/view.ts", "purpose": "接入创建入口", "layer": "Presentation"}],
+                    "create": [{"path": "src/features/draft/use-case.ts", "reason": "现有模块没有创建用例", "naming_basis": "沿用 use-case 命名", "layer": "Domain"}],
+                },
+                "module_boundary": {"layer": "Presentation/Domain", "dependency_rule": "Presentation 只依赖 Domain"},
+                "tests": {"red": [{"path": "tests/draft.test.ts", "command": "pytest tests/draft.test.ts"}]},
+                "risks": [],
+                "blocked_questions": [],
+                "confirmed": True,
+            })
+            development.write_text(development.read_text(encoding="utf-8") + "\n## 实现落点设计\nUS-1 已完成代码落点设计。\n" + receipt(
+                "implementation-design-assistant", "Plans/功能开发/demo.md", "implementation-design"
+            ), encoding="utf-8")
             self.assertEqual(gate()["current_state"], "story-development")
 
             self.write(root / "Plans/功能开发/us-1.md", """
                 ---
                 story_id: US-1
                 status: 已完成
+                implementation_design: Plans/功能开发/us-1.impl.json
                 tdd_evidence: Plans/功能开发/us-1.tdd.json
                 ---
                 # US-1
@@ -462,10 +532,22 @@ skill_run:
             self.write(root / "Plans/功能开发/us-1.md", """
                 ---
                 status: 已完成
+                implementation_design: Plans/功能开发/us-1.impl.json
                 tdd_evidence: Plans/功能开发/us-1.tdd.json
                 ---
                 # US-1
             """)
+            self.write(root / "src/features/draft/view.ts", "export const existing = true")
+            self.dump(root / "Plans/功能开发/us-1.impl.json", {
+                "codebase_available": True,
+                "codebase_read": [{"path": "src/features/draft/view.ts", "reason": "同模块参考"}],
+                "target_files": {"modify": [{"path": "src/features/draft/view.ts", "purpose": "接入", "layer": "Presentation"}], "create": []},
+                "module_boundary": {"layer": "Presentation", "dependency_rule": "不直连 Data"},
+                "tests": {"red": [{"path": "tests/draft.test.ts", "command": "pytest tests/draft.test.ts"}]},
+                "risks": [],
+                "blocked_questions": [],
+                "confirmed": True,
+            })
             self.dump(root / "Plans/功能开发/us-1.tdd.json", {
                 "commit": "abc", "red": {"exit_code": 1}, "green": {"exit_code": 0},
                 "refactor": {"exit_code": 0}, "integration_smoke": {"exit_code": 0},

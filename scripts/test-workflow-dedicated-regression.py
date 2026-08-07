@@ -57,11 +57,13 @@ def assert_bugfix() -> None:
     bp = load_blueprint("bugfix")
     require_enablement(bp)
     require_no_epic_lightweight(bp, "Plans/Bug排查")
-    require(stage_keys(bp) == ["reproduce", "diagnose", "fix", "regression"], "bugfix: 阶段必须保持复现→定位→修复→回归")
+    require(stage_keys(bp) == ["reproduce", "diagnose", "implementation-design", "fix", "regression"], "bugfix: 阶段必须保持复现→定位→落点设计→修复→回归")
     stages = stage_map(bp)
     for key in ["reproduce", "diagnose", "fix"]:
         require(stages[key]["skills"] == ["feature-dev-assistant"], f"bugfix:{key}: 必须由 feature-dev-assistant 执行")
         require(stages[key]["exitCriteria"]["skillRun"] is True, f"bugfix:{key}: 必须留下 skill_run")
+    require(stages["implementation-design"]["skills"] == ["implementation-design-assistant"], "bugfix: 修复前必须由 implementation-design-assistant 做代码落点设计")
+    require(stages["implementation-design"]["exitCriteria"]["implementationDesignReady"] is True, "bugfix: 落点设计必须校验 implementationDesignReady")
     require(stages["regression"]["skills"] == ["code-review"], "bugfix: 回归复核必须由 code-review 执行")
     require("修bug" in bp["triggerHints"] and "需求变更" in bp["description"], "bugfix: 必须保留 bug 入口与需求变更升级提示")
 

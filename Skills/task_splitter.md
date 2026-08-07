@@ -1,6 +1,6 @@
 # task-splitter · 用户故事拆分与故事点
 
-读取已采纳需求、已确认 Backlog 和已采纳架构，拆成可独立演示、独立验收的纵向用户故事。输出主 Plan、`.stories.json` 与故事子 Plan。
+读取已采纳需求、已确认 Backlog 和已采纳架构，拆成可独立演示、独立验收的纵向用户故事。输出主 Plan、`.stories.json` 与故事子 Plan；下一阶段进入 `implementation-design-assistant` 做代码落点设计。
 
 ## 规则
 

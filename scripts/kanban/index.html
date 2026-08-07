@@ -277,7 +277,7 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
+    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'implementation-design': '实现落点设计', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
 
     function boardContentSignature(data) {

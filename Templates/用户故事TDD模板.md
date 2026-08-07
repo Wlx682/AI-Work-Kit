@@ -10,6 +10,7 @@ story_id: US-001
 story_points: 5
 sprint_scope: true
 tdd_evidence: Plans/功能开发/{{date}}-{{title}}-US-001.tdd.json
+implementation_design: Plans/功能开发/{{date}}-{{title}}-US-001.impl.json
 relations:
   depends_on:
     - Templates/模板约定.md
@@ -36,6 +37,15 @@ relations:
 - Data / API：【】
 - 测试与异常：【】
 
+## 实现落点设计
+
+落点证据：`implementation_design`。必须先通过 `python3 scripts/validate-client-dev.py implementation-design --plan Plans/功能开发/父Plan.md`。
+
+- 代码证据：【读过的既有文件/目录】
+- 目标文件：【修改/新建路径、原因、命名依据】
+- 模块边界：【所属层级与依赖方向】
+- Red 测试位置：【测试文件与命令】
+
 ## TDD
 
 1. **Red**：先运行从 AC 转换的测试，保存非零退出码和“仅因尚未实现”的原因。
@@ -47,6 +57,7 @@ relations:
 
 ## 故事验收
 
+- [ ] `implementation_design` 已通过校验
 - [ ] AC 全部通过
 - [ ] Red / Green / Refactor / integration smoke 证据齐全
 - [ ] `status: 已完成`

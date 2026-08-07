@@ -12,10 +12,11 @@
 #   .codex/skills/<name>/SKILL.md   → Codex 入口（gitignore 中，由本脚本生成）
 #   Skills/<name>.md                → 人类阅读真理源（下划线，dash → underscore）
 #
-# 校验三项：
+# 校验四项：
 #   1. .cursor / .claude / .codex 名称集合一致
 #   2. 同名 Skill 在三端内容字节级一致
-#   3. 每个 Skill 在 Skills/ 有对应真理源文件存在
+#   3. 入口 Skill 的全局 ~/.claude / ~/.codex 副本存在且与 .cursor 一致
+#   4. 每个 Skill 在 Skills/ 有对应真理源文件存在
 #
 # 注意：Skills/<name>.md 的内容**不**与 stub 强制字节相等（master 是长文档，stub 是短入口）；只检查存在性。
 # --sync 会清理项目生成端中不在 .cursor/skills 的旧目录；全局副本只覆盖项目同名，保留用户自装。
@@ -26,6 +27,9 @@ CURSOR_DIR="$ROOT/.cursor/skills"
 CLAUDE_DIR="$ROOT/.claude/skills"
 CODEX_DIR="$ROOT/.codex/skills"
 SKILLS_DIR="$ROOT/Skills"
+GLOBAL_CLAUDE_DIR="$HOME/.claude/skills"
+GLOBAL_CODEX_DIR="$HOME/.codex/skills"
+GLOBAL_ENTRYPOINT_SKILLS="workflow-router"
 
 MODE="${1:---check}"
 
@@ -74,13 +78,17 @@ if [ -n "$only_codex" ]; then
   errors=$((errors+1))
 fi
 
-# 2. 同名 Skill 内容比对
+# 2. 同名 Skill 内容比对 + 全局副本漂移检查
 common=$(comm -12 <(echo "$cursor_names") <(echo "$claude_names") | comm -12 - <(echo "$codex_names") || true)
 diff_skills=""
+global_missing_skills=""
+global_diff_skills=""
 for name in $common; do
   c="$CURSOR_DIR/$name/SKILL.md"
   l="$CLAUDE_DIR/$name/SKILL.md"
   x="$CODEX_DIR/$name/SKILL.md"
+  g_claude="$GLOBAL_CLAUDE_DIR/$name/SKILL.md"
+  g_codex="$GLOBAL_CODEX_DIR/$name/SKILL.md"
   if [ ! -f "$c" ] || [ ! -f "$l" ] || [ ! -f "$x" ]; then
     echo "⚠️ $name: SKILL.md 文件缺失" >&2
     errors=$((errors+1))
@@ -89,6 +97,22 @@ for name in $common; do
   if ! diff -q "$c" "$l" > /dev/null 2>&1 || ! diff -q "$c" "$x" > /dev/null 2>&1; then
     diff_skills="$diff_skills $name"
     errors=$((errors+1))
+  fi
+  if printf '%s\n' "$GLOBAL_ENTRYPOINT_SKILLS" | grep -Fxq "$name"; then
+    if [ ! -f "$g_claude" ]; then
+      global_missing_skills="$global_missing_skills Claude:$name"
+      errors=$((errors+1))
+    elif ! diff -q "$c" "$g_claude" > /dev/null 2>&1; then
+      global_diff_skills="$global_diff_skills Claude:$name"
+      errors=$((errors+1))
+    fi
+    if [ ! -f "$g_codex" ]; then
+      global_missing_skills="$global_missing_skills Codex:$name"
+      errors=$((errors+1))
+    elif ! diff -q "$c" "$g_codex" > /dev/null 2>&1; then
+      global_diff_skills="$global_diff_skills Codex:$name"
+      errors=$((errors+1))
+    fi
   fi
 done
 
@@ -104,6 +128,30 @@ if [ -n "$diff_skills" ]; then
       echo "  .cursor ↔ .codex" >&2
       diff -u "$CURSOR_DIR/$n/SKILL.md" "$CODEX_DIR/$n/SKILL.md" | head -n 30 >&2 || true
     fi
+  done
+fi
+
+if [ -n "$global_missing_skills" ]; then
+  echo "✗ 全局副本缺失的 Skill：" >&2
+  for item in $global_missing_skills; do
+    channel=${item%%:*}
+    n=${item#*:}
+    echo "  - $channel:$n" >&2
+  done
+fi
+
+if [ -n "$global_diff_skills" ]; then
+  echo "✗ 全局副本漂移的 Skill：" >&2
+  for item in $global_diff_skills; do
+    channel=${item%%:*}
+    n=${item#*:}
+    if [ "$channel" = "Claude" ]; then
+      target="$GLOBAL_CLAUDE_DIR/$n/SKILL.md"
+    else
+      target="$GLOBAL_CODEX_DIR/$n/SKILL.md"
+    fi
+    echo "  --- $channel:$n ---" >&2
+    diff -u "$CURSOR_DIR/$n/SKILL.md" "$target" | head -n 30 >&2 || true
   done
 fi
 
@@ -178,8 +226,6 @@ if [ "$MODE" = "--sync" ]; then
   fi
 
   # 2) 项目生成端 → 全局 ~/.claude/skills 与 ~/.codex/skills（仅覆盖项目内 Skill 名称，保留用户自装的）
-  GLOBAL_CLAUDE_DIR="$HOME/.claude/skills"
-  GLOBAL_CODEX_DIR="$HOME/.codex/skills"
   mkdir -p "$GLOBAL_CLAUDE_DIR" "$GLOBAL_CODEX_DIR"
   synced=0
   for d in "$CLAUDE_DIR"/*/; do

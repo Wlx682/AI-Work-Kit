@@ -45,6 +45,7 @@ relations:
 | 需求排序 | prioritization | `Plans/需求排序/{{date}}-{{title}}.md` | ⬜ |
 | 正式架构设计 | architecture | `Plans/技术方案/{{date}}-{{title}}.md` | ⬜ |
 | 功能故事拆分与故事点 | story-split | `Plans/功能开发/{{date}}-{{title}}.md` | ⬜ |
+| 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ⬜ |
 | 逐故事 TDD | story-development | 同上及动态故事子 Plan | ⬜ |
 | 全量集成测试 | integration-test | `Plans/自动化测试/{{date}}-{{title}}-集成测试.md` | ⬜ |
 
@@ -56,6 +57,7 @@ relations:
 | prioritization | Backlog 价值/紧迫度/依赖/优先级/依据齐全且团队确认 |
 | architecture | 模块、模型、API、NFR、ADR、需求影响矩阵齐全并已采纳 |
 | story-split | 每个 Scope 故事可独立验收、有故事点、AC 和架构引用 |
+| implementation-design | 每个 Scope 故事有实现落点 JSON，明确代码证据、目标文件、分层边界和 Red 测试位置 |
 | story-development | 每个 Scope 故事 Red/Green/Refactor/冒烟/AC 证据齐全 |
 | integration-test | 当前目标 commit 的全量集成报告通过；随后直接 Done |
 

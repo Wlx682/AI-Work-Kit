@@ -148,13 +148,16 @@ class WorkflowRefactorTests(unittest.TestCase):
         stages = {stage["key"]: stage for stage in bp["stages"]}
         self.assertEqual(
             list(stages),
-            ["requirement", "prioritization", "architecture", "story-split", "story-development", "integration-test"],
+            ["requirement", "prioritization", "architecture", "story-split", "implementation-design", "story-development", "integration-test"],
         )
         self.assertEqual(stages["prioritization"]["epicField"], "prioritization")
         self.assertEqual(stages["story-split"]["epicField"], "development")
+        self.assertEqual(stages["implementation-design"]["epicField"], "development")
         self.assertEqual(stages["story-development"]["epicField"], "development")
         self.assertEqual(stages["integration-test"]["epicField"], "integration")
         self.assertEqual(stages["architecture"]["planFolder"], "Plans/技术方案")
+        self.assertEqual(stages["implementation-design"]["skills"], ["implementation-design-assistant"])
+        self.assertTrue(stages["implementation-design"]["exitCriteria"]["implementationDesignReady"])
         self.assertEqual(stages["story-development"]["skills"], ["feature-dev-assistant", "figma-ui"])
         self.assertIn("workflow-router", (ROOT / "Skills/README.md").read_text(encoding="utf-8"))
         epic_template = (ROOT / "Templates/Epic模板-client-dev.md").read_text(encoding="utf-8")
@@ -1044,6 +1047,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 [
                     ("Plans/Bug排查/2026-07-03-复现-价格错误.md", "feature-dev-assistant"),
                     ("Plans/Bug排查/2026-07-03-定位-价格错误.md", "feature-dev-assistant"),
+                    ("Plans/Bug排查/2026-07-03-落点设计-价格错误.md", "implementation-design-assistant"),
                     ("Plans/Bug排查/2026-07-03-修复-价格错误.md", "feature-dev-assistant"),
                     ("Plans/Bug排查/2026-07-03-回归-价格错误.md", "review-assistant"),
                 ],
@@ -1088,8 +1092,32 @@ class WorkflowRefactorTests(unittest.TestCase):
                             ),
                         )
                         verdict_fm = f"verdict: {verdict_rel}\n"
+                    impl_fm = ""
+                    if "落点设计" in rel:
+                        source_rel = "src/bugfix/price.ts"
+                        impl_rel = rel.replace(".md", ".impl.json")
+                        write_file(tmp / source_rel, "export const price = true")
+                        write_file(
+                            tmp / impl_rel,
+                            json.dumps({
+                                "codebase_available": True,
+                                "codebase_read": [{"path": source_rel, "reason": "价格模块既有实现参考"}],
+                                "target_files": {
+                                    "modify": [{"path": source_rel, "purpose": "修正价格计算", "layer": "Domain"}],
+                                    "create": []
+                                },
+                                "module_boundary": {"layer": "Domain", "dependency_rule": "Domain 不依赖 UI"},
+                                "tests": {"red": [{"path": "tests/price.test.ts", "command": "pytest tests/price.test.ts"}]},
+                                "risks": [],
+                                "blocked_questions": [],
+                                "confirmed": True,
+                            }, ensure_ascii=False),
+                        )
+                        impl_fm = f"implementation_design: {impl_rel}\n"
                     merge_fm = ""
                     merge_body = ""
+                    if "落点设计" in rel:
+                        merge_body = "## 修复落点设计\n\n已确认价格修复落点、模块边界和 Red 回归测试。\n"
                     if "合并意图分析" in rel:
                         merge_fm = "p0_open: 0\n"
                         merge_body = merge_analysis_sections()
@@ -1138,7 +1166,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                         f"""
                         ---
                         status: 已采纳
-                        {story_fm}{verdict_fm}{merge_fm}---
+                        {story_fm}{verdict_fm}{impl_fm}{merge_fm}---
 
                         # {rel}
 
@@ -1410,6 +1438,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             ("prioritization", "gate_pass"),
             ("architecture", "gate_pass"),
             ("story-split", "gate_pass"),
+            ("implementation-design", "gate_pass"),
             ("story-development", "gate_pass"),
             ("integration-test", "gate_fail"),
         ])
@@ -1663,6 +1692,28 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["next"], "归档或蒸馏可复用结论")
 
 
+    def test_workflow_status_prompts_plan_init_for_lightweight_missing_plan(self) -> None:
+        with self.fixture_repo() as tmp:
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-status.py",
+                    "--workflow",
+                    "bugfix",
+                    "--json",
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            data = json.loads(proc.stdout)
+        self.assertTrue(data["blocked"])
+        self.assertIn("workflow-plan-init.py --workflow bugfix", data["next"])
+        self.assertIn("workflow-plan-init.py --workflow bugfix", data["resume"])
+
+
     def test_traceability_blocks_missing_development_p0_coverage(self) -> None:
         with self.fixture_repo() as tmp:
             self.create_traceability_fixture(tmp, cover_tests=True, include_dev=True, cover_dev=False)
@@ -1829,7 +1880,10 @@ class WorkflowRefactorTests(unittest.TestCase):
         story_index: Plans/功能开发/fixture.stories.json
         ---
         # 功能故事
+        ## 实现落点设计
+        US-1 已完成代码落点设计。
         {skill_run("task-splitter", "Plans/功能开发/fixture.md", "story-split")}
+        {skill_run("implementation-design-assistant", "Plans/功能开发/fixture.md", "implementation-design")}
         {skill_run("feature-dev-assistant", "Plans/功能开发/fixture.md", "story-development")}
         """)
         write_file(root / "Plans/功能开发/fixture.stories.json", json.dumps({
@@ -1845,10 +1899,26 @@ class WorkflowRefactorTests(unittest.TestCase):
         ---
         story_id: US-1
         status: 已完成
+        implementation_design: Plans/功能开发/us-1.impl.json
         tdd_evidence: Plans/功能开发/us-1.tdd.json
         ---
         # US-1
         """)
+        write_file(root / "src/features/flow/view.ts", "export const existingFlowView = true")
+        write_file(root / "Plans/功能开发/us-1.impl.json", json.dumps({
+            "story_id": "US-1",
+            "codebase_available": True,
+            "codebase_read": [{"path": "src/features/flow/view.ts", "reason": "完整流程模块既有分层参考"}],
+            "target_files": {
+                "modify": [{"path": "src/features/flow/view.ts", "purpose": "接入完整流程入口", "layer": "Presentation"}],
+                "create": [{"path": "src/features/flow/use-case.ts", "reason": "现有模块没有完整流程用例", "naming_basis": "沿用 use-case 命名", "layer": "Domain"}],
+            },
+            "module_boundary": {"layer": "Presentation/Domain", "dependency_rule": "Presentation 只依赖 Domain"},
+            "tests": {"red": [{"path": "tests/flow.test.ts", "command": "pytest tests/flow.test.ts"}]},
+            "risks": [],
+            "blocked_questions": [],
+            "confirmed": True,
+        }, ensure_ascii=False, indent=2))
         write_file(root / "Plans/功能开发/us-1.tdd.json", json.dumps({
             "story_id": "US-1", "commit": "abc123",
             "red": {"command": "pytest story", "exit_code": 1, "reason": "功能尚未实现", "at": "t1"},

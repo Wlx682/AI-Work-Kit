@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -193,8 +194,27 @@ def validate_integration(root: Path, plan: Path) -> None:
                 validate_story_evidence(root, story)
 
 
+def validate_implementation_design(root: Path, plan: Path) -> None:
+    proc = subprocess.run(
+        [
+            "python3",
+            str(Path(__file__).resolve().parent / "validate-implementation-design.py"),
+            "--root",
+            str(root),
+            "--plan",
+            str(plan),
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    require(proc.returncode == 0, (proc.stderr or proc.stdout).strip())
+
+
 COMMANDS = {
     "backlog": validate_backlog,
+    "implementation-design": validate_implementation_design,
     "story-scope": validate_story_scope,
     "story-development": validate_story_development,
     "integration": validate_integration,

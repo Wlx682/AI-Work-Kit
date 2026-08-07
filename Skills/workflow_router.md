@@ -35,8 +35,11 @@
 - 不替代阶段 Skill
 - 不靠 `lifecycle_state` 推进流程
 - 不把 Epic 当状态机
+- 不允许只加载本 Skill 后直接读写业务代码；命中 workflow 后必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”
 
 ## 蓝图选择
+
+硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill 或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，先运行 `workflow-plan-init.py` 创建当前阶段 plan；禁止跳过这一步直接修代码。
 
 优先级：
 
@@ -126,6 +129,9 @@ python3 scripts/workflow-status.py --workflow client-dev --project 模块名
 无 Epic 轻量工作流：
 
 ```bash
+python3 scripts/workflow-status.py --workflow bugfix
+python3 scripts/workflow-plan-init.py --workflow bugfix --title 案例视频产物预览标题错误
+python3 scripts/workflow-status.py --workflow bugfix
 python3 scripts/workflow-plan-init.py --workflow merge-code --title feature-search合入main
 python3 scripts/workflow-status.py --workflow computer-mgmt
 python3 scripts/workflow-status.py --workflow merge-code

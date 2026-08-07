@@ -303,6 +303,41 @@ def inject_story_split_fixtures(tmp: Path, bp: dict, stage_key: str) -> None:
         )
 
 
+def inject_implementation_design_fixtures(tmp: Path, bp: dict, stage_key: str) -> None:
+    if stage_key != "implementation-design":
+        return
+    for stage in bp.get("stages", []):
+        if stage.get("key") != "implementation-design":
+            continue
+        folder = tmp / stage.get("planFolder", "")
+        for plan in folder.glob("*.md"):
+            text = plan.read_text(encoding="utf-8")
+            if "workflow_stage: implementation-design" not in text:
+                continue
+            source_rel = "src/bugfix/smoke.ts"
+            impl_rel = plan.relative_to(tmp).as_posix().replace(".md", ".impl.json")
+            write_fixture(tmp / source_rel, "export const smokeBugfix = true")
+            (tmp / impl_rel).write_text(json.dumps({
+                "codebase_available": True,
+                "codebase_read": [{"path": source_rel, "reason": "bugfix smoke 既有实现参考"}],
+                "target_files": {
+                    "modify": [{"path": source_rel, "purpose": "修复 smoke 缺陷", "layer": "Domain"}],
+                    "create": []
+                },
+                "module_boundary": {"layer": "Domain", "dependency_rule": "Domain 不依赖 UI"},
+                "tests": {"red": [{"path": "tests/smoke_bugfix.test.ts", "command": "pytest tests/smoke_bugfix.test.ts"}]},
+                "risks": [],
+                "blocked_questions": [],
+                "confirmed": True,
+            }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            if "implementation_design:" not in text:
+                lines = text.splitlines()
+                if lines and lines[0].strip() == "---":
+                    lines.insert(1, f"implementation_design: {impl_rel}")
+                    plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+
 def create_client_dev_epic(tmp: Path) -> str:
     epic_rel = "Plans/Epic/smoke.md"
     write_fixture(
@@ -672,6 +707,7 @@ US-001 将端到端交付“用户完成支付”能力。
 ---
 story_id: US-001
 status: 待开发
+implementation_design: Plans/功能开发/smoke-us-001.impl.json
 tdd_evidence: Plans/功能开发/smoke-us-001.tdd.json
 ---
 
@@ -679,6 +715,29 @@ tdd_evidence: Plans/功能开发/smoke-us-001.tdd.json
 """,
     )
 
+
+def create_client_implementation_design(tmp: Path) -> None:
+    source_rel = "src/features/payment/view.ts"
+    impl_rel = "Plans/功能开发/smoke-us-001.impl.json"
+    write_fixture(tmp / source_rel, "export const existingPaymentView = true")
+    (tmp / impl_rel).write_text(json.dumps({
+        "story_id": "US-001",
+        "codebase_available": True,
+        "codebase_read": [{"path": source_rel, "reason": "同模块命名与分层参考"}],
+        "target_files": {
+            "modify": [{"path": source_rel, "purpose": "接入支付入口", "layer": "Presentation"}],
+            "create": [{"path": "src/features/payment/use-case.ts", "reason": "现有模块没有支付用例", "naming_basis": "沿用 use-case 命名", "layer": "Domain"}],
+        },
+        "module_boundary": {"layer": "Presentation/Domain", "dependency_rule": "Presentation 只依赖 Domain"},
+        "tests": {"red": [{"path": "tests/payment.test.ts", "command": "pytest tests/payment.test.ts"}]},
+        "risks": [],
+        "blocked_questions": [],
+        "confirmed": True,
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    dev = tmp / "Plans/功能开发/smoke.md"
+    dev.write_text(dev.read_text(encoding="utf-8") + "\n## 实现落点设计\nUS-001 已完成代码落点设计。\n" + skill_run(
+        "implementation-design-assistant", "Plans/功能开发/smoke.md", "implementation-design"
+    ), encoding="utf-8")
 
 def complete_client_story_tdd(tmp: Path) -> None:
     story_rel = "Plans/功能开发/smoke-us-001.md"
@@ -689,6 +748,7 @@ def complete_client_story_tdd(tmp: Path) -> None:
 ---
 story_id: US-001
 status: 已完成
+implementation_design: Plans/功能开发/smoke-us-001.impl.json
 tdd_evidence: {evidence_rel}
 ---
 
@@ -810,6 +870,10 @@ def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
 
     create_client_story_scope(tmp, epic_rel)
     gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+    assert_gate_state(gate, workflow, "implementation-design")
+
+    create_client_implementation_design(tmp)
+    gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
     assert_gate_state(gate, workflow, "story-development")
 
     complete_client_story_tdd(tmp)
@@ -865,6 +929,7 @@ def smoke_lightweight_workflow(tmp: Path, workflow: str, bp: dict) -> None:
         inject_verdicts(tmp, bp)
         inject_merge_fixtures(tmp, bp)
         inject_story_split_fixtures(tmp, bp, str(current))
+        inject_implementation_design_fixtures(tmp, bp, str(current))
         next_gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--json"])
         if next_gate.get("current_state") == current and next_gate.get("blockers"):
             raise SmokeError(f"{workflow} 创建 {current} 阶段 plan 后没有推进: {next_gate}")

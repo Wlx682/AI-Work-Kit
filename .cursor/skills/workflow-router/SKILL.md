@@ -33,8 +33,11 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 - 不写代码
 - 不改 `lifecycle_state` 推进阶段
 - 不替代 `event-storming`、`requirement-analyst`、`feature-dev`、`figma-ui` 等阶段 Skill
+- 不允许只加载本 Skill 后直接读写业务代码；命中 workflow 后必须先完成下方“执行”链路
 
 ## 执行
+
+硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill 或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，先运行 `workflow-plan-init.py` 创建当前阶段 plan；禁止跳过这一步直接修代码。
 
 1. 选择蓝图：
    - 显式 `workflow=xxx` 优先
@@ -57,7 +60,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 4. 看状态：
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
-   - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`；代码/分支合并使用 `merge-code`
+   - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`；若缺当前阶段 plan，先 `python3 scripts/workflow-plan-init.py --workflow <name> --title <任务标题>`，再重新 status；代码/分支合并使用 `merge-code`
    - 学习循环：`python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md`
    - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
 5. 根据 `recommended_skill` 调用真正阶段 Skill；若 `usesEpic=true` 的蓝图阻塞为缺 Epic，必须先调用 `template-generator` 创建对应 Epic，然后重新 `boot --epic` 打开具体看板。

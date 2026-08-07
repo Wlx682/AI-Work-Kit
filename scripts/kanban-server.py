@@ -521,12 +521,18 @@ def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[s
         path_raw = str(raw.get("path") or "").strip()
         child_status = ""
         tdd_complete = False
+        implementation_design_ready = False
         if path_raw:
             try:
                 child = resolve_plan(path_raw)
                 if child.is_file():
                     child_fm, _, _ = read_frontmatter(child)
                     child_status = _clean_scalar(child_fm.get("status"))
+                    impl_raw = _clean_scalar(child_fm.get("implementation_design"))
+                    if impl_raw:
+                        impl_path = resolve_plan(impl_raw)
+                        impl = json.loads(impl_path.read_text(encoding="utf-8"))
+                        implementation_design_ready = impl.get("confirmed") is True and not impl.get("blocked_questions")
                     evidence_raw = _clean_scalar(child_fm.get("tdd_evidence"))
                     if evidence_raw:
                         evidence_path = resolve_plan(evidence_raw)
@@ -556,6 +562,7 @@ def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[s
                 "dependencies": raw.get("dependencies") if isinstance(raw.get("dependencies"), list) else [],
                 "path": path_raw,
                 "status": child_status,
+                "implementation_design_ready": implementation_design_ready,
                 "tdd_complete": tdd_complete,
                 "state": state,
             }
@@ -737,6 +744,8 @@ def scan_epic(path: Path) -> dict[str, Any]:
             cur_stage = "architecture"
         elif not stories or not story_meta.get("scope_confirmed"):
             cur_stage = "story-split"
+        elif scoped and any(not s.get("implementation_design_ready") for s in scoped):
+            cur_stage = "implementation-design"
         elif not scoped or len(story_done) < len(scoped):
             cur_stage = "story-development"
         elif not _integration_pass(plan_by_stage):
@@ -1649,6 +1658,7 @@ def suggest_trigger(epic_file: str) -> dict[str, str]:
         "prioritization": "backlog-prioritization-assistant",
         "architecture": "architecture-design-assistant",
         "story-split": "task-splitter",
+        "implementation-design": "implementation-design-assistant",
         "story-development": "feature-dev-assistant",
         "integration-test": "test-generator",
         "development": "feature-dev-assistant",
@@ -1666,6 +1676,7 @@ def suggest_trigger(epic_file: str) -> dict[str, str]:
         "prioritization": "prioritization",
         "architecture": "architecture",
         "story-split": "development",
+        "implementation-design": "development",
         "story-development": "development",
         "integration-test": "integration",
     }.get(lc)

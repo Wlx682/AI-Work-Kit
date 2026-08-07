@@ -352,6 +352,10 @@ PY
         agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" story-scope --root "$ROOT" --plan "$child_file" 2>&1 || true)"
         [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：storyScopeReady: ${agile_check#BLOCKED:client-dev:story-scope:}")
       fi
+      if [[ "$(crit_has "$s_exit" implementationDesignReady)" == "1" ]]; then
+        impl_check="$(python3 "$ROOT/scripts/validate-implementation-design.py" --root "$ROOT" --plan "$child_file" 2>&1 || true)"
+        [[ "$impl_check" == OK:implementation-design* ]] || stage_blockers+=("${s_label}：implementationDesignReady: ${impl_check#BLOCKED:implementation-design:}")
+      fi
       if [[ "$(crit_has "$s_exit" storyTddComplete)" == "1" ]]; then
         agile_check="$(python3 "$ROOT/scripts/validate-client-dev.py" story-development --root "$ROOT" --plan "$child_file" 2>&1 || true)"
         [[ "$agile_check" == OK:client-dev:* ]] || stage_blockers+=("${s_label}：storyTddComplete: ${agile_check#BLOCKED:client-dev:story-development:}")

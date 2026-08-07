@@ -1,8 +1,8 @@
 {
   "name": "bugfix",
   "label": "Bug 修复",
-  "version": "0.1.0",
-  "description": "无 Epic 轻量流程：用于已有功能缺陷的复现、定位、修复和回归。若根因是需求变更或新增能力，转 change-impact-analysis 或 client-dev。",
+  "version": "0.2.0",
+  "description": "无 Epic 轻量流程：用于已有功能缺陷的复现、定位、实现落点设计、修复和回归。若根因是需求变更或新增能力，转 change-impact-analysis 或 client-dev。",
   "usesEpic": false,
   "planRoot": "Plans/Bug排查",
   "bootScript": "scripts/workflow-board-boot.sh",
@@ -14,7 +14,7 @@
   "dedicatedRegression": {
     "command": "python3 scripts/test-workflow-dedicated-regression.py bugfix",
     "priority": "P0",
-    "scope": "bugfix 复现、定位、修复、回归阶段链与 Skill 路由契约"
+    "scope": "bugfix 复现、定位、实现落点设计、修复、回归阶段链与 Skill 路由契约"
   },
   "triggerHints": [
     "改bug",
@@ -62,6 +62,24 @@
       "template": "Templates/排查问题模板.md",
       "exitCriteria": {
         "childPlanExists": true,
+        "skillRun": true
+      },
+      "next": "implementation-design"
+    },
+    {
+      "key": "implementation-design",
+      "label": "修复落点设计（代码架构/目录/文件名）",
+      "planFolder": "Plans/Bug排查",
+      "planPrefix": "落点设计",
+      "skills": [
+        "implementation-design-assistant"
+      ],
+      "template": "Templates/排查问题模板.md",
+      "requiredSections": ["修复落点设计"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "implementationDesignReady": true,
         "skillRun": true
       },
       "next": "fix"

@@ -6,7 +6,7 @@ description: 将已排序需求和已采纳架构拆成可独立演示、验收�
 # 用户故事拆分与故事点
 
 输入：已采纳需求、已确认 Backlog、已采纳架构。
-输出：`Plans/功能开发/YYYY-MM-DD-标题.md`、`.stories.json` 和故事子 Plan。
+输出：`Plans/功能开发/YYYY-MM-DD-标题.md`、`.stories.json` 和故事子 Plan；下一阶段交给 `implementation-design-assistant` 做代码落点设计。
 
 ## 执行
 

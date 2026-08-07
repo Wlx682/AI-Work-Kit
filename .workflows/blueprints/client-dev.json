@@ -1,8 +1,8 @@
 {
   "name": "client-dev",
   "label": "客户端功能开发",
-  "version": "4.0.0",
-  "description": "敏捷客户端功能开发：需求分析→需求排序→正式架构→纵向功能故事拆分与故事点→逐故事 TDD→全量集成测试。集成通过后直接完成，不包含发布阶段。",
+  "version": "4.1.0",
+  "description": "敏捷客户端功能开发：需求分析→需求排序→正式架构→纵向功能故事拆分与故事点→实现落点设计→逐故事 TDD→全量集成测试。集成通过后直接完成，不包含发布阶段。",
   "usesEpic": true,
   "epicRequired": true,
   "epicTemplate": "Templates/Epic模板-client-dev.md",
@@ -36,6 +36,7 @@
     "prioritization": "prioritization",
     "architecture": "architecture",
     "story-split": "development",
+    "implementation-design": "development",
     "story-development": "development",
     "integration-test": "integration"
   },
@@ -100,6 +101,22 @@
       "exitCriteria": {
         "childPlanExists": true,
         "storyScopeReady": true,
+        "skillRunStage": true
+      },
+      "next": "implementation-design"
+    },
+    {
+      "key": "implementation-design",
+      "label": "实现落点设计（代码架构/目录/文件名）",
+      "planFolder": "Plans/功能开发",
+      "epicField": "development",
+      "skills": ["implementation-design-assistant"],
+      "template": "Templates/客户端功能开发模板.md",
+      "requiredSections": ["实现落点设计"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "implementationDesignReady": true,
         "skillRunStage": true
       },
       "next": "story-development"
