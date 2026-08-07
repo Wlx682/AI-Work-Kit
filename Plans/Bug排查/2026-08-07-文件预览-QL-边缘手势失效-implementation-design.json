@@ -1,0 +1,45 @@
+{
+  "codebase_available": true,
+  "codebase_root": "../NNamiWork",
+  "codebase_read": [
+    {
+      "path": "NAMIWork/Core/UI Components/FilePreview/NMFilePreviewController.swift",
+      "reason": "确认 QLPreviewController 作为文件预览内容子控制器嵌入外层预览页"
+    },
+    {
+      "path": "NAMIWork/Core/UI Components/FilePreview/NMFilePreviewManager.swift",
+      "reason": "确认 QL 预览展示入口和统一左缘退出手势注入位置"
+    },
+    {
+      "path": ".ai-delivery/test-fence-registry.yaml",
+      "reason": "确认当前没有文件预览功能的已注册历史回归测试"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "NAMIWork/Core/UI Components/FilePreview/NMFilePreviewManager.swift",
+        "purpose": "仅在 QL 预览路径增加 24pt 左缘透明捕获区承接普通 pan 退出手势，避免 QuickLook 内部手势抢占",
+        "layer": "Core/UI Components/FilePreview"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Core UI Components file preview",
+    "dependency_rule": "保持 Core 文件预览组件内部修改，不引入 Features 依赖，不改变文件类型分流和业务能力协议"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "NAMIWork/Core/UI Components/FilePreview/NMFilePreviewManager.swift",
+        "command": "git diff --check -- NAMIWork/Core/UI Components/FilePreview/NMFilePreviewManager.swift"
+      }
+    ]
+  },
+  "risks": [
+    "未获得 xcodebuild、模拟器或真机授权，无法完成 QL 文件运行态左缘滑动验收"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

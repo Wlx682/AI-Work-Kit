@@ -1,0 +1,23 @@
+{
+  "pass": true,
+  "score": 9,
+  "summary": "代码契约通过：按压态只将原背景色设为 80% 不透明度，标题前景色被显式固定，未设置按钮整体 alpha。",
+  "deviations": [
+    {
+      "area": "运行态视觉复核",
+      "design": "按压态背景色不透明度 80%，文字颜色不变",
+      "impl": "源码配置为 #F3F3F3 alpha 0.8，标题 AttributeContainer 与状态更新均显式固定 #000000；未启动 App 截图",
+      "severity": "P2",
+      "fix": "后续真机回归时按压文件预览底部次级按钮并核对视觉"
+    }
+  ],
+  "verified_ok": [
+    "按压背景与默认背景使用相同 #F3F3F3 色值",
+    "按压背景 alpha 为 0.8",
+    "没有 button.alpha 或其他整体透明度修改",
+    "AttributedString 显式设置 foregroundColor",
+    "configurationUpdateHandler 重新固定 baseForegroundColor 并只按状态切换背景色",
+    "git diff --check 通过"
+  ],
+  "reviewed": true
+}
