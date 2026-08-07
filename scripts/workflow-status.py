@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -138,6 +139,8 @@ def plan_init_command(gate: dict[str, Any]) -> str:
     epic = gate.get("epic")
     if epic:
         return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --epic {epic}"
+    if gate.get("project"):
+        return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --title {shlex.quote(str(gate['project']))}"
     return f"python3 scripts/workflow-plan-init.py --workflow {workflow} --title <任务标题>"
 
 

@@ -281,6 +281,20 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("function observeFades(animate = true)", html)
         self.assertIn("if (!animate) {", html)
 
+    def test_kanban_renders_lightweight_tasks_without_epics(self) -> None:
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+
+        self.assertIn("(!hasEpics && !hasLightweight)", html)
+        self.assertNotIn("!envelope.epics?.length", html)
+        self.assertIn(".ecard[data-file]", html)
+        self.assertIn('class="light-stage-pill ${esc(state)}"', html)
+        self.assertIn('aria-label="阶段状态"', html)
+        self.assertNotIn("slice(0, 3).map(s => `<code>${esc(s.plan.path)}</code>`)", html)
+        self.assertIn('data-light-id="${esc(w.id)}"', html)
+        self.assertIn("function renderLightweightDetail()", html)
+        self.assertIn("view = 'light-detail'", html)
+        self.assertIn("data-light-stage", html)
+
     def test_kanban_detail_uses_workflow_map_as_the_primary_story(self) -> None:
         html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
 
@@ -719,19 +733,62 @@ class WorkflowRefactorTests(unittest.TestCase):
                 f"""
                 ---
                 status: 进行中
+                workflow: ui-change
+                workflow_stage: ui-scope
                 ---
-                # UI范围
+                # UI 范围确认：卡片
 
                 {skill_run("figma-ui", "Plans/界面开发/2026-07-03-UI范围-卡片.md")}
                 """,
             )
             data_with_plan = mod.board_envelope()
 
-        lightweight_names = {item["name"] for item in data["lightweight"]}
-        self.assertEqual(lightweight_names, set())
-        lightweight_names = {item["name"] for item in data_with_plan["lightweight"]}
-        self.assertIn("ui-change", lightweight_names)
-        self.assertNotIn("bugfix", lightweight_names)
+        self.assertEqual(data["lightweight"], [])
+        lightweight_tasks = {(item["workflow"], item["name"]) for item in data_with_plan["lightweight"]}
+        self.assertIn(("ui-change", "卡片"), lightweight_tasks)
+        self.assertFalse(any(workflow == "bugfix" for workflow, _ in lightweight_tasks))
+
+    def test_kanban_groups_lightweight_plans_by_task_without_cross_task_mixing(self) -> None:
+        with self.fixture_repo() as tmp:
+            for rel, task_id, title, stage, status in [
+                ("Plans/Bug排查/2026-07-03-复现-价格错误.md", "bugfix-2026-07-03-价格错误", "价格错误", "reproduce", "已完成"),
+                ("Plans/Bug排查/2026-07-03-定位-价格错误.md", "bugfix-2026-07-03-价格错误", "价格错误", "diagnose", "进行中"),
+                ("Plans/Bug排查/2026-07-04-复现-登录失败.md", "bugfix-2026-07-04-登录失败", "登录失败", "reproduce", "已完成"),
+            ]:
+                write_file(
+                    tmp / rel,
+                    f"""
+                    ---
+                    status: {status}
+                    date: 2026-07-03
+                    workflow: bugfix
+                    workflow_stage: {stage}
+                    task_id: {task_id}
+                    task_title: {title}
+                    ---
+                    # {title}
+                    """,
+                )
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
+
+            tasks = {item["name"]: item for item in mod.lightweight_payload() if item["workflow"] == "bugfix"}
+
+        self.assertEqual(set(tasks), {"价格错误", "登录失败"})
+        self.assertEqual(tasks["价格错误"]["current_stage"], "diagnose")
+        self.assertFalse(tasks["价格错误"]["blocked"])
+        self.assertEqual(tasks["价格错误"]["stages_done"], 1)
+        self.assertEqual(tasks["登录失败"]["current_stage"], "diagnose")
+        self.assertTrue(tasks["登录失败"]["blocked"])
+        self.assertEqual(tasks["登录失败"]["stages_done"], 1)
 
     def test_kanban_reads_hyphenated_learning_plan_keys(self) -> None:
         with self.fixture_repo() as tmp:
@@ -1045,6 +1102,46 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertEqual(data["recommended_skill"], "material-prep-assistant")
         self.assertTrue(any("盘点" in item and "子 Plan 未创建" in item for item in data["blockers"]))
 
+    def test_lightweight_gate_scopes_plans_to_project_title(self) -> None:
+        with self.fixture_repo() as tmp:
+            alpha_rel = "Plans/Bug排查/2026-07-03-复现-价格错误.md"
+            beta_rel = "Plans/Bug排查/2026-07-03-复现-登录失败.md"
+            write_file(
+                tmp / alpha_rel,
+                f"""
+                ---
+                status: 进行中
+                workflow: bugfix
+                workflow_stage: reproduce
+                ---
+                # 复现：价格错误
+
+                {skill_run("feature-dev-assistant", alpha_rel, "reproduce")}
+                """,
+            )
+            write_file(
+                tmp / beta_rel,
+                """
+                ---
+                status: 进行中
+                workflow: bugfix
+                workflow_stage: reproduce
+                ---
+                # 复现：登录失败
+                """,
+            )
+
+            alpha = self.run_gate(tmp, "--workflow", "bugfix", "--project", "价格错误", "--json")
+            beta = self.run_gate(tmp, "--workflow", "bugfix", "--project", "登录失败", "--json")
+
+        self.assertEqual(alpha["project"], "价格错误")
+        self.assertEqual(alpha["current_state"], "diagnose")
+        self.assertEqual(alpha["plans_found"], [f"reproduce:{alpha_rel}"])
+        self.assertEqual(beta["project"], "登录失败")
+        self.assertEqual(beta["current_state"], "reproduce")
+        self.assertEqual(beta["plans_found"], [f"reproduce:{beta_rel}"])
+        self.assertTrue(any("skill_run" in blocker for blocker in beta["blockers"]))
+
     def test_lightweight_workflow_gates_reach_done_with_prefixed_plans(self) -> None:
         cases = [
             (
@@ -1325,6 +1422,8 @@ class WorkflowRefactorTests(unittest.TestCase):
             text = plan.read_text(encoding="utf-8")
             self.assertIn("workflow: ui-change", text)
             self.assertIn("workflow_stage: ui-scope", text)
+            self.assertIn("task_id: ui-change-2026-07-03-卡片", text)
+            self.assertIn("task_title: 卡片", text)
             self.assertIn("skill: figma-ui", text)
 
             gate = self.run_gate(tmp, "--workflow", "ui-change", "--json")

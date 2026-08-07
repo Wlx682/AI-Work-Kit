@@ -36,10 +36,12 @@ def load_blueprint(workflow: str) -> dict[str, Any]:
     return data
 
 
-def run_gate(workflow: str, epic: str | None = None) -> dict[str, Any]:
+def run_gate(workflow: str, epic: str | None = None, project: str | None = None) -> dict[str, Any]:
     command = ["bash", "scripts/workflow-gate.sh", "--workflow", workflow]
     if epic:
         command.extend(["--epic", epic])
+    if project:
+        command.extend(["--project", project])
     command.append("--json")
     proc = subprocess.run(
         command,
@@ -79,7 +81,14 @@ skill_run:
 """
 
 
-def render_plan(workflow: str, stage: dict[str, Any], title: str, rel_path: str, include_feedback: bool) -> str:
+def render_plan(
+    workflow: str,
+    stage: dict[str, Any],
+    title: str,
+    day: str,
+    rel_path: str,
+    include_feedback: bool,
+) -> str:
     skill = stage["skills"][0]
     required_sections = stage.get("requiredSections") or []
     gates = stage.get("exitCriteria") or {}
@@ -101,9 +110,11 @@ tags: [工作流, {workflow}]
 type: plan
 category: {stage['planFolder'].split('/')[-1]}
 status: 进行中
-date: {date.today().isoformat()}
+date: {day}
 workflow: {workflow}
 workflow_stage: {stage['key']}
+task_id: {workflow}-{day}-{slugify(title)}
+task_title: {title}
 skill: {skill}
 {extra_frontmatter}---
 
@@ -152,7 +163,7 @@ def render_stage_template(
 ) -> str:
     template_raw = str(stage.get("template") or "").strip()
     if not template_raw:
-        return render_plan(workflow, stage, title, rel_path, include_feedback)
+        return render_plan(workflow, stage, title, day, rel_path, include_feedback)
     template = ROOT / template_raw
     if not template.is_file():
         raise InitError(f"阶段模板不存在: {template_raw}")
@@ -249,7 +260,8 @@ def create_plans(args: argparse.Namespace) -> list[str]:
     epic_rel: str | None = None
     if args.epic:
         epic, epic_rel = resolve_epic(args.epic)
-    gate = run_gate(args.workflow, epic_rel)
+    # 轻流程必须按具体任务判定当前阶段，否则会与同工作流的历史 plan 串单。
+    gate = run_gate(args.workflow, epic_rel, None if epic else args.title)
     stages = target_stages(bp, gate.get("current_state", ""), args.all)
     epic_fm = gate_parse.read_frontmatter(epic) if epic else {}
     epic_day = epic.stem[:10] if epic and re.match(r"^\d{4}-\d{2}-\d{2}", epic.stem) else ""
@@ -271,7 +283,7 @@ def create_plans(args: argparse.Namespace) -> list[str]:
             (
                 render_stage_template(args.workflow, stage, title, day, rel, args.include_feedback, epic)
                 if epic
-                else render_plan(args.workflow, stage, title, rel, args.include_feedback)
+                else render_plan(args.workflow, stage, title, day, rel, args.include_feedback)
             ),
             encoding="utf-8",
         )

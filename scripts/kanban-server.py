@@ -1044,59 +1044,145 @@ def board_payload() -> list[dict[str, Any]]:
     return out
 
 
-def _latest_stage_plan(stage: dict[str, Any]) -> dict[str, Any] | None:
-    folder = ROOT / str(stage.get("plan_folder") or "")
-    if not folder.is_dir():
-        return None
-    prefix = str(stage.get("plan_prefix") or stage.get("key") or "")
-    candidates = [f for f in folder.glob("*.md") if not prefix or prefix in f.name]
-    if not candidates:
-        return None
-    latest = max(candidates, key=lambda f: f.stat().st_mtime_ns)
-    rel = str(latest.relative_to(ROOT))
-    fm, _, _ = read_frontmatter(latest)
-    return {"path": rel, "status": fm.get("status", ""), "updated_ns": latest.stat().st_mtime_ns}
+LIGHTWEIGHT_DONE_STATUSES = {
+    "已完成",
+    "已采纳",
+    "已通过",
+    "已复核",
+    "完成",
+    "done",
+    "completed",
+    "passed",
+}
+
+
+def _slugify_task(value: str) -> str:
+    value = re.sub(r"\s+", "-", value.strip())
+    value = re.sub(r"[^0-9A-Za-z._\-\u4e00-\u9fff]+", "-", value)
+    return value.strip("-") or "未命名"
+
+
+def _legacy_lightweight_title(path: Path, stage: dict[str, Any], body: str) -> str:
+    """兼容旧 plan：优先从 H1 的全角/半角冒号后取任务标题，再回退到文件名。"""
+    heading = re.search(r"^#\s+.+?[：:]\s*(.+?)\s*$", body, flags=re.MULTILINE)
+    if heading:
+        return heading.group(1).strip()
+    stem = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", path.stem)
+    prefix = str(stage.get("plan_prefix") or stage.get("key") or "").strip()
+    if prefix and stem.startswith(prefix + "-"):
+        stem = stem[len(prefix) + 1 :]
+    return stem or path.stem
+
+
+def _lightweight_gate_results() -> dict[str, str]:
+    """子 Plan 的最后一次门禁结果是阶段是否完成的首选事实。"""
+    results: dict[str, str] = {}
+    if not EVENT_DIR.is_dir():
+        return results
+    for event_file in sorted(EVENT_DIR.glob("*.events.jsonl")):
+        for line in event_file.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            child = str(event.get("child_plan") or "").strip()
+            if child and event.get("type") in ("gate_pass", "gate_fail"):
+                results[child] = "pass" if event["type"] == "gate_pass" else "fail"
+    return results
 
 
 def lightweight_payload() -> list[dict[str, Any]]:
+    gate_results = _lightweight_gate_results()
     items: list[dict[str, Any]] = []
     for bp in read_blueprints():
         if bp.get("uses_epic") or bp.get("kind") == "engine-index":
             continue
-        stages = []
-        current = "done"
-        blocked = False
-        for stage in bp.get("stages", []):
-            plan = _latest_stage_plan(stage)
-            done = bool(plan)
-            if not done and current == "done":
-                current = str(stage.get("key") or "")
-                blocked = True
-            stages.append(
+        stage_defs = {str(stage.get("key") or ""): stage for stage in bp.get("stages", [])}
+        tasks: dict[str, dict[str, Any]] = {}
+        seen_paths: set[str] = set()
+        for stage in stage_defs.values():
+            folder = ROOT / str(stage.get("plan_folder") or "")
+            if not folder.is_dir():
+                continue
+            for path in folder.glob("*.md"):
+                rel = str(path.relative_to(ROOT))
+                if rel in seen_paths:
+                    continue
+                fm, _, body = read_frontmatter(path)
+                if fm.get("workflow") != bp.get("name"):
+                    continue
+                stage_key = str(fm.get("workflow_stage") or "")
+                matched_stage = stage_defs.get(stage_key)
+                if matched_stage is None:
+                    continue
+                seen_paths.add(rel)
+                title = str(fm.get("task_title") or "").strip() or _legacy_lightweight_title(path, matched_stage, body)
+                day = str(fm.get("date") or "legacy").strip()
+                task_id = str(fm.get("task_id") or "").strip() or f"{bp.get('name')}-{day}-{_slugify_task(title)}"
+                task = tasks.setdefault(
+                    task_id,
+                    {"task_id": task_id, "title": title, "plans": {}, "updated_ns": 0},
+                )
+                updated_ns = path.stat().st_mtime_ns
+                previous = task["plans"].get(stage_key)
+                if previous is None or updated_ns > previous["updated_ns"]:
+                    status = str(fm.get("status") or "").strip()
+                    gate_result = gate_results.get(rel, "")
+                    task["plans"][stage_key] = {
+                        "path": rel,
+                        "status": status,
+                        "gate_result": gate_result,
+                        "updated_ns": updated_ns,
+                    }
+                task["updated_ns"] = max(task["updated_ns"], updated_ns)
+
+        for task in tasks.values():
+            stages: list[dict[str, Any]] = []
+            current = "done"
+            blocked = False
+            for stage in bp.get("stages", []):
+                key = str(stage.get("key") or "")
+                plan = task["plans"].get(key)
+                done = bool(
+                    plan
+                    and (
+                        plan.get("gate_result") == "pass"
+                        or str(plan.get("status") or "").lower() in LIGHTWEIGHT_DONE_STATUSES
+                    )
+                )
+                state = "completed" if done else "upcoming"
+                if not done and current == "done":
+                    current = key
+                    blocked = plan is None or plan.get("gate_result") == "fail"
+                    state = "blocked" if blocked else "active"
+                stages.append(
+                    {
+                        "key": key,
+                        "label": stage.get("label", key),
+                        "skill": stage.get("skill", ""),
+                        "plan": plan,
+                        "done": done,
+                        "state": state,
+                    }
+                )
+            done_count = sum(1 for stage in stages if stage["done"])
+            items.append(
                 {
-                    "key": stage.get("key", ""),
-                    "label": stage.get("label", stage.get("key", "")),
-                    "skill": stage.get("skill", ""),
-                    "plan": plan,
-                    "done": done,
+                    "id": task["task_id"],
+                    "name": task["title"],
+                    "workflow": bp.get("name", ""),
+                    "description": bp.get("description", ""),
+                    "current_stage": current,
+                    "blocked": blocked,
+                    "stages_done": done_count,
+                    "stages_total": len(stages),
+                    "updated_ns": task["updated_ns"],
+                    "stages": stages,
                 }
             )
-        total = len(stages)
-        done_count = sum(1 for s in stages if s.get("done"))
-        if done_count == 0:
-            continue
-        items.append(
-            {
-                "name": bp.get("name", ""),
-                "description": bp.get("description", ""),
-                "current_stage": current,
-                "blocked": blocked,
-                "stages_done": done_count,
-                "stages_total": total,
-                "stages": stages,
-            }
-        )
-    return items
+    return sorted(items, key=lambda item: int(item.get("updated_ns") or 0), reverse=True)
 
 
 def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:

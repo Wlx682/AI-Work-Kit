@@ -14,6 +14,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKFLOW=""
 EPIC=""
 PROJECT=""
+PROJECT_SLUG=""
 JSON=0
 PROBE=0
 
@@ -32,6 +33,16 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+if [[ -n "$PROJECT" ]]; then
+  PROJECT_SLUG="$(python3 - "$PROJECT" <<'PY'
+import re, sys
+value = re.sub(r"\s+", "-", sys.argv[1].strip())
+value = re.sub(r"[^0-9A-Za-z._\-\u4e00-\u9fff]+", "-", value)
+print(value.strip("-") or "未命名")
+PY
+)"
+fi
 
 read_fm() {
   python3 "$ROOT/scripts/gate_parse.py" read-frontmatter-key "$2" "$1"
@@ -198,7 +209,7 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
 
     stage_blockers=()
 
-    # 子 Plan 路径解析：有 Epic 只用 epicField 从 Epic 读；无 Epic 按 planFolder 扫最新。
+    # 子 Plan 路径解析：有 Epic 只用 epicField 从 Epic 读；无 Epic 按具体任务标题限定后再扫描。
     # 关键：usesEpic=true 的蓝图不得回退扫目录，否则会串到别的 Epic 的 plan。
     child_raw=""
     if [[ "$USES_EPIC" == "1" && -n "$s_epicfield" && -n "$EPIC_FILE" ]]; then
@@ -207,8 +218,13 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
     elif [[ "$USES_EPIC" != "1" && -n "$s_folder" ]]; then
       # 无 Epic：按 planFolder（+planPrefix）找子 Plan；优先匹配脚本生成的 -planPrefix-，避免短前缀吞掉复核阶段。
       shopt -s nullglob
-      cands=("$ROOT/$s_folder"/*"${s_prefix}"*.md)
-      exact_cands=("$ROOT/$s_folder"/*-"${s_prefix}"-*.md)
+      if [[ -n "$PROJECT_SLUG" ]]; then
+        cands=("$ROOT/$s_folder"/*-"${s_prefix}"-"${PROJECT_SLUG}".md)
+        exact_cands=("${cands[@]}")
+      else
+        cands=("$ROOT/$s_folder"/*"${s_prefix}"*.md)
+        exact_cands=("$ROOT/$s_folder"/*-"${s_prefix}"-*.md)
+      fi
       if [[ ${#exact_cands[@]} -gt 0 ]]; then
         cands=("${exact_cands[@]}")
       fi
@@ -403,7 +419,7 @@ fi
 # --- 审计旁路（auditd 哲学）：判定完成后被动追加一条事件到时间账本。 ---
 # 铁律：只读现场、只 append、写失败绝不影响门禁退出码，也不参与任何路由判定。
 # 信号源是 blockers 数组（空=pass），不是 $?——本门禁 pass/fail 都 exit 0。
-# 事件按 Epic 聚合：.workflows/events/<epic-stem>.events.jsonl（无 Epic 用 workflow 名）。
+# 事件按 Epic / 轻流程任务聚合：无 Epic 时使用 workflow-task slug，避免多任务串账。
 emit_gate_event() {
   # 整个函数包在子 shell + || true 里，任何失败都被吞掉，绝不冒泡到门禁主流程。
   (
@@ -414,6 +430,8 @@ emit_gate_event() {
     local stem
     if [[ -n "${epic_rel:-}" ]]; then
       stem="$(basename "${epic_rel%.md}")"
+    elif [[ -n "$PROJECT_SLUG" ]]; then
+      stem="${WORKFLOW}-${PROJECT_SLUG}"
     else
       stem="$WORKFLOW"
     fi
@@ -449,10 +467,10 @@ emit_gate_event() {
     passed_json="$(printf '%s\n' "${passed_stage_records[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))' 2>/dev/null || echo '[]')"
 
     # 时间戳来自执行现场（date），不伪造。JSONL 由 python 安全序列化。
-    python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" "$passed_json" "$ROOT" <<'PY' 2>/dev/null || true
+    python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" "$passed_json" "$ROOT" "$PROJECT" <<'PY' 2>/dev/null || true
 import datetime, hashlib, json, pathlib, sys
 
-event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child, passed_json, root = sys.argv[1:12]
+event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child, passed_json, root, project = sys.argv[1:13]
 root_path = pathlib.Path(root)
 event_path = pathlib.Path(event_file)
 created_at = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
@@ -491,6 +509,7 @@ for item in json.loads(passed_json):
         "type": "gate_pass",
         "stage": passed_stage,
         "workflow": workflow,
+        "project": project or None,
         "epic": epic or None,
         "child_plan": passed_child or None,
         "reason": "阶段门禁已通过；历史阻塞已解除" if latest_by_stage.get(passed_stage) == "gate_fail" else "阶段门禁已通过",
@@ -504,6 +523,7 @@ to_write.append({
     "type": etype,
     "stage": stage,
     "workflow": workflow,
+    "project": project or None,
     "epic": epic or None,
     "child_plan": child or None,
     "reason": reason,
@@ -530,15 +550,16 @@ fi
 bl_json="$(printf '%s\n' "${blockers[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
 pf_json="$(printf '%s\n' "${plans_found[@]:-}" | python3 -c 'import json,sys; print(json.dumps([l for l in sys.stdin.read().splitlines() if l.strip()], ensure_ascii=False))')"
 if [[ "$JSON" -eq 1 ]]; then
-  python3 - "$WORKFLOW" "$USES_EPIC" "${epic_rel:-}" "${lc_hint:-}" "$current_state" "$next_state" "$recommended_skill" "$gate_development" "$bl_json" "$pf_json" <<'PY'
+  python3 - "$WORKFLOW" "$USES_EPIC" "${epic_rel:-}" "${lc_hint:-}" "$current_state" "$next_state" "$recommended_skill" "$gate_development" "$bl_json" "$pf_json" "$PROJECT" <<'PY'
 import json
 import sys
 
-workflow, uses_epic, epic, lc_hint, current_state, next_state, recommended_skill, gate_development, blockers, plans_found = sys.argv[1:]
+workflow, uses_epic, epic, lc_hint, current_state, next_state, recommended_skill, gate_development, blockers, plans_found, project = sys.argv[1:]
 payload = {
     "workflow": workflow,
     "uses_epic": uses_epic == "1",
     "epic": epic,
+    "project": project or None,
     "lifecycle_state_hint_deprecated": lc_hint,
     "current_state": current_state,
     "next_state": next_state,

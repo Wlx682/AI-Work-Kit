@@ -152,6 +152,13 @@
     .progress .meta { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--faint); margin-top: 5px; }
     .blocker-hint { margin-top: 0.7rem; font-size: 0.76rem; color: var(--muted); display: flex; gap: 0.35rem; align-items: baseline; }
     .blocker-hint b { color: var(--amber); }
+    .light-stage-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.8rem; }
+    .light-stage-pill { display: inline-flex; align-items: center; gap: 0.32rem; min-height: 28px; padding: 3px 9px; border: 1px solid var(--stroke); border-radius: 999px; background: rgba(0,0,0,0.18); color: var(--faint); font-size: 0.7rem; white-space: nowrap; }
+    .light-stage-pill .mark { width: 1em; text-align: center; font-weight: 900; }
+    .light-stage-pill.completed { color: var(--green); border-color: rgba(53,224,138,0.32); background: rgba(53,224,138,0.08); }
+    .light-stage-pill.active { color: var(--blue); border-color: rgba(77,156,255,0.38); background: rgba(77,156,255,0.09); }
+    .light-stage-pill.blocked { color: var(--red); border-color: rgba(255,84,112,0.38); background: rgba(255,84,112,0.09); }
+    .light-stage-pill.upcoming { color: var(--faint); }
     .test-chip { margin-top: 0.55rem; display: inline-flex; gap: 0.35rem; align-items: center; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--muted); background: rgba(0,0,0,0.18); }
     .test-chip.green { color: var(--green); border-color: rgba(53,224,138,0.35); background: rgba(53,224,138,0.08); }
     .test-chip.amber { color: var(--amber); border-color: rgba(255,181,71,0.35); background: rgba(255,181,71,0.08); }
@@ -346,8 +353,9 @@
 
   <script>
     let envelope = null;      // {epics, kpi, revision, updated_at}
-    let view = 'overview';    // 'overview' | 'detail'
+    let view = 'overview';    // 'overview' | 'detail' | 'light-detail'
     let currentFile = null;   // epic.file in detail view
+    let currentLightId = null;
     let selectedFlowStage = null;
     let filter = 'all';       // all | attention | healthy
     let searchQ = '';
@@ -358,7 +366,7 @@
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
     const HEALTH_ORDER = { red: 0, amber: 1, blue: 2, green: 3, archived: 4 };
-    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'implementation-design': '实现落点设计', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test-plan': '集成测试计划/审核', 'integration-test': '全量集成测试', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
+    const STAGE_ZH = { requirement: '需求', prioritization: '需求排序', architecture: '正式架构', 'story-split': 'Story 拆分/故事点', 'implementation-design': '实现落点设计', 'story-check': 'Story Scope 自检', 'story-development': '逐 Story TDD', 'integration-test-plan': '集成测试计划/审核', 'integration-test': '全量集成测试', reproduce: '复现与影响范围', diagnose: '根因定位', fix: '修复实现', regression: '回归与复核', 'ui-scope': 'UI 范围确认', 'ui-implement': 'UI 实现与自检', 'ui-review': 'UI 复核', design: '技术方案', 'test-first': '验收先行', split: '范围拆分', development: '功能开发', test: '自动化测试', deploy: '部署', done: '已完成', topic: '选题', theory: '理论输入', 'project-setup': '工程选型', 'tool-build': '工具实现', 'integration-run': '接入试跑', retro: '复盘' };
     const zhStage = k => STAGE_ZH[k] || k || '—';
     const FLOW_STATE_ZH = { completed: '已通过', active: '进行中', blocked: '阻塞', upcoming: '未开始' };
     const CRITERIA_ZH = {
@@ -391,11 +399,14 @@
 
     function draw(animate = true) {
       $('app').classList.toggle('no-entry-motion', !animate);
-      if (!envelope || !envelope.epics?.length) {
-        $('app').innerHTML = '<div class="empty">Plans/Epic/ 下暂无 Epic。先实例化 Epic 母版。</div>';
+      const hasEpics = Boolean(envelope?.epics?.length);
+      const hasLightweight = Boolean(envelope?.lightweight?.length);
+      if (!envelope || (!hasEpics && !hasLightweight)) {
+        $('app').innerHTML = '<div class="empty">暂无 Epic 或轻流程任务。</div>';
         return;
       }
       if (view === 'detail') { renderDetail(); }
+      else if (view === 'light-detail') { renderLightweightDetail(); }
       else { renderOverview(animate); }
       observeFades(animate);
     }
@@ -476,22 +487,29 @@
       const lightweight = (envelope.lightweight || []).map(w => {
         const pct = w.stages_total ? Math.round(w.stages_done / w.stages_total * 100) : 0;
         const next = zhStage(w.current_stage);
-        const plans = (w.stages || []).filter(s => s.plan).slice(0, 3).map(s => `<code>${esc(s.plan.path)}</code>`).join('<br>') || '暂无阶段 plan';
+        const stagePills = (w.stages || []).map(s => {
+          const state = s.state || (s.done ? 'completed' : 'upcoming');
+          const mark = state === 'completed' ? '✓' : (state === 'active' ? '●' : (state === 'blocked' ? '!' : '○'));
+          const hint = s.plan?.path || '未创建阶段 Plan';
+          return `<span class="light-stage-pill ${esc(state)}" title="${esc(hint)}"><span class="mark">${mark}</span>${esc(zhStage(s.key))}</span>`;
+        }).join('');
+        const badgeClass = w.current_stage === 'done' ? 'pass' : (w.blocked ? 'fail' : '');
+        const badgeText = w.current_stage === 'done' ? '已完成' : (w.blocked ? '待创建阶段 plan' : '进行中');
         return `
-          <div class="ecard blue fade-in">
+          <button class="ecard blue fade-in" data-light-id="${esc(w.id)}" aria-label="查看轻流程任务：${esc(w.name)}">
             <div class="e-head">
               <div>
                 <div class="e-name">${esc(w.name)}</div>
-                <div class="e-stage">当前 <code>${esc(next)}</code></div>
+                <div class="e-stage"><code>${esc(w.workflow)}</code> · 当前 ${esc(next)}</div>
               </div>
-              <span class="gate-badge ${w.blocked ? 'fail' : 'pass'}">${w.blocked ? '待创建阶段 plan' : '阶段齐备'}</span>
+              <span class="gate-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="progress">
               <div class="bar"><i data-w="${pct}"></i></div>
               <div class="meta"><span>${w.stages_done}/${w.stages_total} 阶段</span><span>${pct}%</span></div>
             </div>
-            <div class="blocker-hint">${plans}</div>
-          </div>`;
+            <div class="light-stage-list" aria-label="阶段状态">${stagePills}</div>
+          </button>`;
       }).join('');
 
       // 全局门禁时间线（所有 Epic 最近事件合并，倒序）
@@ -520,7 +538,7 @@
                 <span class="chip ${filter === 'healthy' ? 'on' : ''}" data-f="healthy">✅ 健康</span>
               </span>
             </div>
-            <div class="wall" id="wall">${wall}</div>
+            <div class="wall" id="wall">${wall || '<div class="empty">暂无 Epic 任务</div>'}</div>
             <div class="section-title" style="margin-top:1.2rem"><span>轻流程任务</span><span class="badge-low">无 Epic 流程</span></div>
             <div class="wall">${lightweight || '<div class="empty">暂无轻流程任务</div>'}</div>
           </div>
@@ -549,7 +567,8 @@
 
       applyFilterAndSearch();
       // 交互绑定
-      document.querySelectorAll('.ecard').forEach(c => c.onclick = () => { currentFile = c.dataset.file; selectedFlowStage = null; view = 'detail'; window.scrollTo(0, 0); draw(); });
+      document.querySelectorAll('.ecard[data-file]').forEach(c => c.onclick = () => { currentFile = c.dataset.file; selectedFlowStage = null; view = 'detail'; window.scrollTo(0, 0); draw(); });
+      document.querySelectorAll('.ecard[data-light-id]').forEach(c => c.onclick = () => { currentLightId = c.dataset.lightId; selectedFlowStage = null; view = 'light-detail'; window.scrollTo(0, 0); draw(); });
       document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filter = c.dataset.f; draw(); });
       // 动画：进度条 + count-up
       requestAnimationFrame(() => {
@@ -563,7 +582,7 @@
     }
 
     function applyFilterAndSearch() {
-      document.querySelectorAll('.ecard').forEach(c => {
+      document.querySelectorAll('.ecard[data-file]').forEach(c => {
         const e = envelope.epics.find(x => x.file === c.dataset.file);
         let ok = true;
         if (filter === 'attention') ok = e.health === 'red' || e.health === 'amber';
@@ -577,6 +596,99 @@
     }
 
     /* ============ Level 2: Detail ============ */
+    function renderLightweightDetail() {
+      const task = (envelope.lightweight || []).find(item => item.id === currentLightId);
+      if (!task) { view = 'overview'; currentLightId = null; return renderOverview(); }
+      const stages = task.stages || [];
+      const current = stages.find(stage => stage.state === 'blocked' || stage.state === 'active') || stages[stages.length - 1] || {};
+      if (!selectedFlowStage || !stages.some(stage => stage.key === selectedFlowStage)) {
+        selectedFlowStage = current.key || stages[0]?.key;
+      }
+      const selected = stages.find(stage => stage.key === selectedFlowStage) || current;
+      const selectedPlan = selected.plan || {};
+      const pct = task.stages_total ? Math.round(task.stages_done / task.stages_total * 100) : 0;
+      const currentTitle = task.current_stage === 'done' ? '全流程已完成' : `当前：${zhStage(task.current_stage)}`;
+      const currentMessage = task.current_stage === 'done'
+        ? '所有阶段均已通过'
+        : (task.blocked ? '当前阶段缺少 Plan 或门禁未过' : '当前阶段正在进行');
+      const resumeCommand = selectedPlan.path
+        ? `/resume plan=${selectedPlan.path} 进度=${zhStage(selected.key)}`
+        : `python3 scripts/workflow-plan-init.py --workflow ${task.workflow} --title "${task.name}"`;
+
+      const stageCards = stages.map((stage, index) => {
+        const plan = stage.plan || {};
+        const state = stage.state || (stage.done ? 'completed' : 'upcoming');
+        const gateLabel = plan.gate_result === 'pass' ? '门禁通过' : (plan.gate_result === 'fail' ? '门禁未过' : '暂无门禁判定');
+        const planLabel = plan.path ? (plan.path.split('/').pop() || '阶段 Plan') : '阶段 Plan 缺失';
+        return `
+          <button class="flow-stage ${esc(state)} ${stage.key === selected.key ? 'selected' : ''}" data-light-stage="${esc(stage.key)}">
+            <div class="flow-stage-head">
+              <span class="flow-step">${index + 1}</span>
+              <span class="flow-state">${FLOW_STATE_ZH[state] || state}</span>
+            </div>
+            <div class="flow-stage-body">
+              <h4>${esc(zhStage(stage.key))}</h4>
+              <div class="summary">${esc(stage.label || zhStage(stage.key))}</div>
+              <div class="flow-plan ${plan.path ? 'exists' : 'missing'}">${plan.path ? '◇' : '⚠'} ${esc(planLabel)}</div>
+              <div class="flow-gate ${esc(plan.gate_result || '')}">${plan.gate_result === 'pass' ? '●' : (plan.gate_result === 'fail' ? '▲' : '○')} ${esc(gateLabel)}</div>
+              <div class="skill-list"><span class="skill-tag">${esc(stage.skill || '未声明 Skill')}</span></div>
+            </div>
+          </button>`;
+      }).join('');
+
+      const auditRows = stages.map((stage, index) => {
+        const plan = stage.plan || {};
+        const state = stage.state || (stage.done ? 'completed' : 'upcoming');
+        return `<li class="${plan.gate_result || ''}">
+          <div class="tl-top"><span class="tl-at">STEP ${index + 1}</span> <span class="tl-stage"><code>${esc(zhStage(stage.key))}</code></span></div>
+          <div class="tl-reason">${esc(FLOW_STATE_ZH[state] || state)} · ${esc(plan.status || '无 Plan 状态')}</div>
+        </li>`;
+      }).join('') || '<li>暂无阶段</li>';
+
+      $('app').innerHTML = `
+        <button class="ghost back" id="backBtn">← 返回纵览</button>
+        <div class="topbar" style="margin-bottom:1.2rem">
+          <div class="brand">
+            <span class="light ${task.blocked ? 'red' : (task.current_stage === 'done' ? 'green' : 'blue')}"></span>
+            <div><h1 style="font-size:clamp(16px,1.5vw,20px)">${esc(task.name)}</h1>
+            <div class="ver">${esc(task.workflow)} · 无 Epic 轻流程</div></div>
+          </div>
+          <div class="actions"><button class="primary" id="resumeLightBtn">复制续做命令</button></div>
+        </div>
+        <div class="flow-summary fade-in">
+          <div><div class="eyebrow">Lightweight workflow map</div><h2>${esc(currentTitle)}</h2><div class="flow-desc">${esc(task.description || '按任务级聚合的轻流程阶段地图')}</div></div>
+          <div class="flow-kpi"><strong>${task.stages_done || 0}/${task.stages_total || 0}</strong><span>阶段已通过 · ${pct}%</span></div>
+          <div class="flow-alert ${task.current_stage === 'done' ? 'done' : (task.blocked ? 'blocked' : '')}">
+            <span>${task.current_stage === 'done' ? '交付状态' : (task.blocked ? '当前阻塞' : '当前作业')}</span><b>${esc(currentMessage)}</b>
+            <span>${task.current_stage === 'done' ? '轻流程已收口' : `下一步由 ${esc(current.skill || 'resume-assistant')} 继续`}</span>
+          </div>
+        </div>
+        <div class="section-title"><span>全流程地图</span><span class="badge-low">点击阶段查看 Plan 与门禁</span></div>
+        <div class="flow-map-shell fade-in"><div class="flow-map" style="--stage-count:${Math.max(stages.length, 1)}">${stageCards}</div></div>
+        <div class="flow-details">
+          <section class="flow-workbench fade-in">
+            <div class="flow-workbench-head">
+              <div><div class="eyebrow">阶段作业面</div><h3>${esc(zhStage(selected.key))}</h3><p class="lead">${esc(selected.label || '—')}</p></div>
+              <span class="flow-state">${FLOW_STATE_ZH[selected.state] || selected.state || '—'}</span>
+            </div>
+            <div class="stage-facts">
+              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>` : '<b style="color:var(--red)">未创建</b>'}</div>
+              <div class="stage-fact"><div class="label">Plan 状态</div><b>${esc(selectedPlan.status || '—')}</b></div>
+              <div class="stage-fact"><div class="label">门禁结果</div><b style="color:${selectedPlan.gate_result === 'pass' ? 'var(--green)' : (selectedPlan.gate_result === 'fail' ? 'var(--red)' : 'var(--muted)')}">${esc(selectedPlan.gate_result === 'pass' ? '通过' : (selectedPlan.gate_result === 'fail' ? '未过' : '暂无判定'))}</b></div>
+              <div class="stage-fact"><div class="label">执行 Skill</div><code>${esc(selected.skill || '—')}</code></div>
+            </div>
+          </section>
+          <aside class="flow-audit fade-in"><h3>阶段总览</h3><ul class="timeline">${auditRows}</ul></aside>
+        </div>`;
+
+      $('backBtn').onclick = () => { view = 'overview'; currentLightId = null; selectedFlowStage = null; window.scrollTo(0, 0); draw(); };
+      $('resumeLightBtn').onclick = async () => {
+        try { await navigator.clipboard.writeText(resumeCommand); } catch (_) {}
+        toast(`已复制：${resumeCommand}`);
+      };
+      document.querySelectorAll('[data-light-stage]').forEach(button => button.onclick = () => { selectedFlowStage = button.dataset.lightStage; renderLightweightDetail(); observeFades(false); });
+    }
+
     function renderWorkflowDetail(e) {
       const storyMode = e.effective_workflow === 'client-dev';
       const flow = e.workflow_map;
