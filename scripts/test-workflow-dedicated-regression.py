@@ -147,12 +147,40 @@ def assert_learning_loop() -> None:
     require(stages["record"]["requiredSections"] == ["十四、学习记录", "十五、知识图谱增量", "十六、用户确认"], "learning-loop: record 必须沉淀学习记录、图谱增量和用户确认")
 
 
+def assert_creative_incubation() -> None:
+    bp = load_blueprint("creative-incubation")
+    require_enablement(bp)
+    require(bp["usesEpic"] is True and bp["epicRequired"] is True, "creative-incubation: 必须先创建单轮孵化 Epic")
+    require(bp["epicTemplate"] == "Templates/Epic模板-创意捕获与孵化.md", "creative-incubation: 必须使用专用 Epic 模板")
+    require(bp["startup"]["requireEpicBeforeBoot"] is True, "creative-incubation: 启动看板前必须有 Epic")
+    expected = ["perception", "cognition", "generation", "validation"]
+    require(stage_keys(bp) == expected, "creative-incubation: 阶段链必须保持感知→认知→生成→验证")
+    stages = stage_map(bp)
+    for index, key in enumerate(expected, start=1):
+        stage = stages[key]
+        require(stage["wbsSlices"] == [index], f"creative-incubation:{key}: wbsSlices 应为 {[index]}")
+        require(stage["epicField"] == key, f"creative-incubation:{key}: epicField 必须与 stage key 一致")
+        require(stage["skills"] == ["creative-incubation-assistant"], f"creative-incubation:{key}: 必须走专用阶段 Skill")
+        require(stage["exitCriteria"]["status"] == ["已采纳"], f"creative-incubation:{key}: 必须经用户确认后采纳")
+        require(stage["exitCriteria"]["sectionsPresent"] is True, f"creative-incubation:{key}: 必须校验阶段章节事实")
+        require(stage["exitCriteria"]["skillRun"] is True, f"creative-incubation:{key}: 必须留下 skill_run")
+
+    epic = (ROOT / bp["epicTemplate"]).read_text(encoding="utf-8")
+    plan = (ROOT / "Templates/创意捕获与孵化模板.md").read_text(encoding="utf-8")
+    skill = (ROOT / ".cursor/skills/creative-incubation-assistant/SKILL.md").read_text(encoding="utf-8")
+    for needle in ["≥2 个觅食域", "生活体验为推荐增强项，不是硬门禁", "≥3 个洞察晶体", "≥10 个创意", "≥3 个 AI 高自动化方向", "2 个候选", "≥1 个真实世界实验"]:
+        require(needle in epic or needle in plan or needle in skill, f"creative-incubation: 缺少核心数量契约 {needle}")
+    require("下一轮" in epic and "反馈" in epic, "creative-incubation: Epic 必须声明跨轮反馈回流")
+    require("原始来源" in plan and "反例/适用边界" in plan and "停止/转向阈值" in plan, "creative-incubation: 阶段模板必须保留来源、反例和可证伪阈值")
+
+
 REGRESSIONS = {
     "bugfix": assert_bugfix,
     "ui-change": assert_ui_change,
     "story-split-only": assert_story_split_only,
     "computer-mgmt": assert_computer_mgmt,
     "learning-loop": assert_learning_loop,
+    "creative-incubation": assert_creative_incubation,
 }
 
 

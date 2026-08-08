@@ -20,6 +20,8 @@
 | 类型 | 模板文件 | 存放路径 |
 |------|----------|----------|
 | **Epic（client-dev）** | `Templates/Epic模板-client-dev.md` | `Plans/Epic/` |
+| **Epic（learning-loop）** | `Templates/Epic模板-learning-loop.md` | `Plans/Epic/` |
+| **Epic（creative-incubation）** | `Templates/Epic模板-创意捕获与孵化.md` | `Plans/Epic/` |
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
 | **技术方案**（客户端/服务端） | `Templates/技术方案模板.md` | `Plans/技术方案/` |
 | 重构 | `Templates/技术方案模板.md` | `Plans/代码重构/` |

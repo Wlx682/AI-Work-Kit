@@ -42,6 +42,7 @@ YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-
 | 找 CC 文章 / 周报选题 / 海外资讯 / 分享帖 | `weekly-intel-digest` → `Contexts/情报源/`                                  |
 | 提效案例 / 最佳实践 / 技术提交分享 / 产品提效 | `best-practice-digest` → `Contexts/最佳实践/`（附 skill_run 反哺进化链）             |
 | 工作流进化 / 反馈闭环 / skill_run 聚合 / 流程改进沉淀 | `workflow-evolution-assistant` |
+| 创意捕获 / 创意孵化 / 洞察晶体 / 副业探索 / 创意枯竭 | `workflow-router` → `creative-incubation` → `creative-incubation-assistant` |
 
 全流程步骤结束输出：
 

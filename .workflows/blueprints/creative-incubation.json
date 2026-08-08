@@ -1,0 +1,134 @@
+{
+  "name": "creative-incubation",
+  "label": "创意捕获与孵化",
+  "version": "0.1.1",
+  "description": "四层创意孵化工作流：以跨域信息扩展感知，可选生活纹理增强输入，经哲学抽象形成洞察晶体，批量重组为适合个人优势的创意，再用最小真实世界实验验证；每个 Epic 运行一轮 30 天闭环，反馈进入下一轮感知。",
+  "usesEpic": true,
+  "epicRequired": true,
+  "epicTemplate": "Templates/Epic模板-创意捕获与孵化.md",
+  "planRoot": "Plans/Epic",
+  "startup": {
+    "createBoard": true,
+    "boardSource": "Epic",
+    "requireEpicBeforeBoot": true,
+    "createEpicSkill": "template-generator",
+    "createEpicTemplate": "Templates/Epic模板-创意捕获与孵化.md",
+    "bootCommand": "bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md"
+  },
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "enablement": {
+    "requires": ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"],
+    "preflight": "python3 scripts/workflow-install.py check --workflow creative-incubation"
+  },
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-workflow-dedicated-regression.py creative-incubation",
+    "priority": "P0",
+    "scope": "creative-incubation 四层阶段链、30 天 Epic、2 域/可选生活体验/3 晶体/10 创意/3 自动化/2 候选/1 实验契约"
+  },
+  "triggerHints": [
+    "创意捕获与孵化",
+    "创意捕获",
+    "孵化创意",
+    "创意孵化",
+    "创意系统",
+    "数字感官",
+    "洞察晶体",
+    "创意快闪",
+    "副业探索",
+    "找副业方向",
+    "副业点子",
+    "创意枯竭",
+    "生活体验不足",
+    "最小真实实验",
+    "creative-incubation",
+    "workflow=creative-incubation"
+  ],
+  "epicMapping": {
+    "perception": "perception",
+    "cognition": "cognition",
+    "generation": "generation",
+    "validation": "validation"
+  },
+  "stages": [
+    {
+      "key": "perception",
+      "label": "感知层：数字感官与创意觅食",
+      "planFolder": "Plans/创意孵化",
+      "epicField": "perception",
+      "planPrefix": "感知",
+      "planSuffix": "感知层",
+      "wbsSlices": [1],
+      "skills": ["creative-incubation-assistant"],
+      "template": "Templates/创意捕获与孵化模板.md",
+      "requiredSections": ["一、创意觅食疆域", "二、自动采集与体验任务", "三、AI 初筛契约", "四、本轮精饲料"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": ["已采纳"],
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "cognition"
+    },
+    {
+      "key": "cognition",
+      "label": "认知层：哲学发酵与洞察晶体",
+      "planFolder": "Plans/创意孵化",
+      "epicField": "cognition",
+      "planPrefix": "认知",
+      "planSuffix": "认知层",
+      "wbsSlices": [2],
+      "skills": ["creative-incubation-assistant"],
+      "template": "Templates/创意捕获与孵化模板.md",
+      "requiredSections": ["五、深度思考清修", "六、洞察晶体", "七、孪生知识网络"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": ["已采纳"],
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "generation"
+    },
+    {
+      "key": "generation",
+      "label": "生成层：大规模创意重组",
+      "planFolder": "Plans/创意孵化",
+      "epicField": "generation",
+      "planPrefix": "生成",
+      "planSuffix": "生成层",
+      "wbsSlices": [3],
+      "skills": ["creative-incubation-assistant"],
+      "template": "Templates/创意捕获与孵化模板.md",
+      "requiredSections": ["八、创意生成批次", "九、候选评分与选择", "十、MVP 假设"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": ["已采纳"],
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "validation"
+    },
+    {
+      "key": "validation",
+      "label": "验证层：最小实验与反馈回流",
+      "planFolder": "Plans/创意孵化",
+      "epicField": "validation",
+      "planPrefix": "验证",
+      "planSuffix": "验证层",
+      "wbsSlices": [4],
+      "skills": ["creative-incubation-assistant"],
+      "template": "Templates/创意捕获与孵化模板.md",
+      "requiredSections": ["十一、最小实验设计", "十二、真实世界证据", "十三、反馈回流", "十四、用户确认"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "status": ["已采纳"],
+        "sectionsPresent": true,
+        "skillRun": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

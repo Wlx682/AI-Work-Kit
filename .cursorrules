@@ -45,6 +45,7 @@
 - 学习审计 → `learning-audit-assistant` → `Contexts/LLM学习/笔记/*审计报告*`
 - PM 物料 → `material-prep-assistant` → `Contexts/`（通用对照表）
 - 工作流进化 / 反馈闭环 / skill_run 聚合 / 流程改进沉淀 → `workflow-evolution-assistant`
+- 创意捕获 / 创意孵化 / 洞察晶体 / 副业探索 / 创意枯竭 → `workflow-router` → `creative-incubation` → `creative-incubation-assistant`
 - 架构 → `architecture-design-assistant` · 拆任务 → `task-splitter` · 测试 → `test-generator` · 代码审查 → `code-review`
 - 需求变更 → `change-impact-analysis`
 - 全流程 / 启动项目 / 合代码 / 自然语言工作流 → `workflow-router`（入口 Skill，只选蓝图并启动对应执行器）

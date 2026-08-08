@@ -11,6 +11,7 @@
 - 「Story 拆分」「用户故事拆分」「方案拆成用户故事」「只拆 Story」
 - 「合代码」「合并代码」「合分支」「merge 分支」「把这个分支合进去」「解决合并冲突」
 - 「我要学习」「我想学习」「帮我准备资料」「学完实践」「实践完验证」「学习复盘」「学习记录」「总结知识图谱」
+- 「创意捕获」「孵化创意」「洞察晶体」「创意快闪」「副业探索」「创意枯竭」「最小真实实验」
 
 ## 不触发时机
 
@@ -65,6 +66,7 @@
 | Story 拆分、用户故事拆分、方案拆成用户故事、只拆 Story | `story-split-only` |
 | 合代码、合并代码、合分支、解决合并冲突 | `merge-code` |
 | 我要学习、准备学习资料、实践验证、学习复盘、学习记录、知识图谱 | `learning-loop` |
+| 创意捕获、孵化创意、洞察晶体、副业探索、创意枯竭、最小真实实验 | `creative-incubation` |
 
 ## 回归检查
 
@@ -143,6 +145,14 @@ python3 scripts/workflow-status.py --workflow merge-code
 # 先用 Templates/Epic模板-learning-loop.md 创建 Plans/Epic/xxx.md
 bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
 python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md
+```
+
+创意孵化循环：
+
+```bash
+# 先用 Templates/Epic模板-创意捕获与孵化.md 创建 Plans/Epic/xxx.md
+bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md
+python3 scripts/workflow-status.py --workflow creative-incubation --epic Plans/Epic/xxx.md
 ```
 
 需要排查底层字段时再跑：

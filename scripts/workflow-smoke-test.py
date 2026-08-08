@@ -19,6 +19,7 @@ DEFAULT_WORKFLOWS = [
     "story-split-only",
     "computer-mgmt",
     "learning-loop",
+    "creative-incubation",
     "client-dev",
 ]
 ROUTE_PHRASES = {
@@ -28,6 +29,7 @@ ROUTE_PHRASES = {
     "story-split-only": "这个技术方案只拆 Story",
     "computer-mgmt": "帮我清理电脑缓存",
     "learning-loop": "我要学习 agent 开发",
+    "creative-incubation": "帮我运行一轮创意捕获与孵化",
     "client-dev": "全流程开发一下支付收银台",
 }
 
@@ -890,12 +892,76 @@ def smoke_learning_workflow(tmp: Path, workflow: str, bp: dict) -> None:
         raise SmokeError(f"{workflow} run 事件缺 gate_pass: {event_types}")
 
 
+def smoke_generic_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
+    bootstrap = run_json(
+        tmp,
+        ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--project", "不存在的项目", "--json"],
+    )
+    if bootstrap.get("next_state") != "bootstrap-epic" or not bootstrap.get("blockers"):
+        raise SmokeError(f"{workflow} 无 Epic 时应要求 bootstrap: {bootstrap}")
+
+    stages = bp.get("stages", [])
+    plan_rows: list[tuple[dict, str]] = []
+    for stage in stages:
+        rel = f"{stage['planFolder']}/smoke-{workflow}-{stage['key']}.md"
+        plan_rows.append((stage, rel))
+    plans = "\n".join(f"  {stage['epicField']}: {rel}" for stage, rel in plan_rows)
+    epic_rel = f"Plans/Epic/smoke-{workflow}.md"
+    write_fixture(
+        tmp / epic_rel,
+        f"""
+---
+project: smoke-{workflow}
+workflow: {workflow}
+p0_open: 0
+plans:
+{plans}
+---
+
+# Smoke Epic: {workflow}
+""",
+    )
+
+    gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+    assert_gate_state(gate, workflow, stages[0]["key"])
+
+    for index, (stage, rel) in enumerate(plan_rows):
+        sections = "\n\n".join(f"## {title}\n\nsmoke {title}" for title in stage.get("requiredSections", []))
+        slices = stage.get("wbsSlices", [])
+        write_fixture(
+            tmp / rel,
+            f"""
+---
+status: 已采纳
+workflow: {workflow}
+workflow_stage: {stage['key']}
+epic: {epic_rel}
+---
+
+# {stage['label']} smoke
+
+{sections}
+
+{wbs_table(slices)}
+
+{skill_run(stage['skills'][0], rel, stage['key'])}
+""",
+        )
+        gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--epic", epic_rel, "--json"])
+        expected = stages[index + 1]["key"] if index + 1 < len(stages) else "done"
+        assert_gate_state(gate, workflow, expected)
+
+    if gate.get("blockers"):
+        raise SmokeError(f"{workflow} 完整真实推进后仍有 blockers: {gate}")
+
+
 def smoke_epic_workflow(tmp: Path, workflow: str, bp: dict) -> None:
     if workflow == "learning-loop":
         smoke_learning_workflow(tmp, workflow, bp)
         return
     if workflow != "client-dev":
-        raise SmokeError(f"暂未定义 Epic 型 smoke fixture: {workflow}")
+        smoke_generic_epic_workflow(tmp, workflow, bp)
+        return
 
     bootstrap = run_json(
         tmp,
