@@ -172,6 +172,9 @@ def render_stage_template(
         "{{date}}": day,
         "{{title}}": title,
         "{{title-kebab}}": slugify(title),
+        "{{workflow-stage}}": str(stage["key"]),
+        "{{stage-label}}": str(stage["label"]),
+        "{{skill}}": str(stage["skills"][0]),
         "{{plan-path}}": rel_path,
         "{{plan-stem}}": str(Path(rel_path).with_suffix("")),
         "{{epic-path}}": str(epic.relative_to(ROOT)) if epic else "",
@@ -213,13 +216,20 @@ def insert_epic_plan_path(epic: Path, field: str, rel_path: str) -> None:
     plans_index = next((i for i, line in enumerate(lines) if line.strip() == "plans:"), None)
     if plans_index is None:
         raise InitError(f"Epic 缺少 plans: 索引: {epic.relative_to(ROOT)}")
-    insert_at = plans_index + 1
-    while insert_at < len(lines):
-        line = lines[insert_at]
+    block_end = plans_index + 1
+    while block_end < len(lines):
+        line = lines[block_end]
         if line and not line.startswith((" ", "\t")):
             break
-        insert_at += 1
-    lines.insert(insert_at, f"  {field}: {rel_path}")
+        block_end += 1
+    field_pattern = re.compile(rf"^\s+{re.escape(field)}:\s*")
+    matches = [i for i in range(plans_index + 1, block_end) if field_pattern.match(lines[i])]
+    if matches:
+        lines[matches[0]] = f"  {field}: {rel_path}"
+        for duplicate in reversed(matches[1:]):
+            del lines[duplicate]
+    else:
+        lines.insert(block_end, f"  {field}: {rel_path}")
     epic.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

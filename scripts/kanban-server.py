@@ -417,10 +417,21 @@ def _slice_stage_map(workflow: str | None) -> dict[int, dict[str, str]]:
 def parse_wbs_slices(path: Path) -> list[dict[str, Any]]:
     text = path.read_text(encoding="utf-8")
     in_fence = False
+    fence_char = ""
+    fence_len = 0
     raw: list[dict[str, Any]] = []
     for line in text.splitlines():
-        if line.strip() == "```":
-            in_fence = not in_fence
+        fence = re.match(r"^\s*(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            marker, suffix = fence.group(1), fence.group(2)
+            if not in_fence:
+                in_fence = True
+                fence_char = marker[0]
+                fence_len = len(marker)
+            elif marker[0] == fence_char and len(marker) >= fence_len and not suffix.strip():
+                in_fence = False
+                fence_char = ""
+                fence_len = 0
             continue
         if not in_fence:
             continue
@@ -1428,7 +1439,7 @@ TEST_SUITE_CATALOG = [
         "level_label": "P0 专属契约回归",
         "priority": "P0",
         "name": "工作流专属回归契约",
-        "command": "python3 scripts/workflow-dedicated-regression-gate.py bugfix ui-change story-split-only computer-mgmt learning-loop",
+        "command": "python3 scripts/workflow-dedicated-regression-gate.py bugfix ui-change story-split-only computer-mgmt learning-loop creative-incubation",
         "argv": [
             "python3",
             "scripts/workflow-dedicated-regression-gate.py",
@@ -1437,8 +1448,9 @@ TEST_SUITE_CATALOG = [
             "story-split-only",
             "computer-mgmt",
             "learning-loop",
+            "creative-incubation",
         ],
-        "scope": "bugfix / ui-change / story-split-only / computer-mgmt / learning-loop 的工作流特有阶段链、路由与门禁契约",
+        "scope": "bugfix / ui-change / story-split-only / computer-mgmt / learning-loop / creative-incubation 的工作流特有阶段链、路由与门禁契约",
         "signal": "AI 工作流自身",
     },
     {

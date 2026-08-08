@@ -258,7 +258,7 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
           [[ -z "$want" ]] && continue
           [[ "$c_status" == "$want" ]] && ok_status=1
         done < <(crit_status_list "$s_exit")
-        [[ "$ok_status" == "1" ]] || stage_blockers+=("${s_label}：status 须为「$(crit_status_list "$s_exit" | tr '\n' '/')」（当前: ${c_status:-无}）")
+        [[ "$ok_status" == "1" ]] || stage_blockers+=("${s_label}：status 须为「$(crit_status_list "$s_exit" | paste -sd '/' -)」（当前: ${c_status:-无}）")
       fi
 
       if [[ "$(crit_has "$s_exit" p0Open)" == "1" || "$s_exit" == *'"p0Open"'* ]]; then

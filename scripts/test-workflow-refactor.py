@@ -312,6 +312,69 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("尚未到创建阶段", html)
         self.assertIn(".flow-plan.pending", html)
 
+    def test_kanban_parses_info_string_wbs_fence_without_marking_epic_done(self) -> None:
+        with self.fixture_repo() as tmp:
+            write_file(
+                tmp / "Plans/Epic/creative.md",
+                """
+                ---
+                workflow: creative-incubation
+                lifecycle_state: perception
+                status: 进行中
+                p0_open: 0
+                plans:
+                  perception: Plans/创意孵化/perception.md
+                  cognition: null
+                  generation: null
+                  validation: null
+                ---
+                # 创意探索
+
+                ```text
+                [~] 1. 感知
+                [ ] 2. 认知
+                [ ] 3. 生成
+                [ ] 4. 验证
+                ```
+                """,
+            )
+            write_file(
+                tmp / "Plans/创意孵化/perception.md",
+                """
+                ---
+                status: 进行中
+                lifecycle_state: perception
+                ---
+                # 感知层
+                """,
+            )
+            spec = importlib.util.spec_from_file_location("kanban_server_info_fence", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
+
+            data = mod.scan_epic(tmp / "Plans/Epic/creative.md")
+
+        self.assertEqual(data["current_stage"], "perception")
+        self.assertEqual((data["slices_done"], data["slices_total"]), (0, 4))
+        self.assertEqual(
+            [stage["state"] for stage in data["workflow_map"]["stages"]],
+            ["active", "upcoming", "upcoming", "upcoming"],
+        )
+        self.assertEqual(data["workflow_map"]["progress_pct"], 0)
+
+    def test_gate_status_message_has_no_trailing_separator(self) -> None:
+        gate = (ROOT / "scripts/workflow-gate.sh").read_text(encoding="utf-8")
+
+        self.assertIn("paste -sd '/' -", gate)
+        self.assertNotIn("crit_status_list \"$s_exit\" | tr '\\n' '/'", gate)
+
 
 
 
@@ -470,7 +533,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         dedicated = suites["workflow-dedicated-regression"]
         self.assertEqual(dedicated["priority"], "P0")
         self.assertEqual(dedicated["argv"][:2], ["python3", "scripts/workflow-dedicated-regression-gate.py"])
-        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop", "creative-incubation"]:
             self.assertIn(workflow, dedicated["argv"])
             self.assertIn(workflow, dedicated["scope"])
 
@@ -579,6 +642,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "story-split-only",
                 "computer-mgmt",
                 "learning-loop",
+                "creative-incubation",
             ],
             cwd=ROOT,
             text=True,
@@ -586,7 +650,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             check=True,
         )
-        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop", "creative-incubation"]:
             self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
 
     def test_workflow_dedicated_regression_gate_runs_declared_blueprint_commands(self) -> None:
@@ -599,6 +663,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "story-split-only",
                 "computer-mgmt",
                 "learning-loop",
+                "creative-incubation",
             ],
             cwd=ROOT,
             text=True,
@@ -606,7 +671,7 @@ class WorkflowRefactorTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             check=True,
         )
-        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop"]:
+        for workflow in ["bugfix", "ui-change", "story-split-only", "computer-mgmt", "learning-loop", "creative-incubation"]:
             self.assertIn(f"OK:workflow-dedicated-regression-gate:{workflow}", proc.stdout)
             self.assertIn(f"OK:workflow-dedicated-regression:{workflow}", proc.stdout)
 
@@ -1053,6 +1118,10 @@ class WorkflowRefactorTests(unittest.TestCase):
             "学完之后开始实践": "learning-loop",
             "实践完了帮我验证复盘": "learning-loop",
             "总结知识图谱": "learning-loop",
+            "帮我运行一轮创意捕获与孵化": "creative-incubation",
+            "生活体验不足，想系统探索副业方向": "creative-incubation",
+            "用洞察晶体做一次创意快闪": "creative-incubation",
+            "workflow=creative-incubation 开始本月探索": "creative-incubation",
         }
         for utterance, expected in cases.items():
             with self.subTest(utterance=utterance):
@@ -1350,6 +1419,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                 "bugfix",
                 "story-split-only",
                 "learning-loop",
+                "creative-incubation",
             ],
             cwd=ROOT,
             text=True,
@@ -1362,6 +1432,7 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn("OK:workflow-smoke-test:bugfix", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:story-split-only", proc.stdout)
         self.assertIn("OK:workflow-smoke-test:learning-loop", proc.stdout)
+        self.assertIn("OK:workflow-smoke-test:creative-incubation", proc.stdout)
 
     def test_merge_code_real_git_scenario_suite_passes(self) -> None:
         proc = subprocess.run(
@@ -1437,6 +1508,52 @@ class WorkflowRefactorTests(unittest.TestCase):
             gate = self.run_gate(tmp, "--workflow", "ui-change", "--json")
             self.assertEqual(gate["current_state"], "ui-scope")
             self.assertTrue(any("skill_run" in item for item in gate["blockers"]), gate)
+
+    def test_workflow_plan_init_renders_creative_stage_placeholders(self) -> None:
+        with self.fixture_repo() as tmp:
+            epic_rel = "Plans/Epic/2026-08-08-创意探索.md"
+            write_file(
+                tmp / epic_rel,
+                """
+                ---
+                date: 2026-08-08
+                workflow: creative-incubation
+                plans:
+                  perception: null
+                  cognition: null
+                  generation: null
+                  validation: null
+                ---
+
+                # 创意孵化 smoke Epic
+                """,
+            )
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-plan-init.py",
+                    "--workflow",
+                    "creative-incubation",
+                    "--epic",
+                    epic_rel,
+                ],
+                cwd=tmp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            rel = "Plans/创意孵化/2026-08-08-创意探索-感知层.md"
+            self.assertIn(f"created: {rel}", proc.stdout)
+            text = (tmp / rel).read_text(encoding="utf-8")
+            self.assertIn("workflow_stage: perception", text)
+            self.assertIn("# 感知层：数字感官与创意觅食：创意探索", text)
+            self.assertIn(f"journey: {epic_rel}", text)
+            self.assertNotIn("{{workflow-stage}}", text)
+            self.assertNotIn("{{stage-label}}", text)
+            epic_text = (tmp / epic_rel).read_text(encoding="utf-8")
+            self.assertEqual(epic_text.count("  perception:"), 1)
+            self.assertIn(f"  perception: {rel}", epic_text)
 
     def test_workflow_plan_init_all_with_feedback_can_reach_done(self) -> None:
         with self.fixture_repo() as tmp:
@@ -1899,6 +2016,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "Plans/电脑管理",
                     "Plans/界面开发",
                     "Plans/学习循环",
+                    "Plans/创意孵化",
                     "Plans/Bug排查",
                 ]:
                     (self.root / plan_dir).mkdir(parents=True, exist_ok=True)
