@@ -1,0 +1,51 @@
+{
+  "story_id": "US-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/knowledge_graph_learning",
+  "codebase_read": [
+    {"path": "backend/domain/contracts.py", "reason": "JSON Repository、CourseGraph 与 GraphVersion 持久化"},
+    {"path": "backend/application/service.py", "reason": "首次/vNext 发布和审计读取路径"},
+    {"path": "backend/interfaces/http_api.py", "reason": "现有课程 GET 与 POST 路由"},
+    {"path": "app/lib/src/learning_api.dart", "reason": "Flutter API Port 与 HTTP Adapter"},
+    {"path": "app/lib/src/learning_controller.dart", "reason": "课程刷新与前端状态编排"},
+    {"path": "app/lib/src/nexus_app.dart", "reason": "图谱审计卡与操作入口"},
+    {"path": "backend/tests/test_learning_api.py", "reason": "版本发布和 Repository 集成测试"},
+    {"path": "app/test/learning_controller_test.dart", "reason": "客户端状态流测试"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "backend/domain/contracts.py", "purpose": "增加 GraphSnapshot、版本枚举及不可变快照持久化", "layer": "Domain/Data"},
+      {"path": "backend/application/service.py", "purpose": "发布时保存快照并实现历史查询/回滚", "layer": "Application"},
+      {"path": "backend/interfaces/http_api.py", "purpose": "暴露版本历史与回滚路由", "layer": "HTTP Adapter"},
+      {"path": "backend/tests/test_learning_api.py", "purpose": "覆盖回滚、保留数据与错误零变更", "layer": "Backend Test"},
+      {"path": "app/lib/src/learning_api.dart", "purpose": "增加历史查询和回滚 API", "layer": "Client Port/Adapter"},
+      {"path": "app/lib/src/learning_controller.dart", "purpose": "加载历史并刷新回滚后的课程", "layer": "Client State"},
+      {"path": "app/lib/src/nexus_app.dart", "purpose": "在审计卡呈现历史版本和回滚按钮", "layer": "Client UI"},
+      {"path": "app/lib/l10n/app_en.arb", "purpose": "英文版本历史文案", "layer": "Localization"},
+      {"path": "app/lib/l10n/app_zh.arb", "purpose": "中文版本历史文案", "layer": "Localization"},
+      {"path": "app/test/test_support.dart", "purpose": "历史/回滚 Fake API", "layer": "Client Test Support"},
+      {"path": "app/test/learning_api_test.dart", "purpose": "HTTP 版本接口契约测试", "layer": "Client Test"},
+      {"path": "app/test/learning_controller_test.dart", "purpose": "回滚状态流测试", "layer": "Client Test"},
+      {"path": "app/test/widget_test.dart", "purpose": "回滚入口可见与交互测试", "layer": "Client Test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Flutter → HTTP/Application → Domain Repository；回滚由 Application 编排快照激活",
+    "dependency_rule": "Snapshot 与 Version 内容由 Repository 持久化；UI 不直接重建图谱，回滚不删除任何证据/进度/版本"
+  },
+  "tests": {
+    "red": [
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_graph_version_snapshots_support_non_destructive_rollback"},
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_invalid_graph_rollback_preserves_active_graph"},
+      {"path": "app/test/learning_controller_test.dart", "command": "flutter test test/learning_controller_test.dart --plain-name 'rollback restores a historical graph version'"}
+    ]
+  },
+  "risks": [
+    "当前节点文件是 active projection，回滚必须从版本快照重建，不能把 projection 当历史",
+    "回滚后再次发布不能复用已有版本号，next version 必须按历史最大值递增",
+    "相关文件已有用户改动，只允许增量语义修改"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

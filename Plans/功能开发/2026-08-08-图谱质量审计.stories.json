@@ -1,0 +1,44 @@
+{
+  "scope_confirmed": true,
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "生成后查看图谱质量审计并阻止低质图发布",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-08-图谱质量审计-US-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC1", "AC2", "AC3", "AC4", "AC5", "AC2-反"],
+      "architecture_refs": ["ADR-001", "ADR-003", "ADR-007", "ADR-008", "RQ-G01", "RQ-G02"]
+    },
+    {
+      "id": "US-002",
+      "title": "获批节点变更生成重审计的新图谱版本",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-08-图谱质量审计-US-002.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-001"],
+      "acceptance_criteria": ["AC6", "AC7", "AC8"],
+      "architecture_refs": ["ADR-001", "ADR-003", "ADR-008", "RQ-G03"]
+    },
+    {
+      "id": "US-003",
+      "title": "查看历史版本并非破坏性回滚图谱",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-08-图谱质量审计-US-003.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-002"],
+      "acceptance_criteria": ["AC9", "AC10", "AC11"],
+      "architecture_refs": ["ADR-001", "ADR-008", "RQ-G04"]
+    }
+  ]
+}

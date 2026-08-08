@@ -1,0 +1,47 @@
+{
+  "story_id": "US-003",
+  "commit": "working-tree@87d8f76 (uncommitted; pre-existing user changes preserved)",
+  "red": {
+    "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_graph_version_snapshots_support_non_destructive_rollback knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_invalid_graph_rollback_preserves_active_graph && flutter test test/learning_controller_test.dart --plain-name 'rollback restores a historical graph version'",
+    "exit_code": 1,
+    "at": "2026-08-08T18:31:00+08:00",
+    "reason": "Service 尚无版本历史/回滚方法，Repository 尚无快照，Flutter Controller/API 尚无回滚状态流。"
+  },
+  "green": {
+    "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_graph_version_snapshots_support_non_destructive_rollback knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_invalid_graph_rollback_preserves_active_graph && flutter test test/learning_controller_test.dart --plain-name 'rollback restores a historical graph version' && flutter test test/learning_api_test.dart --plain-name 'HTTP API lists graph versions and rolls one back' && flutter test test/widget_test.dart --plain-name 'graph audit exposes version history rollback'",
+    "exit_code": 0,
+    "at": "2026-08-08T18:35:00+08:00"
+  },
+  "refactor": {
+    "command": "uv run python -m unittest discover -s knowledge_graph_learning/backend/tests -t . && python3 -m compileall -q knowledge_graph_learning/backend",
+    "exit_code": 0,
+    "at": "2026-08-08T18:37:00+08:00"
+  },
+  "integration_smoke": {
+    "command": "flutter test && flutter analyze",
+    "exit_code": 0,
+    "at": "2026-08-08T18:38:00+08:00"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC9",
+      "pass": true,
+      "evidence": "v1 与每个 vNext 均保存独立 GraphSnapshot；回滚前按 content hash、结构和质量规则复验。"
+    },
+    {
+      "ac_id": "AC10",
+      "pass": true,
+      "evidence": "v2→v1 回滚恢复 10 个富节点和边，节点进度 73 保留，v2 快照仍可读取；回滚后再发布生成 v3。"
+    },
+    {
+      "ac_id": "AC11",
+      "pass": true,
+      "evidence": "跨课程、当前版本和损坏快照分别返回 INVALID_GRAPH_ROLLBACK 或 GRAPH_SNAPSHOT_INVALID，active v2 节点与版本不变。"
+    },
+    {
+      "ac_id": "AC10-UI",
+      "pass": true,
+      "evidence": "Flutter API、Controller 和 Widget 测试确认版本历史入口、恢复按钮及回滚后的 v1 UI。"
+    }
+  ]
+}

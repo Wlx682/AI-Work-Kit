@@ -1,0 +1,47 @@
+{
+  "story_id": "US-002",
+  "commit": "working-tree@87d8f76 (uncommitted; pre-existing user changes preserved)",
+  "red": {
+    "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_approved_graph_operation_publishes_reaudited_next_version knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_low_quality_graph_operation_is_rejected_without_version_change knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_graph_review_rejects_stale_base_version_before_apply && flutter test test/learning_controller_test.dart --plain-name 'approved graph operation refreshes graph version audit'",
+    "exit_code": 1,
+    "at": "2026-08-08T18:16:00+08:00",
+    "reason": "审批后仍返回 v1，低质量候选图未被拒绝，旧基线审批未产生版本冲突，Flutter fixture 仍显示 v1。"
+  },
+  "green": {
+    "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_approved_graph_operation_publishes_reaudited_next_version knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_low_quality_graph_operation_is_rejected_without_version_change knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_graph_review_rejects_stale_base_version_before_apply && flutter test test/learning_controller_test.dart --plain-name 'approved graph operation refreshes graph version audit'",
+    "exit_code": 0,
+    "at": "2026-08-08T18:21:00+08:00"
+  },
+  "refactor": {
+    "command": "uv run python -m unittest discover -s knowledge_graph_learning/backend/tests -t . && python3 -m compileall -q knowledge_graph_learning/backend",
+    "exit_code": 0,
+    "at": "2026-08-08T18:27:00+08:00"
+  },
+  "integration_smoke": {
+    "command": "flutter test && flutter analyze",
+    "exit_code": 0,
+    "at": "2026-08-08T18:28:00+08:00"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC6",
+      "pass": true,
+      "evidence": "获批 split/expand 构造富字段候选图并发布 active v2；新增节点的 objective 与 mastery_rubric 已持久化。"
+    },
+    {
+      "ac_id": "AC7",
+      "pass": true,
+      "evidence": "候选图在 Runtime 前预审计、apply 前复验；Critical 返回 GRAPH_AUDIT_FAILED/422 且无 Proposal 领域记录。"
+    },
+    {
+      "ac_id": "AC8",
+      "pass": true,
+      "evidence": "Proposal 固化 base_graph_version_id；审批恢复前检测漂移并返回 GRAPH_VERSION_CONFLICT/409。"
+    },
+    {
+      "ac_id": "AC6-UI",
+      "pass": true,
+      "evidence": "Flutter Controller 测试确认审批后 course 刷新为 v2 且 GraphAudit 指向同一版本。"
+    }
+  ]
+}

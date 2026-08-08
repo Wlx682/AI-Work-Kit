@@ -1,0 +1,45 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "RQ-G01",
+      "title": "合格图谱才可发布",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "直接解决图谱不完整且无法保证学习入口质量的问题",
+      "confirmed": true
+    },
+    {
+      "id": "RQ-G02",
+      "title": "图谱质量事实对学习者可见",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["RQ-G01"],
+      "priority": "P0",
+      "reason": "让版本、检查结果和问题可审计，避免黑盒发布",
+      "confirmed": true
+    },
+    {
+      "id": "RQ-G03",
+      "title": "节点变更必须生成重审计的新版本",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["RQ-G01", "RQ-G02"],
+      "priority": "P0",
+      "reason": "避免增删改拆绕过首次发布门禁并让审计事实过期",
+      "confirmed": true
+    },
+    {
+      "id": "RQ-G04",
+      "title": "历史图谱可非破坏性回滚",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["RQ-G03"],
+      "priority": "P0",
+      "reason": "版本治理必须能够恢复可用图，同时保留新版本、证据和进度",
+      "confirmed": true
+    }
+  ]
+}

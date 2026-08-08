@@ -1,0 +1,33 @@
+{
+  "story_id": "US-001",
+  "commit": "working-tree@87d8f76 (uncommitted; pre-existing staged changes preserved)",
+  "red": {
+    "command": "python3 -m unittest knowledge_graph_learning.backend.tests.test_graph_quality",
+    "exit_code": 1,
+    "at": "2026-08-08T18:04:18+08:00",
+    "reason": "graph_quality 模块尚不存在；同时 API 缺 graph_version/graph_audit，Flutter 缺 graph-quality-audit 卡。API Red 已使用 uv 环境复核为 KeyError，而非依赖故障。"
+  },
+  "green": {
+    "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_graph_quality knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_create_goal_returns_persisted_graph_audit knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_critical_graph_audit_failure_leaves_no_domain_records",
+    "exit_code": 0,
+    "at": "2026-08-08T18:07:30+08:00"
+  },
+  "refactor": {
+    "command": "uv run python -m unittest discover -s knowledge_graph_learning/backend/tests -p 'test_*.py'",
+    "exit_code": 0,
+    "at": "2026-08-08T18:12:40+08:00"
+  },
+  "integration_smoke": {
+    "command": "/Users/wanglongxiang/development/flutter/bin/flutter test",
+    "exit_code": 0,
+    "at": "2026-08-08T18:12:40+08:00"
+  },
+  "acceptance": [
+    {"ac_id": "AC1", "pass": true, "evidence": "首次生成保存 active GraphVersion 1 和 passed GraphAudit"},
+    {"ac_id": "AC2", "pass": true, "evidence": "缺少叶子掌握量规返回 GRAPH_AUDIT_FAILED/422"},
+    {"ac_id": "AC3", "pass": true, "evidence": "Flutter widget 测试确认审计卡、版本和分数可见"},
+    {"ac_id": "AC4", "pass": true, "evidence": "API 测试确认发布节点均带 objective，模型 schema 包含富字段"},
+    {"ac_id": "AC5", "pass": true, "evidence": "旧响应解析为 legacy version + unavailable audit，Flutter 全量测试通过"},
+    {"ac_id": "AC2-反", "pass": true, "evidence": "Critical 审计失败后 learning 目录没有任何 JSON 领域记录"}
+  ]
+}

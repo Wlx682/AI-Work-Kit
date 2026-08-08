@@ -1,0 +1,46 @@
+{
+  "commit": "working-tree@87d8f76 + snapshot:8e6003465321ed08",
+  "executed_at": "2026-08-08T18:49:00+08:00",
+  "all_scope_stories_completed": true,
+  "approved_test_plan": "Plans/自动化测试/2026-08-08-图谱质量审计-集成测试计划.md",
+  "test_case_index_sha256": "f0807209cbad10be8103313a59d6d08c2790bd0913928c9edef7828a49e17808",
+  "test_cases": [
+    {"id": "IT-001", "status": "passed"},
+    {"id": "IT-002", "status": "passed"},
+    {"id": "IT-003", "status": "passed"},
+    {"id": "IT-004", "status": "passed"},
+    {"id": "IT-005", "status": "passed"},
+    {"id": "IT-006", "status": "passed"},
+    {"id": "IT-007", "status": "passed"},
+    {"id": "IT-008", "status": "passed"},
+    {"id": "IT-009", "status": "passed"}
+  ],
+  "suites": [
+    {
+      "name": "backend-full",
+      "command": "uv run python -m unittest discover -s knowledge_graph_learning/backend/tests -t .",
+      "exit_code": 0,
+      "summary": "136 tests passed"
+    },
+    {
+      "name": "backend-compile",
+      "command": "python3 -m compileall -q knowledge_graph_learning/backend",
+      "exit_code": 0,
+      "summary": "all backend modules compiled"
+    },
+    {
+      "name": "flutter-full",
+      "command": "flutter test",
+      "exit_code": 0,
+      "summary": "31 tests passed; 1 opt-in live DeepSeek test skipped"
+    },
+    {
+      "name": "flutter-analyze",
+      "command": "flutter analyze",
+      "exit_code": 0,
+      "summary": "no issues found"
+    }
+  ],
+  "defects": [],
+  "conclusion": "US-001～US-003 全部 P0 AC 通过，图谱质量审计、版本演进与非破坏性回滚集成闭环可进入 Done。"
+}

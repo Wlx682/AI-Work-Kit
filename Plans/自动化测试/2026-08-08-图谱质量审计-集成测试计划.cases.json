@@ -1,0 +1,129 @@
+{
+  "target_commit": "working-tree@87d8f76 + snapshot:8e6003465321ed08",
+  "cases": [
+    {
+      "id": "IT-001",
+      "title": "合格课程发布 active v1 并展示完整审计事实",
+      "priority": "P0",
+      "type": "cross-story",
+      "preconditions": ["Scripted intelligence 返回 10 节点严格树和富字段"],
+      "test_data": ["学习目标：Agent Runtime"],
+      "steps": ["调用创建课程 API", "重新读取课程", "在 Flutter 图谱页渲染审计卡"],
+      "expected_results": ["active GraphVersion=1 且 audit=passed", "节点包含 objective 等富字段", "审计版本、得分、检查项可见"],
+      "automation": "automated",
+      "suite": "backend-and-flutter",
+      "ac_refs": [
+        {"story_id": "US-001", "ac_id": "AC1"},
+        {"story_id": "US-001", "ac_id": "AC3"},
+        {"story_id": "US-001", "ac_id": "AC4"}
+      ]
+    },
+    {
+      "id": "IT-002",
+      "title": "Critical 候选图拒绝且没有半成品领域写入",
+      "priority": "P0",
+      "type": "negative",
+      "preconditions": ["模型输出叶子缺少掌握量规或活动能力"],
+      "test_data": ["低质量 10 节点图谱"],
+      "steps": ["调用创建课程 API", "检查错误码", "扫描 learning JSON 领域记录"],
+      "expected_results": ["返回 GRAPH_AUDIT_FAILED/422", "不存在 Goal/Course/Node/GraphVersion 残留"],
+      "automation": "automated",
+      "suite": "backend-contract",
+      "ac_refs": [
+        {"story_id": "US-001", "ac_id": "AC2"},
+        {"story_id": "US-001", "ac_id": "AC2-反"}
+      ]
+    },
+    {
+      "id": "IT-003",
+      "title": "旧课程响应兼容为 legacy 和 unavailable",
+      "priority": "P0",
+      "type": "compatibility",
+      "preconditions": ["HTTP 响应不包含 graph_version 与 graph_audit"],
+      "test_data": ["最小旧版 Course JSON"],
+      "steps": ["Flutter 解析旧响应", "打开图谱工作区"],
+      "expected_results": ["页面不崩溃", "版本为 legacy，审计为 unavailable"],
+      "automation": "automated",
+      "suite": "flutter-contract",
+      "ac_refs": [{"story_id": "US-001", "ac_id": "AC5"}]
+    },
+    {
+      "id": "IT-004",
+      "title": "获批增删改拆发布重新审计的下一版本",
+      "priority": "P0",
+      "type": "cross-story",
+      "preconditions": ["active v1", "Proposal 候选图通过质量门禁"],
+      "test_data": ["split/update/delete 操作"],
+      "steps": ["生成 Proposal", "人工批准", "读取课程与审计"],
+      "expected_results": ["返回 active v2", "v2 audit=passed 且指向同一版本", "新增富节点已持久化，v1=superceded"],
+      "automation": "automated",
+      "suite": "backend-and-flutter",
+      "ac_refs": [{"story_id": "US-002", "ac_id": "AC6"}]
+    },
+    {
+      "id": "IT-005",
+      "title": "低质量节点变更在 Runtime 写入前被拒绝",
+      "priority": "P0",
+      "type": "negative",
+      "preconditions": ["active v1", "新叶子缺少 objective/rubric/activity capabilities"],
+      "test_data": ["不可审计 split Proposal"],
+      "steps": ["提交节点拆分", "检查错误码与版本", "检查 Proposal 领域文件"],
+      "expected_results": ["返回 GRAPH_AUDIT_FAILED/422", "active 图谱与版本不变", "没有 Proposal 持久化"],
+      "automation": "automated",
+      "suite": "backend-contract",
+      "ac_refs": [{"story_id": "US-002", "ac_id": "AC7"}]
+    },
+    {
+      "id": "IT-006",
+      "title": "旧 base version 审批不会覆盖当前图谱",
+      "priority": "P0",
+      "type": "concurrency",
+      "preconditions": ["Proposal 基于 v1", "审批前 active 已变更为 v2"],
+      "test_data": ["stale base_graph_version_id"],
+      "steps": ["创建 v1 Proposal", "模拟 active 版本漂移", "批准旧 Proposal"],
+      "expected_results": ["返回 GRAPH_VERSION_CONFLICT/409", "apply_graph_update 未执行", "v2 保持 active"],
+      "automation": "automated",
+      "suite": "backend-contract",
+      "ac_refs": [{"story_id": "US-002", "ac_id": "AC8"}]
+    },
+    {
+      "id": "IT-007",
+      "title": "每个发布版本保存可校验的完整快照",
+      "priority": "P0",
+      "type": "persistence",
+      "preconditions": ["v1 和 v2 均发布成功"],
+      "test_data": ["10 节点 v1、12 节点 v2"],
+      "steps": ["读取版本历史", "分别加载 GraphSnapshot", "重算结构与 content hash"],
+      "expected_results": ["历史按 2、1 降序返回", "两个快照包含完整富节点和边", "快照 hash 与 GraphVersion 一致"],
+      "automation": "automated",
+      "suite": "backend-persistence",
+      "ac_refs": [{"story_id": "US-003", "ac_id": "AC9"}]
+    },
+    {
+      "id": "IT-008",
+      "title": "v2 非破坏性回滚 v1 并保留进度和后续版本",
+      "priority": "P0",
+      "type": "recovery",
+      "preconditions": ["v1/v2 快照完整且审计 passed", "v1 节点已有进度 73"],
+      "test_data": ["目标版本 v1"],
+      "steps": ["从图谱页加载历史", "恢复 v1", "读取 v2 快照和节点进度", "再次发布节点更新"],
+      "expected_results": ["v1 重新 active 并恢复 10 节点", "进度 73 和 v2 快照保留", "后续发布版本号为 v3", "Flutter 刷新为 v1"],
+      "automation": "automated",
+      "suite": "backend-and-flutter",
+      "ac_refs": [{"story_id": "US-003", "ac_id": "AC10"}]
+    },
+    {
+      "id": "IT-009",
+      "title": "非法或损坏的历史版本回滚保持 active 图谱不变",
+      "priority": "P0",
+      "type": "negative-recovery",
+      "preconditions": ["active v2"],
+      "test_data": ["跨课程版本", "当前版本", "空节点损坏快照"],
+      "steps": ["分别请求三类非法回滚", "重新读取 active Course"],
+      "expected_results": ["返回 INVALID_GRAPH_ROLLBACK 或 GRAPH_SNAPSHOT_INVALID", "active v2 节点、边和版本完全不变"],
+      "automation": "automated",
+      "suite": "backend-contract",
+      "ac_refs": [{"story_id": "US-003", "ac_id": "AC11"}]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-08T18:47:00+08:00",
+  "target_commit": "working-tree@87d8f76 + snapshot:8e6003465321ed08",
+  "case_index_sha256": "f0807209cbad10be8103313a59d6d08c2790bd0913928c9edef7828a49e17808",
+  "unresolved_comments": 0,
+  "review_summary": "9 个自动化用例覆盖 US-001～US-003 的全部 P0 AC；包含主路径、兼容、并发、持久化、回滚与损坏快照异常。"
+}

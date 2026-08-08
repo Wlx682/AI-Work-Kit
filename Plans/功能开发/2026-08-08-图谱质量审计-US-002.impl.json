@@ -1,0 +1,46 @@
+{
+  "story_id": "US-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/knowledge_graph_learning",
+  "codebase_read": [
+    {"path": "backend/application/service.py", "reason": "现有 Proposal、HITL 和 apply_graph_update 路径"},
+    {"path": "backend/application/intelligence.py", "reason": "ProposalNodeDraft 与变更 schema"},
+    {"path": "backend/application/graph_quality.py", "reason": "US-001 的确定性质量门禁和内容 hash"},
+    {"path": "backend/domain/contracts.py", "reason": "GraphVersion/Audit Repository 与图谱变更持久化"},
+    {"path": "backend/orchestration/runtime.py", "reason": "人工确认后工具调用与错误传播边界"},
+    {"path": "app/lib/src/learning_controller.dart", "reason": "确认后使用服务端返回 course 更新 UI"},
+    {"path": "app/lib/src/nexus_app.dart", "reason": "现有审计卡随 course 自动刷新"},
+    {"path": "backend/tests/test_learning_api.py", "reason": "完整 Proposal→Review→Apply 集成测试"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "backend/application/intelligence.py", "purpose": "为新增节点 Proposal 增加可审计富字段", "layer": "Application Port"},
+      {"path": "backend/infrastructure/deepseek_intelligence.py", "purpose": "要求变更 Proposal 生成富节点字段", "layer": "Infrastructure Adapter"},
+      {"path": "backend/application/service.py", "purpose": "候选图预审计、版本冲突检查、发布 vN+1", "layer": "Application"},
+      {"path": "backend/orchestration/runtime.py", "purpose": "只读获取待审批 Proposal 以便恢复前检查版本冲突", "layer": "Orchestration"},
+      {"path": "backend/tests/test_learning_api.py", "purpose": "覆盖新版本、拒绝和冲突", "layer": "Backend Test"},
+      {"path": "backend/tests/test_learning_intelligence.py", "purpose": "覆盖 Proposal 富节点解析", "layer": "Backend Test"},
+      {"path": "app/test/test_support.dart", "purpose": "确认后返回 version 2 fixture", "layer": "Client Test"},
+      {"path": "app/test/learning_controller_test.dart", "purpose": "验证确认后审计卡数据切换到 version 2", "layer": "Client Test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Flutter → HTTP/Application → Domain Repository；候选审计在 Application 内完成",
+    "dependency_rule": "Runtime 工具调用前必须通过无副作用预审计；Infrastructure 只生成 schema，不能决定发布"
+  },
+  "tests": {
+    "red": [
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_approved_graph_operation_publishes_reaudited_next_version"},
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_low_quality_graph_operation_is_rejected_without_version_change"},
+      {"path": "app/test/learning_controller_test.dart", "command": "flutter test test/learning_controller_test.dart --plain-name 'approved graph operation refreshes graph version audit'"}
+    ]
+  },
+  "risks": [
+    "LangGraph Runtime 当前把工具异常归一为字符串，需在进入 Runtime 前预审计以保留业务错误码",
+    "本 Story 只保存版本元数据和当前图，不具备历史节点快照回滚能力",
+    "相关文件已有暂存改动，只允许增量语义修改"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

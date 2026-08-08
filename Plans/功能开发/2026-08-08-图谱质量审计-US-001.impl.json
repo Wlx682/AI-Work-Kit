@@ -1,0 +1,53 @@
+{
+  "story_id": "US-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/knowledge_graph_learning",
+  "codebase_read": [
+    {"path": "backend/application/intelligence.py", "reason": "现有 CourseGraphDraft、解析和结构门禁"},
+    {"path": "backend/application/service.py", "reason": "create_goal 的生成、领域写入和 API view"},
+    {"path": "backend/domain/contracts.py", "reason": "领域实体与 JSON Repository 契约"},
+    {"path": "backend/infrastructure/deepseek_intelligence.py", "reason": "生产图谱生成 schema 与 prompt"},
+    {"path": "app/lib/src/models.dart", "reason": "Flutter 课程和节点响应模型"},
+    {"path": "app/lib/src/nexus_app.dart", "reason": "图谱页 Header 和用户可见入口"},
+    {"path": "backend/tests/test_learning_api.py", "reason": "create_goal 与无残留写入集成测试"},
+    {"path": "app/test/widget_test.dart", "reason": "图谱页 widget 验收测试"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "backend/application/intelligence.py", "purpose": "扩展富节点结构与解析", "layer": "Application Port"},
+      {"path": "backend/application/service.py", "purpose": "执行审计、阻止写入并返回版本/审计", "layer": "Application"},
+      {"path": "backend/domain/contracts.py", "purpose": "持久化富节点、GraphVersion 和 GraphAudit", "layer": "Domain/Data Contract"},
+      {"path": "backend/infrastructure/deepseek_intelligence.py", "purpose": "要求模型生成可教可评字段", "layer": "Infrastructure Adapter"},
+      {"path": "backend/tests/test_learning_api.py", "purpose": "覆盖发布、拒绝和无残留", "layer": "Backend Test"},
+      {"path": "backend/tests/test_learning_intelligence.py", "purpose": "覆盖富节点解析", "layer": "Backend Test"},
+      {"path": "app/lib/src/models.dart", "purpose": "解析版本、审计和富节点", "layer": "Client Data"},
+      {"path": "app/lib/src/nexus_app.dart", "purpose": "展示图谱审计卡", "layer": "Client Presentation"},
+      {"path": "app/lib/l10n/app_zh.arb", "purpose": "审计 UI 中文文案", "layer": "Client Localization"},
+      {"path": "app/lib/l10n/app_en.arb", "purpose": "审计 UI 英文文案", "layer": "Client Localization"},
+      {"path": "app/test/test_support.dart", "purpose": "提供审计模型 fixture", "layer": "Client Test"},
+      {"path": "app/test/widget_test.dart", "purpose": "验证审计卡可见", "layer": "Client Test"}
+    ],
+    "create": [
+      {"path": "backend/application/graph_quality.py", "reason": "隔离确定性质量规则", "naming_basis": "架构 Graph Quality 模块", "layer": "Application"},
+      {"path": "backend/tests/test_graph_quality.py", "reason": "质量规则独立 Red 测试", "naming_basis": "对应 graph_quality 模块", "layer": "Backend Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Flutter Presentation/Data → HTTP → Application → Domain/Repository；Infrastructure 仅实现智能端口",
+    "dependency_rule": "UI 不直连持久化；质量规则不依赖 HTTP/Flutter/DeepSeek；Application 只接收 schema-valid draft 后写领域数据"
+  },
+  "tests": {
+    "red": [
+      {"path": "backend/tests/test_graph_quality.py", "command": "python3 -m unittest knowledge_graph_learning.backend.tests.test_graph_quality"},
+      {"path": "backend/tests/test_learning_api.py", "command": "python3 -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_create_goal_returns_persisted_graph_audit"},
+      {"path": "app/test/widget_test.dart", "command": "flutter test test/widget_test.dart --plain-name 'graph workspace shows quality audit'"}
+    ]
+  },
+  "risks": [
+    "相关文件已有用户暂存改动，必须增量修改且不覆盖",
+    "旧运行时课程缺少审计字段，Flutter 解析必须兼容",
+    "本 Story 不处理节点操作后的新版本，不能把初始审计误当作变更后审计"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
