@@ -19,7 +19,6 @@ DEFAULT_WORKFLOWS = [
     "story-split-only",
     "computer-mgmt",
     "learning-loop",
-    "creative-incubation",
     "client-dev",
 ]
 ROUTE_PHRASES = {
@@ -29,7 +28,6 @@ ROUTE_PHRASES = {
     "story-split-only": "这个技术方案只拆 Story",
     "computer-mgmt": "帮我清理电脑缓存",
     "learning-loop": "我要学习 agent 开发",
-    "creative-incubation": "帮我运行一轮创意捕获与孵化",
     "client-dev": "全流程开发一下支付收银台",
 }
 

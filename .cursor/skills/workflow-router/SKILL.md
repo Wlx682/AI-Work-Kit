@@ -1,6 +1,6 @@
 ---
 name: workflow-router
-description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、Story 拆分、用户故事拆分、合代码、合并分支、解决合并冲突、帮我清理电脑、做界面、修 bug、我要学习、创意捕获、孵化创意、副业探索、准备学习资料、学习复盘、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做具体阶段工作。
+description: 自然语言工作流入口。用户说全流程开发、启动项目、做个客户端功能、Story 拆分、用户故事拆分、合代码、合并分支、解决合并冲突、帮我清理电脑、做界面、修 bug、我要学习、准备学习资料、学习复盘、workflow=xxx 时触发；只负责选择具体 workflow 蓝图、确保 Epic/看板启动、运行 workflow-status，必要时查看 workflow-gate，不做具体阶段工作。
 ---
 
 # 工作流路由器
@@ -17,8 +17,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 - Story 拆分、用户故事拆分、方案拆成用户故事、只拆 Story
 - 合代码、合并代码、合分支、merge 分支、把这个分支合进去、解决合并冲突
 - 我要学习、我想学习、帮我准备资料、学完实践、实践完验证、学习复盘、学习记录、总结知识图谱
-- 创意捕获、孵化创意、洞察晶体、创意快闪、副业探索、创意枯竭、最小真实实验
-- `workflow=client-dev`、`workflow=merge-code`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=story-split-only`、`workflow=learning-loop`、`workflow=creative-incubation`
+- `workflow=client-dev`、`workflow=merge-code`、`workflow=computer-mgmt`、`workflow=ui-change`、`workflow=bugfix`、`workflow=story-split-only`、`workflow=learning-loop`
 
 ## 不触发
 
@@ -43,7 +42,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 1. 选择蓝图：
    - 显式 `workflow=xxx` 优先
    - 有 Epic 时读 Epic frontmatter `workflow:`
-   - 否则由宿主模型按用户语义、蓝图 `label/description` 与 `triggerHints` 做高置信判断；学习型请求优先考虑 `learning-loop`，创意/副业探索型请求优先考虑 `creative-incubation`，不要借 `client-dev`
+   - 否则由宿主模型按用户语义、蓝图 `label/description` 与 `triggerHints` 做高置信判断；学习型请求优先考虑 `learning-loop`
    - `scripts/workflow-router-check.py` 只作为触发词回归检查与低成本兜底，不是唯一判断来源
    - 无法命中具体 workflow 时，阻塞确认
    - 若用户显式写了不存在的 `workflow=xxx`，先阻塞确认，不要静默回退
@@ -55,7 +54,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 可自动修复的本地 hook 用 `python3 scripts/workflow-install.py apply --workflow <name>`；Skill 全局同步需用户明确授权再加 `--sync-skills`
 3. 启动看板:
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
-   - `usesEpic=true` 的蓝图必须先有 Epic；`client-dev` 用 `Templates/Epic模板-client-dev.md`，`learning-loop` 用 `Templates/Epic模板-learning-loop.md`，`creative-incubation` 用 `Templates/Epic模板-创意捕获与孵化.md`
+   - `usesEpic=true` 的蓝图必须先有 Epic；`client-dev` 用 `Templates/Epic模板-client-dev.md`，`learning-loop` 用 `Templates/Epic模板-learning-loop.md`
    - 已有/刚创建 Epic：`bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`
    - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
 4. 看状态：
@@ -64,7 +63,6 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`
    - 无 Epic 的轻量工作流：`python3 scripts/workflow-status.py --workflow <name>`；若缺当前阶段 plan，先 `python3 scripts/workflow-plan-init.py --workflow <name> --title <任务标题>`，再重新 status；代码/分支合并使用 `merge-code`
    - 学习循环：`python3 scripts/workflow-status.py --workflow learning-loop --epic Plans/Epic/xxx.md`
-   - 创意孵化：`python3 scripts/workflow-status.py --workflow creative-incubation --epic Plans/Epic/xxx.md`
    - 需要底层字段时再跑 `bash scripts/workflow-gate.sh --workflow <name> --epic Plans/Epic/xxx.md --json`
 5. 根据 `recommended_skill` 调用真正阶段 Skill；若 `usesEpic=true` 的蓝图阻塞为缺 Epic，必须先调用 `template-generator` 创建对应 Epic，然后重新 `boot --epic` 打开具体看板。
    - 当前阶段缺子 Plan 时只创建当前阶段，不使用 `--all`；`usesEpic=true` 传 `--epic`，`usesEpic=false` 传 `--title`。

@@ -1439,7 +1439,7 @@ TEST_SUITE_CATALOG = [
         "level_label": "P0 专属契约回归",
         "priority": "P0",
         "name": "工作流专属回归契约",
-        "command": "python3 scripts/workflow-dedicated-regression-gate.py bugfix ui-change story-split-only computer-mgmt learning-loop creative-incubation",
+        "command": "python3 scripts/workflow-dedicated-regression-gate.py bugfix ui-change story-split-only computer-mgmt learning-loop",
         "argv": [
             "python3",
             "scripts/workflow-dedicated-regression-gate.py",
@@ -1448,9 +1448,8 @@ TEST_SUITE_CATALOG = [
             "story-split-only",
             "computer-mgmt",
             "learning-loop",
-            "creative-incubation",
         ],
-        "scope": "bugfix / ui-change / story-split-only / computer-mgmt / learning-loop / creative-incubation 的工作流特有阶段链、路由与门禁契约",
+        "scope": "bugfix / ui-change / story-split-only / computer-mgmt / learning-loop 的工作流特有阶段链、路由与门禁契约",
         "signal": "AI 工作流自身",
     },
     {

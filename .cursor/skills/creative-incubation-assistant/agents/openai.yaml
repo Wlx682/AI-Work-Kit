@@ -1,4 +1,0 @@
-interface:
-  display_name: "创意孵化助理"
-  short_description: "贯通信息觅食、洞察结晶、创意重组与真实世界实验反馈闭环"
-  default_prompt: "使用 $creative-incubation-assistant 运行一轮创意捕获、重组与低成本验证。"

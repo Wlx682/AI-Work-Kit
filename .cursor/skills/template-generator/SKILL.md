@@ -30,7 +30,6 @@ description: >-
 | 排查 | `Templates/排查问题模板.md` | `Plans/Bug排查/` |
 | Epic（client-dev） | `Templates/Epic模板-client-dev.md` | `Plans/Epic/` |
 | Epic（learning-loop） | `Templates/Epic模板-learning-loop.md` | `Plans/Epic/` |
-| Epic（creative-incubation） | `Templates/Epic模板-创意捕获与孵化.md` | `Plans/Epic/` |
 | 技术方案 | `Templates/技术方案模板.md` | `Plans/技术方案/` |
 | 功能开发 | `Templates/客户端功能开发模板.md` | `Plans/功能开发/` |
 | 仅 UI | 同上（含业务逻辑=否） | `Plans/功能开发/` |
