@@ -1,0 +1,1 @@
+{"type": "gate_fail", "stage": "reproduce", "workflow": "bugfix", "project": "图谱来源引用缺失导致质量门禁失败", "epic": null, "child_plan": null, "reason": "复现与影响范围：子 Plan 未创建（Plans/Bug排查/）", "git_commit": "c4de311863ced405dab0655e74b1db517337f05c", "plan_snapshot": null, "created_at": "2026-08-08T19:55:18+08:00"}

@@ -1,0 +1,65 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/knowledge_graph_learning",
+  "codebase_read": [
+    {"path": "backend/application/intelligence.py", "reason": "确认智能端口、严格图谱 validator 与测试替身"},
+    {"path": "backend/application/service.py", "reason": "确认生成、审计、发布、变更、回滚和错误转换编排"},
+    {"path": "backend/application/graph_quality.py", "reason": "确认确定性门禁、finding 和 score 生成"},
+    {"path": "backend/infrastructure/deepseek_intelligence.py", "reason": "确认生产 Adapter 的解析、重试和 Debug 记录"},
+    {"path": "backend/infrastructure/debug_events.py", "reason": "确认 Payload、脱敏和事件关联实现"},
+    {"path": "backend/domain/contracts.py", "reason": "确认 JSON Repository 多文件写入与版本实体"},
+    {"path": "backend/interfaces/http_api.py", "reason": "确认错误 envelope、Debug 路由和请求边界"},
+    {"path": "app/lib/src/learning_api.dart", "reason": "确认错误解析和 Debug API 客户端"},
+    {"path": "app/lib/src/learning_controller.dart", "reason": "确认错误与 Debug 状态进入 UI 的路径"},
+    {"path": "app/lib/src/nexus_app.dart", "reason": "确认状态 Banner、审计卡和 Debug 页面入口"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "backend/application/intelligence.py", "purpose": "删除静默图谱修复，增加显式 revise 端口和测试替身", "layer": "Application Port"},
+      {"path": "backend/application/graph_quality.py", "purpose": "让结构检查来自统一严格发布门禁并提供可序列化审计详情", "layer": "Application Quality"},
+      {"path": "backend/application/service.py", "purpose": "成为 generate/audit/revise/publish 唯一编排者，统一 strict gate、事务和结构化错误", "layer": "Application"},
+      {"path": "backend/infrastructure/deepseek_intelligence.py", "purpose": "仅执行单次模型调用和 schema 解析，实现基于 draft/findings 的 revise", "layer": "Infrastructure Adapter"},
+      {"path": "backend/domain/contracts.py", "purpose": "为 JSON Repository 增加原子单文件写、可恢复多文件 transaction", "layer": "Repository"},
+      {"path": "backend/infrastructure/debug_events.py", "purpose": "默认摘要、显式详细模式、清除、trace/span 上下文", "layer": "Observability"},
+      {"path": "backend/interfaces/http_api.py", "purpose": "贯穿 trace context，返回错误 details，增加 Debug 设置与清除路由", "layer": "HTTP Adapter"},
+      {"path": "backend/tests/test_learning_intelligence.py", "purpose": "Red：Adapter 不审计、不静默修复、显式 revise", "layer": "Backend Test"},
+      {"path": "backend/tests/test_learning_api.py", "purpose": "Red：统一重试上限、strict gate、事务故障和结构化 finding", "layer": "Backend Test"},
+      {"path": "backend/tests/test_debug_events.py", "purpose": "Red：默认摘要、详细模式、清除和 trace/span", "layer": "Backend Test"},
+      {"path": "app/lib/src/models.dart", "purpose": "解析 Debug payload policy/trace 与审计 finding", "layer": "Flutter Data"},
+      {"path": "app/lib/src/learning_api.dart", "purpose": "保留错误 details，增加 Debug 设置与清除 API", "layer": "Flutter Data"},
+      {"path": "app/lib/src/learning_controller.dart", "purpose": "暴露审计错误详情和 Debug 隐私控制", "layer": "Flutter Application"},
+      {"path": "app/lib/src/localization/ui_message.dart", "purpose": "携带结构化 finding 展示参数", "layer": "Flutter Presentation Contract"},
+      {"path": "app/lib/src/localization/message_localizer.dart", "purpose": "生成可行动的多行审计失败信息", "layer": "Flutter Localization"},
+      {"path": "app/lib/src/nexus_app.dart", "purpose": "Debug 详细 Payload 开关、隐私提示、清除按钮和更多类别", "layer": "Flutter Presentation"},
+      {"path": "app/lib/l10n/app_zh.arb", "purpose": "新增 Debug 隐私控制中文文案", "layer": "Flutter Localization"},
+      {"path": "app/lib/l10n/app_en.arb", "purpose": "新增 Debug 隐私控制英文文案", "layer": "Flutter Localization"},
+      {"path": "app/test/learning_api_test.dart", "purpose": "Red：错误 details 与 Debug 控制 API", "layer": "Flutter Test"},
+      {"path": "app/test/learning_controller_test.dart", "purpose": "Red：finding 与 Debug 控制状态", "layer": "Flutter Test"},
+      {"path": "app/test/widget_test.dart", "purpose": "Red：可行动错误和 Debug 隐私控件", "layer": "Flutter Test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Flutter → HTTP → Application(generate/audit/revise/govern) → Domain/Repository；Infrastructure 仅实现模型与存储技术细节",
+    "dependency_rule": "DeepSeek Adapter 不依赖 Graph Quality；所有发布入口复用 Application strict gate；Debug 内容策略独立于调用方；Repository transaction 不泄漏到 Flutter"
+  },
+  "tests": {
+    "red": [
+      {"path": "backend/tests/test_learning_intelligence.py", "command": "uv run python -m unittest backend.tests.test_learning_intelligence"},
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest backend.tests.test_learning_api"},
+      {"path": "backend/tests/test_debug_events.py", "command": "uv run python -m unittest backend.tests.test_debug_events"},
+      {"path": "app/test/learning_api_test.dart", "command": "flutter test test/learning_api_test.dart"},
+      {"path": "app/test/learning_controller_test.dart", "command": "flutter test test/learning_controller_test.dart"},
+      {"path": "app/test/widget_test.dart", "command": "flutter test test/widget_test.dart"}
+    ]
+  },
+  "risks": [
+    "工作区已有未提交改动，必须逐文件增量修改",
+    "严格门禁会使旧测试中允许删除后单子节点的场景改为拒绝，需要同步正确业务预期",
+    "Repository 事务涉及目录切换，必须覆盖异常与重启恢复",
+    "Debug 默认摘要会改变既有 UI fixture 和事件详情断言",
+    "Flutter ARB 修改后必须重新生成 localization 文件"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

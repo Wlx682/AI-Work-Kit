@@ -1,0 +1,40 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/knowledge_graph_learning",
+  "codebase_read": [
+    {"path": "backend/application/graph_quality.py", "reason": "确认 finding 生成顺序和 severity"},
+    {"path": "backend/application/service.py", "reason": "确认 generate/audit/revise 的修订输入"},
+    {"path": "backend/infrastructure/deepseek_intelligence.py", "reason": "确认图谱生成与修订提示词"},
+    {"path": "app/lib/src/localization/message_localizer.dart", "reason": "确认前端固定截取前五条 finding"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "backend/application/graph_quality.py", "purpose": "提供 publish_allowed、blocking/advisory 分区和稳定 ordered findings 的统一质量决策契约", "layer": "Application Quality"},
+      {"path": "backend/application/service.py", "purpose": "只消费质量决策契约，修订时传递 blocking findings 并原样序列化决策详情", "layer": "Application"},
+      {"path": "backend/infrastructure/deepseek_intelligence.py", "purpose": "明确修订聚焦阻断项且保留已有来源", "layer": "Infrastructure Adapter"},
+      {"path": "backend/tests/test_graph_quality.py", "purpose": "Red：critical finding 必须排在 warning 前", "layer": "Backend Test"},
+      {"path": "backend/tests/test_learning_api.py", "purpose": "Red：修订只接收 critical finding", "layer": "Backend Test"},
+      {"path": "app/lib/src/localization/message_localizer.dart", "purpose": "严重问题优先展示并附带问题数量", "layer": "Flutter Presentation"},
+      {"path": "app/test/widget_test.dart", "purpose": "Red：warning 不得遮蔽 critical", "layer": "Flutter Test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Flutter Presentation -> HTTP details -> Application Quality -> Intelligence Port -> DeepSeek Adapter",
+    "dependency_rule": "Graph Quality 是发布决策唯一所有者；Application 消费 blocking/advisory 分区；Adapter 只执行明确的修订；UI 只展示后端决策，不重新决定是否发布"
+  },
+  "tests": {
+    "red": [
+      {"path": "backend/tests/test_graph_quality.py", "command": "uv run python -m unittest backend.tests.test_graph_quality"},
+      {"path": "backend/tests/test_learning_api.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_api.LearningApiServiceTests.test_quality_revision_receives_only_blocking_findings_and_uses_at_most_two_calls"},
+      {"path": "app/test/widget_test.dart", "command": "flutter test test/widget_test.dart"}
+    ]
+  },
+  "risks": [
+    "模型生成仍具有随机性，修复必须提高修订聚焦度而不是绕过门禁",
+    "前端错误文案变更需保持中英文已有本地化主提示",
+    "工作区已有未提交改动，必须增量修改"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

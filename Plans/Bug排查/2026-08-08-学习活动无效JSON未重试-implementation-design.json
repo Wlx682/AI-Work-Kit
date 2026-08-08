@@ -1,0 +1,46 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git",
+  "codebase_read": [
+    {"path": "knowledge_graph_learning/backend/infrastructure/deepseek_intelligence.py", "reason": "确认 App Adapter 的异常翻译与结构化输出重试边界"},
+    {"path": "knowledge_graph_learning/backend/tests/test_learning_intelligence.py", "reason": "确认现有 schema 重试和 transport failure 测试"},
+    {"path": "knowledge_graph_learning/app/test/real_http_flow_test.dart", "reason": "确认真实 DeepSeek 五视图失败位置与诊断输出"},
+    {"path": "agent/infrastructure/llm.py", "reason": "确认共享 JSON parser 会误截断字段内 Markdown 代码围栏"},
+    {"path": "agent/tests/test_llm.py", "reason": "确认共享解析器现有 repair 测试和新增回归落点"}
+    ,{"path": "knowledge_graph_learning/app/lib/src/models.dart", "reason": "确认 RuntimeReview 忽略 evidence 响应中的 course"}
+    ,{"path": "knowledge_graph_learning/app/lib/src/learning_controller.dart", "reason": "确认 Evidence 成功后未刷新当前课程快照"}
+    ,{"path": "knowledge_graph_learning/app/test/learning_controller_test.dart", "reason": "确认 Controller 状态同步回归测试落点"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "knowledge_graph_learning/backend/infrastructure/deepseek_intelligence.py", "purpose": "把 chat_json 的无效 JSON 错误映射为 INVALID_INTELLIGENCE_OUTPUT，并让 validated call 重试一次", "layer": "Infrastructure Adapter"},
+      {"path": "knowledge_graph_learning/backend/tests/test_learning_intelligence.py", "purpose": "Red：无效 JSON 后完整重新生成一次；Timeout 仍不重试", "layer": "Backend Test"},
+      {"path": "knowledge_graph_learning/app/test/real_http_flow_test.dart", "purpose": "保留真实失败的错误码和后端输出诊断", "layer": "Integration Test"},
+      {"path": "agent/infrastructure/llm.py", "purpose": "仅剥离真正包裹整个响应的 Markdown 围栏，保留 JSON 字符串内部代码块", "layer": "Shared LLM Infrastructure"},
+      {"path": "agent/tests/test_llm.py", "purpose": "Red：合法 JSON 字符串内代码围栏必须原样解析；外层围栏仍兼容", "layer": "Shared Test"}
+      ,{"path": "knowledge_graph_learning/app/lib/src/models.dart", "purpose": "RuntimeReview 解析并携带 evidence 响应中的更新课程", "layer": "Flutter Data"}
+      ,{"path": "knowledge_graph_learning/app/lib/src/learning_controller.dart", "purpose": "Evidence 成功后立即替换课程快照和节点进度", "layer": "Flutter Application"}
+      ,{"path": "knowledge_graph_learning/app/test/learning_controller_test.dart", "purpose": "Red：提交 Evidence 后即使没有 Proposal 也更新课程掌握度", "layer": "Flutter Test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Shared LLM parser -> App DeepSeek Adapter -> Application use case -> Flutter controller",
+    "dependency_rule": "共享客户端负责单响应语法修复；App Adapter 负责把无效结构化输出翻译成领域错误并实施有上限的重新生成；传输错误不得伪装成输出错误"
+  },
+  "tests": {
+    "red": [
+      {"path": "knowledge_graph_learning/backend/tests/test_learning_intelligence.py", "command": "uv run python -m unittest knowledge_graph_learning.backend.tests.test_learning_intelligence.DeepSeekLearningIntelligenceTests.test_invalid_json_activity_is_regenerated_once"},
+      {"path": "agent/tests/test_llm.py", "command": "python -m unittest agent.tests.test_llm.ChatJsonTests.test_preserves_markdown_fence_inside_json_string"},
+      {"path": "knowledge_graph_learning/app/test/real_http_flow_test.dart", "command": "R4_LIVE_DEEPSEEK=1 flutter test test/real_http_flow_test.dart"}
+      ,{"path": "knowledge_graph_learning/app/test/learning_controller_test.dart", "command": "flutter test test/learning_controller_test.dart --plain-name 'successful evidence refreshes course progress without graph proposal'"}
+    ]
+  },
+  "risks": [
+    "结构化调用最多增加一次完整模型请求，需保持固定上限",
+    "不能对 Timeout、401、网络异常执行相同重试",
+    "真实模型输出具有随机性，必须保留确定性单测与 live 集成测试双证据"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
