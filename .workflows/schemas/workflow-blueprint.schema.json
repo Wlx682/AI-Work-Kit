@@ -33,6 +33,14 @@
     "planRoot": {
       "type": "string"
     },
+    "planInit": {
+      "type": "object",
+      "properties": {
+        "useStageTemplate": {
+          "type": "boolean"
+        }
+      }
+    },
     "bootScript": {
       "type": "string"
     },
@@ -124,6 +132,10 @@
           },
           "template": {
             "type": "string"
+          },
+          "validator": {
+            "type": "string",
+            "pattern": "^scripts/.+\\.py$"
           },
           "wbsSlices": {
             "type": "array",

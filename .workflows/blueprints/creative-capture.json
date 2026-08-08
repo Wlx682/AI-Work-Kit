@@ -1,0 +1,121 @@
+{
+  "name": "creative-capture",
+  "label": "创意捕捉周循环",
+  "version": "0.1.0",
+  "description": "无 Epic 的长期周循环：用跨领域信号、问题卡与随机链接制造意外关联，再用最小现实测试筛选可继续投入的副业创意。每周一份共享 plan，完成归档决定后进入下一轮。",
+  "usesEpic": false,
+  "planRoot": "Plans/创意捕捉",
+  "planInit": {
+    "useStageTemplate": true
+  },
+  "bootScript": "scripts/workflow-board-boot.sh",
+  "gateScript": "scripts/workflow-gate.sh",
+  "enablement": {
+    "requires": ["core-tools", "skills", "tool-entrypoints", "global-instructions", "pre-commit-hook", "kanban-board"],
+    "preflight": "python3 scripts/workflow-install.py check --workflow creative-capture"
+  },
+  "dedicatedRegression": {
+    "command": "python3 scripts/test-creative-capture-workflow.py creative-capture",
+    "priority": "P0",
+    "scope": "creative-capture 单周共享 plan、五阶段链、定量配额、现实证据、人类归档决定与模板初始化契约"
+  },
+  "triggerHints": [
+    "创意捕捉",
+    "创意工作流",
+    "信息输入少",
+    "新鲜感匮乏",
+    "跨领域灵感",
+    "副业创意",
+    "创意洞察",
+    "每周创意合成",
+    "随机链接",
+    "creative-capture",
+    "workflow=creative-capture"
+  ],
+  "epicMapping": {},
+  "stages": [
+    {
+      "key": "radar",
+      "label": "L1 跨域信号雷达",
+      "planFolder": "Plans/创意捕捉",
+      "planPrefix": "周循环",
+      "skills": ["creative-capture-assistant"],
+      "template": "Templates/创意捕捉周循环模板.md",
+      "validator": "scripts/validate-creative-capture.py",
+      "requiredSections": ["一、本周意外性配额", "二、信号捕捉"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRunStage": true
+      },
+      "next": "insight"
+    },
+    {
+      "key": "insight",
+      "label": "L2 问题化过滤与洞察卡",
+      "planFolder": "Plans/创意捕捉",
+      "planPrefix": "周循环",
+      "skills": ["creative-capture-assistant"],
+      "template": "Templates/创意捕捉周循环模板.md",
+      "validator": "scripts/validate-creative-capture.py",
+      "requiredSections": ["三、问题卡聚类", "四、洞察卡"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRunStage": true
+      },
+      "next": "synthesis"
+    },
+    {
+      "key": "synthesis",
+      "label": "L3 随机链接与创意合成",
+      "planFolder": "Plans/创意捕捉",
+      "planPrefix": "周循环",
+      "skills": ["creative-capture-assistant"],
+      "template": "Templates/创意捕捉周循环模板.md",
+      "validator": "scripts/validate-creative-capture.py",
+      "requiredSections": ["五、随机链接实验", "六、创意候选"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRunStage": true
+      },
+      "next": "reality-test"
+    },
+    {
+      "key": "reality-test",
+      "label": "L4 最小现实测试",
+      "planFolder": "Plans/创意捕捉",
+      "planPrefix": "周循环",
+      "skills": ["creative-capture-assistant"],
+      "template": "Templates/创意捕捉周循环模板.md",
+      "validator": "scripts/validate-creative-capture.py",
+      "requiredSections": ["七、最小现实测试", "八、证据与判定"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRunStage": true
+      },
+      "next": "retro"
+    },
+    {
+      "key": "retro",
+      "label": "周复盘与下轮播种",
+      "planFolder": "Plans/创意捕捉",
+      "planPrefix": "周循环",
+      "skills": ["creative-capture-assistant"],
+      "template": "Templates/创意捕捉周循环模板.md",
+      "validator": "scripts/validate-creative-capture.py",
+      "requiredSections": ["九、本周复盘", "十、下轮种子"],
+      "exitCriteria": {
+        "childPlanExists": true,
+        "sectionsPresent": true,
+        "skillRunStage": true
+      },
+      "next": "done"
+    }
+  ],
+  "reporting": {
+    "format": "📌 当前阶段：[{state}] | 下一个阶段：[{next}] | 如需中断：/resume plan={planPath}"
+  }
+}

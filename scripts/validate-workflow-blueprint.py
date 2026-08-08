@@ -117,6 +117,17 @@ def validate_blueprint(path: Path) -> list[str]:
         if template and not (ROOT / template).exists():
             warnings.append(f"{path}: stage {stage_key}.template 不存在: {template}")
 
+        validator = stage.get("validator")
+        if validator:
+            require(
+                isinstance(validator, str)
+                and validator.startswith("scripts/")
+                and validator.endswith(".py")
+                and ".." not in Path(validator).parts,
+                f"{path}: stage {stage_key}.validator 必须是 scripts/ 下的 Python 文件",
+            )
+            require((ROOT / validator).is_file(), f"{path}: stage {stage_key}.validator 不存在: {validator}")
+
     dedicated = bp.get("dedicatedRegression")
     require(isinstance(dedicated, dict), f"{path}: 缺少 dedicatedRegression 专属回归声明")
     command = dedicated.get("command") if isinstance(dedicated, dict) else None

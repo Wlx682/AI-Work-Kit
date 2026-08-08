@@ -11,6 +11,7 @@
 - 「Story 拆分」「用户故事拆分」「方案拆成用户故事」「只拆 Story」
 - 「合代码」「合并代码」「合分支」「merge 分支」「把这个分支合进去」「解决合并冲突」
 - 「我要学习」「我想学习」「帮我准备资料」「学完实践」「实践完验证」「学习复盘」「学习记录」「总结知识图谱」
+- 「创意捕捉」「信息输入少」「新鲜感匮乏」「跨领域灵感」「副业创意」「每周创意合成」
 
 ## 不触发时机
 
@@ -65,6 +66,7 @@
 | Story 拆分、用户故事拆分、方案拆成用户故事、只拆 Story | `story-split-only` |
 | 合代码、合并代码、合分支、解决合并冲突 | `merge-code` |
 | 我要学习、准备学习资料、实践验证、学习复盘、学习记录、知识图谱 | `learning-loop` |
+| 创意捕捉、信息输入少、跨领域灵感、副业创意、每周创意合成 | `creative-capture` |
 
 ## 回归检查
 
@@ -133,8 +135,10 @@ python3 scripts/workflow-status.py --workflow bugfix
 python3 scripts/workflow-plan-init.py --workflow bugfix --title 案例视频产物预览标题错误
 python3 scripts/workflow-status.py --workflow bugfix
 python3 scripts/workflow-plan-init.py --workflow merge-code --title feature-search合入main
+python3 scripts/workflow-plan-init.py --workflow creative-capture --title 2026-W33
 python3 scripts/workflow-status.py --workflow computer-mgmt
 python3 scripts/workflow-status.py --workflow merge-code
+python3 scripts/workflow-status.py --workflow creative-capture --project 2026-W33
 ```
 
 学习循环：

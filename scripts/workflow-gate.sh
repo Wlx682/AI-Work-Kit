@@ -117,7 +117,7 @@ fi
 
 # 读蓝图元信息
 USES_EPIC="$(python3 -c 'import json,sys; print("1" if json.load(open(sys.argv[1])).get("usesEpic") else "0")' "$BLUEPRINT")"
-# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)|optionalWbsSlices(逗号)
+# stages：每行用 \x1f(US) 分隔 key|label|epicField|planFolder|wbsSlices(逗号)|exitCriteria(json)|onlyIf(json)|planPrefix|requiredSections(json)|optionalWbsSlices(逗号)|validator
 # 用非空白分隔符，避免 read 折叠空字段（如空 epicField）导致字段错位。
 STAGE_ROWS=()
 while IFS= read -r line; do
@@ -137,7 +137,8 @@ for s in bp.get("stages", []):
     prefix = s.get("planPrefix", "")
     req_sections = json.dumps(s.get("requiredSections", []), ensure_ascii=False)
     optional_slices = ",".join(str(n) for n in s.get("optionalWbsSlices", []))
-    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix, req_sections, optional_slices]))
+    validator = s.get("validator", "")
+    print(US.join([key, label, epic_field, folder, slices, exitc, onlyif, prefix, req_sections, optional_slices, validator]))
 PY
 )
 
@@ -187,7 +188,7 @@ if [[ ${#blockers[@]} -eq 0 ]]; then
   found_stage=""
   n_stages=${#STAGE_ROWS[@]}
   for ((i=0; i<n_stages; i++)); do
-    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix s_reqsections s_optional_slices <<<"${STAGE_ROWS[$i]}"
+    IFS=$'\x1f' read -r s_key s_label s_epicfield s_folder s_slices s_exit s_onlyif s_prefix s_reqsections s_optional_slices s_validator <<<"${STAGE_ROWS[$i]}"
 
     # onlyIf：如 {"含业务逻辑":"是"}，不满足则跳过该 stage
     onlyif_skip=0
@@ -331,6 +332,21 @@ PY
       if [[ "$(crit_has "$s_exit" sectionsPresent)" == "1" && -n "$s_reqsections" && "$s_reqsections" != "[]" ]]; then
         sect_msg="$(python3 "$ROOT/scripts/gate_parse.py" check-sections "$child_file" "$s_reqsections" --msg 2>/dev/null || true)"
         [[ -z "$sect_msg" ]] || stage_blockers+=("${s_label}：交接契约未满足 [${sect_msg}]")
+      fi
+
+      # validator：蓝图可声明 scripts/ 下的 Python 专项事实校验器。
+      # 参数固定为 --stage <key> <plan>，不执行任意 shell 字符串。
+      if [[ -n "$s_validator" ]]; then
+        if [[ "$s_validator" != scripts/*.py || "$s_validator" == *".."* || ! -f "$ROOT/$s_validator" ]]; then
+          stage_blockers+=("${s_label}：validator 非法或不存在: $s_validator")
+        else
+          validator_output=""
+          if validator_output="$(python3 "$ROOT/$s_validator" --stage "$s_key" "$child_file" 2>&1)"; then
+            :
+          else
+            stage_blockers+=("${s_label}：validator: ${validator_output#BLOCKED:}")
+          fi
+        fi
       fi
 
       # mergeAnalysis：源/目标分支的代码意图、业务冲突、开发者决策和验证策略须形成结构化事实。

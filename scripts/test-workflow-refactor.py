@@ -1906,6 +1906,7 @@ class WorkflowRefactorTests(unittest.TestCase):
                     "Plans/界面开发",
                     "Plans/学习循环",
                     "Plans/Bug排查",
+                    "Plans/创意捕捉",
                 ]:
                     (self.root / plan_dir).mkdir(parents=True, exist_ok=True)
                 write_file(self.root / "Contexts/决策/Skill反馈协议.md", "# Skill反馈协议\n")

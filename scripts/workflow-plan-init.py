@@ -283,6 +283,7 @@ def create_plans(args: argparse.Namespace) -> list[str]:
         raise InitError("缺少任务标题：轻流程须传 --title；Epic 流程可从 --epic 文件名派生")
     created: list[str] = []
     skipped: list[str] = []
+    use_stage_template = bool((bp.get("planInit") or {}).get("useStageTemplate"))
     for stage in stages:
         path, rel = epic_plan_path(stage, epic) if epic else plan_path_for(stage, title, day)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -292,7 +293,7 @@ def create_plans(args: argparse.Namespace) -> list[str]:
         path.write_text(
             (
                 render_stage_template(args.workflow, stage, title, day, rel, args.include_feedback, epic)
-                if epic
+                if epic or use_stage_template
                 else render_plan(args.workflow, stage, title, day, rel, args.include_feedback)
             ),
             encoding="utf-8",
