@@ -800,6 +800,8 @@ def _build_workflow_map(
             )
         elif key == "integration-test":
             summary = "全量集成已通过" if test_health.get("integration_pass") else "全量集成未通过"
+        if state == "upcoming" and not plan_exists:
+            summary = "尚未到创建阶段"
 
         blocker = ""
         if index == current_index and current_stage != "done":

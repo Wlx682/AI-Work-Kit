@@ -304,6 +304,14 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn('data-flow-stage=', html)
         self.assertIn("当前阶段作业面", html)
 
+    def test_kanban_future_stage_plan_is_not_rendered_as_missing(self) -> None:
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+
+        self.assertIn("function planPresentation(stage)", html)
+        self.assertIn("stage.state === 'upcoming' && !plan.exists", html)
+        self.assertIn("尚未到创建阶段", html)
+        self.assertIn(".flow-plan.pending", html)
+
 
 
 

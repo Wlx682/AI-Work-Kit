@@ -275,6 +275,7 @@
     .flow-stage-body .summary { margin: 0.55rem 0; color: var(--muted); font-size: 0.7rem; min-height: 2.1em; }
     .flow-plan { margin: 0.55rem 0; padding: 0.45rem 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.23); border: 1px solid var(--stroke); font-size: 0.66rem; color: var(--muted); }
     .flow-plan.exists { color: var(--neon-c); }
+    .flow-plan.pending { color: var(--faint); border-style: dashed; }
     .flow-plan.missing { color: var(--red); border-color: rgba(255,84,112,0.28); }
     .flow-gate { display: flex; gap: 0.35rem; align-items: center; color: var(--faint); font-size: 0.66rem; }
     .flow-gate.pass { color: var(--green); } .flow-gate.fail { color: var(--red); }
@@ -689,6 +690,28 @@
       document.querySelectorAll('[data-light-stage]').forEach(button => button.onclick = () => { selectedFlowStage = button.dataset.lightStage; renderLightweightDetail(); observeFades(false); });
     }
 
+    function planPresentation(stage) {
+      const plan = stage.plan || {};
+      const notDue = stage.state === 'upcoming' && !plan.exists;
+      if (plan.exists) {
+        return {
+          className: 'exists',
+          icon: '◇',
+          label: plan.path?.split('/').pop() || '子 Plan 已就绪',
+          statusLabel: plan.status || '已创建',
+        };
+      }
+      if (notDue) {
+        return { className: 'pending', icon: '○', label: '尚未到创建阶段', statusLabel: '尚未开始' };
+      }
+      return {
+        className: 'missing',
+        icon: '⚠',
+        label: plan.path ? '子 Plan 文件不存在' : '子 Plan 缺失',
+        statusLabel: '未创建',
+      };
+    }
+
     function renderWorkflowDetail(e) {
       const storyMode = e.effective_workflow === 'client-dev';
       const flow = e.workflow_map;
@@ -706,8 +729,8 @@
 
       const stageCards = stages.map(stage => {
         const plan = stage.plan || {};
+        const planView = planPresentation(stage);
         const gate = stage.gate;
-        const planLabel = plan.exists ? (plan.path?.split('/').pop() || '子 Plan 已就绪') : '子 Plan 缺失';
         const gateLabel = gate ? (gate.result === 'pass' ? '门禁通过' : '门禁未过') : '暂无门禁判定';
         return `
           <button class="flow-stage ${esc(stage.state)} ${stage.key === selected.key ? 'selected' : ''}" data-flow-stage="${esc(stage.key)}">
@@ -718,7 +741,7 @@
             <div class="flow-stage-body">
               <h4>${esc(stage.label)}</h4>
               <div class="summary">${esc(stage.summary)}</div>
-              <div class="flow-plan ${plan.exists ? 'exists' : 'missing'}">${plan.exists ? '◇' : '⚠'} ${esc(planLabel)}</div>
+              <div class="flow-plan ${planView.className}">${planView.icon} ${esc(planView.label)}</div>
               <div class="flow-gate ${gate?.result || ''}">${gate?.result === 'pass' ? '●' : (gate?.result === 'fail' ? '▲' : '○')} ${esc(gateLabel)}</div>
               <div class="skill-list">${(stage.skills || []).map(skill => `<span class="skill-tag">${esc(skill)}</span>`).join('')}</div>
             </div>
@@ -726,6 +749,8 @@
       }).join('');
 
       const selectedPlan = selected.plan || {};
+      const selectedPlanView = planPresentation(selected);
+      const selectedPlanStyle = selectedPlanView.className === 'pending' ? 'color:var(--muted)' : 'color:var(--red)';
       const criteria = (selected.exit_criteria || []).map(key => `<span>${esc(CRITERIA_ZH[key] || key)}</span>`).join('');
       const selectedEvents = ((e.gate_history || {}).recent || []).filter(event => event.stage === selected.key);
       const timeline = selectedEvents.map(event => `
@@ -802,8 +827,8 @@
               <span class="flow-state">${FLOW_STATE_ZH[selected.state] || selected.state || '—'}</span>
             </div>
             <div class="stage-facts">
-              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>${selectedPlan.exists ? '' : '<div style="color:var(--red);margin-top:0.25rem">文件不存在</div>'}` : '<b style="color:var(--red)">未创建</b>'}</div>
-              <div class="stage-fact"><div class="label">Plan 状态</div>${selectedPlan.exists ? `<select class="statusSel" data-plan="${esc(selectedPlan.path)}">${['草稿','进行中','评审中','已采纳','搁置'].map(option => `<option ${option === selectedPlan.status ? 'selected' : ''}>${option}</option>`).join('')}</select>` : '<b style="color:var(--red)">未创建</b>'}</div>
+              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>${selectedPlan.exists ? '' : '<div style="color:var(--red);margin-top:0.25rem">文件不存在</div>'}` : `<b style="${selectedPlanStyle}">${esc(selectedPlanView.label)}</b>`}</div>
+              <div class="stage-fact"><div class="label">Plan 状态</div>${selectedPlan.exists ? `<select class="statusSel" data-plan="${esc(selectedPlan.path)}">${['草稿','进行中','评审中','已采纳','搁置'].map(option => `<option ${option === selectedPlan.status ? 'selected' : ''}>${option}</option>`).join('')}</select>` : `<b style="${selectedPlanStyle}">${esc(selectedPlanView.statusLabel)}</b>`}</div>
               <div class="stage-fact"><div class="label">产物模板</div><code>${esc(selected.template || '—')}</code></div>
               <div class="stage-fact"><div class="label">执行 Skill</div><code>${esc((selected.skills || []).join(' → ') || '—')}</code></div>
             </div>

@@ -685,6 +685,29 @@ skill_run:
             self.assertEqual(current["skills"], ["test-generator"])
             self.assertIsNone(flow["stages"][-1]["gate"])
 
+    def test_kanban_workflow_map_marks_future_missing_plans_as_not_due(self) -> None:
+        spec = importlib.util.spec_from_file_location("kanban_server_future_plan", ROOT / "scripts/kanban-server.py")
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        flow = mod._build_workflow_map(
+            workflow="client-dev",
+            current_stage="story-development",
+            plans=[],
+            stories=[],
+            story_meta={},
+            test_health={},
+            gate_history=None,
+        )
+
+        for key in ["integration-test-plan", "integration-test"]:
+            stage = next(item for item in flow["stages"] if item["key"] == key)
+            self.assertEqual(stage["state"], "upcoming")
+            self.assertFalse(stage["plan"]["exists"])
+            self.assertEqual(stage["summary"], "尚未到创建阶段")
+            self.assertEqual(stage["blocker"], "")
+
 
 if __name__ == "__main__":
     unittest.main()
