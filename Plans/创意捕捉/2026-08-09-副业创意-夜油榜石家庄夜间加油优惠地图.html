@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="夜油榜：石家庄夜间加油优惠实时地图，单创意副业洞察。">
+  <title>夜油榜｜石家庄夜间加油优惠实时地图</title>
+  <style>
+    :root{--ink:#f4f0ff;--muted:#aba5be;--bg:#09070f;--panel:#12101b;--panel2:#181426;--line:#332943;--violet:#a477ff;--cyan:#42e8e0;--orange:#ff9f43;--red:#ff647c;--green:#76f2a6;--max:1120px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(circle at 72% -8%,#2d174e 0,transparent 30%),linear-gradient(180deg,#08060d,#0c0913 55%,#08060d);font:16px/1.8 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;overflow-x:hidden}a{color:var(--cyan);text-underline-offset:4px}a:hover{color:white}.wrap{width:min(calc(100% - 38px),var(--max));margin:auto}.eyebrow{font:700 12px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .topbar{position:sticky;top:0;z-index:20;background:#09070fe8;border-bottom:1px solid #ffffff12;backdrop-filter:blur(16px)}.topbar .wrap{height:58px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{font:800 14px var(--mono);letter-spacing:.12em}.brand i{color:var(--orange);font-style:normal}.status{font:11px var(--mono);color:var(--green);display:flex;align-items:center;gap:8px}.status:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+    header{min-height:720px;display:grid;align-items:center;padding:82px 0 62px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}header:after{content:"";position:absolute;width:520px;height:520px;border:1px solid #a477ff22;border-radius:50%;right:-120px;top:70px;box-shadow:0 0 0 55px #a477ff08,0 0 0 110px #a477ff05;pointer-events:none}.hero{display:grid;grid-template-columns:1.18fr .82fr;gap:70px;align-items:center;position:relative;z-index:1}.hero h1{font-size:clamp(48px,8vw,104px);line-height:.96;letter-spacing:-.07em;margin:18px 0 24px}.hero h1 span{display:block;color:transparent;-webkit-text-stroke:1px var(--violet)}.lead{font-size:clamp(18px,2vw,24px);line-height:1.6;max-width:760px;color:#d8d1e9}.notice{margin-top:26px;padding:14px 17px;border-left:3px solid var(--orange);background:#ff9f430d;color:#d6cbdd;font-size:14px}.notice strong{color:var(--orange)}
+    .pylon{background:#0e0c15;border:1px solid #493963;border-radius:4px;box-shadow:0 30px 90px #000b;overflow:hidden;transform:rotate(1.2deg)}.pylon-top{background:linear-gradient(90deg,var(--violet),#7348bd);padding:17px 20px;display:flex;justify-content:space-between;align-items:center;font:800 14px var(--mono)}.pylon-row{padding:20px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:12px}.pylon-row:last-child{border:0}.pylon-name{font-weight:700}.pylon-meta{font:11px var(--mono);color:var(--muted)}.price{font:900 30px var(--mono);color:var(--cyan)}.price small{font-size:11px;color:var(--muted)}.ad{font:700 10px var(--mono);padding:3px 6px;border:1px solid var(--orange);color:var(--orange);margin-left:7px}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:-1px}.metric{background:#0d0a13;padding:24px 26px}.metric b{display:block;font:900 clamp(30px,5vw,54px)/1 var(--mono);color:var(--cyan)}.metric span{display:block;margin-top:9px;font-size:13px;color:var(--muted)}
+    main{padding:70px 0 100px}.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:64px}.toc{position:sticky;top:90px;align-self:start}.toc .eyebrow{margin-bottom:17px}.toc a{display:block;color:#81798e;text-decoration:none;font:12px/1.45 var(--mono);padding:8px 0;border-bottom:1px solid #ffffff0c}.toc a:hover{color:var(--cyan)}article{min-width:0}section{padding:22px 0 64px;border-bottom:1px solid var(--line)}section:last-of-type{border-bottom:0}.num{font:900 12px var(--mono);color:var(--violet)}h2{font-size:clamp(29px,4vw,45px);letter-spacing:-.04em;line-height:1.15;margin:8px 0 26px}p{margin:0 0 18px;color:#d2cbdc}strong{color:white}.key{margin:28px 0;padding:22px 24px;border:1px solid #57406f;background:linear-gradient(135deg,#a477ff12,transparent);font-size:18px}.key strong{color:var(--cyan)}
+    .signal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}.signal{padding:20px;border:1px solid var(--line);background:var(--panel)}.signal b{font:900 24px var(--mono);color:var(--orange)}.signal p{font-size:13px;margin:8px 0 0;color:var(--muted)}.infer{padding:18px 20px;border:1px dashed var(--violet);background:#a477ff0b}.infer:before{content:"AI 推断";display:block;font:800 10px var(--mono);letter-spacing:.15em;color:var(--violet);margin-bottom:8px}
+    figure{margin:28px 0;background:var(--panel);border:1px solid var(--line);overflow:hidden}.terminal{padding:11px 14px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted)}.terminal i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:14px 0 var(--orange),28px 0 var(--green);margin-right:35px}.mermaid{padding:32px 12px;text-align:center;overflow-x:auto}figcaption{text-align:center;padding:0 18px 18px;font-size:12px;color:var(--muted)}
+    .money{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:25px 0}.money-card{padding:24px;background:var(--panel2);border:1px solid var(--line)}.money-card b{font:900 40px var(--mono);color:var(--green)}.money-card span{display:block;color:var(--muted);font-size:13px}.risk{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}.risk>div{padding:20px;border-top:3px solid var(--red);background:var(--panel)}.risk b{display:block;margin-bottom:7px}.risk span{font-size:13px;color:var(--muted)}.verdict{padding:28px;border:1px solid var(--green);background:#76f2a60a}.verdict-label{font:800 11px var(--mono);color:var(--green);letter-spacing:.14em}.verdict h3{margin:8px 0 12px;font-size:29px}.stop{margin:22px 0 0;padding-left:20px}.stop li{margin:8px 0;color:#d2cbdc}
+    details{margin-top:56px;border:1px solid var(--line);background:#0e0c15}summary{cursor:pointer;padding:23px 25px;font-weight:800;list-style:none;display:flex;align-items:center;justify-content:space-between}summary::-webkit-details-marker{display:none}summary:after{content:"＋";font:28px var(--mono);color:var(--cyan)}details[open] summary:after{content:"−"}.appendix{padding:5px 25px 30px;border-top:1px solid var(--line)}.appendix h3{margin:34px 0 12px;font-size:22px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:740px;font-size:13px}th,td{padding:12px 13px;border:1px solid var(--line);vertical-align:top;text-align:left}th{background:#1b1725;color:var(--cyan)}td{color:#c9c1d2}.appendix li{margin:7px 0;color:#c9c1d2}footer{border-top:1px solid var(--line);padding:35px 0 55px;color:var(--muted);font:11px/1.7 var(--mono)}
+    .reveal{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+    @media(max-width:820px){header{min-height:auto}.hero{grid-template-columns:1fr;gap:40px}.pylon{transform:none;max-width:520px}.layout{grid-template-columns:1fr}.toc{display:none}.signal-grid,.risk{grid-template-columns:1fr}.money{grid-template-columns:1fr}}
+    @media(max-width:520px){.wrap{width:min(calc(100% - 28px),var(--max))}.topbar .status{display:none}header{padding-top:60px}.hero h1{font-size:52px}.metrics{grid-template-columns:1fr}.metric{padding:17px 20px;display:flex;align-items:baseline;gap:14px}.metric b{font-size:34px}main{padding-top:45px}section{padding-bottom:48px}.pylon-row{padding:16px}.price{font-size:25px}.signal-grid{grid-template-columns:1fr}.appendix{padding-left:15px;padding-right:15px}}
+  </style>
+</head>
+<body>
+  <div class="topbar"><div class="wrap"><div class="brand"><i>18:00</i> / NIGHT FUEL INDEX</div><div class="status">FACT-CHECKED · 2026-08-09</div></div></div>
+  <header>
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">SIDE-016 · 石家庄 · 单创意副业洞察</div>
+          <h1>夜油榜<span>今晚去哪加</span></h1>
+          <p class="lead">一张只在夜里有用的本地优惠地图：车主免费查“今晚有效”，油站为带推广标识的 24 小时卡片付费。</p>
+          <div class="notice"><strong>先纠正一个时间点：</strong>满 200 减 20 的政府补贴已于 2026 年 6 月 30 日结束；本创意抓的是持续至 9 月底的季节性夜间窗口，以及补贴结束后重新碎片化的站方优惠。</div>
+        </div>
+        <div class="pylon" aria-label="说明性油站优惠卡片">
+          <div class="pylon-top"><span>附近 · 今晚有效</span><span>21:36</span></div>
+          <div class="pylon-row"><div><div class="pylon-name">示例油站 A <span class="ad">推广</span></div><div class="pylon-meta">有效至 23:59 · 12 分钟前核验</div></div><div class="price">-0.4<small>/L</small></div></div>
+          <div class="pylon-row"><div><div class="pylon-name">示例油站 B</div><div class="pylon-meta">会员条件 · 来源可查</div></div><div class="price">-0.3<small>/L</small></div></div>
+          <div class="pylon-row"><div><div class="pylon-name">示例油站 C</div><div class="pylon-meta">信息待今晚再次核验</div></div><div class="price">—</div></div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="wrap metrics" aria-label="事实指标">
+    <div class="metric"><b data-count="20" data-prefix="¥">¥20</b><span>2026 年 6 月补贴面额；活动现已结束</span></div>
+    <div class="metric"><b data-count="9">9</b><span>当时公开覆盖的行政区域数量</span></div>
+    <div class="metric"><b data-count="3">3</b><span>商务局索引至少发布到第三批站点</span></div>
+  </div>
+
+  <main class="wrap layout">
+    <aside class="toc"><div class="eyebrow">READ / 5 MIN</div><a href="#s1">01 生意是什么</a><a href="#s2">02 为什么现在</a><a href="#s3">03 谁来付钱</a><a href="#s4">04 如何运转</a><a href="#s5">05 怎么赚钱</a><a href="#s6">06 最终判断</a></aside>
+    <article>
+      <section id="s1" class="reveal"><div class="num">01 / PRODUCT</div><h2>不是油价大全，只回答“今晚去哪”</h2><p>晚上 9 点，地图软件能显示附近油站，却未必同时说明今晚降多少、是否限会员、要不要先领券、几点失效、多久前核验。夜油榜把这些字段放进同一张附近列表：油品、条件、时段、来源、最后核验和一键导航。</p><p>站点自行提交活动，系统到点自动下架；车主可凭小票匿名反馈“已核实”或“与页面不符”。所有付费站卡写明“推广”，不能伪装成最低价排名。</p><div class="key"><strong>最小可售单元：</strong>指定半径内展示 24 小时的推广油站卡，建议 49 元。平台不卖油、不收油款、不发券，也不承诺油品质量。</div></section>
+
+      <section id="s2" class="reveal"><div class="num">02 / TIMING</div><h2>政策先制造时段，补贴再训练习惯</h2><div class="signal-grid"><div class="signal"><b>18→08</b><p>2026 年官方通知设定的夜间错峰时段，5 月 1 日至 9 月底。</p></div><div class="signal"><b>200−20</b><p>6 月集中补贴规则；核销限夜间，且已在 6 月 30 日结束。</p></div><div class="signal"><b>第 3 批</b><p>商务局 6 月 25 日仍在增补参与站名单。</p></div></div><p>官方通知鼓励油站推出夜间优惠。2025 年市政府报道又称这一政策延续多年，多名站点员工观察到夜间车辆明显增加。它至少证明“夜间加油”不是凭空发明的新场景。</p><div class="infer">集中补贴让车主学会在夜间找优惠；补贴结束后，季节性窗口仍在，而信息重新碎裂为站方自己的会员日和临时折扣。这才是实时入口的机会。</div></section>
+
+      <section id="s3" class="reveal"><div class="num">03 / PAYER</div><h2>车主免费，本地油站按天买结果</h2><p><strong>唯一付费客户是有合法经营资质、希望增加夜间到站量的石家庄加油站。</strong>尤其是没有全国性 App 流量的本地或独立站。它们不是为“上地图”付费，而是为当晚的展示、导航点击和可追踪到站报码付费。</p><p>高德、百度、团油、油企小程序和本地生活号都是强替代。夜油榜只有同时做到“只显示当晚有效、带来源与核验时间、推广清晰标注、按距离与可信度排序”才有存在价值。若油站看不到导航或到店信号，49 元也会被视为无效广告。</p></section>
+
+      <section id="s4" class="reveal"><div class="num">04 / OPERATIONS</div><h2>发布、过期、降权都写成规则</h2><p>油站提交营业主体、门店位置、活动原图、油品、门槛与开始结束时间。平台完成人工首审，支付后自动发布；车主无需注册即可浏览和导航；到点自动下架，站方收到报告。</p><figure><div class="terminal"><i></i>AUTOMATION / ORDER LIFECYCLE</div><pre class="mermaid">flowchart LR
+ A["提交主体与优惠"] --> B["首次人工核验"]
+ B --> C["支付 49 元"]
+ C --> D["按时段与半径展示"]
+ D --> E["车主查看并导航"]
+ E --> F["到点下架与报告"]</pre><figcaption>完成定义：信息完整、展示正确、导航可用、到点消失、报告可复核。</figcaption></figure><p>页面与现场不符时自动降权，连续两次有效投诉暂停自助发布。平台不得抓取受限制的地图数据、虚构原价、出售车主轨迹，也不能替站方证明油品质量。</p></section>
+
+      <section id="s5" class="reveal"><div class="num">05 / ECONOMICS</div><h2>先只卖一个 49 元商品</h2><div class="money"><div class="money-card"><b>¥49</b><span>一张推广卡展示 24 小时</span></div><div class="money-card"><b>≈¥30</b><span>扣除 19 元可变成本后的单卡贡献假设</span></div></div><p>若每月售出 300 个付费卡日，贡献约 9,000 元。这只是算术情景，不是销量预测，且未扣开发、税费和创始人时间。不要把满 200 减 20 的政府补贴算成平台收入。</p><p>自助提交、字段校验、定时上下架、半径匹配、推广标识、点击归因、账单和报告可以自动化。首次主体核验、虚假折扣争议、地图与广告合规仍需人工。若每张卡都要打电话追问，49 元模型就不成立。</p></section>
+
+      <section id="s6" class="reveal"><div class="num">06 / VERDICT</div><h2>有条件值得关注，但窗口并不宽</h2><div class="risk"><div><b>平台复制</b><span>地图或加油平台可以顺手增加夜间筛选。</span></div><div><b>无法归因</b><span>导航点击不一定变成真实加油，油站会停止付费。</span></div><div><b>错误伤信任</b><span>优惠变化快，一次现场不符就会损害复访。</span></div></div><div class="verdict"><div class="verdict-label">FINAL VERDICT</div><h3>有条件值得关注</h3><p>新鲜点不在油价查询，而在政策把需求压进夜间，集中补贴又训练了用户。政府券结束后，谁来组织分散的站方优惠，出现了一个短暂空位。</p></div><ul class="stop"><li>90 天付费油站少于 10 家；</li><li>30 天重复购买率低于 30%，或导航点击率低于 3%；</li><li>有效错误投诉高于 5%，或人工核验超过 6 分钟 / 卡；</li><li>实际贡献低于 25 元 / 卡。命中两项即停。</li></ul><p>该机会不是由用户职业筛选出来的。架构能力只在选定后用于时间规则、证据审计和自动下架；油站渠道、广告合规与地图授权必须由本地合作方和专业人员补齐。</p></section>
+
+      <details>
+        <summary>事实与推演附录 · 点击展开</summary>
+        <div class="appendix">
+          <h3>A. 行业坐标与商业系统</h3><ul><li>主行业：成品油零售附近的数据发现与本地广告。</li><li>商业模式：车主免费工具 + 油站按日购买明确标注的推广卡。</li><li>最小可售单元：49 元 / 24 小时推广卡。</li><li>系统资产：带来源、版本与时间戳的优惠记录，主体、点击、投诉和失效日志。</li><li>不做：卖油、收油款、发券、比较油品质量或承诺全网最低价。</li></ul>
+          <h3>B. 事实来源与推断边界</h3><div class="table-wrap"><table><thead><tr><th>日期 / 来源</th><th>可复核事实</th><th>推断与局限</th></tr></thead><tbody><tr><td>2026-04-29<br><a href="https://swj.sjz.gov.cn/columns/2e4c92d3-ca9d-43ae-933b-c48ba711c8f7/202604/29/61a2e07e-8c82-4c91-8e8e-7f915f1deb6e.html">石家庄市商务局通知</a></td><td>5 月 1 日至 9 月底；18:00 至次日 8:00；鼓励夜间优惠。</td><td>没有披露车流、客单或站点数。</td></tr><tr><td>2026-06-10<br><a href="https://sjz.bendibao.com/live/202666/82112.shtm">本地宝（标注来源：石家庄商务）</a></td><td>满 200 减 20，覆盖 9 区，6 月 30 日结束。</td><td>二手整理页；没有核销总量。</td></tr><tr><td>2026-06-25<br><a href="https://swj.sjz.gov.cn/columns/4a8e9a0d-79f3-4ee2-ad90-8a70f38d4701/index.html">商务局活动索引</a></td><td>发布第三批参与站名单。</td><td>索引未披露各批站点数量。</td></tr><tr><td>2025-06-01<br><a href="https://www.sjz.gov.cn/columns/8e2f0b12-4574-4ced-b339-bcb378d54b2d/202506/01/7995f6ec-8495-403c-9779-453fd3a4a800.html">石家庄市政府</a></td><td>政策延续多年；多名站点员工称夜间车辆明显增加。</td><td>员工口述，不是统一交通统计。</td></tr></tbody></table></div><p>“补贴结束后出现统一入口空位”是 AI 推断；49 元、成本、销量情景和阈值都是建议假设。各站当前优惠、车流、付费意愿和平台竞争均未知。</p>
+          <h3>C. 收入与单位经济</h3><p>49 元 / 卡日；支付与云资源 3 元、渠道 10 元、核验退款准备 6 元，单卡贡献约 30 元。300 卡日 / 月对应约 9,000 元贡献，未扣固定成本、税费和开发。</p>
+          <h3>D. 运营与自动化</h3><p>结构化保存主体、站点、坐标、油品、门槛、适用人群、开始结束时间、原始证据、最后核验、推广标识和投诉状态。缺字段不发布、过期下架、投诉降权、异常主体暂停。只保存必要的匿名点击事件。</p>
+          <h3>E. 30 / 90 天路线</h3><ul><li>0–30 天：公开只读地图、油站提交表、来源标记与自动下架。</li><li>31–90 天：49 元推广卡、导航报告、匿名纠错和站点信誉分。</li><li>不开发钱包、返利或代领消费券。</li></ul>
+          <h3>F. 风险、合规与停止条件</h3><p>仅收录合法主体；推广清晰标注；原价、折扣和条件真实完整；经授权使用地图服务；位置数据最小化；不宣传油品质量结论。收费前请专业人员核对广告法、个人信息保护、地图服务许可、电商及成品油零售相关要求。</p>
+        </div>
+      </details>
+    </article>
+  </main>
+  <footer><div class="wrap">SIDE-016 · GENERATED 2026-08-09 · FACTS ≠ INFERENCE ≠ ASSUMPTION<br>本页用于机会研究，不构成投资、法律或经营许可意见。</div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{background:'#12101b',primaryColor:'#2d174e',primaryTextColor:'#f4f0ff',primaryBorderColor:'#a477ff',lineColor:'#42e8e0',secondaryColor:'#181426',tertiaryColor:'#09070f',fontFamily:'PingFang SC, Microsoft YaHei, sans-serif'}});
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const animateCount=(el)=>{const end=Number(el.dataset.count);const prefix=el.dataset.prefix||'';if(reduced){el.textContent=prefix+end;return}const start=performance.now(),dur=900;const tick=t=>{const p=Math.min(1,(t-start)/dur);el.textContent=prefix+Math.round(end*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)};
+    document.querySelectorAll('[data-count]').forEach(animateCount);
+  </script>
+</body>
+</html>
