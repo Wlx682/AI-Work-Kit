@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="秤账通：石家庄小型再生资源回收站电子台账单创意副业洞察。" />
+  <title>秤账通｜石家庄回收站电子台账</title>
+  <style>
+    :root {
+      --bg:#0b0d0c; --bg2:#111512; --panel:#151a16; --paper:#e8eadf;
+      --ink:#f4f6ed; --muted:#9ba399; --line:#293029;
+      --lime:#b8f34a; --orange:#ff8b3d; --red:#ff5d4c; --blue:#72c7ff;
+      --max:1120px; --read:820px; --radius:20px;
+      --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.78 var(--sans);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(184,243,74,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(184,243,74,.045) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(#000,transparent 80%)}
+    a{color:var(--lime);text-underline-offset:3px}.wrap{width:min(var(--max),calc(100% - 40px));margin-inline:auto}.mono{font-family:var(--mono)}
+    #progress{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--lime),var(--orange));z-index:20;box-shadow:0 0 12px rgba(184,243,74,.5)}
+
+    .hero{position:relative;min-height:92vh;display:grid;align-items:center;padding:84px 0 58px;border-bottom:1px solid var(--line);overflow:hidden}
+    .hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);gap:clamp(30px,7vw,88px);align-items:center}
+    .eyebrow{display:flex;align-items:center;gap:10px;color:var(--lime);font:700 .76rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+    .eyebrow::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--lime);box-shadow:0 0 16px rgba(184,243,74,.8)}
+    h1{margin:18px 0 20px;font-size:clamp(3.1rem,8vw,7.4rem);line-height:.91;letter-spacing:-.075em;font-weight:900}
+    h1 span{color:var(--lime)}
+    .lead{max-width:720px;margin:0;color:#d5dacd;font-size:clamp(1.06rem,1.8vw,1.35rem)}
+    .boundary{margin-top:24px;max-width:690px;padding:13px 16px;border-left:3px solid var(--orange);background:rgba(255,139,61,.075);border-radius:0 12px 12px 0;color:#e6c7ad;font-size:.88rem}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+    .button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:10px;border:1px solid var(--line);color:var(--ink);background:var(--panel);text-decoration:none;font-weight:750}
+    .button.primary{background:var(--lime);color:#182005;border-color:transparent}
+
+    .scale-scene{position:relative;aspect-ratio:1/1;display:grid;place-items:center}
+    .scale{position:relative;width:80%;aspect-ratio:1;border-radius:50%;border:1px solid #364235;background:radial-gradient(circle at 50% 58%,#171d18 0 45%,#0d100e 46% 100%);box-shadow:0 30px 90px #000,inset 0 0 55px rgba(184,243,74,.035)}
+    .scale::before{content:"";position:absolute;inset:10%;border-radius:50%;background:repeating-conic-gradient(from 225deg,rgba(184,243,74,.7) 0 1deg,transparent 1deg 12deg);mask-image:radial-gradient(circle,transparent 0 78%,#000 79%)}
+    .scale::after{content:"86.0 KG";position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);padding:9px 16px;border:1px solid rgba(184,243,74,.25);border-radius:6px;background:#0a1007;color:var(--lime);font:800 clamp(1.2rem,3vw,2.2rem)/1 var(--mono);letter-spacing:.06em;box-shadow:0 0 24px rgba(184,243,74,.08)}
+    .needle{position:absolute;width:34%;height:3px;left:50%;top:50%;transform-origin:left center;transform:rotate(-32deg);background:linear-gradient(90deg,var(--orange),transparent);box-shadow:0 0 8px var(--orange)}
+    .receipt{position:absolute;right:0;bottom:2%;width:43%;padding:18px 16px 25px;background:var(--paper);color:#1b211b;transform:rotate(5deg);box-shadow:0 24px 45px rgba(0,0,0,.45);font:700 .68rem/1.8 var(--mono)}
+    .receipt::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:10px;background:linear-gradient(135deg,transparent 6px,var(--paper) 0) 0 0/12px 12px repeat-x}
+    .receipt b{display:block;color:#2f6a1f;font-size:.86rem;border-bottom:1px dashed #747c70;margin-bottom:8px;padding-bottom:6px}
+
+    .signals{border-bottom:1px solid var(--line)}
+    .signal-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+    .signal{padding:34px clamp(18px,4vw,44px);border-right:1px solid var(--line);min-width:0}.signal:last-child{border-right:0}
+    .signal-value{display:block;color:var(--lime);font:800 clamp(2.3rem,5vw,4.7rem)/1 var(--mono);letter-spacing:-.065em}.signal:nth-child(2) .signal-value{color:var(--orange)}
+    .signal-label{display:block;margin-top:12px;color:#c4c9bd;font-weight:700}.signal-source{display:block;margin-top:5px;color:#737c71;font-size:.73rem}
+
+    main{padding:20px 0 80px}
+    .chapter{display:grid;grid-template-columns:190px minmax(0,1fr);gap:clamp(30px,7vw,82px);padding:clamp(68px,10vw,118px) 0;border-bottom:1px solid var(--line)}
+    .js-reveal .chapter{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease}.js-reveal .chapter.visible{opacity:1;transform:none}
+    .chapter-mark{align-self:start;position:sticky;top:26px}.chapter-mark .number{display:block;color:var(--lime);font:800 3.2rem/1 var(--mono);letter-spacing:-.07em}.chapter-mark .label{display:block;margin-top:10px;color:#6f786d;font:700 .7rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+    .content{min-width:0}.content h2{max-width:820px;margin:0 0 26px;font-size:clamp(1.8rem,4vw,3.35rem);line-height:1.12;letter-spacing:-.045em}.content h3{margin:34px 0 10px;color:var(--lime);font-size:1.04rem}.content p{max-width:840px;color:#c7cec0}.content strong{color:#fff}
+    .callout{margin:26px 0;padding:19px 21px;border:1px solid rgba(184,243,74,.18);border-left:4px solid var(--lime);border-radius:0 14px 14px 0;background:linear-gradient(90deg,rgba(184,243,74,.075),transparent);color:#dfe8ce}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:14px;margin:26px 0}
+    .card{min-width:0;padding:21px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#151a16,#101310);box-shadow:0 14px 42px rgba(0,0,0,.18)}
+    .card .tag{display:block;margin-bottom:9px;color:var(--orange);font:800 .68rem/1 var(--mono);letter-spacing:.1em}.card h3{margin:0 0 8px;color:#fff}.card p{margin:0;color:var(--muted);font-size:.9rem}
+    .example{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;margin:26px 0;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+    .example .kg{color:var(--lime);font:800 clamp(2.6rem,6vw,5rem)/.92 var(--mono);letter-spacing:-.08em}.example p{margin:0}
+    figure.diagram{width:100%;max-width:100%;margin:28px 0;border:1px solid var(--line);border-radius:18px;background:#0e110f;overflow:hidden}
+    .diagram-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);color:#717a70;font:700 .7rem/1 var(--mono)}
+    .dot{width:9px;height:9px;border-radius:50%}.dot.r{background:var(--red)}.dot.o{background:var(--orange)}.dot.g{background:var(--lime)}
+    .diagram-scroll{width:100%;max-width:100%;overflow-x:auto;padding:22px 10px}.mermaid{min-width:690px;display:flex;justify-content:center}
+    .price-box{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;margin:26px 0;padding:28px;border:1px solid rgba(184,243,74,.25);border-radius:18px;background:linear-gradient(120deg,rgba(184,243,74,.08),rgba(255,139,61,.04))}.price{white-space:nowrap;color:var(--lime);font:850 clamp(3.3rem,8vw,6.3rem)/.9 var(--mono);letter-spacing:-.08em}.price small{font-size:.2em;letter-spacing:0;color:#a8b39e}
+    .verdict{border-color:rgba(184,243,74,.3);background:linear-gradient(135deg,rgba(184,243,74,.1),#121713)}.verdict-title{color:var(--lime);font-size:clamp(1.5rem,3vw,2.5rem);font-weight:900;margin:8px 0}
+    .stop-list{list-style:none;padding:0;display:grid;gap:9px}.stop-list li{padding:12px 14px;border:1px solid rgba(255,93,76,.18);border-radius:10px;background:rgba(255,93,76,.045);color:#e5beb8}
+
+    .appendix{padding:90px 0 110px}.appendix-head{max-width:700px;margin-bottom:34px}.appendix h2{margin:10px 0;font-size:clamp(2.2rem,6vw,4.8rem);letter-spacing:-.07em}.appendix-head p{color:var(--muted)}
+    details{border-top:1px solid var(--line)}details:last-of-type{border-bottom:1px solid var(--line)}summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:21px 4px;cursor:pointer;list-style:none;font-weight:800;color:#e8ede2}summary::-webkit-details-marker{display:none}summary::after{content:"+";color:var(--lime);font:800 1.35rem/1 var(--mono)}details[open] summary::after{content:"−"}.detail-body{padding:0 4px 26px;color:#bac2b5}.detail-body ul{padding-left:20px}.table-wrap{overflow-x:auto}table{width:100%;min-width:760px;border-collapse:collapse;font-size:.86rem}th,td{padding:13px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{color:var(--lime);font:800 .7rem/1.4 var(--mono);letter-spacing:.05em}td{color:#b8c0b3}
+    footer{padding:28px 0 52px;border-top:1px solid var(--line);color:#6e776d;font:700 .7rem/1.6 var(--mono)}
+    #back{position:fixed;right:18px;bottom:18px;width:44px;height:44px;border-radius:10px;border:1px solid rgba(184,243,74,.3);background:rgba(16,20,17,.88);color:var(--lime);cursor:pointer;opacity:0;pointer-events:none;transition:.25s;z-index:10}#back.show{opacity:1;pointer-events:auto}
+
+    @media(max-width:820px){.hero{min-height:auto}.hero-grid{grid-template-columns:1fr}.scale-scene{width:min(500px,90vw);justify-self:center}.chapter{grid-template-columns:1fr}.chapter-mark{position:static;display:flex;align-items:center;gap:12px}.chapter-mark .number{font-size:2.2rem}.chapter-mark .label{margin:0}}
+    @media(max-width:600px){.wrap{width:min(calc(100% - 28px),var(--max))}.hero{padding-top:62px}.hero h1{font-size:clamp(3rem,16vw,5rem)}.scale-scene{width:88vw}.receipt{width:47%;padding:12px 10px 18px;font-size:.55rem}.signal-grid{grid-template-columns:1fr}.signal{border-right:0;border-bottom:1px solid var(--line);padding:24px 14px}.signal:last-child{border-bottom:0}.chapter{padding:66px 0}.content h2{font-size:2rem}.example{grid-template-columns:1fr}.price-box{grid-template-columns:1fr}.price{font-size:4.7rem}.diagram-scroll{padding-inline:6px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.js-reveal .chapter{opacity:1;transform:none}}
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Shijiazhuang · SIDE-013 · SaaS</div>
+        <h1>秤账<span>通</span></h1>
+        <p class="lead">给仍用纸本、微信或表格记账的小型废品回收站，卖一套每年 399 元的手机电子台账；现在值得看，是因为石家庄已有四字段上报义务，新版回收站行业标准又刚在 7 月 1 日实施。</p>
+        <div class="boundary"><strong>产品边界：</strong>只处理普通再生资源的进出记录与月度导出，不碰危险废物、报废汽车、财税申报，也不承诺“政府一键直报”。</div>
+        <div class="hero-actions"><a class="button primary" href="#main">五分钟读懂</a><a class="button" href="#appendix">查看事实附录</a></div>
+      </div>
+      <div class="scale-scene" aria-label="电子秤和自动生成台账小票的抽象视觉">
+        <div class="scale"><span class="needle"></span></div>
+        <div class="receipt"><b>MONTHLY LEDGER</b>品类：废纸箱<br/>入库：86.0 KG<br/>来源：居民零散<br/>去向：待补充</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="signals" aria-label="机会事实信号"><div class="wrap signal-grid">
+    <div class="signal"><span class="signal-value" data-count="4">4</span><span class="signal-label">种类、数量、来源、去向</span><span class="signal-source">石家庄地方条例明确的台账字段</span></div>
+    <div class="signal"><span class="signal-value">07·01</span><span class="signal-label">新版回收站行业标准实施</span><span class="signal-source">SB/T 10719—2026</span></div>
+    <div class="signal"><span class="signal-value"><span data-count="93">93</span>%</span><span class="signal-label">再生资源回收网点覆盖率</span><span class="signal-source">石家庄市政府，2026-04</span></div>
+  </div></section>
+
+  <main id="main" class="wrap">
+    <section class="chapter"><aside class="chapter-mark"><span class="number">01</span><span class="label">The product</span></aside><div class="content">
+      <h2>卖的是“称完就有账”，不是一套大型 ERP</h2>
+      <p>小型废品回收站每天的动作很朴素：废纸箱、废铁、塑料进站，称重、付款、分堆，攒够后再卖给下游。最容易丢失的恰好是管理需要的四类信息——收了什么、多少、从哪里来、最后去了哪里。纸本能记重量，却很难按月重新汇总；微信群能留照片，却无法自动形成结构化台账。</p>
+      <div class="example"><div class="kg">86<small>kg</small></div><p><strong>说明性示例：</strong>社区回收点收进 86 公斤废纸箱。老板在手机上点“废纸箱”，输入重量，选择来源“居民零散交售”，可选拍下秤面；出货时再选择下游收货方。月底系统生成 PDF 和表格，并标出缺少去向的记录。</p></div>
+      <div class="callout"><strong>最小可售单元：</strong>一家固定回收站使用一年的台账账号。首版只做普通再生资源进出记录。</div>
+    </div></section>
+
+    <section class="chapter"><aside class="chapter-mark"><span class="number">02</span><span class="label">Why now</span></aside><div class="content">
+      <h2>地方义务已经存在，新标准刚进入实施期</h2>
+      <p><strong>石家庄本地要求：</strong>《石家庄市再生资源回收利用管理条例》自 2025 年 6 月 28 日施行，要求建立回收台账并定期上报种类、数量、来源和去向；未定期上报、责令改正后仍不改的，罚款 500 至 2000 元。机会是简化真实存在的重复工作，不是制造焦虑。</p>
+      <p><strong>全国新标准：</strong>商务部 2026 年 1 月公布新版《再生资源回收站点建设管理规范》；福建省商务厅解读显示，新版于 7 月 1 日实施，设施清单包含计量器具与信息采集设备。它是推荐性行业标准，不应被写成每项都直接处罚，但正在抬高规范经营的参照线。</p>
+      <p><strong>本地网络：</strong>石家庄市政府 2026 年 4 月披露，全市再生资源回收网点覆盖率达到 93%。这说明网络广泛存在，却不能推导出实际站点数，也不知道多少仍在手工记账。</p>
+      <div class="callout">三项信号共同创造的是<strong>“轻量记录工具的销售窗口”</strong>，不是已验证的 399 元付费需求。</div>
+    </div></section>
+
+    <section class="chapter"><aside class="chapter-mark"><span class="number">03</span><span class="label">Who pays</span></aside><div class="content">
+      <h2>唯一付费客户：一至五人经营、没有专用系统的固定回收站</h2>
+      <p>连锁回收企业、分拣中心和大型拆解厂通常需要完整的派单、库存、运输与财务系统，不是首要客户。购买触发是小站点第一次被要求补齐一段时间的记录，发现纸本和聊天内容无法快速汇总。</p>
+      <p>替代方案包括纸质账本、Excel、通用进销存和全国性回收 SaaS。秤账通必须做到一分钟记完一笔、断网也能保存、导出字段可按当地实际口径调整，才比“继续凑合”更值钱。</p>
+      <div class="cards">
+        <article class="card"><span class="tag">PAYER</span><h3>小型固定站点</h3><p>经营者自己使用、自己付年费，不向政府销售平台。</p></article>
+        <article class="card"><span class="tag">TRIGGER</span><h3>需要补账或汇总</h3><p>不买的代价是重新翻纸本、照片与聊天记录。</p></article>
+        <article class="card"><span class="tag">POSITION</span><h3>窄工具，不做全家桶</h3><p>已有综合系统存在；机会来自更低学习成本和本地字段。</p></article>
+      </div>
+    </div></section>
+
+    <section class="chapter"><aside class="chapter-mark"><span class="number">04</span><span class="label">Workflow</span></aside><div class="content">
+      <h2>一笔废品，从称重直接变成月度记录</h2>
+      <figure class="diagram"><div class="diagram-bar"><span class="dot r"></span><span class="dot o"></span><span class="dot g"></span>&nbsp; scale-to-ledger.mmd</div><div class="diagram-scroll"><pre class="mermaid">
+flowchart LR
+    A["称重后选择品类"] --> B["录入重量与来源"]
+    B --> C["离线保存并检查缺项"]
+    C --> D["出货时补充去向"]
+    D --> E["自动按月汇总"]
+    E --> F["导出 PDF 与表格"]
+      </pre></div></figure>
+      <p>首次使用时，站点预设常收品类、来源类型和下游收货方。以后每笔记录用手机完成，系统自动生成编号、时间和修改痕迹；照片只是可选证据，不强迫采集居民身份证。月底老板确认后，自行打印或通过主管部门认可的方式提交。</p>
+      <div class="callout"><strong>完成定义：</strong>生成字段完整、修改可追溯的月度记录包。公开条例没有指定统一电子模板或接口，因此首版不能宣称一键直报政府。</div>
+    </div></section>
+
+    <section class="chapter"><aside class="chapter-mark"><span class="number">05</span><span class="label">Economics</span></aside><div class="content">
+      <h2>低价年度订阅，靠渠道分销和低人工成本成立</h2>
+      <div class="price-box"><div><strong>建议定价假设</strong><p>一个固定站点使用一年；不含硬件与代报服务。</p></div><div class="price">¥399<small>/年</small></div></div>
+      <div class="cards">
+        <article class="card"><span class="tag">− ¥80</span><h3>渠道分成</h3><p>电子秤、打包机维修商或下游大户按续费分成。</p></article>
+        <article class="card"><span class="tag">− ¥85</span><h3>技术与服务摊销</h3><p>云与支付 25 元，客服和维护按 60 元估算。</p></article>
+        <article class="card"><span class="tag">= ¥234</span><h3>单站年贡献</h3><p>300 个付费站点约 7.02 万元，纯算式而非销量预测。</p></article>
+      </div>
+      <p>支付开通、离线同步、缺项提醒、月度汇总、导出、备份、渠道归因和续费可以自动化。当地字段核对、模板配置、异常恢复、支持和渠道关系必须有人负责。若每个站点每年平均需要超过一小时人工服务，399 元低价订阅就难以成立。</p>
+    </div></section>
+
+    <section class="chapter"><aside class="chapter-mark"><span class="number">06</span><span class="label">Verdict</span></aside><div class="content">
+      <h2>有条件值得关注：真正的风险是小站点不愿换掉纸本</h2>
+      <article class="card verdict"><span class="tag">FINAL JUDGMENT</span><div class="verdict-title">有条件值得关注</div><p>付费主体、重复记录场景和年度订阅逻辑都清楚；地方条例、新行业标准和现有回收网络提供石家庄限定性。相比回收撮合平台，它不组织运力、不承受废品价格波动，自动化上限更高。</p></article>
+      <h3>出现任一情况，就该停止</h3>
+      <ul class="stop-list"><li>付费站点月活低于 60%，说明购买后也不用</li><li>记录缺项率持续高于 5%，核心功能没有省事</li><li>年度续费率低于 45%</li><li>每站年人工服务超过一小时，或单站贡献低于 180 元</li></ul>
+      <p>你的系统架构与自动化能力适合离线同步、多租户、模板版本和渠道结算；再生资源分类、当地报送口径与线下渠道销售需要外包或合作。角色只影响实现方式，没有把软件机会改成咨询业务。</p>
+    </div></section>
+  </main>
+
+  <section id="appendix" class="appendix"><div class="wrap">
+    <div class="appendix-head"><div class="eyebrow">Evidence & assumptions</div><h2>事实与推演附录</h2><p>正文负责让你判断，附录负责让你复核。默认全部收起；事实、推断、建议定价和未知项严格分开。</p></div>
+    <details><summary>A. 行业坐标与最小商业系统</summary><div class="detail-body"><ul><li><strong>主行业：</strong>再生资源回收数字化、小微经营工具。</li><li><strong>商业模式：</strong>单固定站点年度 SaaS 订阅，渠道按续费分成。</li><li><strong>价值链位置：</strong>称重之后、月度汇总或定期上报之前。</li><li><strong>受益与付款：</strong>固定站点经营者既使用也付款。</li><li><strong>最小可售单元：</strong>一个站点一年的台账账号。</li></ul></div></details>
+    <details><summary>B. 市场证据与事实来源</summary><div class="detail-body"><div class="table-wrap"><table><thead><tr><th>来源</th><th>可复核事实</th><th>据此推演</th><th>局限</th></tr></thead><tbody>
+      <tr><td><a href="https://www.sjz.gov.cn/columns/8e2f0b12-4574-4ced-b339-bcb378d54b2d/202506/03/46812e04-542a-41b7-b2e4-83085a638303.html" target="_blank" rel="noopener">石家庄市再生资源条例</a></td><td>建立台账，定期上报种类、数量、来源、去向；逾期不改罚 500—2000 元。</td><td>电子台账可能降低整理负担。</td><td>未公开统一频率、模板和接口。</td></tr>
+      <tr><td><a href="https://www.mofcom.gov.cn/zcfb/blgg/art/2026/art_5de06e6c36dc4d7c8de64743d7cac255.html" target="_blank" rel="noopener">商务部公告 2026 年第 5 号</a></td><td>商务部审核公布新版回收站点建设管理规范等 11 项标准。</td><td>规范化工具出现新窗口。</td><td>公告未展开全部条款。</td></tr>
+      <tr><td><a href="https://swt.fj.gov.cn/xxgk/jgzn/jgcs/ltyfzc/zszyhs/202603/t20260331_7117422.htm" target="_blank" rel="noopener">福建省商务厅标准解读</a></td><td>新版 7 月 1 日实施，设施清单含计量器具和信息采集设备。</td><td>手机台账可成为轻量采集环节。</td><td>推荐性标准不等于每项直接处罚。</td></tr>
+      <tr><td><a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202604/01/68ad8315-3f59-484b-ab7b-db140393aa08.html" target="_blank" rel="noopener">石家庄“无废城市”进展</a></td><td>再生资源回收网点覆盖率达到 93%。</td><td>广泛网络可能形成窄工具用户。</td><td>覆盖率不是站点数，未披露手工记账比例。</td></tr>
+      <tr><td><a href="https://zfxxgk.ndrc.gov.cn/web/iteminfo.jsp?id=20582" target="_blank" rel="noopener">国家发改委、财政部 2026“两新”政策</a></td><td>完善三级回收体系，引导“互联网＋回收”企业拓展品类。</td><td>回收网络仍处于数字化政策推动期。</td><td>不直接证明本产品购买需求。</td></tr>
+    </tbody></table></div></div></details>
+    <details><summary>C. 事实、定价、未知与单位经济</summary><div class="detail-body"><div class="table-wrap"><table><thead><tr><th>类型</th><th>内容</th></tr></thead><tbody><tr><td>公开事实</td><td>石家庄存在台账与上报要求；新版行业标准已实施；网点覆盖率 93%。</td></tr><tr><td>AI 推断</td><td>小型固定站点可能需要比综合 ERP 更简单的台账工具。</td></tr><tr><td>定价假设</td><td>399 元／站点／年；渠道 80、技术支付 25、客服维护 60，年贡献约 234 元。</td></tr><tr><td>规模算式</td><td>300 × 234 = 7.02 万元年贡献，不是销量预测。</td></tr><tr><td>未知</td><td>站点数、手工记账比例、报送格式、支付意愿、续费率、竞争价格。</td></tr></tbody></table></div></div></details>
+    <details><summary>D. 运营与自动化系统</summary><div class="detail-body"><ul><li><strong>数据：</strong>品类、来源、去向、进出记录、修改日志和月度汇总。</li><li><strong>自动：</strong>支付、同步、字段校验、汇总导出、备份、渠道分成和续费。</li><li><strong>人工：</strong>口径核验、模板升级、异常恢复、支持与线下渠道。</li><li><strong>熔断：</strong>格式不明时只出通用台账，不宣称政府认可。</li><li><strong>不做：</strong>居民预约、派单、行情、运输调度和财税申报。</li></ul></div></details>
+    <details><summary>E. 30 / 90 天演进路线</summary><div class="detail-body"><ul><li><strong>0—30 天：</strong>完成普通再生资源进出记录、离线缓存、缺项检查和通用月报。</li><li><strong>31—90 天：</strong>增加多模板版本、修改留痕、渠道二维码、自动续费和备份恢复。</li><li><strong>沉淀资产：</strong>当地品类字段模板、低学习成本交互、渠道关系与版本记录。</li></ul></div></details>
+    <details><summary>F. 风险、合规与停止条件</summary><div class="detail-body"><ul><li><strong>最大风险：</strong>纸本替代意愿低，而不是开发难。</li><li><strong>经营边界：</strong>只帮助记录和导出，不提供法律意见，不保证报送通过，不代替经营备案。</li><li><strong>数据边界：</strong>默认只记录来源类型，不强制采集居民身份证与精确住址。</li><li><strong>停止条件：</strong>月活低于 60%、缺项高于 5%、续费低于 45%、每站年服务超过一小时、贡献低于 180 元。</li></ul></div></details>
+  </div></section>
+
+  <footer><div class="wrap">秤账通 · 单创意副业洞察 · SIDE-013 · 2026-08-09 · 事实与测算已分层标注</div></footer>
+  <button id="back" aria-label="返回顶部">↑</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    try{mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',primaryColor:'#182018',primaryBorderColor:'#5f7a36',primaryTextColor:'#f4f6ed',lineColor:'#778370'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:38,rankSpacing:48,padding:12}});}catch(err){}
+    document.body.classList.add('js-reveal');
+    const chapters=[...document.querySelectorAll('.chapter')];
+    const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');revealObserver.unobserve(entry.target);}}),{threshold:.07});
+    chapters.forEach(chapter=>revealObserver.observe(chapter));
+    setTimeout(()=>chapters.forEach(chapter=>chapter.classList.add('visible')),2600);
+
+    const counters=[...document.querySelectorAll('[data-count]')];
+    const animateCount=node=>{if(node.dataset.done)return;node.dataset.done='1';const goal=Number(node.dataset.count);const started=performance.now();const frame=now=>{const t=Math.min((now-started)/850,1);node.textContent=String(Math.round(goal*(1-Math.pow(1-t,3))));if(t<1)requestAnimationFrame(frame);};requestAnimationFrame(frame);};
+    const countObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)animateCount(entry.target);}),{threshold:.4});counters.forEach(node=>countObserver.observe(node));
+
+    const progress=document.getElementById('progress');const backBtn=document.getElementById('back');
+    addEventListener('scroll',()=>{const root=document.documentElement;const maximum=root.scrollHeight-root.clientHeight;progress.style.width=(maximum>0?root.scrollTop/maximum*100:0)+'%';backBtn.classList.toggle('show',scrollY>600);},{passive:true});
+    backBtn.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+  </script>
+</body>
+</html>

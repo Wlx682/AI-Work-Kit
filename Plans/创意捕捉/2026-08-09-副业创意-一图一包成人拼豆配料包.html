@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#090b10"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%238a7cff%22/><circle cx=%2222%22 cy=%2222%22 r=%227%22 fill=%22%23fff%22/><circle cx=%2242%22 cy=%2222%22 r=%227%22 fill=%22%23ffd166%22/><circle cx=%2232%22 cy=%2242%22 r=%227%22 fill=%22%235ee6c4%22/></svg>"/>
+<title>一图一包｜成人拼豆按图配料包</title>
+<style>
+  :root{
+    --bg:#090b10;--bg2:#0f121a;--panel:#131721;--panel2:#171c28;
+    --ink:#f3f5fb;--muted:#a6afc1;--quiet:#717b91;--line:#272e40;
+    --purple:#8a7cff;--mint:#5ee6c4;--yellow:#ffd166;--pink:#ff729f;--red:#ff6f7d;
+    --read:820px;--wide:1120px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.82;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:var(--mint);text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}
+  strong{color:#fff}.mono{font-family:var(--mono)}
+  #progress{position:fixed;z-index:100;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--purple),var(--pink),var(--mint));box-shadow:0 0 16px rgba(138,124,255,.65)}
+  .topbar{position:fixed;z-index:90;top:0;left:0;right:0;height:54px;padding:0 clamp(18px,4vw,42px);display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(9,11,16,.78);backdrop-filter:blur(16px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:13px;letter-spacing:.3px}.brand-mark{display:grid;grid-template-columns:repeat(2,7px);gap:3px}.brand-mark i{display:block;width:7px;height:7px;border-radius:2px}.brand-mark i:nth-child(1){background:var(--purple)}.brand-mark i:nth-child(2){background:var(--yellow)}.brand-mark i:nth-child(3){background:var(--pink)}.brand-mark i:nth-child(4){background:var(--mint)}
+  .top-meta{margin-left:auto;color:var(--quiet);font:11.5px var(--mono)}
+  .hero{position:relative;min-height:720px;padding:clamp(112px,13vw,160px) clamp(20px,5vw,52px) clamp(70px,9vw,104px);display:grid;place-items:center;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(800px 420px at 12% 10%,rgba(138,124,255,.18),transparent 65%),radial-gradient(680px 420px at 90% 72%,rgba(94,230,196,.12),transparent 68%)}
+  .hero:after{content:"";position:absolute;inset:0;opacity:.34;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}
+  .hero-grid{position:relative;z-index:2;width:min(100%,var(--wide));display:grid;grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);gap:clamp(38px,7vw,92px);align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;margin-bottom:22px;border:1px solid var(--line);border-radius:999px;color:var(--mint);font:12px var(--mono);letter-spacing:1.2px}.pulse{width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 12px var(--mint);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.28}}
+  h1{font-size:clamp(38px,6vw,70px);line-height:1.03;letter-spacing:-2.2px;margin:0 0 24px;font-weight:900}.grad{background:linear-gradient(115deg,#fff 12%,#c9c2ff 50%,#7af0d5);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-copy{max-width:650px;color:#bec7d8;font-size:clamp(17px,1.8vw,20px);line-height:1.72}.hero-copy b{color:#fff}.hero-tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}.tag{padding:6px 11px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;color:var(--muted);font:12px var(--mono)}
+  .machine{position:relative;min-height:420px;padding:22px;border:1px solid #30384e;border-radius:24px;background:linear-gradient(160deg,rgba(25,30,44,.96),rgba(12,15,23,.94));box-shadow:0 35px 90px rgba(0,0,0,.48),0 0 0 1px rgba(138,124,255,.08) inset;overflow:hidden}.machine-head{display:flex;gap:7px;margin-bottom:24px}.machine-head i{width:9px;height:9px;border-radius:50%;background:var(--quiet)}.machine-head i:nth-child(1){background:var(--red)}.machine-head i:nth-child(2){background:var(--yellow)}.machine-head i:nth-child(3){background:var(--mint)}
+  .transform{display:grid;grid-template-columns:1fr 46px 1fr;align-items:center;gap:10px}.photo,.pixel{aspect-ratio:1;border:1px solid var(--line);border-radius:16px;background:#0d1017;display:grid;place-items:center;overflow:hidden}.arrow{color:var(--mint);text-align:center;font:24px var(--mono)}
+  .photo svg{width:82%;height:82%}.pixel-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;width:82%;aspect-ratio:1}.pixel-grid i{border-radius:2px;background:#252b3b}.pixel-grid i.p{background:var(--purple)}.pixel-grid i.m{background:var(--mint)}.pixel-grid i.y{background:var(--yellow)}.pixel-grid i.k{background:#4d556c}.pixel-grid i.w{background:#e9edf7}.pixel-grid i.r{background:var(--pink)}
+  .sachets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:22px}.sachet{height:58px;border:1px solid var(--line);border-radius:9px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));position:relative}.sachet:before{content:"";position:absolute;left:7px;right:7px;top:9px;height:2px;background:#3b4358}.sachet:after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;left:50%;bottom:8px;transform:translateX(-50%);background:var(--c);box-shadow:0 0 13px color-mix(in srgb,var(--c),transparent 45%)}
+  .machine-label{margin-top:18px;color:var(--quiet);font:11px var(--mono);text-align:center;letter-spacing:.6px}
+  .metric-wrap{max-width:var(--wide);margin:-44px auto 0;padding:0 clamp(20px,5vw,40px);position:relative;z-index:5}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.metric{min-height:164px;padding:24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(24,29,42,.98),rgba(14,17,25,.98));box-shadow:0 22px 52px rgba(0,0,0,.3)}.metric-num{font:800 clamp(38px,6vw,56px)/1 var(--mono);letter-spacing:-2px;color:var(--accent)}.metric-label{margin-top:16px;color:var(--muted);font-size:14px}.metric small{display:block;color:var(--quiet);margin-top:5px;font-size:12px}
+  article{max-width:var(--read);margin:0 auto;padding:70px clamp(20px,5vw,40px) 100px}section{padding:48px 0;border-bottom:1px solid var(--line);position:relative}.js-reveal section{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease}.js-reveal section.in{opacity:1;transform:none}
+  .secno{color:var(--mint);font:12px var(--mono);letter-spacing:1.8px;margin-bottom:10px}h2{font-size:clamp(25px,3.5vw,34px);line-height:1.25;letter-spacing:-.6px;margin:0 0 22px}h3{font-size:19px;margin:30px 0 10px}.lead{font-size:19px;color:#cbd3e2}.keyline{margin:26px 0;padding:22px 24px;border-radius:14px;border:1px solid rgba(138,124,255,.34);background:linear-gradient(110deg,rgba(138,124,255,.11),rgba(94,230,196,.035));font-size:18px;color:#e7e9f4}.plain-list{padding:0;margin:20px 0;list-style:none}.plain-list li{padding:13px 0 13px 28px;border-bottom:1px dashed #242b3b;position:relative}.plain-list li:before{content:"";position:absolute;left:2px;top:24px;width:9px;height:9px;border-radius:3px;background:linear-gradient(135deg,var(--purple),var(--mint))}
+  .steps{counter-reset:step;display:grid;gap:13px;margin:26px 0}.step{counter-increment:step;display:grid;grid-template-columns:42px 1fr;gap:16px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg2)}.step:before{content:counter(step);width:42px;height:42px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,var(--purple),#5f54c7);font:750 15px var(--mono);color:white}.step b{display:block;margin-bottom:3px}.step span{color:var(--muted);font-size:14.5px}
+  .price-card{margin:28px 0;padding:25px;border:1px solid rgba(94,230,196,.35);border-radius:18px;background:linear-gradient(135deg,rgba(94,230,196,.08),rgba(138,124,255,.07));display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}.price{font:850 clamp(38px,7vw,62px)/1 var(--mono);color:var(--mint)}.price-copy{color:var(--muted)}.price-copy b{display:block;color:#fff;font-size:17px}.warning{margin:24px 0;padding:18px 20px;border-left:3px solid var(--yellow);border-radius:0 12px 12px 0;background:rgba(255,209,102,.055);color:#e7ddc2}.verdict{margin:26px 0;padding:26px;border:1px solid rgba(255,114,159,.35);border-radius:18px;background:linear-gradient(135deg,rgba(255,114,159,.08),rgba(138,124,255,.08))}.verdict-label{color:var(--pink);font:12px var(--mono);letter-spacing:1.4px}.verdict h3{font-size:27px;margin:8px 0 10px}
+  figure.dia{margin:30px 0;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:linear-gradient(180deg,var(--panel),#0d1017)}.dia-bar{padding:11px 15px;border-bottom:1px solid var(--line);color:var(--quiet);font:11px var(--mono)}pre.mermaid{padding:24px 12px;margin:0;overflow:auto;text-align:center;background:transparent}figcaption{text-align:center;color:var(--quiet);font-size:12.5px;padding:0 18px 17px}
+  .appendix{max-width:var(--wide);margin:0 auto;padding:0 clamp(20px,5vw,40px) 110px}.appendix>details{border:1px solid var(--line);border-radius:20px;background:linear-gradient(150deg,var(--panel),#0d1017);overflow:hidden}.appendix>details>summary{cursor:pointer;padding:24px clamp(20px,4vw,32px);font-weight:800;font-size:22px;display:flex;align-items:center;gap:12px}.appendix>details>summary:before{content:"+";width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:rgba(138,124,255,.17);color:#c7c0ff;font:20px var(--mono)}.appendix>details[open]>summary:before{content:"−"}.appendix-body{padding:0 clamp(20px,4vw,32px) 34px;border-top:1px solid var(--line)}.appendix-body h3{margin-top:34px;color:#fff}.appendix-body h4{margin:26px 0 8px;color:#e9ecf7}.table-wrap{width:100%;overflow:auto;border:1px solid var(--line);border-radius:12px;margin:18px 0}table{border-collapse:collapse;width:100%;min-width:720px;font-size:13.5px}th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{color:var(--quiet);font:11px var(--mono);letter-spacing:.5px;background:#11151e}td{color:#c7cfdf}tr:last-child td{border-bottom:0}.fact-note{padding:16px 18px;border-radius:12px;background:#0c0f16;color:var(--muted);font-size:14px}.small-list{color:#c7cfdf;padding-left:20px}.small-list li{margin:8px 0}
+  footer{border-top:1px solid var(--line);padding:34px clamp(20px,5vw,40px) 80px;text-align:center;color:var(--quiet);font-size:13px}.footlinks{display:flex;justify-content:center;gap:10px 20px;flex-wrap:wrap;margin-bottom:12px}.template-badge{position:fixed;z-index:80;left:14px;bottom:14px;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(15,18,26,.9);color:var(--quiet);font:10px var(--mono)}#backTop{position:fixed;z-index:80;right:18px;bottom:18px;width:44px;height:44px;border-radius:12px;border:1px solid rgba(138,124,255,.45);background:rgba(138,124,255,.14);color:#ddd9ff;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:.25s}#backTop.show{opacity:1;pointer-events:auto}
+  @media(max-width:820px){.hero{min-height:auto}.hero-grid{grid-template-columns:1fr}.machine{max-width:560px;width:100%;margin:0 auto}.metric-wrap{margin-top:-28px}.top-meta{display:none}.price-card{grid-template-columns:1fr}.template-badge{display:none}}
+  @media(max-width:460px){body{font-size:16px}.hero{padding-top:100px}.machine{min-height:340px;padding:16px}.transform{grid-template-columns:1fr 28px 1fr;gap:6px}.arrow{font-size:17px}.sachets{gap:5px}.metric{min-height:142px}.step{grid-template-columns:36px 1fr}.step:before{width:36px;height:36px}.appendix>details>summary{font-size:18px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}.js-reveal section{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i></span>单创意副业洞察</div><div class="top-meta">SIDE-008 · 中国内地 · 约 5 分钟</div></div>
+
+<header class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow"><span class="pulse"></span>2026 新鲜机会 · 成人手作消费</div>
+      <h1><span class="grad">一图一包</span><br/>成人拼豆按图配料包</h1>
+      <p class="hero-copy">成年玩家上传一张自己的照片，系统生成像素图纸和准确色号清单，合作仓寄出<strong>一幅作品刚好够用</strong>的分色材料包。年轻人拼豆消费正在升温，7 月的新公告又把成人与儿童产品边界说得更清楚。</p>
+      <div class="hero-tags"><span class="tag">个性化商品</span><span class="tag">自动图纸</span><span class="tag">第三方履约</span><span class="tag">不搭售电熨斗</span></div>
+    </div>
+    <div class="machine" aria-label="照片变成像素图与分色材料包的示意图">
+      <div class="machine-head"><i></i><i></i><i></i></div>
+      <div class="transform">
+        <div class="photo"><svg viewBox="0 0 100 100" role="img" aria-label="用户自己的宠物照片示意"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8a7cff"/><stop offset="1" stop-color="#5ee6c4"/></linearGradient></defs><rect x="5" y="5" width="90" height="90" rx="15" fill="#171c28"/><path d="M27 39 L22 20 L42 31 Q50 26 58 31 L78 20 L73 42 Q82 51 76 67 Q69 84 50 85 Q31 84 24 67 Q18 52 27 39Z" fill="url(#g)"/><circle cx="39" cy="53" r="4" fill="#090b10"/><circle cx="62" cy="53" r="4" fill="#090b10"/><path d="M45 64 Q50 69 55 64" fill="none" stroke="#090b10" stroke-width="3" stroke-linecap="round"/></svg></div>
+        <div class="arrow">→</div>
+        <div class="pixel"><div class="pixel-grid"><i></i><i></i><i class="p"></i><i class="p"></i><i class="p"></i><i class="p"></i><i></i><i></i><i></i><i class="p"></i><i class="p"></i><i class="m"></i><i class="m"></i><i class="p"></i><i class="p"></i><i></i><i class="p"></i><i class="p"></i><i class="m"></i><i class="w"></i><i class="w"></i><i class="m"></i><i class="p"></i><i class="p"></i><i class="p"></i><i class="m"></i><i class="w"></i><i class="k"></i><i class="k"></i><i class="w"></i><i class="m"></i><i class="p"></i><i class="p"></i><i class="m"></i><i class="w"></i><i class="y"></i><i class="y"></i><i class="w"></i><i class="m"></i><i class="p"></i><i></i><i class="p"></i><i class="m"></i><i class="w"></i><i class="r"></i><i class="w"></i><i class="m"></i><i class="p"></i><i></i><i></i><i class="p"></i><i class="p"></i><i class="m"></i><i class="m"></i><i class="p"></i><i class="p"></i><i></i><i></i><i></i><i class="p"></i><i class="p"></i><i class="p"></i><i class="p"></i><i></i><i></i></div></div>
+      </div>
+      <div class="sachets"><div class="sachet" style="--c:#8a7cff"></div><div class="sachet" style="--c:#5ee6c4"></div><div class="sachet" style="--c:#ffd166"></div><div class="sachet" style="--c:#ff729f"></div></div>
+      <div class="machine-label">OWN PHOTO → PIXEL MAP → EXACT COLOR PACK</div>
+    </div>
+  </div>
+</header>
+
+<div class="metric-wrap">
+  <div class="metrics">
+    <div class="metric"><div class="metric-num" style="--accent:var(--purple)" data-target="1" data-suffix=" 图">1 图</div><div class="metric-label">对应一份图纸</div><small>不卖全色库存</small></div>
+    <div class="metric"><div class="metric-num" style="--accent:var(--mint)" data-target="1" data-suffix=" 包">1 包</div><div class="metric-label">刚好完成一幅作品</div><small>含少量备损豆</small></div>
+    <div class="metric"><div class="metric-num" style="--accent:var(--yellow)" data-target="0" data-suffix=" 熨斗">0 熨斗</div><div class="metric-label">不搭售家用电熨斗</div><small>只做成年玩家补充包</small></div>
+  </div>
+</div>
+
+<article>
+  <section>
+    <div class="secno">01 — 先看懂</div><h2>卖的不是豆子，是一次准备完毕的私人创作</h2>
+    <p class="lead">一个已有底板、镊子和合规加热工具的成年玩家，想把自己的猫、毕业照或旅行照做成拼豆。她今天要自己转像素图、核对色号，再购买多个整袋豆子；常用色可能缺货，不常用色却会剩一堆。</p>
+    <p>“一图一包”把准备工作变成一次上传。网页先免费显示低清像素预览；付款后系统锁定尺寸和配色，生成手机图纸，并把准确色号、数量和少量备损豆交给合作仓分袋发货。</p>
+    <div class="keyline"><strong>最小可售单元：</strong>一张用户自有照片对应的一份数字图纸，加一包按色分装的实体拼豆。不是儿童入门套装，也不是全色囤货包。</div>
+    <p>公开报道已记录玩家的现实摩擦：自购色号繁多容易浪费，热门色号经常缺货，还需要额外收纳空间。<a href="https://www.news.cn/fashion/20260225/241777a19d884756b8a1769c4475db02/c.html" target="_blank" rel="noopener">新华网转北京青年报，2026-02-25</a></p>
+  </section>
+
+  <section>
+    <div class="secno">02 — 时间窗口</div><h2>需求在变，规则也刚刚变得具体</h2>
+    <p><strong>需求端：</strong>2026 年 5 月，新华网将拼豆描述为年轻人的“指尖消费新宠”，提到低门槛、沉浸创作、解压和社交分享。2 月的实地报道还记录了图纸分享、个性化创作、热门色号缺货和照片礼物场景。<a href="https://js.news.cn/20260512/76540f5f62394ca8947ff3d12eb4d7a6/c.html" target="_blank" rel="noopener">新华网江苏频道</a> · <a href="https://www.news.cn/fashion/20260225/241777a19d884756b8a1769c4475db02/c.html" target="_blank" rel="noopener">新华网转北京青年报</a></p>
+    <p><strong>监管端：</strong>市场监管总局 2026 年 7 月 17 日发布公告，分别规定面向 14 岁以下与 14 岁以上人群的拼豆产品要求；面向 14 岁以上人群的产品不得把用于熨烫织物的家用电熨斗作为加热部件，营销也不得误导儿童使用。<a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/zljds/art/2026/art_05ab9131f0ce42b19fd477a89f941580.html" target="_blank" rel="noopener">市场监管总局 2026 年第 25 号公告</a></p>
+    <div class="keyline">因此，这次不做“再开一家拼豆店”，而做更窄的商品：<strong>只服务已有工具的成年玩家，只卖个性化项目补充包，主动避开儿童营销和加热电器搭售。</strong></div>
+  </section>
+
+  <section>
+    <div class="secno">03 — 付费客户</div><h2>只抓一个人：没有全色库存的成年居家玩家</h2>
+    <ul class="plain-list"><li><strong>唯一付费客户：</strong>18 岁以上，已经玩过拼豆并拥有基础工具，但没有全色库存的居家玩家。</li><li><strong>购买触发：</strong>她很想把一张私人照片做成礼物或纪念品，却不愿转图、逐色下单、囤一柜材料。</li><li><strong>替代方案：</strong>买通用套装、逐色采购或去线下店。前两种便宜但费时间和空间；线下店省采购，却受地点与营业时间限制。</li></ul>
+    <p>付费理由不是豆子稀缺，而是把一次私人创作的准备工作压缩成一次上传和一次收货。真正的竞争对手，是用户觉得“太麻烦，改天再做”。</p>
+    <p class="warning"><strong>说明性示例：</strong>用户上传自己拍摄的宠物照片，选择 72×72 格，网页展示 24 色预览和预计制作时长；付款后收到编号小袋、备损豆和手机图纸。这个场景用于解释产品，不代表已有成交。</p>
+  </section>
+
+  <section>
+    <div class="secno">04 — 履约系统</div><h2>软件做定制，合作仓做分装</h2>
+    <div class="steps"><div class="step"><div><b>上传与确权</b><span>用户上传自己的照片并声明权利；清除元数据，疑似影视、动漫、名人图像进入复核。</span></div></div><div class="step"><div><b>自动转图</b><span>裁切主体、像素化，并把颜色限制到仓库真实有货的色号；只开放两个尺寸。</span></div></div><div class="step"><div><b>生成物料单</b><span>计算每个色号颗数，加建议 8% 备损，生成分袋标签、拣货单和手机图纸。</span></div></div><div class="step"><div><b>第三方履约</b><span>合作仓按色称重或计数、抽检、封袋和发货；订单不含电熨斗、底板或镊子。</span></div></div><div class="step"><div><b>交付与复购</b><span>用户扫码看图纸完成作品；系统之后推荐“同尺寸下一张”，不强迫订阅。</span></div></div></div>
+    <figure class="dia"><div class="dia-bar">one-photo-one-pack.mmd</div><pre class="mermaid">flowchart LR
+  A["上传自有照片"] --> B["像素化 + 现货色号"]
+  B --> C["免费预览"]
+  C -->|付款| D["物料单 + 分袋标签"]
+  D --> E["合作仓抽检发货"]
+  E --> F["扫码图纸完成作品"]
+  C -->|不满意| X["换照片或离开"]
+  E -->|缺色 / 误差| H["人工熔断"]</pre><figcaption>主链路自动化，低相似度、缺色和疑似侵权内容必须转人工</figcaption></figure>
+    <p><strong>不做什么：</strong>不提供儿童玩具，不承诺照片级还原，不销售未经授权的 IP 图案，也不提供自动熨烫成品。</p>
+  </section>
+
+  <section>
+    <div class="secno">05 — 收入与自动化</div><h2>89 元卖一幅项目；分袋成本决定生死</h2>
+    <div class="price-card"><div class="price">¥89</div><div class="price-copy"><b>建议定价假设 · 72×72 格 · 最多 24 色</b>假设豆材 10 元、分袋标签 10 元、仓配操作 8 元、运费 8 元、支付与售后准备金 7 元，可变成本约 43 元，单包贡献约 46 元。全部数字未经供应商报价，仅用于判断结构。</div></div>
+    <p>复购来自“下一张照片”，不是豆子自然消耗。免费预览页本身还能获客：用户先看自己的照片变成像素稿，满意才买材料包；分享带水印预览或成品，可以继续带来新上传。</p>
+    <ul class="plain-list"><li><strong>可自动化：</strong>裁切、色号映射、物料单、袋签、支付、下单、物流通知、图纸交付和补发判定。</li><li><strong>必须人工：</strong>首批色差校准、质检、疑似侵权复核、缺色替代、严重错配和安全投诉。</li><li><strong>自动化上限：</strong>若每单人工修图超过 5 分钟，或合作仓无法稳定分色装袋，它会退化成低毛利手工作坊。</li></ul>
+  </section>
+
+  <section>
+    <div class="secno">06 — 判断</div><h2>有条件值得，但绝不是“上传照片就躺赚”</h2>
+    <div class="verdict"><div class="verdict-label">FINAL VERDICT</div><h3>有条件值得继续关注</h3><p>它抓住真实摩擦——色号多、缺货、剩料和转图麻烦——也能把软件与实体履约串成直接交易。但色差、合规和拣货精度任何一个失控，都会让礼物型订单变成退款。</p></div>
+    <p>三大失败点：照片变成有限色后不像本人；小袋分装的仓储成本高于豆子本身；消费者或平台仍把产品认定为面向儿童，令分类、认证或质量责任判断偏离设想。</p>
+    <p class="warning"><strong>重要边界：</strong>“明确面向 18 岁以上”不等于自动获得任何认证豁免。商品分类、材料安全、标签和进货查验仍需按实际产品由合格专业人士确认。</p>
+    <p><strong>停止条件：</strong>连续 100 个付费订单中，因“还原不像”退款超过 12%；每单平均人工超过 8 分钟；错色、少豆或破袋补发率超过 5%；或 89 元售价下单包贡献低于 25 元。任一条件持续两个批次就停止扩量。</p>
+    <p>你的架构与自动化能力适合图片处理、订单状态机和异常熔断；欠缺的塑料材料质检、色彩管理、标签与仓配，应交给专业方。这些能力只影响执行方式，不把商品机会改写成咨询。</p>
+  </section>
+</article>
+
+<div class="appendix">
+  <details>
+    <summary>事实与推演附录（点击展开复核）</summary>
+    <div class="appendix-body">
+      <h3>A. 行业坐标与商业系统</h3>
+      <ul class="small-list"><li><strong>主行业：</strong>中国内地成人手作 / 拼豆材料。</li><li><strong>商业模式：</strong>个性化实体配料包 + 自动图纸生成 + 第三方履约。</li><li><strong>价值链位置：</strong>把私人图片转换为可生产图纸、精确物料单和分袋订单。</li><li><strong>最小可售单元：</strong>一份照片像素图纸 + 对应一次项目的分色拼豆包。</li><li><strong>付款者：</strong>成年居家玩家；礼物场景的使用者可能是收礼人。</li></ul>
+
+      <h3>B. 市场证据与事实来源</h3>
+      <div class="table-wrap"><table><thead><tr><th>日期</th><th>来源</th><th>可复核事实</th><th>AI 推断</th><th>局限</th></tr></thead><tbody><tr><td>2026-07-17</td><td><a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/zljds/art/2026/art_05ab9131f0ce42b19fd477a89f941580.html" target="_blank" rel="noopener">市场监管总局</a></td><td>公告分 14 岁以下与 14 岁以上产品规定要求；成人类产品不得搭配用于熨烫织物的电熨斗，营销不得误导儿童使用。</td><td>做 18+ 补充包并取消加热电器，可能缩小复杂度。</td><td>公告不判断本文商品分类，也不给豁免结论。</td></tr><tr><td>2026-05-12</td><td><a href="https://js.news.cn/20260512/76540f5f62394ca8947ff3d12eb4d7a6/c.html" target="_blank" rel="noopener">新华网江苏</a></td><td>报道将拼豆与年轻人的解压、沉浸、创作和社交分享联系起来。</td><td>成年玩家可能为项目准备环节付费。</td><td>无样本量、转化率或客单价。</td></tr><tr><td>2026-02-25</td><td><a href="https://www.news.cn/fashion/20260225/241777a19d884756b8a1769c4475db02/c.html" target="_blank" rel="noopener">新华网转北青报</a></td><td>记录图纸分享、热门色号缺货、剩料收纳问题与照片礼物场景。</td><td>按一幅作品配料能减少准备成本。</td><td>个案与门店观察不代表全国。</td></tr><tr><td>2026-04-08</td><td><a href="https://www.bj.news.cn/20260408/0859d0f4d3c74255872ed901bb2bf266/c.html" target="_blank" rel="noopener">新华网财经聚焦</a></td><td>报道提醒未经授权商业使用动漫等形象可能侵权。</td><td>只接自有照片并复核疑似 IP 图像是必要边界。</td><td>不替代具体法律意见。</td></tr></tbody></table></div>
+      <div class="fact-note"><strong>分层说明：</strong>趋势、公开摩擦和 7 月公告是事实；稳定购买与免费预览获客是 AI 推断；售价成本是建议假设；转化率、仓配报价、检测成本、商品分类与平台准入均未知。</div>
+
+      <h3>C. 收入与单位经济</h3>
+      <div class="table-wrap"><table><thead><tr><th>收入项</th><th>建议定价</th><th>可变成本</th><th>逻辑</th><th>复购</th></tr></thead><tbody><tr><td>72×72 项目包</td><td>89 元</td><td>43 元</td><td>软件复用，成本集中在分袋、仓配、材料与售后</td><td>下一张私人照片</td></tr><tr><td>96×96 大项目包</td><td>139 元</td><td>68 元</td><td>豆量增加，图像处理成本变化较小</td><td>纪念日或多人照片，需求未知</td></tr><tr><td>仅数字图纸</td><td>19 元</td><td>支付、存储、客服与复核</td><td>服务已有全色库存玩家</td><td>与实体包互转</td></tr></tbody></table></div>
+      <p>关键未知不是豆子进价，而是分 20 多种颜色并保持准确的成本。供应方需要固定色号库、标准小袋、自动标签和经校准的称量规则。</p>
+
+      <h3>D. 运营、自动化与责任</h3>
+      <ul class="small-list"><li><strong>自动资产：</strong>有限色量化、色号映射、相似度预警、物料单、袋签、订单接口、物流回传、扫码图纸与工单分类。</li><li><strong>人工责任：</strong>合作仓负责分装准确与批次追溯；经营者负责供应商审核、进货查验、标签、平台材料、消费者告知与召回。</li><li><strong>熔断：</strong>低相似度不开放付款；关键色缺货就暂停；疑似儿童用途或商业 IP 进入人工复核；同批次投诉集中时暂停发货。</li></ul>
+
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul class="small-list"><li><strong>0–30 天：</strong>定义 18+ 补充包、两个尺寸和 24 个色号；确认商品分类、材料标准、标签与平台准入；取得两家仓配真实报价。仅作参考，不要求用户现在实验。</li><li><strong>31–90 天：</strong>合规可行时扩到 48 色，接入下单和物流回传；用真实订单校准色差、缺豆率、补发率和人工分钟数。</li><li><strong>沉淀资产：</strong>色号映射表、照片适配规则、耗时模型、仓配误差数据、合规证据包和授权图案库。</li></ul>
+
+      <h3>F. 风险、合规与停止条件</h3>
+      <ul class="small-list"><li><strong>产品安全：</strong>不搭售电熨斗不等于无产品责任；豆材、警示、年龄、标签、进货查验和实际分类均需确认。</li><li><strong>知识产权：</strong>默认只收用户自有照片；商业 IP 必须有许可。用户声明不能完全消除经营者风险。</li><li><strong>隐私：</strong>原图加密传输、限时删除、默认不训练；人脸和未成年人照片采用更严格权限。</li><li><strong>质量：</strong>记录品牌、批次、色号、称量规则和抽检结果，支持补发或召回。</li><li><strong>未知：</strong>材料与仓配报价、平台类目和保证金、检测费用、预览转付费率、可接受色差和复购周期。</li></ul>
+
+      <h3>G. 角色后置适配</h3>
+      <ul class="small-list"><li><strong>可迁移：</strong>系统架构、图像处理、订单状态机、异常熔断、供应商接口和指标看板。</li><li><strong>缺口：</strong>消费品质量合规、材料检测、色彩管理、包装标签、小件分装和退换货。</li><li><strong>外包：</strong>商品分类评估、材料检测、分装抽检和发货；核心保留图像到物料单规则与订单数据。</li></ul>
+    </div>
+  </details>
+</div>
+
+<footer><div class="footlinks"><a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/zljds/art/2026/art_05ab9131f0ce42b19fd477a89f941580.html" target="_blank" rel="noopener">市场监管总局公告</a><a href="https://js.news.cn/20260512/76540f5f62394ca8947ff3d12eb4d7a6/c.html" target="_blank" rel="noopener">新华网趋势信号</a><a href="https://www.news.cn/fashion/20260225/241777a19d884756b8a1769c4475db02/c.html" target="_blank" rel="noopener">新华网实地报道</a></div><div>单创意副业洞察 · 2026-08-09 · 公开事实不等于客户验证或收益承诺</div></footer>
+<div class="template-badge">TEMPLATE A · single-scroll</div><button id="backTop" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#717b91',primaryColor:'#171c28',primaryBorderColor:'#3d4660',primaryTextColor:'#f3f5fb',secondaryColor:'#191d2a',tertiaryColor:'#10141d'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:30,rankSpacing:42,padding:12}});}catch(e){}
+  var progressBar=document.getElementById('progress');
+  addEventListener('scroll',function(){var root=document.documentElement;var maxScroll=root.scrollHeight-root.clientHeight;progressBar.style.width=(maxScroll>0?(root.scrollTop/maxScroll*100):0)+'%';},{passive:true});
+  document.body.classList.add('js-reveal');
+  var sectionObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('in');sectionObserver.unobserve(entry.target);}});},{threshold:.06,rootMargin:'0px 0px -5% 0px'});
+  document.querySelectorAll('section').forEach(function(sectionEl){sectionObserver.observe(sectionEl);});
+  setTimeout(function(){document.querySelectorAll('section:not(.in)').forEach(function(sectionEl){sectionEl.classList.add('in');});},2500);
+  var reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var metricObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var el=entry.target;var target=Number(el.dataset.target||0);var suffix=el.dataset.suffix||'';if(reduceMotion){el.textContent=target+suffix;}else{var started=performance.now();var duration=650;function tick(now){var p=Math.min(1,(now-started)/duration);var eased=1-Math.pow(1-p,3);el.textContent=Math.round(target*eased)+suffix;if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);}metricObserver.unobserve(el);});},{threshold:.4});
+  document.querySelectorAll('.metric-num').forEach(function(metricEl){metricObserver.observe(metricEl);});
+  var backTopBtn=document.getElementById('backTop');backTopBtn.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});addEventListener('scroll',function(){backTopBtn.classList.toggle('show',scrollY>620);},{passive:true});
+</script>
+</body>
+</html>

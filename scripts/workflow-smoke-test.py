@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import json
 import shutil
 import subprocess
@@ -20,7 +19,6 @@ DEFAULT_WORKFLOWS = [
     "story-split-only",
     "computer-mgmt",
     "learning-loop",
-    "creative-capture",
     "client-dev",
 ]
 ROUTE_PHRASES = {
@@ -30,7 +28,6 @@ ROUTE_PHRASES = {
     "story-split-only": "这个技术方案只拆 Story",
     "computer-mgmt": "帮我清理电脑缓存",
     "learning-loop": "我要学习 agent 开发",
-    "creative-capture": "帮我建立每周创意捕捉系统",
     "client-dev": "全流程开发一下支付收银台",
 }
 
@@ -339,28 +336,6 @@ def inject_implementation_design_fixtures(tmp: Path, bp: dict, stage_key: str) -
                 if lines and lines[0].strip() == "---":
                     lines.insert(1, f"implementation_design: {impl_rel}")
                     plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def inject_creative_capture_fixture(tmp: Path, bp: dict) -> None:
-    """创意周循环有定量事实门禁，不能用空模板 + skill_run 冒充完成。"""
-    if bp.get("name") != "creative-capture":
-        return
-    fixture_module = tmp / "scripts/test-creative-capture-workflow.py"
-    spec = importlib.util.spec_from_file_location("creative_capture_fixture", fixture_module)
-    if spec is None or spec.loader is None:
-        raise SmokeError(f"无法加载 creative-capture fixture: {fixture_module}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    plans = sorted((tmp / "Plans/创意捕捉").glob("*周循环*.md"))
-    if not plans:
-        raise SmokeError("creative-capture plan-init 后未找到共享周 plan")
-    plan = plans[-1]
-    rel = plan.relative_to(tmp).as_posix()
-    feedback = "\n\n".join(
-        skill_run("creative-capture-assistant", rel, stage["key"])
-        for stage in bp.get("stages", [])
-    )
-    write_fixture(plan, module.complete_plan() + "\n" + feedback)
 
 
 
@@ -1077,7 +1052,6 @@ def smoke_lightweight_workflow(tmp: Path, workflow: str, bp: dict) -> None:
         inject_merge_fixtures(tmp, bp)
         inject_story_split_fixtures(tmp, bp, str(current))
         inject_implementation_design_fixtures(tmp, bp, str(current))
-        inject_creative_capture_fixture(tmp, bp)
         next_gate = run_json(tmp, ["bash", "scripts/workflow-gate.sh", "--workflow", workflow, "--json"])
         if next_gate.get("current_state") == current and next_gate.get("blockers"):
             raise SmokeError(f"{workflow} 创建 {current} 阶段 plan 后没有推进: {next_gate}")

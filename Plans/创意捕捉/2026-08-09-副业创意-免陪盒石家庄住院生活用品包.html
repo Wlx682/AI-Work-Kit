@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="免陪盒：面向石家庄免陪照护病区家庭的72小时普通住院生活用品包。"/>
+<title>免陪盒 · 石家庄无陪病房72小时生活用品包</title>
+<style>
+  :root{
+    --bg:#071316;--paper:#edf7f3;--ink:#eaf6f2;--text:#bdd1cb;--muted:#78948d;
+    --panel:#0d1e21;--panel2:#10272a;--line:#234045;--mint:#75f3c8;--aqua:#4fd6e6;
+    --coral:#ff796f;--yellow:#ffd166;--dark:#041012;--read:820px;--wide:1120px;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.82;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:var(--mint);text-decoration:none;border-bottom:1px solid rgba(117,243,200,.3)}a:hover{border-bottom-color:var(--mint)}
+  #progress{position:fixed;top:0;left:0;width:0;height:3px;z-index:90;background:linear-gradient(90deg,var(--coral),var(--mint))}
+  .topbar{position:fixed;top:0;left:0;right:0;height:56px;z-index:80;display:flex;align-items:center;padding:0 clamp(16px,4vw,44px);background:rgba(7,19,22,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:850;letter-spacing:.5px}
+  .cross{width:25px;height:25px;border-radius:50%;background:var(--mint);position:relative;box-shadow:0 0 18px rgba(117,243,200,.25)}
+  .cross:before,.cross:after{content:"";position:absolute;background:var(--dark);left:50%;top:50%;transform:translate(-50%,-50%);border-radius:2px}
+  .cross:before{width:12px;height:3px}.cross:after{width:3px;height:12px}
+  .meta{margin-left:auto;color:var(--muted);font:11px var(--mono);letter-spacing:.8px}
+
+  .hero{min-height:790px;display:flex;align-items:center;padding:clamp(105px,11vw,150px) clamp(20px,5vw,58px) clamp(70px,8vw,105px);position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero:before{content:"";position:absolute;inset:0;background:
+    radial-gradient(700px 480px at 80% 42%,rgba(79,214,230,.14),transparent 66%),
+    radial-gradient(560px 420px at 12% 15%,rgba(255,121,111,.09),transparent 68%),
+    linear-gradient(rgba(35,64,69,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(35,64,69,.18) 1px,transparent 1px);
+    background-size:auto,auto,44px 44px,44px 44px}
+  .hero-grid{position:relative;z-index:2;width:min(100%,var(--wide));margin:0 auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr);gap:clamp(40px,7vw,88px);align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid #31545a;padding:6px 12px;color:var(--mint);font:12px var(--mono);letter-spacing:1.2px}
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 11px var(--coral);animation:pulse 1.8s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+  h1{font-size:clamp(46px,7.8vw,88px);line-height:.98;letter-spacing:-4px;margin:28px 0 24px;font-weight:950}
+  h1 span{display:block;font-size:.48em;color:var(--mint);letter-spacing:-1.5px;margin-top:17px}
+  .hero-copy{font-size:clamp(17px,2vw,20px);color:#c7dad4;line-height:1.75;max-width:640px}.hero-copy strong{color:#fff}
+  .pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:27px}.pill{padding:6px 11px;border:1px solid var(--line);background:#0a191c;color:#9fb6af;font:12px var(--mono)}
+
+  .kit{position:relative;background:var(--paper);color:#102622;border-radius:7px;padding:28px;transform:rotate(1.2deg);box-shadow:20px 26px 0 rgba(79,214,230,.05),0 30px 90px rgba(0,0,0,.3)}
+  .kit:before{content:"";position:absolute;inset:12px;border:1px dashed rgba(16,38,34,.18);pointer-events:none}
+  .kit-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #163c38;padding-bottom:18px;position:relative;z-index:2}
+  .kit-name{font:900 30px/1 var(--sans)}.kit-name small{display:block;font:10px var(--mono);letter-spacing:1.6px;margin-top:7px;color:#55746d}
+  .seal{width:68px;height:68px;border:2px solid var(--coral);border-radius:50%;display:grid;place-items:center;text-align:center;color:#b83f3a;font:800 10px/1.15 var(--mono);transform:rotate(-10deg)}
+  .hours{display:flex;align-items:flex-end;gap:10px;margin:26px 0 20px;position:relative;z-index:2}.hours b{font:950 72px/.8 var(--mono);letter-spacing:-7px}.hours span{font:800 16px/1.15 var(--sans)}
+  .items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;position:relative;z-index:2}
+  .item{border:1px solid rgba(16,38,34,.18);padding:10px;background:rgba(255,255,255,.45);font-size:12px;font-weight:700}.item i{display:inline-block;width:7px;height:7px;background:var(--mint);border:1px solid #1f8f72;border-radius:50%;margin-right:7px}
+  .kit-foot{margin-top:22px;padding-top:14px;border-top:1px solid rgba(16,38,34,.2);font:10px var(--mono);color:#56736d;display:flex;justify-content:space-between;position:relative;z-index:2}
+
+  .metrics{max-width:var(--wide);margin:0 auto;padding:0 clamp(20px,5vw,58px);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--line)}
+  .metric{min-height:195px;background:var(--bg);padding:30px clamp(22px,3vw,34px);display:flex;flex-direction:column;justify-content:center}
+  .metric-num{font:950 clamp(38px,6vw,60px)/1 var(--mono);letter-spacing:-3px;color:var(--mint)}.metric:nth-child(2) .metric-num{color:var(--coral)}.metric:nth-child(3) .metric-num{color:var(--aqua)}
+  .metric p{margin:14px 0 0;color:var(--muted);font-size:14px}.metric p b{color:var(--ink)}
+
+  article{max-width:var(--read);margin:0 auto;padding:32px clamp(20px,5vw,42px) 80px}
+  section{padding:clamp(48px,7vw,76px) 0;border-bottom:1px solid var(--line)}
+  .js-reveal section{opacity:0;transform:translateY(18px);transition:.65s ease}.js-reveal section.visible{opacity:1;transform:none}
+  .kicker{color:var(--mint);font:12px var(--mono);letter-spacing:1.7px;margin-bottom:12px}
+  h2{font-size:clamp(27px,4vw,38px);line-height:1.2;letter-spacing:-.8px;margin:0 0 22px}
+  h3{font-size:19px;margin:28px 0 8px}p{color:var(--text);margin:16px 0}strong{color:#fff}
+  .lead{font-size:clamp(18px,2.4vw,21px);color:#d9e8e3}
+  .callout{padding:20px 22px;margin:26px 0;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--mint)}.callout b{display:block;color:var(--mint);font:12px var(--mono);letter-spacing:1px;margin-bottom:5px}
+  .warning{border-left-color:var(--coral)}.warning b{color:var(--coral)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:25px 0}.card{background:var(--panel);border:1px solid var(--line);padding:18px}.card small{display:block;color:var(--mint);font:11px var(--mono);margin-bottom:7px}.card b{display:block}.card p{font-size:14px;color:var(--muted);margin:7px 0 0}
+  figure.diagram{margin:30px 0;background:var(--panel);border:1px solid #31545a;overflow:hidden}.diagram-bar{padding:11px 15px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted);display:flex;gap:7px;align-items:center}.dot{width:8px;height:8px;border-radius:50%}.red{background:var(--coral)}.yel{background:var(--yellow)}.grn{background:var(--mint)}.mermaid{padding:30px 12px;text-align:center;overflow-x:auto}figcaption{text-align:center;padding:0 20px 18px;color:var(--muted);font-size:13px}
+  .economics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);margin:27px 0}.economics div{background:var(--panel);padding:22px;text-align:center}.economics b{display:block;font:950 30px var(--mono);color:var(--mint)}.economics small{color:var(--muted)}
+  .verdict{padding:25px;border:1px solid rgba(117,243,200,.45);background:linear-gradient(110deg,rgba(117,243,200,.08),transparent)}.verdict small{color:var(--mint);font:12px var(--mono);letter-spacing:1.5px}.verdict h3{font-size:31px;margin:7px 0}.verdict p{margin-bottom:0}
+
+  .appendix{max-width:var(--wide);margin:0 auto;padding:0 clamp(20px,5vw,58px) 110px}
+  details{background:var(--panel);border:1px solid var(--line)}summary{cursor:pointer;list-style:none;padding:24px clamp(20px,4vw,34px);font-weight:850;display:flex;align-items:center;gap:14px}summary::-webkit-details-marker{display:none}summary:before{content:"+";width:28px;height:28px;display:grid;place-items:center;border:1px solid #3c5b5f;color:var(--mint);font:18px var(--mono)}details[open] summary:before{content:"−"}
+  .appendix-body{padding:0 clamp(20px,4vw,34px) 34px;border-top:1px solid var(--line);color:var(--text)}.appendix-body h3{color:var(--ink);border-top:1px dashed var(--line);padding-top:25px}
+  table{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto}th,td{text-align:left;vertical-align:top;padding:11px 12px;border-bottom:1px solid var(--line);min-width:135px}th{color:var(--mint);font:11px var(--mono)}ul{padding-left:21px}li{margin:8px 0}
+  footer{border-top:1px solid var(--line);padding:42px 20px 80px;text-align:center;color:var(--muted);font:12px var(--mono)}
+  #back{position:fixed;right:20px;bottom:20px;z-index:70;width:44px;height:44px;background:rgba(13,30,33,.92);border:1px solid #3c5b5f;color:var(--mint);cursor:pointer;opacity:0;pointer-events:none;transition:.25s}#back.show{opacity:1;pointer-events:auto}
+  @media(max-width:840px){.hero{min-height:auto}.hero-grid{grid-template-columns:1fr}.kit{max-width:570px;width:100%;margin:0 auto;transform:none}.meta{display:none}h1{letter-spacing:-2.5px}}
+  @media(max-width:520px){.hero{padding-left:18px;padding-right:18px}.kit{padding:20px}.kit-head{align-items:center}.hours b{font-size:62px}.items{grid-template-columns:1fr}.metric{min-height:155px}.metric-num{letter-spacing:-2px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}.js-reveal section{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><div class="brand"><span class="cross"></span>免陪盒 / CARE KIT</div><div class="meta">SIDE-015 · 石家庄 · 2026-08-09</div></div>
+
+<header class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow"><span class="pulse"></span>New hospital retail moment</div>
+      <h1>免陪盒<span>家属离场，物品仍要到场</span></h1>
+      <p class="hero-copy">给临时住进石家庄免陪照护病区、家属无法长期陪床的家庭，卖一盒可配送至医院<strong>公共交接点</strong>的 72 小时普通生活用品。不是护理、不是医疗用品，而是一次标准化的紧急零售履约。</p>
+      <div class="pills"><span class="pill">建议定价 ¥79</span><span class="pill">普通日用品</span><span class="pill">不进病区 · 不碰患者</span></div>
+    </div>
+    <div class="kit" aria-label="72小时生活用品盒示意">
+      <div class="kit-head"><div class="kit-name">免陪盒<small>GENERAL DAILY NECESSITIES</small></div><div class="seal">SEALED<br/>BATCH</div></div>
+      <div class="hours"><b>72</b><span>小时<br/>基础用品</span></div>
+      <div class="items">
+        <div class="item"><i></i>软毛牙刷 / 小支牙膏</div><div class="item"><i></i>棉质方巾 / 普通纸巾</div>
+        <div class="item"><i></i>普通湿巾 / 梳子</div><div class="item"><i></i>收纳袋 / 姓名标签</div>
+      </div>
+      <div class="kit-foot"><span>NON-MEDICAL GOODS</span><span>CHECK HOSPITAL RULES</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-num" data-target="5" data-prefix="" data-suffix="月">5月</div><p><b>石家庄市五院启动试点</b><br/>2026 年具体病区落地</p></div>
+  <div class="metric"><div class="metric-num" data-target="100" data-prefix="¥" data-suffix="/日">¥100/日</div><p><b>河北免陪照护指导价</b><br/>这是照护费，不是商品价格</p></div>
+  <div class="metric"><div class="metric-num" data-target="200" data-prefix="" data-suffix="+">200+</div><p><b>河北医大一院历史使用者</b><br/>2025 年 1 月公开时点</p></div>
+</div>
+
+<article>
+  <section>
+    <div class="kicker">01 / WHAT IT SELLS</div>
+    <h2>不是把牙刷装进盒子，而是替家属少跑一趟</h2>
+    <p class="lead">传统住院时，陪床家属也是随时补货的人。免陪照护把生活照护交给护士和医疗护理员，家属可以离开病房，但患者的个人用品并不会自动出现。</p>
+    <p><strong>免陪盒</strong>把入院前三天最普通、最不涉及治疗的用品，做成一个不用临时列清单的标准商品。家属网页下单，附近合作零售点出库，同城配送只送到医院允许的公共交接位置，再由家属或指定接收人领取。</p>
+    <div class="callout"><b>最小可售单元</b>一盒密封、可追溯批次的 72 小时普通住院生活用品包。不含药品、食品、医疗器械、消毒产品和任何治疗功能商品。</div>
+    <p>说明性示例：患者傍晚进入免陪病区，子女次日要上班。他们购买一盒，选择医院附近交接点和时段。合作零售点取出预装库存，配送至公共位置。这个场景用于解释交易，并非真实订单。</p>
+  </section>
+
+  <section>
+    <div class="kicker">02 / WHY NOW</div>
+    <h2>免陪服务开始落地，家属角色正在被重新拆分</h2>
+    <div class="cards">
+      <div class="card"><small>2026-05</small><b>本地病区启动</b><p>市五院神经内科试点，护士主导、第三方协同，食堂送餐到床头。</p></div>
+      <div class="card"><small>2025-01</small><b>河北价格入口</b><p>免陪照护指导价 100 元 / 日；当时河北医大一院已有 200 余名患者使用。</p></div>
+      <div class="card"><small>2025-05</small><b>国家后勤要求</b><p>试点方案同时强调生活照护、在线订餐、统一配送和智慧病房。</p></div>
+    </div>
+    <p><strong>AI 推断：</strong>当照护人员专业化、家属停留减少，个人物品准备会从“家属顺手做”变成可单独购买的非医疗履约环节。这一推断有制度变化支撑，但没有商品订单数据。</p>
+    <p>来源：<a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/26/4edd1c6f-0d29-4e20-bf31-34ddc762a290.html">石家庄市五院试点</a>、<a href="https://www.nhsa.gov.cn/art/2025/1/4/art_14_15360.html">河北价格项目</a>、<a href="https://www.nhc.gov.cn/yzygj/c100068/202505/22107c74c18049d9b8d3439c992eae1e.shtml">国家试点方案</a>。</p>
+  </section>
+
+  <section>
+    <div class="kicker">03 / WHO PAYS</div>
+    <h2>唯一付款者：无法持续陪床的患者家属</h2>
+    <p>他们购买的不是八件廉价日用品，而是“今晚不用再跑一趟，也不用临时确认八件小东西”的确定性。购买时刻是医院确认住院与病区后，家属发现准备时间短、无法陪床，或者患者已经入院却缺少个人用品。</p>
+    <p>医院提供床位用品不等于包办所有个人用品。一份 2026 年公开的医院住院须知就要求患者自备碗、筷、茶杯和脸盆。它不是石家庄清单，只能证明住院生活用品通常存在个人准备责任，具体内容必须逐院核对。</p>
+    <div class="callout warning"><b>强替代方案</b>家里现拿、医院便利店、外卖平台和普通电商都能买。只有“清单适配 + 一次配齐 + 按约交接”同时成立，免陪盒才有资格卖得比散装日用品贵。</div>
+  </section>
+
+  <section>
+    <div class="kicker">04 / HOW IT WORKS</div>
+    <h2>标准商品背后，真正需要维护的是“逐院版本”</h2>
+    <figure class="diagram">
+      <div class="diagram-bar"><i class="dot red"></i><i class="dot yel"></i><i class="dot grn"></i>&nbsp;care-kit-flow.mmd</div>
+      <pre class="mermaid">
+flowchart LR
+    A["家属选择医院&lt;br/&gt;与交接时段"] --> B["系统匹配该院&lt;br/&gt;允许清单"]
+    B --> C["附近库存点&lt;br/&gt;领取密封盒"]
+    C --> D["配送至医院&lt;br/&gt;公共交接点"]
+    D --> E["接收人核对&lt;br/&gt;批次与封签"]
+      </pre>
+      <figcaption>没有医院书面许可时，它只能是普通零售订单，不能进入院内材料或借用医院标识。</figcaption>
+    </figure>
+    <p>完成定义：正确版本的未拆封商品，在承诺时段送达双方约定且医院允许的公共位置，由指定接收人确认。平台<strong>不进入病区、不触碰患者、不代替护理员、不承诺医院一定接收，也不收集病情、床号或诊断信息。</strong></p>
+    <p>医院版本未确认、物品是否禁带存在疑问、封签破损或交接位置变化时，订单应暂停出库。把不确定性留给人工，不让自动化替医院做决定。</p>
+  </section>
+
+  <section>
+    <div class="kicker">05 / MONEY & AUTOMATION</div>
+    <h2>79 元一盒，真正容易失控的是配送与渠道成本</h2>
+    <p><strong>建议定价假设：79 元 / 盒。</strong> 假设日用品 26 元、包装质检 5 元、同城履约 12 元、渠道分成 12 元、支付与退换准备 4 元，单盒贡献约 20 元。</p>
+    <div class="economics"><div><b>¥79</b><small>建议零售价</small></div><div><b>− ¥59</b><small>假设可变成本</small></div><div><b>≈ ¥20</b><small>单盒贡献情景</small></div></div>
+    <p>每月 500 盒对应约 1 万元贡献，只是算术，不是销量预测。家庭复购频率低，因此它依赖持续的新入院流量与多家医院周边库存，不能靠会员订阅粉饰。</p>
+    <div class="cards">
+      <div class="card"><small>AUTO</small><b>适合自动化</b><p>医院版本匹配、库存同步、订单路由、配送通知、电子发票、批次追踪和超时退款。</p></div>
+      <div class="card"><small>HUMAN</small><b>必须人工</b><p>逐院核对规则、供应商品控、建立零售点、处理拒收、破损、缺件和投诉。</p></div>
+    </div>
+    <p><strong>自动化上限：</strong>超过 10% 的订单需要电话确认交接位置，或每家医院都要求完全不同的组合，标准盒就会退化成低毛利跑腿。</p>
+  </section>
+
+  <section>
+    <div class="kicker">06 / VERDICT</div>
+    <h2>有新购买时刻，但商品门槛很低</h2>
+    <div class="verdict"><small>FINAL JUDGEMENT</small><h3>有条件值得关注</h3><p>新鲜点不是“卖住院用品”，而是免陪病房可能把过去由家属顺手完成的物资准备，拆成一笔独立、紧急、标准化的订单。</p></div>
+    <p>最可能失败的三件事：医院不给渠道或不允许第三方交接；便利店与外卖更便宜更快；商品清单和病区要求不符，造成禁带、浪费或投诉。</p>
+    <p>停止条件：90 天付费订单少于 200 盒；单盒贡献低于 15 元；错漏超时投诉高于 5%；按约交接成功率低于 90%；人工确认率高于 10%。达到其中两个，就不再扩医院和库存。</p>
+    <p>角色只在选定后参与执行：架构能力适合设计医院版本、库存路由与异常状态；医院零售渠道、日用品供应链和产品责任才是关键缺口，应交给有经验的本地合作方、质检与法律专业人员。</p>
+  </section>
+</article>
+
+<div class="appendix" id="appendix">
+  <details>
+    <summary>事实与推演附录 · 点击展开完整来源、测算与合规边界</summary>
+    <div class="appendix-body">
+      <h3>A. 行业坐标与商业系统</h3>
+      <ul><li>行业：医院周边即时零售 / 普通住院生活用品。</li><li>模式：标准实体商品直销，附近库存点履约。</li><li>位置：确认住院之后、患者获得个人用品之前。</li><li>付款者通常是家属，使用者是患者。</li><li>最小单位：一盒 72 小时普通生活用品包。</li></ul>
+      <h3>B. 市场证据与事实来源</h3>
+      <table>
+        <thead><tr><th>日期</th><th>来源与事实</th><th>AI 推断</th><th>局限</th></tr></thead>
+        <tbody>
+          <tr><td>2026-07-26</td><td><a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/26/4edd1c6f-0d29-4e20-bf31-34ddc762a290.html">石家庄市政府</a>：市五院 5 月在神经内科启动免陪照护，护士主导、第三方协同。</td><td>家属停留减少后，用品交接可能独立成单。</td><td>单病区报道，无购买数据。</td></tr>
+          <tr><td>2025-01-04</td><td><a href="https://www.nhsa.gov.cn/art/2025/1/4/art_14_15360.html">国家医保局</a>：河北指导价 100 元 / 日；公开时河北医大一院已有 200 余名患者使用。</td><td>免陪模式存在真实使用基础。</td><td>单院累计；100 元是照护费。</td></tr>
+          <tr><td>2025-05-26</td><td><a href="https://www.nhc.gov.cn/yzygj/c100068/202505/22107c74c18049d9b8d3439c992eae1e.shtml">国家卫健委</a>：试点包括生活照护、后勤、在线订餐和统一配送。</td><td>病区会更重视标准后勤入口。</td><td>文件未要求生活用品盒。</td></tr>
+          <tr><td>2026-03-04</td><td><a href="https://www.yantai.gov.cn/art/2025/3/6/art_84963_3008658.html">烟台市政府公共企事业信息</a>：一所医院要求自备碗筷、茶杯和脸盆。</td><td>个人用品存在准备负担。</td><td>非石家庄，各院不能通用。</td></tr>
+        </tbody>
+      </table>
+      <p>事实与推演分离：试点时间、服务内容、指导价、患者数量与住院须知来自来源；独立物资订单是 AI 推断；79 元、成本和停止阈值是建议假设。各院允许清单、交接规则、合同和真实订单量未知。</p>
+      <h3>C. 收入与单位经济</h3>
+      <p>建议零售价 79 元。商品 26 + 包装质检 5 + 配送 12 + 渠道 12 + 支付退换 4 = 59 元，贡献约 20 元。配送半径、失败交接与更高渠道分成都会迅速吞掉利润。</p>
+      <h3>D. 运营与自动化系统</h3>
+      <p>逐院规则确认 → 商品白名单 → 批次预装 → 周边库存 → 网页选医院和时段 → 自动路由 → 公共区域交接 → 签收、退款与批次追溯。不得保存诊断、病情或不必要的住院信息。</p>
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul><li>0–30 天：只做不含食品、药品、器械和液体大包装的通用盒，明确普通零售交接与退款边界。</li><li>31–90 天：形成少量医院版本和周边合规库存点；获得书面许可后才进入院内渠道。</li></ul>
+      <h3>F. 风险、合规与停止条件</h3>
+      <p>落实普通商品质量、标签、进货查验、电商与消费者权益义务；不销售或宣称药品、器械、医疗消毒功能；未经许可不使用医院名称、标识和院内渠道；只收履约必要信息并设置保存期限。正式经营前应让律师核对院方合作、隐私、商品责任和宣传用语。</p>
+    </div>
+  </details>
+</div>
+
+<footer>免陪盒 · SIDE-015 · 事实截止 2026-08-09 · 公开桌面证据不等于客户验证或收益承诺</footer>
+<button id="back" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{
+    mermaid.initialize({startOnLoad:true,securityLevel:"loose",theme:"dark",
+      themeVariables:{fontFamily:"-apple-system, PingFang SC, sans-serif",fontSize:"14px",lineColor:"#78948d",
+        primaryColor:"#10272a",primaryBorderColor:"#31545a",primaryTextColor:"#eaf6f2",secondaryColor:"#152f31",
+        tertiaryColor:"#0d1e21",edgeLabelBackground:"#0d1e21"},
+      flowchart:{htmlLabels:true,curve:"basis",nodeSpacing:34,rankSpacing:45,padding:12}});
+  }catch(err){}
+  var progressBar=document.getElementById("progress");
+  var backButton=document.getElementById("back");
+  addEventListener("scroll",function(){
+    var rootElement=document.documentElement;
+    var maxScroll=rootElement.scrollHeight-rootElement.clientHeight;
+    progressBar.style.width=(maxScroll>0?rootElement.scrollTop/maxScroll*100:0)+"%";
+    if(scrollY>650){backButton.classList.add("show");}else{backButton.classList.remove("show");}
+  },{passive:true});
+  backButton.addEventListener("click",function(){scrollTo({top:0,behavior:"smooth"});});
+  document.body.classList.add("js-reveal");
+  var revealObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add("visible");revealObserver.unobserve(entry.target);}});
+  },{threshold:.05,rootMargin:"0px 0px -4% 0px"});
+  document.querySelectorAll("section").forEach(function(sectionElement){revealObserver.observe(sectionElement);});
+  setTimeout(function(){document.querySelectorAll("section:not(.visible)").forEach(function(sectionElement){sectionElement.classList.add("visible");});},2200);
+  function animateNumber(element){
+    if(element.dataset.done==="1"){return;}element.dataset.done="1";
+    var targetValue=parseInt(element.dataset.target,10);
+    var prefixValue=element.dataset.prefix||"";
+    var suffixValue=element.dataset.suffix||"";
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches){element.textContent=prefixValue+targetValue+suffixValue;return;}
+    var startTime=null;
+    function tick(timestamp){
+      if(!startTime){startTime=timestamp;}
+      var ratio=Math.min((timestamp-startTime)/900,1);
+      var eased=1-Math.pow(1-ratio,3);
+      element.textContent=prefixValue+Math.floor(targetValue*eased)+suffixValue;
+      if(ratio<1){requestAnimationFrame(tick);}
+    }
+    requestAnimationFrame(tick);
+  }
+  var metricObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){if(entry.isIntersecting){animateNumber(entry.target);metricObserver.unobserve(entry.target);}});
+  },{threshold:.4});
+  document.querySelectorAll(".metric-num").forEach(function(metricElement){metricObserver.observe(metricElement);});
+</script>
+</body>
+</html>

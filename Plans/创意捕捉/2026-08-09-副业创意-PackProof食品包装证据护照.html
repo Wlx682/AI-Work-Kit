@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="PackProof 食品包装证据护照：五分钟看懂一个基于近期欧盟包装法规变化的微型软件机会。"/>
+<link rel="icon" href="data:,"/>
+<title>PackProof｜食品包装证据护照</title>
+<style>
+:root{
+  --bg:#080b10;--bg2:#0d121b;--panel:#111824;--panel2:#0b111a;
+  --ink:#edf3ff;--muted:#a4b0c3;--dim:#6f7d94;--line:#243044;
+  --cyan:#54e6d1;--blue:#6ea2ff;--amber:#ffc66d;--red:#ff7c8b;--green:#56d7a5;
+  --read:760px;--wide:1080px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.82 var(--sans);overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}
+#progress{position:fixed;z-index:90;top:0;left:0;width:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan));box-shadow:0 0 16px rgba(84,230,209,.5)}
+.topbar{position:fixed;z-index:80;top:0;left:0;right:0;height:54px;display:flex;align-items:center;gap:12px;padding:0 clamp(18px,4vw,42px);background:rgba(8,11,16,.76);backdrop-filter:blur(16px);border-bottom:1px solid rgba(36,48,68,.8)}
+.mark{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#06101a;font:800 13px var(--mono)}
+.topbar b{font-size:13px;letter-spacing:.2px}.topbar span:last-child{margin-left:auto;color:var(--dim);font:12px var(--mono)}
+.hero{position:relative;min-height:690px;display:grid;place-items:center;padding:120px 22px 70px;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero:before{content:"";position:absolute;inset:0;background:
+ radial-gradient(700px 420px at 50% 5%,rgba(110,162,255,.2),transparent 65%),
+ radial-gradient(580px 350px at 78% 78%,rgba(84,230,209,.1),transparent 64%),
+ linear-gradient(rgba(36,48,68,.34) 1px,transparent 1px),linear-gradient(90deg,rgba(36,48,68,.34) 1px,transparent 1px);
+ background-size:auto,auto,52px 52px,52px 52px;mask-image:linear-gradient(#000 65%,transparent)}
+.hero-in{position:relative;z-index:2;width:min(100%,var(--wide));text-align:center}
+.kicker{display:inline-flex;align-items:center;gap:9px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;color:var(--cyan);font:12px var(--mono);letter-spacing:1.1px;background:rgba(13,18,27,.7)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+h1{max-width:850px;margin:25px auto 18px;font-size:clamp(38px,7vw,74px);line-height:1.05;letter-spacing:-2.4px;background:linear-gradient(115deg,#fff 15%,#b9d3ff 56%,#7cf2df);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{max-width:760px;margin:0 auto;color:#c1ccdc;font-size:clamp(17px,2vw,21px);line-height:1.72}
+.hero .sub strong{color:#fff}
+.promise{max-width:720px;margin:28px auto 0;padding:14px 18px;border:1px solid rgba(84,230,209,.25);border-radius:12px;background:rgba(84,230,209,.05);color:#b9dcd7;font-size:14px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;max-width:900px;margin:42px auto 0;text-align:left}
+.metric{min-height:156px;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(17,24,36,.92),rgba(9,14,22,.8));box-shadow:0 24px 60px -42px #000}
+.metric .num{display:block;font:800 clamp(38px,6vw,56px)/1 var(--mono);color:var(--cyan);letter-spacing:-2px}
+.metric:nth-child(2) .num{color:var(--blue)}.metric:nth-child(3) .num{color:var(--amber)}
+.metric p{margin:15px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+main{max-width:var(--read);margin:auto;padding:20px clamp(20px,5vw,38px) 100px}
+section{padding:52px 0;border-bottom:1px solid var(--line)}
+.js-reveal section[data-reveal]{opacity:0;transform:translateY(18px);transition:.65s ease}
+.js-reveal section[data-reveal].in{opacity:1;transform:none}
+.sec-no{margin-bottom:8px;color:var(--cyan);font:12px var(--mono);letter-spacing:1.8px}
+h2{margin:0 0 20px;font-size:clamp(25px,4vw,34px);line-height:1.25;letter-spacing:-.7px}
+h3{margin:30px 0 10px;font-size:19px;line-height:1.35}
+p{margin:15px 0;color:#ccd5e5}
+strong{color:#fff}
+.lead{font-size:19px;color:#d9e1ee}
+.scene,.verdict,.boundary{margin:24px 0;padding:20px 22px;border-radius:14px;background:var(--panel2);border:1px solid var(--line)}
+.scene{border-left:3px solid var(--blue)}.verdict{border-left:3px solid var(--cyan)}.boundary{border-left:3px solid var(--amber)}
+.label{display:block;margin-bottom:7px;color:var(--dim);font:11px var(--mono);letter-spacing:1px;text-transform:uppercase}
+ul,ol{padding-left:22px}li{margin:10px 0;color:#cbd5e5}
+.signal-list{display:grid;gap:12px;margin:24px 0}
+.signal{padding:18px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.signal time{display:block;margin-bottom:7px;color:var(--cyan);font:700 12px var(--mono)}
+.flow-card{margin:28px 0;border:1px solid var(--line);border-radius:16px;background:var(--panel2);overflow:hidden}
+.flow-head{padding:12px 16px;border-bottom:1px solid var(--line);color:var(--dim);font:12px var(--mono)}
+.mermaid{padding:26px 12px;text-align:center;overflow-x:auto}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:24px 0}
+.mini{padding:18px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.mini b{display:block;margin-bottom:6px}.mini p{margin:0;color:var(--muted);font-size:14px}
+details.appendix{margin-top:54px;border:1px solid var(--line);border-radius:18px;background:var(--bg2);overflow:hidden}
+details.appendix>summary{cursor:pointer;list-style:none;padding:22px 24px;font-size:20px;font-weight:750;background:linear-gradient(90deg,rgba(110,162,255,.08),transparent)}
+details.appendix>summary::-webkit-details-marker{display:none}
+details.appendix>summary:after{content:"＋";float:right;color:var(--cyan)}
+details.appendix[open]>summary:after{content:"－"}
+.appendix-in{padding:4px 24px 30px}
+.appendix-in h3{padding-top:26px;border-top:1px solid var(--line)}
+.table-wrap{width:100%;overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:12px}
+table{width:100%;min-width:680px;border-collapse:collapse;font-size:13.5px;background:#0a0f17}
+th,td{padding:12px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font:11px var(--mono);letter-spacing:.5px;background:#101722}
+td{color:#c6d0df}tr:last-child td{border-bottom:0}
+.fact-tags{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.fact-tags span{padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
+.source-note{margin-top:26px;padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--dim);font-size:13px}
+footer{max-width:var(--read);margin:auto;padding:0 20px 80px;color:var(--dim);font-size:13px}
+#back{position:fixed;z-index:70;right:20px;bottom:20px;width:44px;height:44px;border:1px solid rgba(110,162,255,.45);border-radius:12px;background:rgba(16,24,37,.9);color:#d7e4ff;cursor:pointer;opacity:0;pointer-events:none;transition:.25s}
+#back.show{opacity:1;pointer-events:auto}
+@media(max-width:720px){
+  .topbar span:last-child{display:none}.hero{min-height:auto;padding-top:105px}
+  h1{letter-spacing:-1.4px}.metrics{grid-template-columns:1fr}.metric{min-height:125px}
+  main{padding-left:18px;padding-right:18px}.appendix-in{padding-left:16px;padding-right:16px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}.js-reveal section[data-reveal]{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav class="topbar"><span class="mark">P</span><b>PackProof · 单创意洞察</b><span>五分钟正文 / 事实附录</span></nav>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="kicker"><span class="pulse"></span>包装食品 × 微型软件</div>
+    <h1>把散落的包装文件<br/>变成可追溯的证据护照</h1>
+    <p class="sub">卖给销往欧盟或北爱尔兰的中小食品品牌。系统整理供应商声明、材料规格和检测报告，指出缺件并生成资料包；<strong>它整理证据，不冒充认证机构。</strong></p>
+    <div class="promise">为什么是现在：BPA 首个期限刚到，PPWR 即将普遍适用，企业需要回答“每个在售包装的证据在哪里”。</div>
+    <div class="metrics">
+      <div class="metric"><span class="num" data-count="23" data-suffix="天">23天</span><p>三个关键法规与官方解释节点集中出现的时间窗口</p></div>
+      <div class="metric"><span class="num" data-count="4" data-suffix="步">4步</span><p>上传、抽取、分流、审核导出，构成最小履约闭环</p></div>
+      <div class="metric"><span class="num" data-count="79" data-prefix="€" data-suffix="/月">€79/月</span><p>建议定价假设，不是市场报价，也不代表已验证需求</p></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section data-reveal>
+    <div class="sec-no">01 — 先看懂</div>
+    <h2>这是个什么生意？</h2>
+    <div class="scene"><span class="label">说明性场景 · 不是客户案例</span>一家小型酱料品牌准备把新瓶装产品卖到欧盟。瓶身、瓶盖、密封垫、油墨和涂层各有供应商 PDF，但质量负责人很难迅速判断：哪份文件对应当前版本？是否提到 BPA 或 PFAS？换材料后旧报告还能不能用？</div>
+    <p class="lead">PackProof 给每一种包装建立一张“证据护照”。用户上传文件，系统抽取材料、供应商、日期、测试和声明字段；缺什么会被列出来，需要时可导出带原文出处与版本记录的资料包。</p>
+    <p><strong>最小可售单元：</strong>某个具体包装组合的证据护照，例如玻璃瓶 + 瓶盖 + 密封垫。它不卖泛泛的法规报告，也不做实验检测。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">02 — 时机</div>
+    <h2>为什么偏偏是现在？</h2>
+    <div class="signal-list">
+      <div class="signal"><time>2026-07-20</time>欧盟 BPA 食品接触材料规则的首个关键过渡期限到达。英国食品标准局提醒相关企业检查供应链、材料与支持文件。 <a href="https://www.gov.uk/government/publications/bpa-in-food-contact-materials-eu-rules-and-uk-implications/bpa-in-food-contact-materials-eu-rules-and-uk-implications">官方指引 ↗</a></div>
+      <div class="signal"><time>2026-08-03</time>欧盟委员会在 PPWR 普遍适用前九天发布新版 FAQ，显示企业仍需要统一解释。 <a href="https://environment.ec.europa.eu/publications/faq-packaging-and-packaging-waste-regulation-ppwr_en">官方 FAQ ↗</a></div>
+      <div class="signal"><time>2026-08-12</time>PPWR 将普遍适用，对食品接触包装中的 PFAS 设置浓度上限，并要求相关技术文件与符合性声明。 <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32025R0040">法规原文 ↗</a></div>
+    </div>
+    <p>这些变化共同制造了新的付费理由：企业现在需要持续知道<strong>每个包装版本的证据在哪里、是否过期、还缺什么</strong>。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">03 — 付款者</div>
+    <h2>谁会付钱，为什么会付？</h2>
+    <p class="lead"><strong>唯一付费客户（AI 推断）：</strong>已经在欧盟或北爱尔兰销售，有 10–100 个活跃包装组合，但没有企业级法规系统的独立食品品牌或进口商。</p>
+    <p>最强购买时刻不是“学习法规”，而是新品上市、供应商换材料、零售商索件或主管机关要求文件。此时继续用邮箱 + Excel + 共享盘，可能导致上市延误或无法及时举证。</p>
+    <div class="boundary"><span class="label">真正购买的结果</span>文件不丢、版本对得上、缺件有人追、需要时能快速导出。受益者是质量/运营人员，付款者是承担上市与监管风险的企业。</div>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">04 — 履约</div>
+    <h2>它具体怎么运转？</h2>
+    <div class="flow-card">
+      <div class="flow-head">最小履约闭环</div>
+      <pre class="mermaid">
+flowchart LR
+  A["上传供应商文件"] --> B["抽取材料与证据"]
+  B --> C{"证据闸门"}
+  C -->|"已覆盖"| D["人工审核后导出"]
+  C -->|"缺件"| E["自动追件"]
+  C -->|"歧义"| F["责任人或专家判断"]
+  E --> A
+  F --> D
+      </pre>
+    </div>
+    <p>系统只给三种状态：证据已覆盖、明确缺件、需要人工判断。每个字段都应能点回原文件页码；文件或包装变化后生成新版本。</p>
+    <p><strong>完成定义：</strong>包装身份、组件、供应商、原始证据、版本和审核人都能追溯，才标为“资料完整”。资料完整不等于法律合规。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">05 — 赚钱方式</div>
+    <h2>怎么赚钱，能自动到什么程度？</h2>
+    <p class="lead"><strong>建议定价假设：</strong>€79/月，管理不超过 50 个包装类型。假设每客户每月 OCR、存储、通知、支付和一般支持共 €14–34，软件层月贡献毛利约 €45–65；这不是市场报价。</p>
+    <div class="split">
+      <div class="mini"><b>可以自动化</b><p>文件去重、OCR、字段抽取、缺件提醒、版本差异、规则变化影响清单和导出目录。</p></div>
+      <div class="mini"><b>必须由人负责</b><p>判断责任主体、过渡条款、检测方法是否适用，处理矛盾证据并签署声明。</p></div>
+    </div>
+    <p>复购来自包装换版、供应商更新、新品上市与规则变化。如果客户只在一次审计前使用，随后不再登录，订阅模式就不成立。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">06 — 判断</div>
+    <h2>最大问题与最终判断</h2>
+    <div class="verdict"><span class="label">结论</span><strong>有条件值得继续关注。</strong>机会不在“合规 SaaS”这个大词，而在 2026 年 7–8 月形成的具体文件断层。产品只要守住“整理证据，不替人担责”的窄边界，才可能成为软件，而不是法规咨询项目。</div>
+    <ol>
+      <li>用户把“资料完整”误当成“已经合规”，责任边界失守。</li>
+      <li>供应商文件无法模板化，人工解释吞掉毛利。</li>
+      <li>需求只是一次性整理，90 天留存无法支撑订阅。</li>
+    </ol>
+    <p><strong>角色设定不参与入口筛选。</strong>这个方向因近期法规节点和文件义务入选。选定后，系统架构能力可迁移到证据图谱、规则版本和审计链；食品接触材料与欧盟法规判断必须交给专业人员。</p>
+  </section>
+
+  <details class="appendix">
+    <summary>事实与推演附录 · 点击展开复核</summary>
+    <div class="appendix-in">
+      <div class="fact-tags"><span>主行业：包装食品</span><span>商业模式：微型软件订阅</span><span>事实政策：不得编造</span><span>状态：桌面研究</span></div>
+
+      <h3>A. 行业坐标与商业系统</h3>
+      <p><strong>价值链位置：</strong>包装供应商、检测实验室与食品制造商/进口商之间的证据整理层。商业系统是：文件接收 → 结构化抽取 → 缺件/歧义分流 → 人工审核 → 资料包导出 → 持续版本监控。</p>
+      <p><strong>唯一付费客户：</strong>已有多个包装组合但没有企业级法规系统的独立食品品牌或进口商。<strong>最小可售单元：</strong>一个包装类型证据护照。</p>
+
+      <h3>B. 市场证据与事实来源</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>日期</th><th>一手来源</th><th>可复核事实</th><th>推断 / 局限</th></tr></thead>
+        <tbody>
+          <tr><td>2026-07-20</td><td><a href="https://www.gov.uk/government/publications/bpa-in-food-contact-materials-eu-rules-and-uk-implications/bpa-in-food-contact-materials-eu-rules-and-uk-implications">英国食品标准局</a></td><td>BPA 首个过渡期限到达；相关企业应审查材料、供应链与文件。</td><td>不证明企业会购买本软件。</td></tr>
+          <tr><td>2026-08-03</td><td><a href="https://environment.ec.europa.eu/publications/faq-packaging-and-packaging-waste-regulation-ppwr_en">欧盟委员会 FAQ</a></td><td>新版 PPWR FAQ 于 8 月 3 日发布。</td><td>解释需求不等于软件需求。</td></tr>
+          <tr><td>2026-08-12</td><td><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32025R0040">PPWR 原文</a></td><td>PFAS 有上限；制造商需技术文件与声明；供应商需提供必要文件。</td><td>责任主体与例外需逐案判断。</td></tr>
+          <tr><td>现行</td><td><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R3190">BPA Regulation Article 8</a></td><td>相关材料需书面声明，并保留支持文件供主管机关索取。</td><td>不证明目标客户的预算。</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>事实：</strong>PPWR 列出 25 ppb 单项目标 PFAS、250 ppb 目标 PFAS 总和、50 ppm 含聚合物 PFAS 的相应上限，具体仍受法规条件与检测口径约束。相关技术文件通常需按一次性包装 5 年、重复使用包装 10 年保存。</p>
+      <p><strong>AI 推断：</strong>文件散落在邮箱、共享盘和供应商 PDF；按包装类型计费可能比按食品 SKU 更合理。</p>
+      <p><strong>未知：</strong>采购决策人、真实预算、现有系统、供应商回复速度、抽取准确率和留存。</p>
+      <p><strong>不得编造：</strong>目前没有真实客户、成交、节省金额或平台强制索件案例；软件不能自动判定合规。</p>
+
+      <h3>C. 收入与单位经济</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>收入项</th><th>建议定价假设</th><th>可变成本</th><th>回款与复购</th></tr></thead>
+        <tbody>
+          <tr><td>基础订阅</td><td>€79/月，≤50 个包装类型</td><td>€14–34/月；贡献毛利假设 €45–65</td><td>月/年预付；包装与文件变化驱动</td></tr>
+          <tr><td>扩展订阅</td><td>€199/月，≤250 个包装类型</td><td>处理量、成员权限与支持增加</td><td>多品牌或进口商</td></tr>
+          <tr><td>专家转介</td><td>5%–10% 平台费</td><td>支付、纠纷和服务管理</td><td>只在高风险例外时触发</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>D. 运营与自动化系统</h3>
+      <p>低置信度字段不能进入“已覆盖”；矛盾声明冻结导出；原文件变化使旧结论失效；规则更新只标“需复核”；没有原始文件时不得靠聊天回答生成绿色状态。长期资产是材料—证据—法规条款规则库、供应商文档模板与包装版本关系图。</p>
+
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul>
+        <li><strong>0–30 天：</strong>只覆盖 EU/NI 一次性食品接触包装，只做 BPA、PFAS/总氟、供应商、材料与版本字段。</li>
+        <li><strong>31–90 天：</strong>增加组件拆分、证据反向引用、供应商免注册上传、批量影响分析与独立专家转介。</li>
+      </ul>
+
+      <h3>F. 风险、合规与停止条件</h3>
+      <ul>
+        <li><strong>合规边界：</strong>声明只生成草稿；字段保留原文、页码、文件散列和审核状态；矛盾证据必须转人工。</li>
+        <li><strong>停止条件：</strong>前 100 个真实文件核心字段可靠抽取率低于 60%；超过 30% 护照每月需半小时以上专家判断；50 个付费客户阶段 90 天留存低于 50%。</li>
+        <li><strong>说明：</strong>以上阈值均为运营假设，不是行业基准。</li>
+      </ul>
+
+      <div class="source-note">研究边界：公开市场数据只算桌面证据，不等于客户验证，不构成法律意见或收益承诺。完整 Markdown 保留 skill_run 与工作流反馈记录。</div>
+    </div>
+  </details>
+</main>
+
+<footer>PackProof · 单创意副业洞察 · 2026-08-09<br/>网页骨架：A · 单栏纵向叙事。交付纳米Work时只需上传 CDN，不改内容。</footer>
+<button id="back" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  if(window.mermaid){
+    mermaid.initialize({startOnLoad:true,securityLevel:"loose",theme:"dark",themeVariables:{
+      fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:"14px",lineColor:"#6f7d94",
+      primaryColor:"#111824",primaryBorderColor:"#36506d",primaryTextColor:"#edf3ff"
+    },flowchart:{htmlLabels:true,curve:"basis",nodeSpacing:38,rankSpacing:46,padding:12}});
+  }
+
+  document.body.classList.add("js-reveal");
+  var revealObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add("in");revealObserver.unobserve(entry.target);}});
+  },{threshold:.06,rootMargin:"0px 0px -5% 0px"});
+  document.querySelectorAll("section[data-reveal]").forEach(function(el){revealObserver.observe(el);});
+  setTimeout(function(){document.querySelectorAll("section[data-reveal]:not(.in)").forEach(function(el){el.classList.add("in");});},2500);
+
+  var reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var countObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting){return;}
+      var el=entry.target;
+      var target=Number(el.getAttribute("data-count"));
+      var prefix=el.getAttribute("data-prefix")||"";
+      var suffix=el.getAttribute("data-suffix")||"";
+      if(reduced){el.textContent=prefix+target+suffix;el.setAttribute("data-counted","true");countObserver.unobserve(el);return;}
+      var started=performance.now();
+      function frame(now){
+        var progress=Math.min(1,(now-started)/850);
+        var eased=1-Math.pow(1-progress,3);
+        el.textContent=prefix+Math.round(target*eased)+suffix;
+        if(progress<1){requestAnimationFrame(frame);}else{el.setAttribute("data-counted","true");}
+      }
+      requestAnimationFrame(frame);
+      countObserver.unobserve(el);
+    });
+  },{threshold:.45});
+  document.querySelectorAll("[data-count]").forEach(function(el){countObserver.observe(el);});
+
+  var progressBar=document.getElementById("progress");
+  var backBtn=document.getElementById("back");
+  function onScroll(){
+    var root=document.documentElement;
+    var maxScroll=root.scrollHeight-root.clientHeight;
+    progressBar.style.width=(maxScroll>0?(root.scrollTop/maxScroll*100):0)+"%";
+    backBtn.classList.toggle("show",window.scrollY>600);
+  }
+  window.addEventListener("scroll",onScroll,{passive:true});
+  backBtn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"});});
+  onScroll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="拼舱卡：把石家庄周边小工厂的中欧班列拼箱需求，变成货代可按次解锁的标准询盘。"/>
+<title>拼舱卡 · 石家庄班列询盘交易</title>
+<style>
+  :root{
+    --bg:#070b0d;--panel:#0d1416;--panel2:#101a1d;--ink:#eef4ef;--muted:#9baaa5;--faint:#65736f;
+    --line:#22302d;--lime:#d7ff58;--cyan:#63e6d2;--orange:#ff8c42;--red:#ff5d68;
+    --read:820px;--wide:1120px;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.82;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(99,230,210,.25)}
+  a:hover{border-bottom-color:var(--cyan)}
+  #progress{position:fixed;z-index:80;top:0;left:0;width:0;height:3px;background:linear-gradient(90deg,var(--lime),var(--cyan));box-shadow:0 0 18px rgba(215,255,88,.55)}
+  .topbar{height:54px;position:fixed;z-index:70;top:0;left:0;right:0;display:flex;align-items:center;padding:0 clamp(16px,4vw,42px);background:rgba(7,11,13,.84);border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
+  .logo{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800;letter-spacing:.4px}
+  .logo-mark{width:28px;height:20px;border:2px solid var(--lime);position:relative;display:inline-block}
+  .logo-mark:before,.logo-mark:after{content:"";position:absolute;bottom:-6px;width:6px;height:6px;background:var(--bg);border:2px solid var(--lime);border-radius:50%}
+  .logo-mark:before{left:3px}.logo-mark:after{right:3px}
+  .top-meta{margin-left:auto;color:var(--faint);font:11px var(--mono);letter-spacing:.8px}
+
+  .hero{position:relative;min-height:760px;display:flex;align-items:center;padding:clamp(110px,12vw,150px) clamp(20px,5vw,56px) clamp(68px,8vw,100px);border-bottom:1px solid var(--line);overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;background:
+    radial-gradient(700px 420px at 84% 45%,rgba(99,230,210,.12),transparent 64%),
+    radial-gradient(520px 340px at 20% 15%,rgba(215,255,88,.08),transparent 65%),
+    linear-gradient(rgba(34,48,45,.24) 1px,transparent 1px),linear-gradient(90deg,rgba(34,48,45,.2) 1px,transparent 1px);
+    background-size:auto,auto,58px 58px,58px 58px}
+  .hero-grid{position:relative;z-index:2;width:min(100%,var(--wide));margin:0 auto;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);gap:clamp(38px,7vw,90px);align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:6px 12px;border:1px solid #31433f;color:var(--lime);font:12px var(--mono);letter-spacing:1.4px;text-transform:uppercase}
+  .eyebrow i{width:7px;height:7px;background:var(--lime);box-shadow:0 0 12px var(--lime);animation:blink 1.8s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  h1{font-size:clamp(42px,7.6vw,86px);line-height:.98;letter-spacing:-3px;margin:28px 0 24px;font-weight:900}
+  h1 span{display:block;color:transparent;-webkit-text-stroke:1px rgba(238,244,239,.55)}
+  .hero-copy{font-size:clamp(17px,2vw,20px);line-height:1.75;color:#c4d1cc;max-width:660px}
+  .hero-copy strong{color:var(--lime)}
+  .hero-pills{display:flex;gap:9px;flex-wrap:wrap;margin-top:28px}
+  .pill{padding:6px 11px;background:#0c1516;border:1px solid var(--line);color:var(--muted);font:12px var(--mono)}
+
+  .manifest{position:relative;min-height:430px;border:1px solid #344742;background:linear-gradient(145deg,rgba(15,26,28,.94),rgba(8,13,15,.96));padding:24px;box-shadow:18px 18px 0 rgba(215,255,88,.04)}
+  .manifest:before{content:"QUOTE CARD / SJZ";position:absolute;right:-1px;top:-28px;font:10px var(--mono);letter-spacing:2px;color:var(--faint)}
+  .m-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px dashed #40524e;font:11px var(--mono);color:var(--muted)}
+  .status{color:var(--lime)}
+  .route{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:28px 0}
+  .city b{display:block;font-size:24px}.city small{font:11px var(--mono);color:var(--faint)}
+  .city:last-child{text-align:right}
+  .rail{width:84px;height:22px;position:relative;border-top:2px solid var(--cyan);border-bottom:2px solid var(--cyan)}
+  .rail:after{content:"";position:absolute;inset:2px 0;background:repeating-linear-gradient(90deg,transparent 0 7px,rgba(99,230,210,.7) 7px 9px)}
+  .m-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .field{background:#0a1113;border:1px solid var(--line);padding:12px}.field span{display:block;color:var(--faint);font:10px var(--mono);text-transform:uppercase;letter-spacing:1px}.field b{display:block;margin-top:3px;font-size:14px}
+  .unlock{margin-top:22px;display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--lime);color:#101605;font-weight:900}
+  .unlock em{margin-left:auto;font:700 13px var(--mono);font-style:normal}
+  .barcode{height:34px;margin-top:18px;opacity:.55;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px,var(--ink) 5px 6px,transparent 6px 10px)}
+
+  .metrics{max-width:var(--wide);margin:-1px auto 0;padding:0 clamp(20px,5vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--line)}
+  .metric{background:var(--bg);min-height:190px;padding:30px clamp(22px,3vw,34px);display:flex;flex-direction:column;justify-content:center}
+  .metric-num{font:900 clamp(38px,6vw,58px)/1 var(--mono);color:var(--lime);letter-spacing:-3px}
+  .metric-label{margin-top:15px;color:var(--muted);font-size:14px}.metric-label b{color:var(--ink)}
+  .metric:nth-child(2) .metric-num{color:var(--cyan)}.metric:nth-child(3) .metric-num{color:var(--orange)}
+
+  article{max-width:var(--read);margin:0 auto;padding:30px clamp(20px,5vw,42px) 70px}
+  section{padding:clamp(46px,7vw,76px) 0;border-bottom:1px solid var(--line);position:relative}
+  .js-reveal section{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease}
+  .js-reveal section.visible{opacity:1;transform:none}
+  .sec-kicker{font:12px var(--mono);color:var(--lime);letter-spacing:1.6px;margin-bottom:12px}
+  h2{font-size:clamp(27px,4vw,38px);line-height:1.2;margin:0 0 22px;letter-spacing:-.8px}
+  h3{font-size:19px;margin:28px 0 8px}
+  p{margin:16px 0;color:#cbd6d2}strong{color:#fff}
+  .lead{font-size:clamp(18px,2.4vw,21px);color:#dce7e2}
+  .callout{margin:26px 0;padding:20px 22px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--lime)}
+  .callout b{display:block;color:var(--lime);font:12px var(--mono);letter-spacing:1px;margin-bottom:5px}
+  .warning{border-left-color:var(--orange)}.warning b{color:var(--orange)}
+  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:24px 0}
+  .chip{padding:18px;background:var(--panel);border:1px solid var(--line)}.chip small{display:block;color:var(--cyan);font:11px var(--mono);margin-bottom:6px}.chip b{display:block}.chip p{font-size:14px;margin:7px 0 0;color:var(--muted)}
+  figure.diagram{margin:30px 0;border:1px solid #31433f;background:var(--panel);overflow:hidden}
+  .diagram-bar{padding:11px 15px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--faint);display:flex;gap:7px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%}.r{background:var(--red)}.y{background:var(--orange)}.g{background:var(--cyan)}
+  .mermaid{padding:30px 12px;text-align:center;overflow-x:auto}
+  figcaption{padding:0 20px 18px;text-align:center;color:var(--faint);font-size:13px}
+  .formula{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);margin:26px 0}
+  .formula div{background:var(--panel);padding:21px;text-align:center}.formula span{display:block;font:900 28px var(--mono);color:var(--lime)}.formula small{color:var(--muted)}
+  .verdict{padding:24px;border:1px solid rgba(215,255,88,.45);background:linear-gradient(110deg,rgba(215,255,88,.08),transparent)}
+  .verdict-label{font:12px var(--mono);color:var(--lime);letter-spacing:1.5px}.verdict h3{font-size:30px;margin:8px 0}.verdict p{margin-bottom:0}
+
+  .appendix{max-width:var(--wide);margin:0 auto;padding:0 clamp(20px,5vw,56px) 110px}
+  details{background:var(--panel);border:1px solid var(--line)}
+  summary{cursor:pointer;list-style:none;padding:24px clamp(20px,4vw,34px);font-weight:800;display:flex;align-items:center;gap:14px}
+  summary::-webkit-details-marker{display:none}
+  summary:before{content:"+";width:28px;height:28px;display:grid;place-items:center;border:1px solid #41534f;color:var(--lime);font:18px var(--mono)}
+  details[open] summary:before{content:"−"}
+  .appendix-body{padding:0 clamp(20px,4vw,34px) 34px;border-top:1px solid var(--line);color:var(--muted)}
+  .appendix-body h3{color:var(--ink);border-top:1px dashed var(--line);padding-top:25px}
+  table{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto}
+  th,td{text-align:left;vertical-align:top;padding:11px 12px;border-bottom:1px solid var(--line);min-width:130px}
+  th{color:var(--lime);font:11px var(--mono)}
+  ul{padding-left:21px;color:#cbd6d2}li{margin:8px 0}
+  footer{border-top:1px solid var(--line);padding:40px 20px 80px;text-align:center;color:var(--faint);font:12px var(--mono)}
+  #back{position:fixed;right:20px;bottom:20px;z-index:60;width:44px;height:44px;border:1px solid #3b4e49;background:rgba(13,20,22,.9);color:var(--lime);cursor:pointer;opacity:0;pointer-events:none;transition:.25s}
+  #back.show{opacity:1;pointer-events:auto}
+  @media(max-width:820px){
+    .hero{min-height:auto}.hero-grid{grid-template-columns:1fr}.manifest{max-width:560px;width:100%;margin:0 auto}
+    h1{letter-spacing:-2px}.top-meta{display:none}
+  }
+  @media(max-width:520px){
+    .hero{padding-left:18px;padding-right:18px}.manifest{padding:18px}.route{grid-template-columns:1fr}.rail{width:100%}.city:last-child{text-align:left}
+    .m-fields{grid-template-columns:1fr}.metric{min-height:155px}.metric-num{letter-spacing:-2px}
+  }
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.eyebrow i{animation:none}.js-reveal section{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar">
+  <div class="logo"><span class="logo-mark"></span>拼舱卡 / CARGO LEAD</div>
+  <div class="top-meta">SIDE-014 · 石家庄 · 2026-08-09</div>
+</div>
+
+<header class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow"><i></i>Shijiazhuang rail freight signal</div>
+      <h1>拼舱卡<span>不是货代，是询盘交易</span></h1>
+      <p class="hero-copy">免费把小工厂零散的班列拼箱需求整理成<strong>可直接报价的标准卡</strong>，再由服务石家庄国际陆港的货代按次付费解锁。最近“多品名拼箱 + 县域集货仓 + 新线路”同时扩张，让过去不值得处理的小货量开始具备交易条件。</p>
+      <div class="hero-pills">
+        <span class="pill">工厂免费</span><span class="pill">货代 ¥59 / 条·建议假设</span><span class="pill">不承运 · 不报关</span>
+      </div>
+    </div>
+    <div class="manifest" aria-label="拼舱卡示意图">
+      <div class="m-head"><span>CARGO INQUIRY #014</span><span class="status">● VERIFIED FIELDS</span></div>
+      <div class="route">
+        <div class="city"><b>石家庄</b><small>SJZ / PICKUP</small></div>
+        <div class="rail"></div>
+        <div class="city"><b>华沙</b><small>WAW / DESTINATION</small></div>
+      </div>
+      <div class="m-fields">
+        <div class="field"><span>cargo</span><b>普通五金配件</b></div>
+        <div class="field"><span>volume</span><b>1.8 m³</b></div>
+        <div class="field"><span>gross weight</span><b>待填写</b></div>
+        <div class="field"><span>quote window</span><b>24 小时</b></div>
+      </div>
+      <div class="unlock"><span>解锁合格询盘</span><em>MAX 3 AGENTS</em></div>
+      <div class="barcode"></div>
+    </div>
+  </div>
+</header>
+
+<div class="metrics" aria-label="关键公开信号">
+  <div class="metric"><div class="metric-num" data-target="814" data-suffix=" 列">814 列</div><div class="metric-label"><b>2026 上半年开行量</b><br/>同比增长 42.06%</div></div>
+  <div class="metric"><div class="metric-num" data-target="30" data-suffix="+">30+</div><div class="metric-label"><b>县域跨境集货仓</b><br/>货源入口正在下沉</div></div>
+  <div class="metric"><div class="metric-num" data-target="20" data-suffix=" 条">20 条</div><div class="metric-label"><b>国际线路</b><br/>2026 年 7 月更新</div></div>
+</div>
+
+<article>
+  <section>
+    <div class="sec-kicker">01 / WHAT IT SELLS</div>
+    <h2>卖的不是运输，是一条能立即报价的询盘</h2>
+    <p class="lead">小工厂常用一句“有批货去欧洲，多少钱”开始询价。货代却必须追问货名、包装、体积、重量、目的地、发车时间、带电与否。双方不是没需求，而是信息一开始就不在同一种格式里。</p>
+    <p><strong>拼舱卡</strong>先用网页把这些问题问完，验证手机号、外包装照片和必填字段，再生成一张隐藏联系方式的标准卡，进入已核验货代的报价池。最多三家货代付费解锁，工厂自行选择并与货代直接签约。</p>
+    <div class="callout"><b>最小可售单元</b>一条资料完整、联系方式真实、仍在报价期内的拼箱询盘，供一家货代解锁一次。它是可报价机会，不是保证成交的订单。</div>
+    <p>说明性示例：某石家庄周边五金厂有 1.8 立方米普通配件发往华沙。负责人填完货物和目的地资料；系统补问重量与包装；三家货代看到匿名卡后决定是否花钱解锁并报价。这个场景用于解释流程，并非真实成交案例。</p>
+  </section>
+
+  <section>
+    <div class="sec-kicker">02 / WHY NOW</div>
+    <h2>三个基础设施变化，在同一时间碰到了一起</h2>
+    <div class="chips">
+      <div class="chip"><small>2025-01</small><b>小货可以同箱</b><p>京津冀首个中欧班列多品名集拼业务落地，直接针对中小微企业货量少、单独发运成本高。</p></div>
+      <div class="chip"><small>2026-02 → 07</small><b>入口下沉到县域</b><p>企业公开说过去拼箱等待长、手续麻烦；随后 30 多个集货仓进入县域产业集群。</p></div>
+      <div class="chip"><small>2026 H1 → 07</small><b>班次与线路增长</b><p>上半年 814 列；7 月开出第 20 条国际线路，至列日公开时效约 20 天。</p></div>
+    </div>
+    <p>这些事实只证明“有小货可拼、有入口收货、有线路可报”的条件增强。<strong>AI 推断：</strong>下一层缺口可能是把分散小工厂的需求，转换成货代愿意处理的标准格式。公开资料并没有证明货代已经愿意为此付费。</p>
+    <p>来源：<a href="https://www.sjz.gov.cn/columns/8e2f0b12-4574-4ced-b339-bcb378d54b2d/202501/16/1f3fb5aa-f746-49d6-b173-e60c07dc266e.html">多品名集拼</a>、<a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202602/09/cbf8959c-64e3-4758-a780-fb0945367e25.html">企业拼箱痛点与跨境仓</a>、<a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/27/b7881621-36a3-405e-8573-1ef2836860e6.html">814 列与县域网络</a>、<a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/06/88cd5e8b-d5f1-4706-91a3-356aa5a771c9.html">第 20 条国际线路</a>。</p>
+  </section>
+
+  <section>
+    <div class="sec-kicker">03 / WHO PAYS</div>
+    <h2>只向一类客户收费：缺本地货源的货代</h2>
+    <p><strong>唯一付费客户是服务石家庄国际陆港、希望获得本地出口货源的持证国际货运代理或订舱服务商。</strong> 工厂免费，因为先把供给端资料做完整，比同时说服两边付费更现实。</p>
+    <p>货代的购买触发不是“看见一家公司名单”，而是销售人员需要持续找货，却不想再处理泛泛问价。一条卡如果已经完成手机号验证、字段校验、重复过滤，并且最多三家解锁，它才有机会比微信群线索节省时间。</p>
+    <div class="callout warning"><b>最强替代方案</b>熟人转介绍、产业群、集货仓一站式服务和阿里巴巴国际物流都能承接询价。尤其集货仓可能直接包圆需求，所以“有没有独立流量”是这门生意最大的未知。</div>
+  </section>
+
+  <section>
+    <div class="sec-kicker">04 / HOW IT WORKS</div>
+    <h2>平台只站在“提出需求”和“初步报价”之间</h2>
+    <figure class="diagram">
+      <div class="diagram-bar"><i class="dot r"></i><i class="dot y"></i><i class="dot g"></i>&nbsp;quote-lead-flow.mmd</div>
+      <pre class="mermaid">
+flowchart LR
+    A["工厂免费填写&lt;br/&gt;货物与目的地"] --> B["规则校验 + 异常复核"]
+    B --> C["生成匿名拼舱卡"]
+    C --> D["最多三家货代&lt;br/&gt;付费解锁并报价"]
+    D --> E["工厂自行选择&lt;br/&gt;双方直接签约"]
+      </pre>
+      <figcaption>交付结束于“获得可比较报价”，运输合同始终由工厂与货代直接签订。</figcaption>
+    </figure>
+    <p>一次交付的完成定义：货代按时拿到真实联系方式和足以初步报价的资料，工厂收到格式可比较的回复。平台<strong>不保证最低价、不判断海关编码、不收运费、不承运、不报关，也不为通关、时效和货损担责。</strong></p>
+    <p>涉及危险品、液体粉末、带电产品、品牌授权、出口管制或资料冲突时，系统只负责暂停卡片，交由具备资质的专业人员判断。自动化负责拦截，不能冒充合规结论。</p>
+  </section>
+
+  <section>
+    <div class="sec-kicker">05 / MONEY & AUTOMATION</div>
+    <h2>59 元解锁一次，成立与否看“三家都愿意买”</h2>
+    <p><strong>建议定价假设：每家货代解锁 59 元，最多三家，一条完全解锁询盘收入 177 元。</strong> 假设渠道成本 45 元、支付与云服务 7 元、人工复核和退款准备金 25 元，单条贡献约 100 元。</p>
+    <div class="formula">
+      <div><span>¥177</span><small>3 家解锁收入</small></div>
+      <div><span>− ¥77</span><small>假设可变成本</small></div>
+      <div><span>≈ ¥100</span><small>单条贡献情景</small></div>
+    </div>
+    <p>每月 100 条完全解锁，对应约 1 万元贡献；这只是算术，不是需求预测。如果平均只卖给一家，收入只有 59 元，按上述成本结构会亏损，所以真正的核心指标不是提交量，而是合格线索的多家解锁率。</p>
+    <div class="chips">
+      <div class="chip"><small>AUTO</small><b>适合自动化</b><p>动态追问、单位校验、手机验证、去重、联系方式遮罩、支付解锁、倒计时、提醒与渠道归因。</p></div>
+      <div class="chip"><small>HUMAN</small><b>必须人工</b><p>货代资质初审、异常货物复核、虚假线索退款、争议处理和本地渠道关系。</p></div>
+    </div>
+    <p><strong>自动化上限：</strong>平均每条人工处理超过 12 分钟，或大量工厂必须电话代填，59 元模式就会被服务成本吃掉。</p>
+  </section>
+
+  <section>
+    <div class="sec-kicker">06 / VERDICT</div>
+    <h2>值得关注，但证据只走到“基础条件形成”</h2>
+    <div class="verdict">
+      <div class="verdict-label">FINAL JUDGEMENT</div>
+      <h3>有条件值得关注</h3>
+      <p>资产轻、可自动化，而且切中刚形成的县域集货网络；但目前没有货代购买线索的公开证据，不能把班列增长直接等同于平台收入。</p>
+    </div>
+    <p>最可能失败的三件事：集货仓和既有货代包圆入口；货代嫌同一线索卖给三家价值太低；货物属性过于复杂，无法低成本筛选和报价。</p>
+    <p>停止条件：90 天后付费货代少于 8 家；合格询盘解锁率低于 30%；24 小时响应率低于 70%；争议退款高于 10%；人工超过 12 分钟 / 条；完全解锁贡献低于 60 元。达到其中两项，就停止扩张。</p>
+    <p>这个创意不是由“架构师”角色筛出来的。角色只影响落地：系统建模和自动化是可迁移能力；国际物流实务、危险品识别与本地货代关系是能力缺口，应找从业者按次复核或合作，而不是把产品改写成咨询。</p>
+  </section>
+</article>
+
+<div class="appendix" id="appendix">
+  <details>
+    <summary>事实与推演附录 · 点击展开完整证据、测算与边界</summary>
+    <div class="appendix-body">
+      <h3>A. 行业坐标与商业系统</h3>
+      <ul>
+        <li>主行业：国际铁路拼箱 / 国际货运代理获客。</li>
+        <li>商业模式：合格询盘按次解锁，最多三家货代购买同一条。</li>
+        <li>价值链位置：小工厂提出出口需求之后、货代初步报价之前。</li>
+        <li>受益者与付款者不同：工厂免费比价，货代为线索付费。</li>
+        <li>最小可售单元：经联系方式和字段核验、仍在有效期内的拼箱询盘。</li>
+      </ul>
+      <h3>B. 市场证据与事实来源</h3>
+      <table>
+        <thead><tr><th>日期</th><th>来源与事实</th><th>AI 推断</th><th>局限</th></tr></thead>
+        <tbody>
+          <tr><td>2025-01-16</td><td><a href="https://www.sjz.gov.cn/columns/8e2f0b12-4574-4ced-b339-bcb378d54b2d/202501/16/1f3fb5aa-f746-49d6-b173-e60c07dc266e.html">石家庄市政府</a>：不同货主、不同品名可拼同一箱，面向货量少的中小微企业。</td><td>小批量询价可能增加。</td><td>没有公开询价量。</td></tr>
+          <tr><td>2026-02-09</td><td><a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202602/09/cbf8959c-64e3-4758-a780-fb0945367e25.html">石家庄市政府</a>：真实企业称过去拼箱等待长、品类混杂手续麻烦；报道时跨境仓共 31 家。</td><td>标准资料可减少报价反复。</td><td>单一企业引语。</td></tr>
+          <tr><td>2026-07-27</td><td><a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/27/b7881621-36a3-405e-8573-1ef2836860e6.html">石家庄市政府</a>：上半年 814 列、同比增 42.06%、超 8 万标箱；30 多个县域集货仓。</td><td>本地货源连接节点增多。</td><td>规模不证明平台能获客。</td></tr>
+          <tr><td>2026-07-06</td><td><a href="https://www.sjz.gov.cn/columns/839b1981-330e-4901-aba5-6c392154ce03/202607/06/88cd5e8b-d5f1-4706-91a3-356aa5a771c9.html">石家庄市政府</a>：第 20 条国际线路至列日，公开时效约 20 天。</td><td>可报价目的地组合增多。</td><td>不是逐票时效承诺。</td></tr>
+          <tr><td>现有竞争</td><td><a href="https://supplier.alibaba.com/supplier/gjwl.html">阿里巴巴国际物流</a>已经提供海运拼箱、空运和中欧班列入口。</td><td>本地化必须依靠货源结构与响应差异。</td><td>无法得知石家庄使用率。</td></tr>
+        </tbody>
+      </table>
+      <p>事实分类：日期、开行量、仓数、线路和企业引语来自来源；货代愿意按次付费属于 AI 推断。59 元价格、成本和停止阈值均为建议假设。实际获客成本、成交率、线路报价接口和工厂填表意愿未知。</p>
+      <h3>C. 收入与单位经济</h3>
+      <p>建议定价假设为 59 元 / 家 / 条，最多三家。完全解锁收入 177 元；渠道 45 元、支付云服务 7 元、复核与退款准备 25 元，贡献约 100 元。平均只卖一家就可能亏损，因此暂不先做订阅。</p>
+      <h3>D. 运营与自动化系统</h3>
+      <p>产业渠道二维码 → 动态询价表 → 手机验证 → 字段和重复校验 → 风险词拦截 → 人工异常复核 → 匿名卡 → 支付解锁 → 结构化报价 → 双方签约 → 结果与退款记录。可沉淀的是货类字段库、异常规则、货代响应记录和县域渠道数据。</p>
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul><li>0–30 天：只覆盖普通非危险品和一个目的地区域，完成字段、匿名卡、支付和退款规则。</li><li>31–90 天：增加动态追问、县域渠道二维码、货代响应记录和重复识别；仍不承运。</li></ul>
+      <h3>F. 风险、合规与停止条件</h3>
+      <p>平台应明确自己是信息撮合，不是承运人或报关代理；联系人、电话和货物照片需明示用途、授权范围和保存期限，不公开敏感联系方式。危险品、出口管制、制裁、知识产权与海关编码交给专业方判断。正式上线前需由律师核对合同、隐私与平台责任。</p>
+    </div>
+  </details>
+</div>
+
+<footer>拼舱卡 · SIDE-014 · 事实截止 2026-08-09 · 公开证据不等于客户验证或收益承诺</footer>
+<button id="back" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{
+    mermaid.initialize({startOnLoad:true,securityLevel:"loose",theme:"dark",
+      themeVariables:{fontFamily:"-apple-system, PingFang SC, sans-serif",fontSize:"14px",lineColor:"#65736f",
+        primaryColor:"#101a1d",primaryBorderColor:"#3d514c",primaryTextColor:"#eef4ef",secondaryColor:"#162421",
+        tertiaryColor:"#11181a",edgeLabelBackground:"#0d1416"},
+      flowchart:{htmlLabels:true,curve:"basis",nodeSpacing:34,rankSpacing:45,padding:12}});
+  }catch(err){}
+
+  var progressBar=document.getElementById("progress");
+  var backButton=document.getElementById("back");
+  addEventListener("scroll",function(){
+    var root=document.documentElement;
+    var maxScroll=root.scrollHeight-root.clientHeight;
+    progressBar.style.width=(maxScroll>0?root.scrollTop/maxScroll*100:0)+"%";
+    if(scrollY>650){backButton.classList.add("show");}else{backButton.classList.remove("show");}
+  },{passive:true});
+  backButton.addEventListener("click",function(){scrollTo({top:0,behavior:"smooth"});});
+
+  document.body.classList.add("js-reveal");
+  var revealObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){entry.target.classList.add("visible");revealObserver.unobserve(entry.target);}
+    });
+  },{threshold:.05,rootMargin:"0px 0px -4% 0px"});
+  document.querySelectorAll("section").forEach(function(sectionEl){revealObserver.observe(sectionEl);});
+  setTimeout(function(){document.querySelectorAll("section:not(.visible)").forEach(function(sectionEl){sectionEl.classList.add("visible");});},2200);
+
+  function animateNumber(el){
+    if(el.dataset.done==="1"){return;}
+    el.dataset.done="1";
+    var targetValue=parseInt(el.dataset.target,10);
+    var suffixValue=el.dataset.suffix||"";
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=targetValue+suffixValue;return;}
+    var startTime=null;
+    function tick(timestamp){
+      if(!startTime){startTime=timestamp;}
+      var ratio=Math.min((timestamp-startTime)/900,1);
+      var eased=1-Math.pow(1-ratio,3);
+      el.textContent=Math.floor(targetValue*eased)+suffixValue;
+      if(ratio<1){requestAnimationFrame(tick);}
+    }
+    requestAnimationFrame(tick);
+  }
+  var metricObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){if(entry.isIntersecting){animateNumber(entry.target);metricObserver.unobserve(entry.target);}});
+  },{threshold:.4});
+  document.querySelectorAll(".metric-num").forEach(function(metricEl){metricObserver.observe(metricEl);});
+</script>
+</body>
+</html>

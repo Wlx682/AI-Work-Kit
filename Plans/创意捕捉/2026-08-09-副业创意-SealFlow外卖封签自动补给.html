@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="一个面向中国内地区域餐饮品牌的外卖封签自动补给副业创意，含事实、测算与风险边界。"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>"/>
+<title>SealFlow｜外卖封签自动补给</title>
+<style>
+:root{
+  --bg:#070a0f;--panel:#0d121b;--panel-2:#111824;--ink:#eef4ff;--ink-2:#b7c2d5;--muted:#738198;
+  --line:#202b3a;--cyan:#63e6d2;--blue:#65a7ff;--amber:#ffc66d;--red:#ff7a86;--green:#57d8a6;
+  --max:1040px;--read:760px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.82 var(--sans);overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(99,230,210,.28)}a:hover{border-color:var(--cyan)}
+#progress{position:fixed;z-index:80;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));box-shadow:0 0 14px rgba(99,230,210,.5)}
+.topbar{position:fixed;z-index:70;left:0;right:0;top:0;height:54px;display:flex;align-items:center;padding:0 clamp(18px,4vw,44px);background:rgba(7,10,15,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:10px;align-items:center;font-weight:760;font-size:13px}.brand-mark{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#061117;font:900 13px var(--mono)}
+.topmeta{margin-left:auto;color:var(--muted);font:12px var(--mono)}
+.hero{position:relative;isolation:isolate;padding:clamp(106px,13vw,154px) clamp(20px,5vw,52px) clamp(58px,8vw,88px);overflow:hidden;border-bottom:1px solid var(--line)}
+.hero:before{content:"";position:absolute;z-index:-2;inset:0;background:radial-gradient(900px 430px at 50% -5%,rgba(101,167,255,.2),transparent 64%),radial-gradient(540px 330px at 75% 85%,rgba(99,230,210,.1),transparent 70%)}
+.hero:after{content:"";position:absolute;z-index:-1;inset:0;opacity:.38;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(#000,transparent 86%)}
+.hero-inner{max-width:var(--max);margin:auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.75fr);gap:clamp(32px,6vw,72px);align-items:center}
+.kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:22px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--cyan);font:12px var(--mono);letter-spacing:1px}.pulse{width:6px;height:6px;border-radius:99px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.3}}
+h1{font-size:clamp(38px,6.4vw,70px);line-height:1.03;letter-spacing:-2px;margin:0 0 22px;background:linear-gradient(120deg,#fff 15%,#b9d4ff 58%,#83f4df);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-lead{font-size:clamp(17px,2vw,21px);line-height:1.72;color:var(--ink-2);margin:0;max-width:680px}.hero-lead strong{color:#fff}.hero-tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px}.tag{padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(17,24,36,.7);color:#a8b8ce;font:12px var(--mono)}
+.visual{min-height:330px;position:relative;display:grid;place-items:center}.seal{position:relative;width:min(100%,300px);aspect-ratio:1.5;border-radius:24px;background:linear-gradient(145deg,#121b29,#0a0f17);border:1px solid #2d3d51;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 60px rgba(101,167,255,.12);transform:rotate(-5deg)}
+.seal:before,.seal:after{content:"";position:absolute;top:0;bottom:0;width:18px;background:radial-gradient(circle at 0 10px,transparent 7px,var(--panel-2) 8px) 0 0/18px 20px repeat-y}.seal:before{left:-1px}.seal:after{right:-1px;transform:scaleX(-1)}
+.seal-core{position:absolute;inset:27px 34px;border:1px dashed rgba(99,230,210,.48);border-radius:14px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.seal-lock{font-size:44px;filter:drop-shadow(0 0 15px rgba(99,230,210,.35))}.seal-title{font:800 21px var(--mono);letter-spacing:1px}.seal-sub{color:var(--muted);font:11px var(--mono);margin-top:5px}.scan{position:absolute;right:-15px;bottom:30px;width:92px;height:92px;border-radius:18px;background:#ecf5ff;color:#071018;display:grid;place-items:center;font:900 12px var(--mono);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:rotate(7deg)}
+.scan:before{content:"";width:50px;height:50px;background:repeating-linear-gradient(90deg,#071018 0 4px,transparent 4px 8px),repeating-linear-gradient(#071018 0 4px,transparent 4px 8px);mix-blend-mode:multiply;opacity:.72}
+.metrics{max-width:var(--max);margin:-27px auto 0;padding:0 clamp(20px,4vw,36px);position:relative;z-index:5;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.metric{min-height:150px;padding:22px;border-radius:16px;background:linear-gradient(145deg,rgba(17,24,36,.96),rgba(10,15,23,.96));border:1px solid var(--line);box-shadow:0 15px 36px rgba(0,0,0,.25)}
+.metric-value{font:850 clamp(35px,5vw,50px)/1.05 var(--mono);color:#fff;letter-spacing:-2px}.metric-value.cyan{color:var(--cyan)}.metric-value.blue{color:#9ac4ff}.metric-label{margin-top:12px;color:var(--ink-2);font-size:14px}.metric-note{color:var(--muted);font-size:12px;margin-top:4px}
+main{max-width:var(--read);margin:auto;padding:30px clamp(20px,5vw,38px) 80px}section{padding:clamp(36px,6vw,58px) 0;border-bottom:1px solid var(--line)}
+.js-reveal section{opacity:0;transform:translateY(18px);transition:.65s ease}.js-reveal section.in{opacity:1;transform:none}.num{color:var(--cyan);font:12px var(--mono);letter-spacing:1.5px;margin-bottom:9px}h2{font-size:clamp(25px,3.4vw,34px);line-height:1.25;letter-spacing:-.6px;margin:0 0 17px}h3{font-size:19px;margin:30px 0 8px}p{color:#d2dbea;margin:15px 0}strong{color:#fff}code{font-family:var(--mono);background:#101a27;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#9af0de;font-size:.88em}
+.lead{font-size:18.5px;color:var(--ink-2)}.callout{margin:24px 0;padding:17px 19px;border-radius:13px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cyan)}.callout.warn{border-left-color:var(--amber)}
+ul,ol{padding-left:1.25em;color:#d2dbea}li{margin:10px 0}li::marker{color:var(--cyan)}
+.steps{display:grid;gap:11px;margin:26px 0}.step{display:grid;grid-template-columns:42px 1fr;gap:13px;align-items:start;padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}.step-no{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:rgba(101,167,255,.12);color:#a9cdff;font:750 13px var(--mono)}.step b{display:block;margin:1px 0 4px}.step span{color:var(--ink-2);font-size:14.5px}
+.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:14px;margin:24px 0;background:var(--panel)}table{width:100%;min-width:620px;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font:11px var(--mono);letter-spacing:.5px}tr:last-child td{border:0}
+.verdict{padding:22px;border-radius:16px;background:linear-gradient(135deg,rgba(87,216,166,.09),rgba(101,167,255,.06));border:1px solid rgba(87,216,166,.3)}
+figure.diagram{margin:28px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel)}.diagram-bar{padding:11px 15px;color:var(--muted);font:11px var(--mono);border-bottom:1px solid var(--line)}.mermaid{padding:26px 12px;text-align:center;overflow-x:auto}.diagram figcaption{padding:0 18px 16px;text-align:center;color:var(--muted);font-size:12.5px}
+.appendix{max-width:var(--max);margin:0 auto 88px;padding:0 clamp(20px,5vw,40px)}details{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}summary{cursor:pointer;padding:24px clamp(18px,4vw,30px);font-size:20px;font-weight:760;display:flex;align-items:center;justify-content:space-between;gap:15px;list-style:none}summary::-webkit-details-marker{display:none}summary:after{content:"＋";color:var(--cyan);font:24px var(--mono)}details[open] summary{border-bottom:1px solid var(--line)}details[open] summary:after{content:"－"}.appendix-body{padding:8px clamp(18px,4vw,30px) 30px}.appendix-body h3{margin-top:34px}.appendix-body p,.appendix-body li{font-size:14.5px}.badge{display:inline-block;padding:2px 7px;border-radius:6px;font:11px var(--mono);margin-right:5px}.fact{background:rgba(87,216,166,.12);color:#85e7be}.infer{background:rgba(101,167,255,.12);color:#a9cdff}.unknown{background:rgba(255,198,109,.12);color:#ffd596}
+footer{border-top:1px solid var(--line);padding:32px 20px 70px;text-align:center;color:var(--muted);font-size:13px}.footer-links{display:flex;justify-content:center;flex-wrap:wrap;gap:9px 18px;margin-top:10px}
+#toTop{position:fixed;right:20px;bottom:20px;z-index:60;width:44px;height:44px;border:1px solid rgba(101,167,255,.38);border-radius:12px;background:rgba(13,18,27,.86);color:#bcd7ff;font-size:18px;opacity:0;pointer-events:none;transition:.25s;cursor:pointer}#toTop.show{opacity:1;pointer-events:auto}
+@media(max-width:760px){.hero-inner{grid-template-columns:1fr}.visual{min-height:270px}.seal{width:260px}.topmeta{display:none}.hero{text-align:left}.metrics{margin-top:-18px}.metric{min-height:130px}.step{grid-template-columns:36px 1fr}.visual{margin-top:4px}}
+@media(max-width:420px){h1{letter-spacing:-1px}.visual{min-height:230px}.seal{width:220px}.scan{width:74px;height:74px}.scan:before{width:40px;height:40px}.metric{min-height:118px}.topbar{height:50px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}.js-reveal section{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><span class="brand"><span class="brand-mark">S</span>SealFlow 创意洞察</span><span class="topmeta">中国内地 · 2026-08-09 · 阅读约 5 分钟</span></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="kicker"><span class="pulse"></span>单创意副业 · 实体耗材订阅</div>
+      <h1>外卖封签<br/>自动补给</h1>
+      <p class="hero-lead">向有 <strong>3–30 家门店</strong>的区域餐饮品牌，按月出售定制防拆封签。新规刚把“封口后无法复原”变成明确义务；商家买的是<strong>合适规格、门店统一、持续不断货</strong>。</p>
+      <div class="hero-tags"><span class="tag">不是咨询</span><span class="tag">第三方生产</span><span class="tag">按月复购</span><span class="tag">价格均为假设</span></div>
+    </div>
+    <div class="visual" aria-label="防拆封签示意图">
+      <div class="seal"><div class="seal-core"><div class="seal-lock">◈</div><div class="seal-title">SEALED / 已封签</div><div class="seal-sub">OPENED = TRACE · 拆启留痕</div></div><div class="scan">QR</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="metrics" aria-label="三个事实锚点">
+  <div class="metric"><div class="metric-value blue">06.01</div><div class="metric-label">全国新规正式施行</div><div class="metric-note">2026 年，不是旧闻翻炒</div></div>
+  <div class="metric"><div class="metric-value cyan"><span class="count" data-target="1">1</span>单<span style="font-size:.55em"> / </span><span class="count" data-target="1">1</span>签</div><div class="metric-label">地方执行已落到每笔外卖</div><div class="metric-note">无锡公开提醒口径</div></div>
+  <div class="metric"><div class="metric-value"><span class="count" data-target="0">0</span>复原</div><div class="metric-label">核心不是贴纸，而是拆启留痕</div><div class="metric-note">全国条款的性能底线</div></div>
+</div>
+
+<main>
+  <section>
+    <div class="num">01 — 商品</div><h2>这到底卖什么？</h2>
+    <p class="lead"><strong>说明性场景，不是真实案例：</strong>一家 8 店米粉品牌过去用袋口打结或透明胶带。现在要做到开封后无法复原，老板临时网购通用封签，却发现尺寸不合、门店各买各的、月底还会断货。</p>
+    <p>SealFlow 把它变成固定商品：店主选择袋型、封签尺寸、门店数和月订单区间，系统自动生成带品牌名、拆封警示和可选售后二维码的印刷稿；标签厂生产，仓配按门店分箱直发，以后按预计用量补货。</p>
+    <div class="callout"><strong>最小可售单元：</strong>一个品牌、至少 3 家门店、一个月的定制防拆封签。首版不卖打印机、不接整套包装、不承诺“用了就合规”。</div>
+  </section>
+
+  <section>
+    <div class="num">02 — 时机</div><h2>为什么是现在？</h2>
+    <ul>
+      <li><strong>全国规则刚执行：</strong>市场监管总局第 123 号令于 2026-06-01 施行，要求外卖餐食包装、封口，且开启后无法复原。<a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_d04d512f5ad8470eb61a652c0061dc3a.html">查看原文</a></li>
+      <li><strong>地方已经落成动作：</strong>无锡 7 月提醒“一餐一封签”、袋口打结不能替代；汕尾要求当地线上餐饮商家使用专用食安封签。<a href="https://www.wuxi.gov.cn/doc/2026/07/10/4803054.shtml">无锡</a> · <a href="https://www.shanwei.gov.cn/swscjdglj/zwdt/gzdt/content/post_1253018.html">汕尾</a></li>
+      <li><strong>平台审查同步升级：</strong>市场监管总局实施报道提到，平台正加强实地资质审核和过程管控。<a href="https://www.samr.gov.cn/spjys/sjdt/gzdt/art/2026/art_d0a91459127c4df091a08830220cb2b2.html">实施报道</a></li>
+    </ul>
+    <div class="callout warn">机会不在发明封签，而在大量门店从偶尔采购，切换到<strong>每一单都消耗、不能断货</strong>的日常用品。国家只规定性能底线，各地执行口径不同，不能说成全国统一的“专用贴纸强制令”。</div>
+  </section>
+
+  <section>
+    <div class="num">03 — 买家</div><h2>谁会付钱？</h2>
+    <p><strong>唯一付费客户（AI 推断）：</strong>中国内地拥有 3–30 家门店、外卖占比较高、尚无集团采购团队的区域餐饮品牌，例如地方米粉、盖饭、轻食、烘焙和茶饮连锁。单店通常只看低价，大型连锁已有供应商，中间的小连锁最可能为统一采购付费。</p>
+    <p>购买理由不是怕法规，而是三件具体事：门店不能断货、规格必须一致、封签最好顺手承载品牌识别。二维码只链接品牌自有反馈或客服页；是否允许导向站外交易，要服从所在平台规则。</p>
+    <p><strong>强替代：</strong>通用封签很便宜，平台或地方也可能免费提供，现有包装也可能自带防拆结构。因此只有“多店分发 + 自动补货 + 小批量定制”明显省事时，这门生意才成立。</p>
+  </section>
+
+  <section>
+    <div class="num">04 — 系统</div><h2>它怎样自动运转？</h2>
+    <div class="steps">
+      <div class="step"><div class="step-no">01</div><div><b>固定选择</b><span>上传品牌名，选择袋型、尺寸、门店和用量；只提供已实物验证的规格。</span></div></div>
+      <div class="step"><div class="step-no">02</div><div><b>自动印前</b><span>模板引擎生成印刷 PDF 与门店分箱清单，首批由人工核稿。</span></div></div>
+      <div class="step"><div class="step-no">03</div><div><b>第三方履约</b><span>标签厂生产，仓配按门店直发，经营者不自己囤大货。</span></div></div>
+      <div class="step"><div class="step-no">04</div><div><b>预测补货</b><span>按日均订单、营业天数和安全余量估算库存，确认付款后复用原稿生产。</span></div></div>
+    </div>
+    <p><strong>人工边界：</strong>首批选材、粘性和撕毁测试、印刷验收、售后与规则更新不能自动化。只要多数客户要求反复改稿，它就会退化成低毛利广告制作。</p>
+  </section>
+
+  <section>
+    <div class="num">05 — 收入</div><h2>钱从哪里来？</h2>
+    <p>把设计、模板和普通配送包进月价，让客户只理解一个商品。以下全是<strong>建议定价假设</strong>，不是供应商报价。</p>
+    <div class="table-wrap"><table><thead><tr><th>商品</th><th>建议价格</th><th>假设成本</th><th>贡献毛利假设</th></tr></thead><tbody>
+      <tr><td>每店 3,000 枚定制封签</td><td>¥399 / 店 / 月</td><td>¥150–210</td><td>¥189–249</td></tr>
+      <tr><td>首次制版与样品</td><td>¥299 / 品牌</td><td>¥80–150</td><td>¥149–219</td></tr>
+      <tr><td>临时加急补货</td><td>正常价 + ¥80</td><td>视快递与排产</td><td>非核心收入</td></tr>
+    </tbody></table></div>
+    <p>以 8 店品牌作说明性计算：月收入 <code>8 × 399 = ¥3,192</code>；若每店可变成本 ¥180，月贡献毛利约 <code>8 × (399 - 180) = ¥1,752</code>。未扣获客、税费、退换货和人工，也不是收益承诺。</p>
+  </section>
+
+  <section>
+    <div class="num">06 — 判断</div><h2>最大问题与最终判断</h2>
+    <div class="verdict"><strong>值得作为“低人力、实体复购”的国内副业样本继续观察，但不是暴利项目。</strong> 它有近期触发器、明确消耗动作和明确付款人；交付比咨询标准，客户也不必学习一个新软件。</div>
+    <p>最可能的死因是：通用封签低价到无法覆盖定制价值；平台免费发物料；各地口径不同，却被卖家误说成全国统一要求。产品底线应是只卖防拆封签与补给，不说“官方指定”，只链接规则、不作法律判断，固定规格、不无限定制。</p>
+    <p><strong>角色后置：</strong>这个机会因国内规则刚落地和实体耗材转为高频消耗而入选，不是因为你的职业。你的系统能力可用于配置、印前、预测和异常熔断；材料、印刷与仓配交给专业供应商，不能把它改写成个人咨询。</p>
+  </section>
+</main>
+
+<div class="appendix">
+<details>
+  <summary><span>事实与推演附录 <small style="display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:4px">来源、单位经济、自动化边界与停止条件</small></span></summary>
+  <div class="appendix-body">
+    <h3>A. 行业坐标</h3>
+    <ul>
+      <li><strong>行业：</strong>中国内地网络餐饮 / 包装耗材。</li>
+      <li><strong>模式：</strong>定制实体耗材订阅 + 自动印前 + 第三方生产和分箱履约。</li>
+      <li><strong>付款者：</strong>3–30 店区域餐饮品牌老板或运营负责人。</li>
+      <li><strong>最小单元：</strong>一个品牌、至少 3 店、每店 3,000 枚/月。</li>
+    </ul>
+
+    <h3>B. 来源表</h3>
+    <div class="table-wrap"><table><thead><tr><th>日期 / 来源</th><th>公开事实</th><th>可以推演什么</th><th>不能证明什么</th></tr></thead><tbody>
+      <tr><td>2026-06-01<br/><a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_d04d512f5ad8470eb61a652c0061dc3a.html">总局第 123 号令</a></td><td>外卖餐食须包装、封口，开启后无法复原</td><td><span class="badge infer">AI 推断</span>防拆封口耗材会持续消耗</td><td>没有规定必须购买某种第三方贴纸</td></tr>
+      <tr><td>2026-06-08<br/><a href="https://www.shanwei.gov.cn/swscjdglj/zwdt/gzdt/content/post_1253018.html">汕尾市监</a></td><td>当地要求专用封签，禁止胶带、订书钉和绳索替代</td><td><span class="badge infer">AI 推断</span>当地采购更紧迫</td><td>地方口径不能外推全国</td></tr>
+      <tr><td>2026-07-10<br/><a href="https://www.wuxi.gov.cn/doc/2026/07/10/4803054.shtml">无锡市监</a></td><td>提醒“一餐一封签”，袋口打结不可替代</td><td><span class="badge infer">AI 推断</span>用量可按订单预测</td><td>没有公布采购量或付费意愿</td></tr>
+      <tr><td>2026-06-08<br/><a href="https://www.samr.gov.cn/spjys/sjdt/gzdt/art/2026/art_d0a91459127c4df091a08830220cb2b2.html">总局实施报道</a></td><td>平台加强资质实地核查和过程管控</td><td><span class="badge infer">AI 推断</span>小连锁更在意统一操作</td><td>平台压力不只针对封签</td></tr>
+      <tr><td>2026 年二季度<br/><a href="https://www.samr.gov.cn/xw/xwfbt/art/2026/art_6e5847170ffb49d98bdeaa58db168515.html">总局发布会</a></td><td>通报 7 家平台“幽灵外卖”系列案处罚，继续整治无堂食外卖</td><td><span class="badge infer">AI 推断</span>执行不会随发布结束</td><td>不能证明封签订阅已有市场</td></tr>
+      <tr><td>2026-04-08<br/><a href="https://scjgj.gz.gov.cn/ztzl/bhzx/zcwj/content/post_10761256.html">广州检查计划</a></td><td>无堂食、集约厨房和连锁门店为重点对象</td><td>未来可能延伸其他门店用品</td><td>不用于支撑首版封签收入</td></tr>
+    </tbody></table></div>
+    <p><span class="badge fact">事实</span>全国底线是“开启后无法复原”；一些城市进一步公开“一餐一封签”或专用封签要求。</p>
+    <p><span class="badge infer">AI 推断</span>3–30 店小连锁会为定制、分店直发和不断货付费。</p>
+    <p><span class="badge unknown">未知</span>真实印刷报价、最低起订量、免费物料覆盖率、每单用量、客户价格接受度、材料标准和各地检查口径。</p>
+
+    <h3>C. 单位经济</h3>
+    <div class="table-wrap"><table><thead><tr><th>项目</th><th>假设</th><th>备注</th></tr></thead><tbody>
+      <tr><td>月包收入</td><td>¥399 / 店</td><td>每月预付</td></tr><tr><td>生产</td><td>¥100–150 / 3,000 枚</td><td>未取得供应商报价</td></tr><tr><td>分箱配送</td><td>¥35–50 / 店</td><td>普通快递</td></tr><tr><td>支付与系统</td><td>¥5–10 / 店</td><td>固定成本摊销</td></tr><tr><td>贡献毛利</td><td>¥189–249 / 店</td><td>未扣获客、税费与人工</td></tr>
+    </tbody></table></div>
+
+    <h3>D. 自动化闭环</h3>
+    <figure class="diagram"><div class="diagram-bar">sealflow-fulfillment.mmd</div><pre class="mermaid">
+flowchart LR
+    A["品牌填写袋型与门店用量"] --> B["固定模板自动生成印刷 PDF"]
+    B --> C["人工核稿与首批样品"]
+    C --> D["标签厂生产"]
+    D --> E["仓配按门店直发"]
+    E --> F["系统预测库存与提醒补货"]
+    F -->|"付款后复用原版"| D
+    </pre><figcaption>自动化负责重复订单，人工只卡住首次样品、质量和异常。</figcaption></figure>
+    <p><strong>异常熔断：</strong>规则不明时只描述产品性能；涉嫌侵权标志暂停生产；尺寸未过样品验证不做大货；食品直接接触场景转具备资质的包装商；二维码涉嫌绕过平台交易时拒绝上线。</p>
+
+    <h3>E. 30 / 90 天演进</h3>
+    <ul><li><strong>0–30 天：</strong>3 种尺寸、2 种材质、单/双色固定模板，只做品牌名、拆封警示和可选售后二维码。</li><li><strong>31–90 天：</strong>沉淀袋型—尺寸规则库，增加多店分箱、库存预测、批次追踪与版本锁定。</li><li><strong>不进入首版：</strong>法规咨询、日周月台账、整套包装袋、打印硬件、私域代运营、食品检测和门店培训。</li></ul>
+
+    <h3>F. 风险与停止条件</h3>
+    <ul>
+      <li>连续三个月每店贡献毛利低于 ¥150；</li><li>超过 30% 订单需要固定模板外的人工设计；</li><li>90 天内订阅客户次月续购率低于 40%；</li><li>质量退换货超过订单数 5%；</li><li>目标城市由平台或政府稳定免费供应封签。</li>
+    </ul>
+    <p>以上阈值都是经营假设，不是行业基准。本文没有声称已有客户、订单、供应商、平台合作、官方认证或实际毛利。</p>
+
+    <h3>G. 角色后置适配</h3>
+    <p><strong>可迁移：</strong>规则建模、配置系统、自动印前、库存预测和异常流程。<strong>需要外部能力：</strong>标签材料、胶黏剂、食品相关产品标准、餐饮渠道、印刷质检和仓配。不能外包的核心判断是：何时拒绝定制，何时拒绝“保证合规”。</p>
+  </div>
+</details>
+</div>
+
+<footer>
+  <div>单创意副业洞察 · SIDE-006 · 公开事实与商业推演已分层</div>
+  <div class="footer-links"><a href="https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2026/art_d04d512f5ad8470eb61a652c0061dc3a.html">国家规则</a><a href="https://www.wuxi.gov.cn/doc/2026/07/10/4803054.shtml">无锡提醒</a><a href="https://www.shanwei.gov.cn/swscjdglj/zwdt/gzdt/content/post_1253018.html">汕尾提醒</a></div>
+</footer>
+<button id="toTop" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  try{
+    mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#738198',primaryColor:'#111b29',primaryBorderColor:'#33465e',primaryTextColor:'#eef4ff'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:38,rankSpacing:48,padding:12}});
+  }catch(err){console.error(err);}
+  var progressBar=document.getElementById('progress');
+  var backButton=document.getElementById('toTop');
+  function updateScroll(){var doc=document.documentElement;var maxScroll=doc.scrollHeight-doc.clientHeight;progressBar.style.width=(maxScroll>0?(doc.scrollTop/maxScroll*100):0)+'%';backButton.classList.toggle('show',window.scrollY>600);}
+  window.addEventListener('scroll',updateScroll,{passive:true});updateScroll();
+  backButton.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.body.classList.add('js-reveal');
+    var revealObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('in');revealObserver.unobserve(entry.target);}});},{threshold:.06,rootMargin:'0px 0px -4% 0px'});
+    document.querySelectorAll('section').forEach(function(sectionNode){revealObserver.observe(sectionNode);});
+    window.setTimeout(function(){document.querySelectorAll('section:not(.in)').forEach(function(sectionNode){sectionNode.classList.add('in');});},2500);
+    var countObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var node=entry.target;var target=Number(node.dataset.target);var start=performance.now();function frame(now){var ratio=Math.min((now-start)/650,1);node.textContent=String(Math.round(target*(1-Math.pow(1-ratio,3))));if(ratio<1)requestAnimationFrame(frame);}requestAnimationFrame(frame);countObserver.unobserve(node);});},{threshold:.6});
+    document.querySelectorAll('.count').forEach(function(countNode){countObserver.observe(countNode);});
+  }else{document.querySelectorAll('section').forEach(function(sectionNode){sectionNode.classList.add('in');});}
+})();
+</script>
+</body>
+</html>

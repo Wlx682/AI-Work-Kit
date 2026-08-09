@@ -1,4 +1,4 @@
 interface:
   display_name: "创意捕捉助手"
-  short_description: "每周运行跨领域信号采集、哲思洞察合成与最小现实验证闭环"
-  default_prompt: "Use $creative-capture-assistant to run this week’s creative capture cycle."
+  short_description: "跨行业盲扫后，用五分钟正文深挖一个赚钱机会"
+  default_prompt: "Use $creative-capture-assistant to find one evidence-backed money-making idea and present it as a five-minute narrative with a verifiable facts appendix."

@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Stone48：面向石家庄入境自由行游客的多语种48小时自助夜游数字包。" />
+  <title>Stone48｜石家庄多语种自助夜游包</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #eff8f7;
+      --muted: #9fb4b3;
+      --night: #071211;
+      --panel: rgba(15, 34, 32, .76);
+      --line: rgba(150, 208, 200, .16);
+      --cyan: #67e8d1;
+      --amber: #ffbd59;
+      --red: #ff725e;
+      --max: 1160px;
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--night); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(25, 116, 102, .2), transparent 29rem),
+        radial-gradient(circle at 90% 20%, rgba(255, 189, 89, .09), transparent 24rem),
+        var(--night);
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .22;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, #000, transparent 80%);
+    }
+
+    a { color: var(--cyan); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: #a6f4e6; }
+    button, summary { font: inherit; }
+    .wrap { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
+    .eyebrow { color: var(--cyan); font-size: .76rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .mono { font-family: "Space Grotesk", monospace; }
+
+    .hero {
+      min-height: 94vh;
+      display: grid;
+      place-items: center;
+      position: relative;
+      padding: 88px 0 52px;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(360px, .94fr);
+      gap: clamp(28px, 6vw, 80px);
+      align-items: center;
+    }
+    .hero h1 {
+      max-width: 760px;
+      margin: 14px 0 18px;
+      font-size: clamp(3rem, 8vw, 7.2rem);
+      line-height: .9;
+      letter-spacing: -.07em;
+      font-weight: 900;
+    }
+    .hero h1 span { color: var(--amber); }
+    .lead { max-width: 690px; margin: 0; font-size: clamp(1.08rem, 1.7vw, 1.35rem); color: #d5e6e3; }
+    .boundary {
+      display: inline-flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 24px;
+      padding: 13px 16px;
+      border: 1px solid rgba(255,189,89,.28);
+      border-radius: 14px;
+      background: rgba(255,189,89,.07);
+      color: #f9dfb6;
+      font-size: .88rem;
+    }
+    .boundary b { flex: none; color: var(--amber); }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 20px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .btn.primary { background: var(--cyan); color: #05231e; border-color: transparent; }
+
+    .route-visual {
+      aspect-ratio: 1 / 1;
+      position: relative;
+      border-radius: 50%;
+      border: 1px solid rgba(103,232,209,.22);
+      background:
+        radial-gradient(circle, rgba(103,232,209,.12), transparent 52%),
+        repeating-radial-gradient(circle, transparent 0 46px, rgba(103,232,209,.08) 47px 48px);
+      box-shadow: 0 0 100px rgba(103,232,209,.08), inset 0 0 80px rgba(3,12,11,.68);
+      overflow: hidden;
+    }
+    .route-visual::before {
+      content: "";
+      position: absolute;
+      width: 78%;
+      height: 33%;
+      left: 11%;
+      bottom: 18%;
+      border: 16px solid var(--amber);
+      border-bottom: 0;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      filter: drop-shadow(0 0 14px rgba(255,189,89,.32));
+      opacity: .88;
+    }
+    .route-visual::after {
+      content: "正定  ·  48H  ·  赵州桥";
+      position: absolute;
+      left: 50%;
+      top: 28%;
+      transform: translateX(-50%);
+      width: 100%;
+      text-align: center;
+      font: 700 clamp(.78rem, 1.4vw, 1rem)/1 "Space Grotesk", sans-serif;
+      letter-spacing: .14em;
+      color: var(--cyan);
+    }
+    .pin { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 8px rgba(255,114,94,.12), 0 0 22px var(--red); }
+    .pin.one { left: 18%; top: 48%; }
+    .pin.two { right: 15%; bottom: 27%; }
+    .route-line {
+      position: absolute;
+      left: 22%; top: 51%; width: 60%; height: 16%;
+      border-top: 2px dashed rgba(103,232,209,.7);
+      border-radius: 50%;
+      transform: rotate(7deg);
+    }
+    .moon { position: absolute; width: 54px; height: 54px; right: 16%; top: 14%; border-radius: 50%; background: var(--amber); box-shadow: 0 0 34px rgba(255,189,89,.35); }
+
+    .metrics { margin-top: -1px; border-bottom: 1px solid var(--line); }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .metric { min-width: 0; padding: 34px clamp(18px, 4vw, 48px); border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric-value { display: block; color: var(--amber); font: 700 clamp(2.35rem, 5vw, 4.8rem)/1 "Space Grotesk", sans-serif; letter-spacing: -.06em; }
+    .metric-label { display: block; margin-top: 10px; color: var(--muted); font-size: .91rem; }
+    .metric-source { display: block; margin-top: 7px; font-size: .72rem; color: #738c89; }
+
+    main { padding: 24px 0 80px; }
+    .section {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: clamp(28px, 6vw, 80px);
+      padding: clamp(70px, 10vw, 124px) 0;
+      border-bottom: 1px solid var(--line);
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
+    .section.visible { opacity: 1; transform: none; }
+    .section-index { position: sticky; top: 28px; align-self: start; }
+    .section-index .n { display: block; color: var(--amber); font: 700 3.4rem/1 "Space Grotesk", sans-serif; letter-spacing: -.06em; }
+    .section-index .tag { display: block; margin-top: 12px; color: var(--muted); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; }
+    .content { min-width: 0; }
+    .content h2 { margin: 0 0 25px; max-width: 800px; font-size: clamp(1.75rem, 3.8vw, 3.45rem); line-height: 1.13; letter-spacing: -.045em; }
+    .content h3 { margin: 34px 0 10px; font-size: 1.04rem; color: var(--cyan); }
+    .content p { max-width: 820px; color: #c8d9d6; }
+    .content strong { color: #fff; }
+    .callout {
+      margin: 28px 0;
+      padding: 20px 22px;
+      border-left: 3px solid var(--amber);
+      border-radius: 0 16px 16px 0;
+      background: linear-gradient(90deg, rgba(255,189,89,.1), rgba(255,189,89,.025));
+      color: #f4e6d1;
+    }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 14px; margin: 26px 0; }
+    .card {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 16px 50px rgba(0,0,0,.13);
+    }
+    .card .kicker { display: block; margin-bottom: 8px; color: var(--amber); font-size: .75rem; font-weight: 800; letter-spacing: .08em; }
+    .card h3 { margin: 0 0 8px; color: #fff; font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .price-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 22px;
+      align-items: center;
+      padding: 26px;
+      border: 1px solid rgba(103,232,209,.25);
+      border-radius: 20px;
+      background: linear-gradient(120deg, rgba(103,232,209,.09), rgba(255,189,89,.05));
+    }
+    .price-card .price { color: var(--cyan); font: 700 clamp(3rem, 7vw, 5.8rem)/.9 "Space Grotesk", sans-serif; letter-spacing: -.07em; white-space: nowrap; }
+    .price-card p { margin: 0; }
+    .verdict { border-color: rgba(103,232,209,.35); background: linear-gradient(135deg, rgba(103,232,209,.12), rgba(15,34,32,.6)); }
+    .verdict-title { margin: 6px 0 8px; color: var(--cyan); font-size: clamp(1.55rem, 3vw, 2.4rem); font-weight: 900; }
+    .stop-list { display: grid; gap: 9px; padding: 0; list-style: none; }
+    .stop-list li { padding: 12px 14px; border: 1px solid rgba(255,114,94,.18); border-radius: 12px; background: rgba(255,114,94,.055); color: #e9c5bf; }
+
+    .mermaid-shell { width: 100%; max-width: 100%; margin: 28px 0; padding: 24px 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: rgba(4,13,12,.72); }
+    .mermaid { min-width: 700px; display: flex; justify-content: center; }
+
+    .appendix { padding: 86px 0 110px; }
+    .appendix-head { max-width: 680px; margin-bottom: 30px; }
+    .appendix h2 { margin: 10px 0; font-size: clamp(2rem, 5vw, 4rem); letter-spacing: -.06em; }
+    .appendix-head p { color: var(--muted); }
+    details { border-top: 1px solid var(--line); }
+    details:last-of-type { border-bottom: 1px solid var(--line); }
+    summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 21px 4px;
+      cursor: pointer;
+      color: #e8f6f3;
+      font-weight: 700;
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--amber); font: 500 1.5rem/1 "Space Grotesk", sans-serif; }
+    details[open] summary::after { content: "−"; }
+    .detail-body { padding: 0 4px 26px; color: #b8cbc8; }
+    .detail-body ul { padding-left: 20px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .87rem; }
+    th, td { padding: 13px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--amber); font-size: .75rem; letter-spacing: .04em; }
+    td { color: #b8cbc8; }
+    footer { padding: 28px 0 50px; color: #728c88; font-size: .78rem; border-top: 1px solid var(--line); }
+
+    @media (max-width: 820px) {
+      .hero { min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .route-visual { width: min(480px, 92vw); justify-self: center; }
+      .section { grid-template-columns: 1fr; }
+      .section-index { position: static; display: flex; align-items: center; gap: 12px; }
+      .section-index .n { font-size: 2.2rem; }
+      .section-index .tag { margin: 0; }
+    }
+    @media (max-width: 600px) {
+      .wrap { width: min(100% - 28px, var(--max)); }
+      .hero { padding-top: 60px; }
+      .hero h1 { font-size: clamp(3.1rem, 17vw, 5rem); }
+      .route-visual { width: 86vw; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .metric { border-right: 0; border-bottom: 1px solid var(--line); padding: 24px 14px; }
+      .metric:last-child { border-bottom: 0; }
+      .price-card { grid-template-columns: 1fr; }
+      .price-card .price { font-size: 4.4rem; }
+      .section { padding: 66px 0; }
+      .content h2 { font-size: 2rem; }
+      .mermaid-shell { margin-inline: -4px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+      .section { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow mono">Shijiazhuang · One business idea · SIDE-012</div>
+        <h1>STONE<span>48</span></h1>
+        <p class="lead">把正定古城与赵州桥夜游做成外国游客付费解锁的 48 小时手机网页：卖的是“今晚敢自己走”的确定感，机会来自入境增长与刚启幕的夜游新场景。</p>
+        <div class="boundary"><b>边界</b><span>它不是门票、旅行社或人工导游，不代订交通住宿，只销售经过核验的数字信息内容。</span></div>
+        <div class="hero-cta">
+          <a class="btn primary" href="#idea">五分钟读懂</a>
+          <a class="btn" href="#appendix">核对事实来源</a>
+        </div>
+      </div>
+      <div class="route-visual" aria-label="以赵州桥拱形和两地路线构成的抽象夜游视觉">
+        <span class="moon"></span><span class="pin one"></span><span class="pin two"></span><span class="route-line"></span>
+      </div>
+    </div>
+  </header>
+
+  <section class="metrics" aria-label="机会信号">
+    <div class="wrap metric-grid">
+      <div class="metric"><span class="metric-value"><span data-count="240">240</span>h</span><span class="metric-label">符合条件旅客的过境免签窗口</span><span class="metric-source">国家移民管理局</span></div>
+      <div class="metric"><span class="metric-value"><span data-count="263">263</span>%</span><span class="metric-label">2026 年“五一”入境游增幅</span><span class="metric-source">石家庄市体育局</span></div>
+      <div class="metric"><span class="metric-value">07·<span data-count="10">10</span></span><span class="metric-label">赵州桥新夜游启幕日期</span><span class="metric-source">石家庄市文旅局</span></div>
+    </div>
+  </section>
+
+  <main id="idea" class="wrap">
+    <section class="section">
+      <aside class="section-index"><span class="n">01</span><span class="tag">What is sold</span></aside>
+      <div class="content">
+        <h2>卖的是“今晚敢自己走”，不是另一篇攻略</h2>
+        <p>外国自由行游客到了石家庄，真正麻烦的往往不是不知道赵州桥，而是零碎的小决定：把哪个中文地址交给司机、哪个入口是官方的、表演结束后怎样确认返程、古建名称如何听懂、遇到问题该展示哪句中文。普通攻略介绍景点，却很少把这些动作排成一条可以照着走的夜游流程。</p>
+        <div class="callout"><strong>最小可售单元：</strong>一个设备使用 48 小时的网页激活码。首版只做英语、韩语，以及正定古城、赵州桥两条路线。</div>
+        <p><strong>说明性场景：</strong>韩国游客住进正定酒店，扫描前台二维码付款后选择韩语。傍晚听正定古城短音频；次日去赵州桥时，一键复制中文目的地，入场前查看人工核验过的提醒，散场后按“确认车辆—核对酒店地址—保存 12367”完成返程。网页到期自动关闭。</p>
+        <div class="cards">
+          <article class="card"><span class="kicker">02–03 MIN</span><h3>短音频</h3><p>只讲眼前需要理解的历史与场景，不做百科。</p></article>
+          <article class="card"><span class="kicker">COPY</span><h3>中文地点卡</h3><p>地址和求助句可直接展示、复制，不依赖会说中文。</p></article>
+          <article class="card"><span class="kicker">RETURN</span><h3>返程检查表</h3><p>把散场后的交通、住宿地址和求助动作放在路线末端。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <aside class="section-index"><span class="n">02</span><span class="tag">Why now</span></aside>
+      <div class="content">
+        <h2>三个同期信号，让石家庄第一次像个时间窗口</h2>
+        <p><strong>政策信号：</strong>国家移民管理局当前政策覆盖 55 个国家的 240 小时过境免签，石家庄正定机场列在适用入境口岸中。它扩大了短停留自由行的潜在人群，但官方没有公布多少人会留在石家庄游玩。</p>
+        <p><strong>客流信号：</strong>石家庄市体育局称，2026 年“五一”入境游增幅为 263%，进入全国增幅前十；河北省文旅厅把正定古城列进入境游十大目的地，并披露正定机场稳定运营首尔、釜山、清州、曼谷和香港等航线。航线说明方向，不等于实际语言占比。</p>
+        <p><strong>供给信号：</strong>赵州桥夜游于 2026 年 7 月 10 日启幕，增加打铁花、实景演绎、雅乐、民谣和露营食肆。新内容让旧攻略更容易过时，也让“今晚看什么、怎样回来”的动态信息更值钱。</p>
+        <div class="callout">这些事实只证明<strong>机会条件正在变化</strong>，不证明外国游客一定愿意付 39 元。需求仍是必须面对的未知项。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <aside class="section-index"><span class="n">03</span><span class="tag">Who pays</span></aside>
+      <div class="content">
+        <h2>唯一付费客户：停留一至三天的外国自由行游客</h2>
+        <p>酒店、民宿和咖啡店只是二维码分销渠道，按成交获得分成；它们不是主付费方。购买通常发生在游客入住后准备出门，或发现景区讲解与自己的语言不匹配时。</p>
+        <p>替代方案并不少：免费地图、翻译软件、短视频、酒店前台和旅行平台攻略。Stone48 只有在“打开即可执行”上明显省心——信息少而准确、中文地址可直接展示、音频无需下载 App、返程动作紧跟路线——才有付费理由。</p>
+        <div class="cards">
+          <article class="card"><span class="kicker">PAYER</span><h3>外国自由行游客</h3><p>自己付费、自己使用；不是向酒店卖一套系统。</p></article>
+          <article class="card"><span class="kicker">CHANNEL</span><h3>可信二维码位置</h3><p>前台、民宿、咖啡店在“准备出门”时出现，比线上投流更关键。</p></article>
+          <article class="card"><span class="kicker">LANGUAGE</span><h3>英语 + 韩语首发</h3><p>韩语来自韩国航线信号；扩语种只看真实激活数据。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <aside class="section-index"><span class="n">04</span><span class="tag">Delivery</span></aside>
+      <div class="content">
+        <h2>一张二维码到一张返程卡，交付可以自动完成</h2>
+        <div class="mermaid-shell"><div class="mermaid">
+flowchart LR
+    A[扫码] --> B[选择语言]
+    B --> C[支付并激活48小时]
+    C --> D[选择路线]
+    D --> E[音频与地点卡]
+    E --> F[返程与应急卡]
+    F --> G[到期关闭并匿名统计]
+        </div></div>
+        <p>用户不用注册账号，只需订单号与设备凭证。每张路线卡同时显示自制音频、可复制中文地名、官方信息链接、最后核验时间和“今天可能变化”的提示。网络不稳定时，可提前缓存音频与文字；护照与精确位置不上传。</p>
+        <div class="callout"><strong>自动化边界：</strong>系统可以监测官方页面发生变化，却不能让 AI 自动发布新时间。营业时间、演出、交通和票务变动必须人工复核。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <aside class="section-index"><span class="n">05</span><span class="tag">Economics</span></aside>
+      <div class="content">
+        <h2>39 元一次性数字商品，目标不是高客单而是重复销售</h2>
+        <div class="price-card">
+          <div><strong>建议定价假设</strong><p>48 小时网页激活码；不含门票、交通和住宿。</p></div>
+          <div class="price">¥39</div>
+        </div>
+        <div class="cards">
+          <article class="card"><span class="kicker">− ¥10</span><h3>渠道分成</h3><p>让可信位置愿意展示二维码。</p></article>
+          <article class="card"><span class="kicker">− ¥9</span><h3>技术与内容摊销</h3><p>支付、托管、客服 4 元；翻译复核、维护 5 元。</p></article>
+          <article class="card"><span class="kicker">= ¥20</span><h3>单份贡献</h3><p>月售 300 份约贡献 6000 元，均为算式而非销量预测。</p></article>
+        </div>
+        <p>支付、激活、语言切换、播放、缓存、到期、渠道归因、分成、匿名统计和页面变更提醒可以自动化。母语复核、历史审校、现场动线、官方时间确认、渠道关系和退款争议必须有人负责。若每份订单平均需要超过 10 分钟真人答疑，这个数字商品就失去成立基础。</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <aside class="section-index"><span class="n">06</span><span class="tag">Verdict</span></aside>
+      <div class="content">
+        <h2>值得继续关注；最大难题是可信分销，不是生成内容</h2>
+        <article class="card verdict">
+          <span class="kicker">FINAL JUDGMENT</span>
+          <div class="verdict-title">值得继续关注</div>
+          <p>资本轻、地域差异明显、交付可高度自动化；同期出现入境政策、韩国航线、正定目的地认定和赵州桥新夜游。真正的护城河不是 AI 音频，而是经过审校的内容资产与游客出门前能看到的可信二维码。</p>
+        </article>
+        <h3>出现任一情况，就该停止</h3>
+        <ul class="stop-list">
+          <li>90 天内无法建立 10 个可持续分销点</li>
+          <li>购买页到成功播放的完成率低于 90%</li>
+          <li>退款率超过 8%，或真人支持超过每份 10 分钟</li>
+          <li>单份实际贡献低于 15 元</li>
+        </ul>
+        <p>你的自动化能力适合支付、激活、内容版本和渠道结算；外语母语审校、地方史审核及现场动线核验必须外包。角色只影响执行方式，不限制创意来自哪个行业。</p>
+      </div>
+    </section>
+  </main>
+
+  <section id="appendix" class="appendix">
+    <div class="wrap">
+      <div class="appendix-head"><div class="eyebrow mono">Evidence & assumptions</div><h2>事实与推演附录</h2><p>正文负责快速读懂，附录负责让你复核。默认收起；所有定价和销量都标为假设。</p></div>
+
+      <details><summary>A. 行业坐标与最小商业系统</summary><div class="detail-body"><ul>
+        <li><strong>主行业：</strong>石家庄入境旅游数字内容。</li><li><strong>商业模式：</strong>48 小时自助夜游包直售，渠道按成交分成。</li><li><strong>价值链位置：</strong>游客入住或到达景区后、决定自行出游前。</li><li><strong>受益者与付款者：</strong>外国自由行游客既使用也付款；酒店只分销。</li><li><strong>最小可售单元：</strong>一个 48 小时设备激活码。</li>
+      </ul></div></details>
+
+      <details><summary>B. 市场证据与事实来源</summary><div class="detail-body"><div class="table-wrap"><table>
+        <thead><tr><th>来源</th><th>可直接复核的事实</th><th>据此推演</th><th>局限</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://www.nia.gov.cn/n897453/c1751080/content.html" target="_blank" rel="noopener">国家移民管理局</a></td><td>55 国适用 240 小时过境免签；河北适用口岸包括石家庄正定机场。</td><td>短停留自由行可能增加自助内容需求。</td><td>未公布实际留石和游玩人数。</td></tr>
+          <tr><td><a href="https://tyj.sjz.gov.cn/columns/39c54cc2-9526-4862-88d9-34618bdabb57/202606/17/7594f272-0bcc-4e7f-9ff1-803c869a545d.html" target="_blank" rel="noopener">石家庄市体育局</a></td><td>2026 年“五一”入境游增幅 263%，进入全国增幅前十。</td><td>客流可能支持小额多语种商品。</td><td>基数和绝对人数未披露。</td></tr>
+          <tr><td><a href="https://whly.hebei.gov.cn/c/2026-06-08/585350.html" target="_blank" rel="noopener">河北省文化和旅游厅</a></td><td>正定古城入选河北入境游十大目的地；正定机场运营韩国、泰国、香港等航线。</td><td>英语、韩语首发比盲做十种语言合理。</td><td>航线不等于游客语言占比。</td></tr>
+          <tr><td><a href="https://wglj.sjz.gov.cn/columns/4bccb071-c987-46a8-9718-77801cb4eb16/202607/08/844c54dd-3fb3-4add-8668-9634a3fa3800.html" target="_blank" rel="noopener">石家庄市文化广电和旅游局</a></td><td>赵州桥夜游 7 月 10 日启幕，包含打铁花、演绎、雅乐和食肆。</td><td>新场景提高动态夜游信息价值。</td><td>未披露夜游客流和外国游客占比。</td></tr>
+        </tbody>
+      </table></div></div></details>
+
+      <details><summary>C. 收入与单位经济</summary><div class="detail-body"><div class="table-wrap"><table>
+        <thead><tr><th>项目</th><th>假设</th><th>说明</th></tr></thead><tbody>
+          <tr><td>激活码</td><td>¥39 / 48 小时</td><td>不含票、车、住宿。</td></tr><tr><td>可变成本与摊销</td><td>¥19</td><td>渠道 10 + 技术客服 4 + 内容复核 5。</td></tr><tr><td>单份贡献</td><td>¥20</td><td>计算结果，不是实际利润承诺。</td></tr><tr><td>月售 300 份</td><td>贡献约 ¥6000</td><td>纯算术示例，不是客流预测。</td></tr>
+        </tbody></table></div></div></details>
+
+      <details><summary>D. 自动化与人工边界</summary><div class="detail-body"><ul>
+        <li><strong>自动：</strong>支付、激活、缓存、到期、渠道归因与分成、匿名统计、官方页面变更提醒。</li>
+        <li><strong>人工：</strong>母语复核、历史审校、现场动线、时间确认、渠道关系和争议处理。</li>
+        <li><strong>熔断：</strong>官方时间无法确认时标为待核实并隐藏具体场次，不让 AI 猜测。</li>
+        <li><strong>隐私：</strong>不采集护照，不默认上传精确位置。</li>
+      </ul></div></details>
+
+      <details><summary>E. 30 / 90 天演进路线</summary><div class="detail-body"><ul>
+        <li><strong>0—30 天：</strong>只做正定与赵州桥、英语与韩语；每条信息保留来源和最后核验时间。</li>
+        <li><strong>31—90 天：</strong>再增加渠道二维码、离线缓存、匿名漏斗和自动结算；扩语种只看实际使用。</li>
+        <li><strong>可沉淀资产：</strong>经过母语与地方史审核的短音频、场景化中文卡、可信分销点和更新记录。</li>
+      </ul></div></details>
+
+      <details><summary>F. 风险、合规与未知项</summary><div class="detail-body"><ul>
+        <li><strong>最大风险：</strong>可信分销位置不足，而不是网页开发失败。</li>
+        <li><strong>经营边界：</strong>只销售数字信息内容；不组合销售门票、住宿和交通，不以旅行社或人工导游名义履约。</li>
+        <li><strong>版权：</strong>音频、文字和视觉必须原创或获得许可。</li>
+        <li><strong>未知项：</strong>外国自由行绝对人数、语言结构、支付成功率、酒店分销意愿、夜游季节性。</li>
+      </ul></div></details>
+    </div>
+  </section>
+
+  <footer><div class="wrap">STONE48 · 单创意副业洞察 · 生成于 2026-08-09 · 事实与假设已分层标注</div></footer>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose', flowchart: { curve: 'basis', htmlLabels: true } });
+  </script>
+  <script>
+    const sections = [...document.querySelectorAll('.section')];
+    const reveal = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: .08 });
+    sections.forEach(section => reveal.observe(section));
+    setTimeout(() => sections.forEach(section => section.classList.add('visible')), 2500);
+
+    const countNodes = [...document.querySelectorAll('[data-count]')];
+    const countUp = (node) => {
+      if (node.dataset.done) return;
+      node.dataset.done = '1';
+      const target = Number(node.dataset.count);
+      const start = performance.now();
+      const run = now => {
+        const progress = Math.min((now - start) / 900, 1);
+        node.textContent = String(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+        if (progress < 1) requestAnimationFrame(run);
+      };
+      requestAnimationFrame(run);
+    };
+    const counterObserver = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) countUp(e.target); }), { threshold: .4 });
+    countNodes.forEach(node => counterObserver.observe(node));
+  </script>
+</body>
+</html>

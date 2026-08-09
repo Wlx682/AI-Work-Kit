@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="基于欧盟 2026 年维修权、低价值进口关税与产品安全规则生成的单创意副业洞察。">
+  <title>欧盟本地按需打印维修小件目录｜单创意副业洞察</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050a12;
+      --bg-soft: #091321;
+      --panel: rgba(13, 27, 45, .82);
+      --panel-solid: #0d1b2d;
+      --line: rgba(125, 211, 252, .18);
+      --line-strong: rgba(45, 212, 191, .5);
+      --text: #e7f4ff;
+      --muted: #8fa8bc;
+      --cyan: #60dfff;
+      --mint: #4ee6b0;
+      --amber: #ffc96b;
+      --red: #ff7a90;
+      --sidebar: 286px;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .38);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 32px; }
+    body {
+      margin: 0;
+      min-width: 0;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 86% 4%, rgba(78, 230, 176, .12), transparent 28rem),
+        radial-gradient(circle at 25% 18%, rgba(96, 223, 255, .10), transparent 30rem),
+        linear-gradient(180deg, #050a12 0%, #07111d 55%, #050a12 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.7;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(96, 223, 255, .025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 223, 255, .025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, #000, transparent 80%);
+    }
+
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { color: #fff; }
+    button { font: inherit; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      left: 16px;
+      top: -80px;
+      padding: 10px 14px;
+      color: #03131c;
+      background: var(--mint);
+      border-radius: 10px;
+      transition: top .2s ease;
+    }
+    .skip-link:focus { top: 16px; }
+
+    .sidebar {
+      position: fixed;
+      z-index: 30;
+      inset: 0 auto 0 0;
+      width: var(--sidebar);
+      padding: 30px 22px 24px;
+      overflow-y: auto;
+      background: rgba(5, 10, 18, .90);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      gap: 11px;
+      align-items: center;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      color: var(--mint);
+      background: rgba(78, 230, 176, .08);
+      box-shadow: inset 0 0 20px rgba(78, 230, 176, .07);
+      font-weight: 800;
+    }
+    .brand strong { display: block; font-size: 14px; letter-spacing: .08em; }
+    .brand span { display: block; color: var(--muted); font-size: 11px; letter-spacing: .12em; }
+
+    .eyebrow {
+      color: var(--mint);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .side-note { margin: 20px 0 10px; color: var(--muted); font-size: 12px; }
+    .nav-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+    .nav-list a {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-height: 38px;
+      padding: 7px 10px;
+      color: #98afc1;
+      border-left: 2px solid transparent;
+      border-radius: 0 9px 9px 0;
+      font-size: 13px;
+      transition: .2s ease;
+    }
+    .nav-list a:hover, .nav-list a.active {
+      color: var(--text);
+      border-left-color: var(--mint);
+      background: rgba(78, 230, 176, .07);
+    }
+    .nav-index { color: #527087; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+
+    .sidebar-footer {
+      margin-top: 24px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(96, 223, 255, .035);
+      font-size: 11px;
+    }
+
+    .menu-button {
+      display: none;
+      position: fixed;
+      z-index: 45;
+      top: 14px;
+      left: 14px;
+      width: 44px;
+      height: 44px;
+      color: var(--text);
+      background: rgba(9, 19, 33, .95);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .page { min-width: 0; margin-left: var(--sidebar); }
+    .content { width: min(1180px, calc(100% - 72px)); margin: 0 auto; padding: 38px 0 100px; }
+
+    .hero {
+      position: relative;
+      min-height: 650px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr);
+      gap: clamp(34px, 6vw, 80px);
+      align-items: center;
+      padding: clamp(46px, 7vw, 92px) 0 78px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-copy { position: relative; z-index: 2; min-width: 0; }
+    .hero-kicker {
+      display: inline-flex;
+      gap: 9px;
+      align-items: center;
+      padding: 6px 11px;
+      border: 1px solid rgba(78, 230, 176, .26);
+      border-radius: 999px;
+      color: var(--mint);
+      background: rgba(78, 230, 176, .055);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .hero-kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 15px var(--mint); }
+    h1 {
+      max-width: 860px;
+      margin: 20px 0 20px;
+      font-size: clamp(44px, 6vw, 82px);
+      line-height: .98;
+      letter-spacing: -.055em;
+    }
+    .gradient-text {
+      color: transparent;
+      background: linear-gradient(105deg, #fff 18%, var(--cyan) 58%, var(--mint));
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+    .hero-lead { max-width: 760px; margin: 0; color: #b8cddd; font-size: clamp(17px, 1.7vw, 22px); line-height: 1.65; }
+    .hero-tags { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
+    .tag { padding: 7px 10px; color: #b8cddd; border: 1px solid var(--line); border-radius: 8px; background: rgba(13, 27, 45, .6); font-size: 12px; }
+
+    .part-visual {
+      position: relative;
+      min-height: 410px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .orbit {
+      position: absolute;
+      inset: 8% 1% 9%;
+      border: 1px solid rgba(96, 223, 255, .14);
+      border-radius: 50%;
+      transform: rotate(-11deg);
+      box-shadow: inset 0 0 50px rgba(96, 223, 255, .03), 0 0 40px rgba(78, 230, 176, .04);
+    }
+    .orbit::before, .orbit::after {
+      content: "";
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px var(--cyan);
+    }
+    .orbit::before { left: 15%; top: 5%; }
+    .orbit::after { right: 8%; bottom: 19%; background: var(--mint); box-shadow: 0 0 18px var(--mint); }
+    .part-core {
+      position: absolute;
+      inset: 19% 15% 18%;
+      display: grid;
+      place-items: center;
+      transform: rotate(-8deg);
+      border: 1px solid rgba(96, 223, 255, .36);
+      border-radius: 32% 68% 45% 55% / 49% 38% 62% 51%;
+      background:
+        linear-gradient(135deg, rgba(96, 223, 255, .17), rgba(78, 230, 176, .055)),
+        repeating-linear-gradient(45deg, transparent 0 10px, rgba(96, 223, 255, .05) 10px 11px);
+      box-shadow: inset 0 0 60px rgba(96, 223, 255, .09), 0 30px 80px rgba(0, 0, 0, .5);
+    }
+    .part-core::before {
+      content: "";
+      width: 38%;
+      aspect-ratio: 1;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      box-shadow: inset 0 0 30px rgba(78, 230, 176, .11), 0 0 20px rgba(78, 230, 176, .08);
+    }
+    .visual-label {
+      position: absolute;
+      z-index: 3;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: #b6cbd9;
+      background: rgba(5, 10, 18, .9);
+      box-shadow: var(--shadow);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+    .label-a { top: 12%; left: 1%; }
+    .label-b { top: 41%; right: 0; }
+    .label-c { bottom: 9%; left: 12%; }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: -36px 0 72px;
+      position: relative;
+      z-index: 5;
+    }
+    .metric {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(13, 27, 45, .96), rgba(7, 17, 29, .96));
+      box-shadow: var(--shadow);
+    }
+    .metric-label { color: var(--muted); font-size: 11px; letter-spacing: .11em; text-transform: uppercase; }
+    .metric-value { display: block; margin: 7px 0 2px; color: #fff; font-size: clamp(36px, 4.2vw, 56px); font-weight: 820; line-height: 1; letter-spacing: -.045em; }
+    .metric-value.accent { color: var(--mint); }
+    .metric-note { color: #8fa8bc; font-size: 12px; }
+
+    section {
+      min-width: 0;
+      margin: 0 0 82px;
+      opacity: 1;
+      transform: none;
+    }
+    .js-reveal section {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+    .js-reveal section.visible { opacity: 1; transform: none; }
+
+    .section-head { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 28px; }
+    .section-number { padding-top: 7px; color: #527087; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    h2 { margin: 0; font-size: clamp(29px, 4vw, 46px); line-height: 1.12; letter-spacing: -.035em; }
+    h3 { margin: 0 0 10px; font-size: 19px; line-height: 1.35; }
+    p { margin: 0 0 16px; }
+    .section-intro { max-width: 850px; color: #a9c0d2; font-size: 17px; }
+
+    .callout {
+      padding: clamp(20px, 3vw, 30px);
+      border: 1px solid var(--line-strong);
+      border-radius: 17px;
+      background: linear-gradient(135deg, rgba(78, 230, 176, .09), rgba(96, 223, 255, .035));
+      box-shadow: inset 3px 0 0 var(--mint);
+    }
+    .callout strong { color: #fff; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 15px; }
+    .card {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--panel);
+    }
+    .card:hover { border-color: rgba(96, 223, 255, .34); }
+    .card p, .card li { color: #9fb7c9; }
+    .signal-id { display: inline-block; margin-bottom: 16px; color: var(--mint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .fact { color: #fff; font-weight: 720; }
+    .inference { margin-top: 13px; padding-top: 13px; border-top: 1px dashed var(--line); color: var(--amber); font-size: 12px; }
+
+    .table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 15px; background: rgba(9, 19, 33, .7); }
+    table { width: 100%; min-width: 720px; border-collapse: collapse; }
+    th, td { padding: 15px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #9bb4c7; background: rgba(96, 223, 255, .035); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    td { color: #b7ccda; font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+
+    .payer {
+      display: grid;
+      grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+      gap: 15px;
+      align-items: stretch;
+    }
+    .payer-main { padding: 28px; border: 1px solid rgba(78, 230, 176, .35); border-radius: 17px; background: rgba(78, 230, 176, .055); }
+    .payer-main strong { display: block; margin: 9px 0 10px; font-size: clamp(24px, 3vw, 36px); line-height: 1.18; }
+    .payer-list { margin: 0; padding: 23px 25px 23px 45px; border: 1px solid var(--line); border-radius: 17px; background: var(--panel); }
+    .payer-list li { margin: 6px 0; color: #a9c0d1; }
+
+    .mermaid-shell { padding: clamp(12px, 2vw, 24px); overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: rgba(4, 11, 19, .85); }
+    pre.mermaid { min-width: 760px; margin: 0; }
+
+    .steps { display: grid; gap: 11px; counter-reset: step; }
+    .step { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 14px; align-items: start; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(13, 27, 45, .66); }
+    .step::before { counter-increment: step; content: counter(step, decimal-leading-zero); display: grid; width: 42px; height: 42px; place-items: center; color: var(--mint); border: 1px solid var(--line-strong); border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .step p { margin: 4px 0 0; color: #9fb7c9; }
+
+    .risk { border-left: 3px solid var(--red); }
+    .risk .signal-id { color: var(--red); }
+    .hypothesis { border-left: 3px solid var(--amber); }
+    .hypothesis .signal-id { color: var(--amber); }
+
+    .phase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 15px; }
+    .phase { padding: 22px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); }
+    .phase-time { color: var(--mint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    ul { margin: 10px 0 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+
+    .verdict {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 52px);
+      border: 1px solid rgba(78, 230, 176, .42);
+      border-radius: 22px;
+      background: linear-gradient(130deg, rgba(13, 27, 45, .96), rgba(5, 22, 27, .96));
+      box-shadow: var(--shadow);
+    }
+    .verdict::after { content: "SIDE-003"; position: absolute; right: -12px; bottom: -32px; color: rgba(96, 223, 255, .04); font-size: clamp(80px, 13vw, 170px); font-weight: 900; line-height: 1; }
+    .verdict blockquote { position: relative; z-index: 1; max-width: 940px; margin: 16px 0 0; color: #d9ebf7; font-size: clamp(21px, 3vw, 34px); line-height: 1.42; letter-spacing: -.02em; }
+
+    .source-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .source-list a { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(13, 27, 45, .58); }
+    .source-list a span:first-child { color: var(--mint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .source-list small { display: block; color: var(--muted); }
+
+    footer { padding: 28px 0 8px; color: #688298; border-top: 1px solid var(--line); font-size: 12px; }
+
+    @media (max-width: 980px) {
+      .sidebar { display: none; transform: none; box-shadow: var(--shadow); }
+      body.nav-open .sidebar { display: block; }
+      .menu-button { display: grid; place-items: center; }
+      .page { margin-left: 0; }
+      .content { width: min(100% - 42px, 920px); padding-top: 74px; }
+      .hero { min-height: auto; grid-template-columns: 1fr; padding-top: 34px; }
+      .part-visual { min-height: 340px; max-width: 570px; width: 100%; margin: 0 auto; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -12px; }
+    }
+
+    @media (max-width: 680px) {
+      .content { width: min(100% - 28px, 620px); }
+      .hero { gap: 12px; padding-bottom: 46px; }
+      .part-visual { min-height: 290px; }
+      .label-b { right: 2%; }
+      .metric-grid { grid-template-columns: 1fr; margin-top: 22px; }
+      .section-head { grid-template-columns: 1fr; gap: 5px; }
+      .section-number { padding: 0; }
+      .payer { grid-template-columns: 1fr; }
+      section { margin-bottom: 62px; }
+      .table-wrap { margin-right: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .js-reveal section { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <button class="menu-button" type="button" aria-label="打开目录" aria-expanded="false">☰</button>
+
+  <aside class="sidebar" aria-label="章节目录">
+    <div class="brand">
+      <div class="brand-mark">CC</div>
+      <div><strong>CREATIVE CAPTURE</strong><span>SINGLE IDEA / 003</span></div>
+    </div>
+    <p class="side-note">一个机会，一组事实，一套商业系统。</p>
+    <nav>
+      <ol class="nav-list">
+        <li><a href="#why-now"><span class="nav-index">01</span>为什么是现在</a></li>
+        <li><a href="#audit"><span class="nav-index">02</span>事实审计</a></li>
+        <li><a href="#payer"><span class="nav-index">03</span>唯一付费客户</a></li>
+        <li><a href="#system"><span class="nav-index">04</span>产品与交易系统</a></li>
+        <li><a href="#economics"><span class="nav-index">05</span>单位经济</a></li>
+        <li><a href="#automation"><span class="nav-index">06</span>自动化运营</a></li>
+        <li><a href="#boundaries"><span class="nav-index">07</span>法律与安全边界</a></li>
+        <li><a href="#roadmap"><span class="nav-index">08</span>参考路线</a></li>
+        <li><a href="#stop"><span class="nav-index">09</span>停止条件</a></li>
+        <li><a href="#fit"><span class="nav-index">10</span>角色适配</a></li>
+        <li><a href="#sources"><span class="nav-index">11</span>来源</a></li>
+      </ol>
+    </nav>
+    <div class="sidebar-footer">2026-08-09 · 基于公开资料<br>金额均为假设，不是成交数据。</div>
+  </aside>
+
+  <div class="page">
+    <main id="main" class="content">
+      <header class="hero">
+        <div class="hero-copy">
+          <span class="hero-kicker">非咨询型机会 · 实体商品 × 数字授权</span>
+          <h1><span class="gradient-text">欧盟本地按需打印</span><br>维修小件目录</h1>
+          <p class="hero-lead">让维修店按机型找到绝版塑料小件；订单生成后，由欧盟本地伙伴制造、质检、追溯并发货。首批只做吸尘器上非承压、非导电、非高温的小件。</p>
+          <div class="hero-tags">
+            <span class="tag">循环经济</span><span class="tag">家电维修后市场</span><span class="tag">分布式制造</span><span class="tag">无库存目录</span>
+          </div>
+        </div>
+        <div class="part-visual" aria-label="抽象的可追溯 3D 打印零件示意">
+          <div class="orbit"></div>
+          <div class="part-core"></div>
+          <span class="visual-label label-a">MODEL / PART / REV</span>
+          <span class="visual-label label-b">EU LOCAL FAB</span>
+          <span class="visual-label label-c">BATCH TRACE ✓</span>
+        </div>
+      </header>
+
+      <div class="metric-grid" aria-label="关键事实">
+        <article class="metric"><span class="metric-label">维修指令适用日</span><span class="metric-value" data-count="31" data-suffix=" JUL">31 JUL</span><span class="metric-note">2026 · 欧盟成员国开始适用</span></article>
+        <article class="metric"><span class="metric-label">低价值进口临时关税</span><span class="metric-value accent" data-count="3" data-prefix="€">€3</span><span class="metric-note">按关税分类 item · 2026-07-01 起</span></article>
+        <article class="metric"><span class="metric-label">2025 低价值进口品</span><span class="metric-value" data-count="5.9" data-decimals="1" data-suffix="B">5.9B</span><span class="metric-note">接近 59 亿件 · 欧盟海关数据</span></article>
+      </div>
+
+      <section id="why-now">
+        <div class="section-head"><span class="section-number">01 / SIGNALS</span><div><h2>三个 2026 年 7 月信号，形成一个窗口</h2><p class="section-intro">它们证明环境发生了变化，但不证明这项生意已经成立。事实与推断在每张卡片中分开。</p></div></div>
+        <div class="card-grid">
+          <article class="card"><span class="signal-id">SIGNAL_A · POLICY</span><h3>维修权正式开始适用</h3><p><span class="fact">事实：</span>欧盟成员国自 2026-07-31 起适用维修商品指令；受可维修性规则约束的制造商要在合理时间和价格内维修，提供备件时也应合理定价。</p><p class="inference">推断：维修需求可能被制度性放大，但具体零件销量仍未知。</p></article>
+          <article class="card"><span class="signal-id">SIGNAL_B · CUSTOMS</span><h3>低价直邮多出固定费用</h3><p><span class="fact">事实：</span>≤€150 的境外电商货物从 2026-07-01 起按关税分类 item 征临时 €3 关税；2026-11-01 起产品标识符强制申报。</p><p class="inference">推断：欧盟本地生产在部分低价、急用小件上可能更有竞争力，不等于必然更便宜。</p></article>
+          <article class="card"><span class="signal-id">SIGNAL_C · VOLUME</span><h3>59 亿件的极低客单流量</h3><p><span class="fact">事实：</span>2025 年欧盟低价值进口品接近 59 亿件，同比增长 26%；上半年均价 €8.82，93% 数量来自中国。</p><p class="inference">推断：€3 相当于 €8.82 的约 34%，仅用于理解量级，不能当作每件商品涨幅。</p></article>
+        </div>
+      </section>
+
+      <section id="audit">
+        <div class="section-head"><span class="section-number">02 / AUDIT</span><div><h2>事实审计：哪些已知，哪些未知</h2></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>命题</th><th>状态</th><th>证据</th><th>使用边界</th></tr></thead>
+          <tbody>
+            <tr><td>维修政策在 2026-07-31 生效</td><td>已知事实</td><td>欧盟委员会</td><td>只证明制度推动，不证明某 SKU 有订单</td></tr>
+            <tr><td>≤€150 境外电商货物有 €3 临时关税</td><td>已知事实</td><td>欧盟委员会税务与海关总司</td><td>按关税分类 item 计算，不可简单按件推算</td></tr>
+            <tr><td>本地打印能在急用小件上占优</td><td>待验证推断</td><td>由时效、费用与追溯变化推导</td><td>取决于本地制造、配送和失败率</td></tr>
+            <tr><td>吸尘器卡扣是高需求首品</td><td>未被证明</td><td>无</td><td>只是低风险切口建议，不是“爆款”陈述</td></tr>
+            <tr><td>€19.90 能产生 €4–10 贡献毛利</td><td>价格假设</td><td>方案模型</td><td>必须按国家、伙伴、VAT 与退货实算</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout" style="margin-top:16px"><strong>不得编造：</strong>本文没有虚构客户、订单、复购或热门 SKU；所有价格、成本、门槛与路线均明确标为假设。</div>
+      </section>
+
+      <section id="payer">
+        <div class="section-head"><span class="section-number">03 / PAYER</span><div><h2>唯一付费客户：欧盟小型独立家电维修店</h2></div></div>
+        <div class="payer">
+          <div class="payer-main"><span class="eyebrow">THE JOB TO BE DONE</span><strong>让一台已拆开的机器，按承诺日期修完。</strong><p>他们买的不是一块塑料，而是适配确定性、交期、来源与可追溯性。</p></div>
+          <ol class="payer-list"><li>确认完整型号与损坏位置</li><li>判断原厂件是否仍供应、是否值得</li><li>找到材料与尺寸匹配的低风险替代件</li><li>在承诺日期前收件并完成装配</li><li>留存来源、批次与安全信息，减少返工</li></ol>
+        </div>
+      </section>
+
+      <section id="system">
+        <div class="section-head"><span class="section-number">04 / SYSTEM</span><div><h2>不是打印店，是“可信零件目录 + 本地制造网络”</h2><p class="section-intro">最小可售单元：一个经过适配验证、带制造与追溯信息、在欧盟境内按需生产并寄到维修店的非安全关键塑料件。</p></div></div>
+        <div class="mermaid-shell">
+          <pre class="mermaid">
+flowchart LR
+  A[维修店提交机型与损坏件] --> B{权利与安全闸门}
+  B -->|不通过| X[拒绝建档或下架]
+  B -->|通过| C[版本化 CAD 与材料工艺单]
+  C --> D[路由至欧盟本地打印伙伴]
+  D --> E[尺寸质检与批次追溯]
+  E --> F[境内配送到维修店]
+  F --> G[安装结果与适配反馈]
+  G --> C
+          </pre>
+        </div>
+        <div class="card-grid" style="margin-top:16px">
+          <article class="card"><span class="signal-id">START NARROW</span><h3>首批建议</h3><p>吸尘器外部旋钮、轮盖、软管转接件、线缆收纳卡、非承重外壳卡扣。逐件审查，不因为属于此列表就自动安全。</p></article>
+          <article class="card risk"><span class="signal-id">HARD BLOCK</span><h3>首批禁区</h3><p>导电、绝缘、电池、插头、承压、承重、耐高温、高速旋转，以及医疗、儿童、燃气、制动、消防相关部件。</p></article>
+          <article class="card"><span class="signal-id">CORE ASSET</span><h3>真正资产</h3><p>机型兼容图谱、版本工艺、风险文件、制造质量数据与长尾型号页面。打印机本身不是护城河。</p></article>
+        </div>
+      </section>
+
+      <section id="economics">
+        <div class="section-head"><span class="section-number">05 / ECONOMICS</span><div><h2>先让单件成立，再谈订阅与平台</h2><p class="section-intro">以下是 €19.90 订单的建议定价假设，不是供应商报价，也不是成交数据。</p></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>项目</th><th>假设区间</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>售价</td><td>€19.90</td><td>需按目标国家 VAT 与价格展示规则重算</td></tr>
+            <tr><td>材料与机器</td><td>€2–4</td><td>材料、机器时间与失败率</td></tr>
+            <tr><td>伙伴人工与质检</td><td>€3–5</td><td>去支撑、量测、贴标与包装</td></tr>
+            <tr><td>境内配送</td><td>€3–5</td><td>国家、尺寸与时效差异大</td></tr>
+            <tr><td>支付、客服、错配与退货准备</td><td>€1.5–3</td><td>作为风险准备，不是固定报价</td></tr>
+            <tr><td><strong>贡献毛利</strong></td><td><strong>€4–10</strong></td><td>未扣获客、CAD、合规、税务与开发</td></tr>
+          </tbody>
+        </table></div>
+        <div class="card-grid" style="margin-top:16px">
+          <article class="card hypothesis"><span class="signal-id">REVENUE_01</span><h3>零件毛利</h3><p>第一阶段唯一必须成立的收入：按件销售，包含数字设计、本地制造、质检与追溯。</p></article>
+          <article class="card hypothesis"><span class="signal-id">REVENUE_02</span><h3>维修店额度包</h3><p>真实复购出现后，再提供预付额度、优先生产和更低单价；不要拿订阅掩盖单件价值不足。</p></article>
+          <article class="card hypothesis"><span class="signal-id">REVENUE_03</span><h3>图纸按单授权</h3><p>向合格制造伙伴授权，不向消费者裸卖未经权利审核的 STL。平台掌握目录、版本和订单。</p></article>
+        </div>
+      </section>
+
+      <section id="automation">
+        <div class="section-head"><span class="section-number">06 / AUTOMATION</span><div><h2>正常订单流自动化，责任判断不自动消失</h2></div></div>
+        <div class="steps">
+          <div class="step"><div><h3>需求归一化</h3><p>图片 OCR、品牌词典与型号规则只产生候选；无法确认完整机型时就不卖。</p></div></div>
+          <div class="step"><div><h3>安全与权利闸门</h3><p>按温度、载荷、电气、转速、压力、儿童接触等字段拦截；图纸来源、维修用途和权利审核不全则不上架。</p></div></div>
+          <div class="step"><div><h3>制造路由</h3><p>按国家、材料、设备、交期和质量分派单；没有合格伙伴时显示不可售，不承诺虚假时效。</p></div></div>
+          <div class="step"><div><h3>批次追溯</h3><p>自动串联订单、图纸版本、材料批次、打印伙伴、量测记录与配送信息。</p></div></div>
+          <div class="step"><div><h3>异常熔断</h3><p>同一 SKU 两次连续错配、断裂或安全投诉即自动停售；版本问题能定位订单并回滚。</p></div></div>
+        </div>
+      </section>
+
+      <section id="boundaries">
+        <div class="section-head"><span class="section-number">07 / BOUNDARIES</span><div><h2>合规不是附录，而是产品字段</h2></div></div>
+        <div class="card-grid">
+          <article class="card risk"><span class="signal-id">GPSR</span><h3>消费品安全</h3><p>相关消费品要有欧盟责任经济运营者、风险分析、技术文件、追溯、投诉与召回流程；远程销售页面还要展示制造者/代表、描述与警示。</p></article>
+          <article class="card risk"><span class="signal-id">DESIGN RIGHTS</span><h3>维修条款有限</h3><p>现行条例第 22 条只覆盖特定的外观依赖型部件与修复用途，并要求披露商业来源与制造者。3D 文件本身也可能受设计权控制。</p></article>
+          <article class="card risk"><span class="signal-id">LIABILITY</span><h3>责任不可模糊</h3><p>平台、图纸设计者和制造伙伴必须约定：谁是制造商、谁维护文件、谁批准材料替换、谁执行召回与赔付。</p></article>
+        </div>
+        <div class="callout" style="margin-top:16px"><strong>产品原则：</strong>“平台只是撮合”不是天然免责；“Right to Repair”也不是复制许可证。每个 SKU 上线前都要过权利、安全和来源三道闸门。</div>
+      </section>
+
+      <section id="roadmap">
+        <div class="section-head"><span class="section-number">08 / ROADMAP</span><div><h2>90 天参考路线：扩目录，不扩风险</h2><p class="section-intro">仅供评估，不要求你现在访谈、发布或做实验。</p></div></div>
+        <div class="phase-grid">
+          <article class="phase"><span class="phase-time">DAY 01—30</span><h3>先定义可售</h3><ul><li>只选一个国家、一个家电品类</li><li>建立 20 个候选 SKU 的型号、尺寸、来源与风险卡</li><li>约定一家本地制造伙伴的质检、批次与召回协作</li><li>先做目录和档案，不先买打印机</li></ul></article>
+          <article class="phase"><span class="phase-time">DAY 31—60</span><h3>打通订单闭环</h3><ul><li>机型检索与“无法确认则不卖”</li><li>支付、派单、标签、物流与停售</li><li>记录打印耗时、失败率、错配、退款与毛利</li><li>只有完整数据的 SKU 才被收录</li></ul></article>
+          <article class="phase"><span class="phase-time">DAY 61—90</span><h3>只扩相邻 SKU</h3><ul><li>扩同品牌、同材料、同结构小件</li><li>达标后再接第二制造伙伴</li><li>复购出现后才开放额度包</li><li>继续排除高风险部件</li></ul></article>
+        </div>
+      </section>
+
+      <section id="stop">
+        <div class="section-head"><span class="section-number">09 / STOP</span><div><h2>出现这些情况，停止扩张</h2></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>停止信号</th><th>动作</th></tr></thead>
+          <tbody>
+            <tr><td>90 天后多数候选 SKU 无法在合法来源与 GPSR 文件下上线</td><td>停止扩目录，重做边界</td></tr>
+            <tr><td>首次适配成功率长期低于 90%</td><td>收紧匹配，不再买流量</td></tr>
+            <tr><td>平均贡献毛利连续四周低于 €5</td><td>停止该 SKU 或重算履约</td></tr>
+            <tr><td>本地生产仍比替代方案慢且贵，客户不为时效与追溯付费</td><td>否定核心价值假设</td></tr>
+            <tr><td>两次安全事件指向同一材料、工艺或分级缺陷</td><td>全线熔断相关版本</td></tr>
+            <tr><td>必须进入高风险部件才能获得足够客单</td><td>停止本商业方向</td></tr>
+          </tbody>
+        </table></div>
+        <p style="margin-top:12px;color:var(--muted)">90%、€5、连续四周等是管理假设，不是行业基准。</p>
+      </section>
+
+      <section id="fit">
+        <div class="section-head"><span class="section-number">10 / ROLE</span><div><h2>角色适配放在选题之后</h2></div></div>
+        <div class="card-grid">
+          <article class="card"><span class="signal-id">TRANSFERABLE</span><h3>可迁移优势</h3><p>把机型、零件版本、安全分级、制造路由、批次与异常熔断设计成可靠系统。</p></article>
+          <article class="card"><span class="signal-id">OUTSOURCE</span><h3>必须外包或补齐</h3><p>逆向 CAD/DFM、材料与结构验证、欧盟知识产权、GPSR、当地税务与履约。</p></article>
+          <article class="card risk"><span class="signal-id">BLIND SPOT</span><h3>最大误区</h3><p>因为会写系统，就把制造质量和法律判断也当成纯软件问题。</p></article>
+        </div>
+      </section>
+
+      <section>
+        <div class="verdict"><span class="eyebrow">FINAL VERDICT</span><blockquote>机会的新鲜点不是“3D 打印”，而是维修政策起跑、低价境外小件成本与追溯规则同步改变——一个以本地制造、可信适配和合规追溯为核心的无库存目录，获得了新的结构性窗口。</blockquote></div>
+      </section>
+
+      <section id="sources">
+        <div class="section-head"><span class="section-number">11 / SOURCES</span><div><h2>一手来源</h2><p class="section-intro">法规和数据均链接到欧盟官方页面。商业推断没有伪装成来源结论。</p></div></div>
+        <ol class="source-list">
+          <li><a href="https://commission.europa.eu/law/law-topic/consumer-protection-law/directive-repair-goods_en" target="_blank" rel="noreferrer"><span>01</span><span>European Commission · Directive on repair of goods<small>适用日期、维修义务、备件与维修平台</small></span></a></li>
+          <li><a href="https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en" target="_blank" rel="noreferrer"><span>02</span><span>European Commission · Temporary flat fee guidance<small>€3 临时关税、计算方式、责任方与产品标识符</small></span></a></li>
+          <li><a href="https://taxation-customs.ec.europa.eu/customs/eu-customs-union-facts-and-figures/goods-bought-online_en" target="_blank" rel="noreferrer"><span>03</span><span>European Commission · Goods bought online<small>59 亿件、26% 增长、€8.82 均价与来源构成</small></span></a></li>
+          <li><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32026R0715" target="_blank" rel="noreferrer"><span>04</span><span>EUR-Lex · Regulation (EU) 2026/715<small>3D 文件、设计权与 Article 22 维修条款</small></span></a></li>
+          <li><a href="https://eur-lex.europa.eu/legal-content/en/LSU/?uri=CELEX%3A32023R0988" target="_blank" rel="noreferrer"><span>05</span><span>EUR-Lex · General Product Safety Regulation<small>责任经济运营者、风险分析、技术文件和远程销售信息</small></span></a></li>
+        </ol>
+      </section>
+
+      <footer>Creative Capture Assistant · SIDE-003 · 2026-08-09<br>本文为机会研究，不构成法律、税务或投资建议。</footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      root.classList.add('js-reveal');
+
+      setTimeout(() => {
+        document.querySelectorAll('section').forEach(section => section.classList.add('visible'));
+      }, 3000);
+
+      if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.06, rootMargin: '0px 0px 80px' });
+        document.querySelectorAll('section').forEach(section => revealObserver.observe(section));
+      } else {
+        document.querySelectorAll('section').forEach(section => section.classList.add('visible'));
+      }
+
+      const formatCount = (element, value) => {
+        const decimals = Number(element.dataset.decimals || 0);
+        const prefix = element.dataset.prefix || '';
+        const suffix = element.dataset.suffix || '';
+        element.textContent = prefix + Number(value).toFixed(decimals) + suffix;
+      };
+      const animateCount = (element) => {
+        if (element.dataset.counted) return;
+        element.dataset.counted = 'true';
+        const target = Number(element.dataset.count);
+        const start = performance.now();
+        const duration = 900;
+        const frame = (now) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          formatCount(element, target * eased);
+          if (progress < 1) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+      };
+      const metricObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) animateCount(entry.target); });
+      }, { threshold: .4 });
+      document.querySelectorAll('[data-count]').forEach(metric => metricObserver.observe(metric));
+
+      const button = document.querySelector('.menu-button');
+      button.addEventListener('click', () => {
+        const open = document.body.classList.toggle('nav-open');
+        button.setAttribute('aria-expanded', String(open));
+      });
+      document.querySelectorAll('.nav-list a').forEach(link => link.addEventListener('click', () => {
+        document.body.classList.remove('nav-open');
+        button.setAttribute('aria-expanded', 'false');
+      }));
+
+      const sections = [...document.querySelectorAll('section[id]')];
+      const navLinks = [...document.querySelectorAll('.nav-list a')];
+      const navObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id));
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      sections.forEach(section => navObserver.observe(section));
+
+      if (window.mermaid) {
+        mermaid.initialize({
+          startOnLoad: true,
+          securityLevel: 'loose',
+          theme: 'dark',
+          themeVariables: {
+            background: '#07111d',
+            primaryColor: '#10263a',
+            primaryTextColor: '#e7f4ff',
+            primaryBorderColor: '#4ee6b0',
+            lineColor: '#60dfff',
+            secondaryColor: '#0d1b2d',
+            tertiaryColor: '#091321',
+            fontFamily: 'Inter, system-ui, sans-serif'
+          },
+          flowchart: { curve: 'basis', htmlLabels: true }
+        });
+      }
+
+      window.addEventListener('load', () => {
+        document.querySelectorAll('section').forEach(section => {
+          if (section.getBoundingClientRect().top < window.innerHeight * 1.2) section.classList.add('visible');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

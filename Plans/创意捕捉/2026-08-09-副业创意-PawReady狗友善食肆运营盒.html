@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="PawReady 狗友善食肆运营盒：五分钟看懂一个基于香港新政策形成的实体套件与耗材补充机会。"/>
+<link rel="icon" href="data:,"/>
+<title>PawReady｜狗友善食肆运营盒</title>
+<style>
+:root{
+  --bg:#090b0e;--bg2:#101318;--panel:#151a20;--panel2:#0e1217;
+  --ink:#f5f2ec;--muted:#b8b1a6;--dim:#7e7a73;--line:#2b3037;
+  --mint:#76dfb7;--coral:#ff8b72;--gold:#f2c66d;--blue:#78a9ff;
+  --read:760px;--wide:1120px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.82 var(--sans);overflow-x:hidden}
+a{color:var(--mint);text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}
+#progress{position:fixed;z-index:90;top:0;left:0;width:0;height:3px;background:linear-gradient(90deg,var(--coral),var(--gold),var(--mint));box-shadow:0 0 16px rgba(118,223,183,.35)}
+.topbar{position:fixed;z-index:80;top:0;left:0;right:0;height:54px;display:flex;align-items:center;gap:12px;padding:0 clamp(18px,4vw,42px);background:rgba(9,11,14,.78);backdrop-filter:blur(16px);border-bottom:1px solid rgba(43,48,55,.8)}
+.mark{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--coral),var(--gold));color:#17100d;font:900 15px var(--mono)}
+.topbar b{font-size:13px}.topbar span:last-child{margin-left:auto;color:var(--dim);font:12px var(--mono)}
+.hero{position:relative;min-height:750px;display:grid;place-items:center;padding:112px 22px 70px;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero:before{content:"";position:absolute;inset:0;background:
+ radial-gradient(720px 420px at 50% 10%,rgba(255,139,114,.14),transparent 66%),
+ radial-gradient(600px 360px at 80% 78%,rgba(118,223,183,.09),transparent 65%),
+ linear-gradient(rgba(43,48,55,.27) 1px,transparent 1px),linear-gradient(90deg,rgba(43,48,55,.27) 1px,transparent 1px);
+ background-size:auto,auto,54px 54px,54px 54px;mask-image:linear-gradient(#000 70%,transparent)}
+.hero-in{position:relative;z-index:2;width:min(100%,var(--wide));text-align:center}
+.kicker{display:inline-flex;align-items:center;gap:9px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;color:var(--mint);font:12px var(--mono);letter-spacing:1px;background:rgba(16,19,24,.7)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+h1{max-width:900px;margin:24px auto 16px;font-size:clamp(39px,7vw,76px);line-height:1.04;letter-spacing:-2.5px;background:linear-gradient(115deg,#fff 12%,#ffd5c8 52%,#9ff0d2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{max-width:790px;margin:0 auto;color:#d0c9bf;font-size:clamp(17px,2vw,21px);line-height:1.72}
+.hero .sub strong{color:#fff}
+.hero-art{position:relative;width:160px;height:116px;margin:24px auto 12px}
+.table-ring{position:absolute;left:24px;right:24px;bottom:5px;height:48px;border:2px solid rgba(242,198,109,.7);border-radius:50%;box-shadow:0 0 40px rgba(242,198,109,.1)}
+.table-ring:before,.table-ring:after{content:"";position:absolute;bottom:-23px;width:3px;height:28px;background:rgba(242,198,109,.55)}
+.table-ring:before{left:28px}.table-ring:after{right:28px}
+.paw{position:absolute;top:4px;left:52px;width:56px;height:50px}
+.paw i{position:absolute;display:block;background:linear-gradient(145deg,var(--coral),#ffb49f);box-shadow:0 0 18px rgba(255,139,114,.18)}
+.paw .pad{left:15px;top:19px;width:29px;height:28px;border-radius:48% 48% 55% 55%}
+.paw .toe{width:13px;height:16px;border-radius:50%}.paw .t1{left:1px;top:10px;transform:rotate(-18deg)}.paw .t2{left:17px;top:0}.paw .t3{right:9px;top:2px}.paw .t4{right:-4px;top:13px;transform:rotate(18deg)}
+.promise{max-width:760px;margin:20px auto 0;padding:14px 18px;border:1px solid rgba(118,223,183,.24);border-radius:12px;background:rgba(118,223,183,.05);color:#c3e6d8;font-size:14px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;max-width:920px;margin:38px auto 0;text-align:left}
+.metric{min-height:154px;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(21,26,32,.94),rgba(11,14,18,.82));box-shadow:0 24px 60px -42px #000}
+.metric .num{display:block;font:850 clamp(38px,6vw,56px)/1 var(--mono);color:var(--mint);letter-spacing:-2px}
+.metric:nth-child(2) .num{color:var(--coral)}.metric:nth-child(3) .num{color:var(--gold)}
+.metric p{margin:15px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+main{max-width:var(--read);margin:auto;padding:20px clamp(20px,5vw,38px) 100px}
+section{padding:52px 0;border-bottom:1px solid var(--line)}
+.js-reveal section[data-reveal]{opacity:0;transform:translateY(18px);transition:.65s ease}
+.js-reveal section[data-reveal].in{opacity:1;transform:none}
+.sec-no{margin-bottom:8px;color:var(--mint);font:12px var(--mono);letter-spacing:1.8px}
+h2{margin:0 0 20px;font-size:clamp(25px,4vw,34px);line-height:1.25;letter-spacing:-.7px}
+h3{margin:30px 0 10px;font-size:19px;line-height:1.35}
+p{margin:15px 0;color:#d5d0c8}strong{color:#fff}
+.lead{font-size:19px;color:#e3ddd4}
+.scene,.verdict,.boundary{margin:24px 0;padding:20px 22px;border-radius:14px;background:var(--panel2);border:1px solid var(--line)}
+.scene{border-left:3px solid var(--coral)}.verdict{border-left:3px solid var(--mint)}.boundary{border-left:3px solid var(--gold)}
+.label{display:block;margin-bottom:7px;color:var(--dim);font:11px var(--mono);letter-spacing:1px;text-transform:uppercase}
+ul,ol{padding-left:22px}li{margin:10px 0;color:#d3cec6}
+.signal-list{display:grid;gap:12px;margin:24px 0}
+.signal{padding:18px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.signal time{display:block;margin-bottom:7px;color:var(--mint);font:700 12px var(--mono)}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:22px 0}
+.product{padding:17px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.product b{display:block;margin-bottom:6px;color:#fff}.product p{margin:0;color:var(--muted);font-size:14px}
+.flow-card{margin:28px 0;border:1px solid var(--line);border-radius:16px;background:var(--panel2);overflow:hidden}
+.flow-head{padding:12px 16px;border-bottom:1px solid var(--line);color:var(--dim);font:12px var(--mono)}
+.mermaid{padding:26px 12px;text-align:center;overflow-x:auto}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:24px 0}
+.mini{padding:18px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+.mini b{display:block;margin-bottom:6px}.mini p{margin:0;color:var(--muted);font-size:14px}
+details.appendix{margin-top:54px;border:1px solid var(--line);border-radius:18px;background:var(--bg2);overflow:hidden}
+details.appendix>summary{cursor:pointer;list-style:none;padding:22px 24px;font-size:20px;font-weight:750;background:linear-gradient(90deg,rgba(255,139,114,.08),transparent)}
+details.appendix>summary::-webkit-details-marker{display:none}
+details.appendix>summary:after{content:"＋";float:right;color:var(--mint)}
+details.appendix[open]>summary:after{content:"－"}
+.appendix-in{padding:4px 24px 30px}.appendix-in h3{padding-top:26px;border-top:1px solid var(--line)}
+.table-wrap{width:100%;overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:12px}
+table{width:100%;min-width:700px;border-collapse:collapse;font-size:13.5px;background:#0b0f13}
+th,td{padding:12px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font:11px var(--mono);letter-spacing:.5px;background:#14191f}
+td{color:#cec8bf}tr:last-child td{border-bottom:0}
+.fact-tags{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.fact-tags span{padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
+.source-note{margin-top:26px;padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--dim);font-size:13px}
+footer{max-width:var(--read);margin:auto;padding:0 20px 80px;color:var(--dim);font-size:13px}
+#back{position:fixed;z-index:70;right:20px;bottom:20px;width:44px;height:44px;border:1px solid rgba(118,223,183,.4);border-radius:12px;background:rgba(18,23,28,.92);color:#d9fff0;cursor:pointer;opacity:0;pointer-events:none;transition:.25s}
+#back.show{opacity:1;pointer-events:auto}
+@media(max-width:720px){
+  .topbar span:last-child{display:none}.hero{min-height:auto;padding-top:100px}
+  h1{letter-spacing:-1.4px}.metrics{grid-template-columns:1fr}.metric{min-height:125px}
+  main{padding-left:18px;padding-right:18px}.appendix-in{padding-left:16px;padding-right:16px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.pulse{animation:none}.js-reveal section[data-reveal]{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav class="topbar"><span class="mark">P</span><b>PawReady · 单创意洞察</b><span>五分钟正文 / 事实附录</span></nav>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="kicker"><span class="pulse"></span>香港餐饮 × 宠物友好 × 实体补货</div>
+    <div class="hero-art" aria-hidden="true"><div class="paw"><i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i></div><div class="table-ring"></div></div>
+    <h1>把“狗只可入店”<br/>变成一箱能执行的动作</h1>
+    <p class="sub">卖给香港获准容许狗只进入的独立食肆：入口展示、桌位提示、员工卡、狗只专用清理物料和二维码须知一次配齐。<strong>不代办牌照，不冒充官方。</strong></p>
+    <div class="promise">为什么是现在：新安排刚实施一个月，头两周已有约 14,000 次巡查、70 次口头警告和 31 间退出者。</div>
+    <div class="metrics">
+      <div class="metric"><span class="num" data-count="940" data-suffix="+店">940+店</span><p>7 月 9 日首批获准容许狗只进入的食肆规模</p></div>
+      <div class="metric"><span class="num" data-count="70" data-suffix="次">70次</span><p>实施头两周发出的口头警告，早期摩擦已经出现</p></div>
+      <div class="metric"><span class="num" data-count="1480" data-prefix="HK$">HK$1480</span><p>建议启动盒定价假设，不是市场报价或已验证成交</p></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section data-reveal>
+    <div class="sec-no">01 — 先看懂</div>
+    <h2>这是个什么生意？</h2>
+    <div class="scene"><span class="label">说明性场景 · 不是客户案例</span>一家茶餐厅刚获准让顾客带狗入内。官方给了牌照条件和 A3 标示，但店员仍要现场判断：狗绳是否超过 1.5 米、哪些桌可以坐、狗只弄污地面谁处理、清理工具放在哪里、如何提醒顾客不要把狗放上餐桌。</div>
+    <p class="lead">PawReady 把这些动作装成一箱：官方标示的透明展示架、双语店内规则卡、狗友善桌位标识、员工处置卡、分类清理标签，以及手套、排泄袋和尿垫等首批耗材。二维码页面展示本店规则、预约提示与事件记录。</p>
+    <div class="product-grid">
+      <div class="product"><b>看得见</b><p>入口展示、桌位标识、顾客须知，减少临场争议。</p></div>
+      <div class="product"><b>做得到</b><p>员工口袋卡与分色标签，把长指引变成操作顺序。</p></div>
+      <div class="product"><b>补得上</b><p>消耗品按统一 SKU 补货，规则变化只换受影响卡片。</p></div>
+    </div>
+    <p><strong>最小可售单元：</strong>一间获准食肆的一套启动盒。官方标示仍由食环署提供，PawReady 只提供展示载体，绝不重印或仿制。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">02 — 时机</div>
+    <h2>为什么偏偏是现在？</h2>
+    <div class="signal-list">
+      <div class="signal"><time>2026-07-09</time>新安排正式实施，首批超过 940 间食肆获准，政府派出 90 人专队逐店讲解。 <a href="https://www.news.gov.hk/eng/2026/07/20260709/20260709_163549_294.html">香港政府新闻 ↗</a></div>
+      <div class="signal"><time>实施头两周</time>约 14,000 次巡查、70 次口头警告、65 宗投诉和 31 间退出；警告主要涉及入口标示不清与狗只约束。 <a href="https://news.rthk.hk/rthk/en/component/k2/1863560-20260725.htm">香港电台 ↗</a></div>
+      <div class="signal"><time>官方操作清单</time>清洁频率、专用垃圾桶、排泄物处理、员工培训、桌位距离、繁忙时段与事故报告都需要落成用品和流程。 <a href="https://www.fehd.gov.hk/english/licensing/dog_restaurants/guide_restaurant.html">食环署指引 ↗</a></div>
+    </div>
+    <p>市场不是“准备开放”，而是已经营业并出现磨合。<strong>机会不是解释政策，而是把重复摩擦预先装进一个盒子。</strong></p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">03 — 付款者</div>
+    <h2>谁会付钱，为什么会付？</h2>
+    <p class="lead"><strong>唯一付费客户（AI 推断）：</strong>首批获准食肆中，缺少集团采购与营运团队、但希望把狗友善时段做成差异化卖点的独立餐厅、咖啡店和茶饮店。</p>
+    <p>购买触发是刚拿到许可准备营业、被口头提醒后需要整改，或推出狗友善桌位却发现员工执行不一致。店主购买的是少跑几家店、少做几版提示牌、少让员工临场发明规则。</p>
+    <div class="boundary"><span class="label">最强替代方案</span>政府指引免费，手套、尿垫和排泄袋也很容易买到。PawReady 必须靠尺寸统一、双语话术、摆放逻辑和补货方便取胜；如果只是普通用品加价装箱，它没有成立理由。</div>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">04 — 履约</div>
+    <h2>它具体怎么运转？</h2>
+    <div class="flow-card">
+      <div class="flow-head">规则到补货的闭环</div>
+      <pre class="mermaid">
+flowchart LR
+  A["食肆填写门店配置"] --> B["生成双语规则与物料单"]
+  B --> C["香港本地印刷和组装"]
+  C --> D["启动盒送店"]
+  D --> E["店内使用与事件记录"]
+  E --> F["耗材补货和替换卡"]
+  F --> C
+      </pre>
+    </div>
+    <p>问卷只收面积、狗友善桌数、开放时段、是否提供预包装狗粮，以及由谁处理排泄物。系统据此生成二维码须知和固定模板；官方规则更新时，只替换受影响的数字内容与卡片。</p>
+    <p><strong>完成定义：</strong>店员一分钟内能找到入口展示、入店检查、桌位安排、弄污清理和异常上报的动作。产品不申请许可、不安装承重牵引装置、不出售清洁化学品，也不保证合规。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">05 — 赚钱方式</div>
+    <h2>怎么赚钱，能自动到什么程度？</h2>
+    <p class="lead"><strong>建议定价假设：</strong>启动盒 HK$1,480；假设货品、印刷、组装和香港配送合计 HK$450–650，单盒贡献毛利约 HK$830–1,030。补充包假设 HK$298/月，贡献毛利约 HK$118–178。全部不是供应商报价。</p>
+    <div class="split">
+      <div class="mini"><b>可以自动化</b><p>配置问卷、模板生成、二维码页面、付款、补货提醒、库存阈值和版本更新。</p></div>
+      <div class="mini"><b>必须由人负责</b><p>选品、印刷验收、组装配送、粤语复核、客诉和异常退换。</p></div>
+    </div>
+    <p>复购来自手套、尿垫、排泄袋、规则卡损耗和新增桌位。二维码工具随盒提供，只负责配置与补货，不强行再造一个低使用率 SaaS。</p>
+  </section>
+
+  <section data-reveal>
+    <div class="sec-no">06 — 判断</div>
+    <h2>最大问题与最终判断</h2>
+    <div class="verdict"><span class="label">结论</span><strong>有条件值得继续关注。</strong>约千家餐厅同时学习同一套新动作，而默认用品与话术尚未形成。用标准盒承接“制度刚落地、行业正在磨合”的窗口，比再造一个宠物 App 更接近真实交易。</div>
+    <ol>
+      <li>首批市场只有约 940 家，而且已有 31 家退出，可服务市场可能太小。</li>
+      <li>普通网购用品足够便宜，店主可能拒绝为标准化支付溢价。</li>
+      <li>产品一旦暗示官方认可或保证合规，就会制造责任与信任风险。</li>
+    </ol>
+    <p><strong>角色设定不参与入口筛选。</strong>该机会因政策刚落地和实体经营摩擦入选。选定后，系统能力可用于配置规则、SKU 与补货；香港餐饮渠道、粤语文案、宠物行为和本地履约必须交给当地合作方，不能改写成远程咨询。</p>
+  </section>
+
+  <details class="appendix">
+    <summary>事实与推演附录 · 点击展开复核</summary>
+    <div class="appendix-in">
+      <div class="fact-tags"><span>主行业：香港餐饮</span><span>模式：实体套件 + 补货</span><span>事实政策：不得编造</span><span>状态：桌面研究</span></div>
+
+      <h3>A. 行业坐标与商业系统</h3>
+      <p><strong>价值链位置：</strong>食环署规则、餐厅采购、宠物用品供应商与香港本地印刷/配送之间。商业系统是：规则拆解 → 门店配置 → 模板生成 → 组装配送 → 店内使用 → 耗材补货 → 规则更新。</p>
+      <p><strong>受益者与付款者：</strong>店员和带狗顾客受益，获准食肆经营者付款并承担运营责任。<strong>最小可售单元：</strong>一间食肆的一套启动盒。</p>
+
+      <h3>B. 市场证据与事实来源</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>日期</th><th>一手来源</th><th>可复核事实</th><th>推断 / 局限</th></tr></thead>
+        <tbody>
+          <tr><td>2026-06-12</td><td><a href="https://www.fehd.gov.hk/english/news/details/20260612_12451.html">食环署抽签结果</a></td><td>2,205 宗申请；1,616 宗参与 1,000 个名额抽签；官方提供 A3 标示。</td><td>申请热度不等于付费意愿。</td></tr>
+          <tr><td>2026-07-09</td><td><a href="https://www.news.gov.hk/eng/2026/07/20260709/20260709_163549_294.html">香港政府</a></td><td>首批超过 940 间获准；90 人专队逐店解释要求。</td><td>政府已免费提供说明。</td></tr>
+          <tr><td>2026-07-25</td><td><a href="https://news.rthk.hk/rthk/en/component/k2/1863560-20260725.htm">香港电台</a></td><td>约 14,000 次巡查、70 次口头警告、65 宗投诉、31 间退出。</td><td>问题也可能随磨合快速消退。</td></tr>
+          <tr><td>2026-06—07</td><td><a href="https://www.fehd.gov.hk/english/licensing/dog_restaurants/guide_restaurant.html">食环署经营指引</a></td><td>涉及预约、清洁、专用垃圾桶、排泄物、培训、分色工具和事故报告。</td><td>部分是建议而非法定义务。</td></tr>
+          <tr><td>2026-07-10</td><td><a href="https://apnews.com/article/dogs-hong-kong-restaurants-f46cc17094828405ed80aa57a0776441">美联社现场报道</a></td><td>一家茶楼称投入超过 HK$10,000 准备空气净化器、分隔区、宠物车和清洁用品。</td><td>单店不能外推整个市场。</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>事实：</strong>狗只须由成年人以不超过 1.5 米牵引带稳妥牵引，或系于固定在地面或墙上的附着物；食肆不得烹煮狗粮，只能提供符合条件的预包装产品；官方标示由食环署提供。</p>
+      <p><strong>AI 推断：</strong>独立食肆比集团连锁更需要外部套件；店主愿为一次配齐和双语模板支付 HK$1,480；耗材补货可以形成持续收入。</p>
+      <p><strong>未知：</strong>真实消耗量、现有供应商、第二阶段时间和名额、获客成本、退货率与店主信任。</p>
+      <p><strong>不得编造：</strong>目前没有真实供应商、客户、订单、官方合作、合规认证或真实毛利。</p>
+
+      <h3>C. 收入与单位经济</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>收入项</th><th>建议定价假设</th><th>可变成本</th><th>回款与复购</th></tr></thead>
+        <tbody>
+          <tr><td>启动盒</td><td>HK$1,480/店</td><td>HK$450–650；贡献毛利假设 HK$830–1,030</td><td>下单预付；新获准门店或新增区域触发</td></tr>
+          <tr><td>清理补充包</td><td>HK$298/月</td><td>HK$120–180；贡献毛利假设 HK$118–178</td><td>月付或按需；实际用量驱动</td></tr>
+          <tr><td>替换物料包</td><td>HK$180–380/次</td><td>HK$60–160</td><td>规则更新、损坏或新增桌位时触发</td></tr>
+          <tr><td>二维码工具</td><td>随启动盒提供</td><td>低托管与通知成本</td><td>维持配置、补货和版本更新入口</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>D. 运营与自动化系统</h3>
+      <p>未获许可的食肆不得使用“获准食肆”措辞；官方标示只装入展示架，不扫描、重印或修改；法律判断必须链接官方原文；首版不销售承重装置、消毒剂、狗粮或接触食品的器具。人工负责供应商、印刷质量、粤语表达、仓储配送与客诉。</p>
+
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul>
+        <li><strong>0–30 天：</strong>只服务已获准的独立食肆，只做展示载体、双语规则卡、桌位标识、员工卡、分类标签和基础清理耗材。</li>
+        <li><strong>31–90 天：</strong>形成咖啡店、茶餐厅和酒吧三个固定 SKU，增加一键补货、事件记录和规则更新替换卡。</li>
+        <li><strong>可沉淀资产：</strong>场景模板、门店配置规则、SKU 消耗数据、香港本地印刷/履约网络。</li>
+      </ul>
+
+      <h3>F. 风险、合规与停止条件</h3>
+      <ul>
+        <li><strong>合规边界：</strong>不替代官方标示，不保证合规，不提供法律意见，不销售未经核验的化学品或食品，不采集顾客敏感信息。</li>
+        <li><strong>停止条件：</strong>获客成本高于 HK$500 且单盒贡献毛利低于 HK$800；90 天补充包购买率低于 20%；非标准设计或到店培训需求超过 30%；退货与质量投诉超过 5%。</li>
+        <li><strong>说明：</strong>所有价格、成本和阈值均为商业模型假设，不是行业基准。</li>
+      </ul>
+
+      <div class="source-note">研究边界：桌面证据只能证明新场景与运营摩擦已经出现，不能证明餐厅会购买 PawReady，也不构成法律、食物业或产品安全意见。</div>
+    </div>
+  </details>
+</main>
+
+<footer>PawReady · 单创意副业洞察 · 2026-08-09<br/>网页骨架：A · 单栏纵向叙事。交付纳米Work时只需上传 CDN，不改内容。</footer>
+<button id="back" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  if(window.mermaid){
+    mermaid.initialize({startOnLoad:true,securityLevel:"loose",theme:"dark",themeVariables:{
+      fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:"14px",lineColor:"#7e7a73",
+      primaryColor:"#151a20",primaryBorderColor:"#4a544f",primaryTextColor:"#f5f2ec",
+      secondaryColor:"#211b19",tertiaryColor:"#11171a"
+    },flowchart:{htmlLabels:true,curve:"basis",nodeSpacing:38,rankSpacing:46,padding:12}});
+  }
+
+  document.body.classList.add("js-reveal");
+  var revealObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add("in");revealObserver.unobserve(entry.target);}});
+  },{threshold:.06,rootMargin:"0px 0px -5% 0px"});
+  document.querySelectorAll("section[data-reveal]").forEach(function(el){revealObserver.observe(el);});
+  setTimeout(function(){document.querySelectorAll("section[data-reveal]:not(.in)").forEach(function(el){el.classList.add("in");});},2500);
+
+  var reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var countObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting){return;}
+      var el=entry.target;
+      var target=Number(el.getAttribute("data-count"));
+      var prefix=el.getAttribute("data-prefix")||"";
+      var suffix=el.getAttribute("data-suffix")||"";
+      if(reduced){el.textContent=prefix+target+suffix;el.setAttribute("data-counted","true");countObserver.unobserve(el);return;}
+      var started=performance.now();
+      function frame(now){
+        var progress=Math.min(1,(now-started)/850);
+        var eased=1-Math.pow(1-progress,3);
+        el.textContent=prefix+Math.round(target*eased)+suffix;
+        if(progress<1){requestAnimationFrame(frame);}else{el.setAttribute("data-counted","true");}
+      }
+      requestAnimationFrame(frame);
+      countObserver.unobserve(el);
+    });
+  },{threshold:.45});
+  document.querySelectorAll("[data-count]").forEach(function(el){countObserver.observe(el);});
+
+  var progressBar=document.getElementById("progress");
+  var backBtn=document.getElementById("back");
+  function onScroll(){
+    var root=document.documentElement;
+    var maxScroll=root.scrollHeight-root.clientHeight;
+    progressBar.style.width=(maxScroll>0?(root.scrollTop/maxScroll*100):0)+"%";
+    backBtn.classList.toggle("show",window.scrollY>600);
+  }
+  window.addEventListener("scroll",onScroll,{passive:true});
+  backBtn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"});});
+  onScroll();
+})();
+</script>
+</body>
+</html>
