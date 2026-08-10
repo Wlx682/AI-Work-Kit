@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="RoofLead 250：把地方建筑许可与欧洲开放地理数据加工为商业屋顶光伏安装商可订阅的新项目线索周报。">
+  <title>RoofLead 250｜欧盟新屋顶光伏线索周报</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #eef8ee;
+      --muted: #a9b9ad;
+      --paper: #07110d;
+      --paper-2: #0b1812;
+      --panel: rgba(18, 35, 27, .78);
+      --line: rgba(193, 255, 91, .18);
+      --lime: #c1ff5b;
+      --mint: #65f0b0;
+      --amber: #ffd36a;
+      --red: #ff857f;
+      --cyan: #72dfff;
+      --max: 1180px;
+      --radius: 24px;
+      --shadow: 0 28px 90px rgba(0, 0, 0, .33);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 82% 3%, rgba(193,255,91,.09), transparent 28rem),
+        radial-gradient(circle at 8% 28%, rgba(101,240,176,.06), transparent 30rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.78;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .22;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, #000 0, transparent 75%);
+      z-index: -1;
+    }
+
+    a { color: var(--lime); text-underline-offset: 3px; }
+    button, summary { font: inherit; }
+    .shell { width: min(var(--max), calc(100% - clamp(28px, 6vw, 80px))); margin-inline: auto; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(7,17,13,.8);
+      backdrop-filter: blur(18px);
+    }
+    .topbar-inner { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: .13em; text-transform: uppercase; }
+    .brand-mark { width: 12px; height: 12px; background: var(--lime); box-shadow: 0 0 22px var(--lime); transform: rotate(45deg); }
+    .top-meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .hero {
+      min-height: min(850px, calc(100vh - 58px));
+      display: grid;
+      align-items: center;
+      padding: clamp(58px, 9vw, 120px) 0 clamp(70px, 10vw, 130px);
+      position: relative;
+    }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(320px, .94fr); gap: clamp(40px, 7vw, 92px); align-items: center; }
+    .eyebrow { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 24px; }
+    .chip { border: 1px solid var(--line); color: var(--mint); background: rgba(101,240,176,.06); padding: 6px 11px; border-radius: 999px; font: 700 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(48px, 7.8vw, 104px); line-height: .91; letter-spacing: -.066em; max-width: 9ch; }
+    h1 span { color: var(--lime); }
+    .hero-lede { max-width: 700px; margin: 28px 0 0; font-size: clamp(18px, 2vw, 24px); line-height: 1.55; color: #d7e3d9; }
+    .hero-lede strong { color: var(--amber); }
+    .hero-note { margin-top: 23px; display: flex; align-items: flex-start; gap: 11px; color: var(--muted); font-size: 13px; max-width: 64ch; }
+    .hero-note i { flex: 0 0 auto; margin-top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 15px var(--amber); }
+
+    .map-card {
+      min-height: 520px;
+      position: relative;
+      border: 1px solid rgba(193,255,91,.2);
+      border-radius: 32px;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(17,39,28,.95), rgba(7,18,13,.92));
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.06);
+      transform: rotate(1deg);
+    }
+    .map-card::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(193,255,91,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(193,255,91,.07) 1px, transparent 1px); background-size: 34px 34px; }
+    .map-label { position: absolute; inset: 22px 22px auto; display: flex; justify-content: space-between; z-index: 2; color: var(--muted); font: 11px ui-monospace, monospace; letter-spacing: .08em; }
+    .parcel { position: absolute; border: 1px solid rgba(193,255,91,.28); background: rgba(193,255,91,.045); }
+    .p1 { width: 44%; height: 23%; top: 22%; left: 11%; transform: skewY(-9deg); }
+    .p2 { width: 33%; height: 31%; top: 52%; left: 18%; transform: skewY(5deg); }
+    .p3 { width: 28%; height: 39%; top: 29%; right: 10%; transform: skewY(12deg); }
+    .roof { position: absolute; border: 2px solid var(--lime); background: repeating-linear-gradient(135deg, rgba(193,255,91,.22) 0 5px, rgba(193,255,91,.05) 5px 10px); box-shadow: 0 0 34px rgba(193,255,91,.15); }
+    .r1 { width: 35%; height: 15%; top: 30%; left: 16%; transform: skewY(-9deg); }
+    .r2 { width: 25%; height: 20%; top: 59%; left: 22%; transform: skewY(5deg); border-color: var(--cyan); }
+    .r3 { width: 19%; height: 27%; top: 35%; right: 15%; transform: skewY(12deg); border-color: var(--amber); }
+    .pin { position: absolute; z-index: 3; width: 13px; height: 13px; border: 3px solid var(--paper); border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px rgba(193,255,91,.14), 0 0 30px var(--lime); }
+    .pin1 { top: 28%; left: 50%; } .pin2 { top: 56%; left: 45%; background: var(--cyan); } .pin3 { top: 32%; right: 13%; background: var(--amber); }
+    .scan { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(193,255,91,.12) 50%, transparent 55%); animation: scan 4.5s linear infinite; }
+    @keyframes scan { from { transform: translateY(-60%); } to { transform: translateY(60%); } }
+    .lead-ticket { position: absolute; z-index: 4; left: 26px; right: 26px; bottom: 26px; padding: 18px; border-radius: 18px; background: rgba(5,14,10,.88); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(16px); }
+    .ticket-top { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font: 11px ui-monospace, monospace; text-transform: uppercase; }
+    .ticket-title { font-size: 20px; line-height: 1.35; margin-top: 8px; }
+    .ticket-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .ticket-meta span { background: rgba(255,255,255,.06); padding: 4px 8px; border-radius: 7px; color: #cbd8ce; font-size: 11px; }
+
+    .metrics { margin-top: -58px; position: relative; z-index: 5; }
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .metric { min-height: 178px; padding: clamp(24px, 3vw, 34px); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius); background: rgba(12,26,19,.92); box-shadow: 0 16px 55px rgba(0,0,0,.2); }
+    .metric-value { display: block; font-weight: 820; font-size: clamp(40px, 6vw, 64px); line-height: 1; letter-spacing: -.055em; color: var(--lime); }
+    .metric:nth-child(2) .metric-value { color: var(--amber); }
+    .metric:nth-child(3) .metric-value { color: var(--cyan); }
+    .metric-label { display: block; margin-top: 16px; color: var(--muted); font-size: 14px; }
+
+    .layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); padding: clamp(80px, 11vw, 140px) 0; align-items: start; }
+    .toc { position: sticky; top: 96px; display: grid; gap: 4px; }
+    .toc b { color: var(--muted); font: 11px ui-monospace, monospace; letter-spacing: .12em; margin-bottom: 9px; }
+    .toc a { color: #809086; border-left: 1px solid rgba(255,255,255,.12); padding: 6px 0 6px 12px; font-size: 12px; text-decoration: none; transition: .2s; }
+    .toc a:hover { color: var(--lime); border-color: var(--lime); }
+
+    main { min-width: 0; }
+    section { padding: clamp(44px, 7vw, 86px) 0; border-top: 1px solid rgba(255,255,255,.08); opacity: 1; transform: none; }
+    .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .65s ease, transform .65s ease; }
+    .js .reveal.visible { opacity: 1; transform: none; }
+    .section-no { color: var(--lime); font: 12px ui-monospace, monospace; letter-spacing: .15em; text-transform: uppercase; }
+    h2 { font-size: clamp(30px, 4.5vw, 56px); line-height: 1.08; letter-spacing: -.04em; margin: 11px 0 28px; max-width: 16ch; }
+    h3 { font-size: clamp(20px, 2.2vw, 28px); line-height: 1.25; margin: 32px 0 14px; }
+    p { color: #c6d3c9; margin: 0 0 18px; }
+    strong { color: var(--ink); }
+    .lead { font-size: clamp(18px, 2vw, 23px); color: #e3ece5; max-width: 740px; }
+    .callout { margin: 30px 0; padding: 22px 24px; border: 1px solid rgba(255,211,106,.22); background: rgba(255,211,106,.055); border-radius: 18px; color: #e7dec8; }
+    .callout strong { color: var(--amber); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 28px 0; }
+    .card { padding: 23px; background: var(--panel); border: 1px solid rgba(255,255,255,.09); border-radius: 18px; min-width: 0; }
+    .card-kicker { color: var(--mint); font: 11px ui-monospace, monospace; letter-spacing: .11em; text-transform: uppercase; }
+    .card h3 { margin: 10px 0 9px; font-size: 19px; }
+    .card p { margin: 0; font-size: 14px; color: var(--muted); }
+    .fact-row { display: grid; grid-template-columns: minmax(100px, .28fr) minmax(0, 1fr); gap: 22px; padding: 22px 0; border-bottom: 1px dashed rgba(255,255,255,.1); }
+    .fact-date { color: var(--amber); font: 700 14px ui-monospace, monospace; }
+    .fact-row p { margin: 0; }
+    .fact-row a { font-size: 12px; }
+
+    .diagram { margin: 34px 0; padding: 18px; border-radius: 20px; border: 1px solid rgba(193,255,91,.16); background: #07140d; overflow-x: auto; }
+    .diagram-title { display: flex; justify-content: space-between; color: var(--muted); font: 11px ui-monospace, monospace; padding: 4px 5px 15px; }
+    .mermaid { min-width: 640px; }
+    .steps { counter-reset: step; display: grid; gap: 12px; margin: 30px 0; }
+    .step { counter-increment: step; display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 16px; align-items: start; padding: 20px; border: 1px solid rgba(255,255,255,.08); border-radius: 17px; background: rgba(255,255,255,.025); }
+    .step::before { content: counter(step, decimal-leading-zero); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--lime); color: #10200f; font: 800 13px ui-monospace, monospace; }
+    .step p { margin: 0; }
+
+    .economics { display: grid; grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr); gap: 18px; margin: 30px 0; }
+    .price-card { padding: 30px; background: var(--lime); color: #10200f; border-radius: 22px; }
+    .price-card small { font: 700 11px ui-monospace, monospace; letter-spacing: .1em; }
+    .price { font-size: clamp(50px, 7vw, 82px); line-height: 1; font-weight: 850; letter-spacing: -.06em; margin: 14px 0 8px; }
+    .price-card p { color: #253722; margin: 0; }
+    .cost-card { padding: 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 22px; background: var(--panel); }
+    .cost-line { display: flex; justify-content: space-between; gap: 20px; padding: 11px 0; border-bottom: 1px dashed rgba(255,255,255,.1); color: var(--muted); font-size: 14px; }
+    .cost-line:last-child { color: var(--mint); border: 0; font-weight: 800; font-size: 17px; }
+
+    .verdict { padding: clamp(28px, 5vw, 50px); border-radius: 28px; background: linear-gradient(135deg, rgba(255,211,106,.12), rgba(193,255,91,.06)); border: 1px solid rgba(255,211,106,.24); }
+    .verdict-tag { color: var(--amber); font: 800 12px ui-monospace, monospace; letter-spacing: .12em; }
+    .verdict h3 { font-size: clamp(31px, 4vw, 48px); margin: 12px 0 18px; }
+    .stop-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; margin-top: 28px; }
+    .stop { padding: 17px; border-radius: 14px; background: rgba(255,133,127,.055); border: 1px solid rgba(255,133,127,.16); color: #e5c7c5; font-size: 13px; }
+    .stop b { display: block; color: var(--red); font-size: 20px; margin-bottom: 4px; }
+
+    .appendix-wrap { padding: 0 0 clamp(90px, 12vw, 150px); }
+    details { border: 1px solid rgba(255,255,255,.1); border-radius: 24px; background: rgba(12,26,19,.72); overflow: hidden; }
+    summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 26px 28px; color: var(--ink); font-weight: 760; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--lime); font-size: 25px; }
+    details[open] summary::after { content: "−"; }
+    .appendix { padding: 0 clamp(20px, 4vw, 44px) 42px; border-top: 1px solid rgba(255,255,255,.07); }
+    .appendix h3 { color: var(--lime); margin-top: 38px; }
+    .table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; }
+    table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13px; }
+    th, td { text-align: left; vertical-align: top; padding: 13px; border-bottom: 1px solid rgba(255,255,255,.07); }
+    th { color: var(--mint); background: rgba(255,255,255,.035); }
+    td { color: var(--muted); }
+    ul { color: #c6d3c9; padding-left: 1.2em; }
+
+    footer { border-top: 1px solid rgba(255,255,255,.08); padding: 28px 0 48px; color: var(--muted); font-size: 12px; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    #backBtn { position: fixed; right: 20px; bottom: 20px; width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(193,255,91,.24); color: var(--lime); background: rgba(7,17,13,.86); backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: .2s; cursor: pointer; z-index: 20; }
+    #backBtn.show { opacity: 1; pointer-events: auto; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .economics { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .map-card { min-height: 440px; transform: none; }
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
+    }
+    @media (max-width: 560px) {
+      .top-meta { display: none; }
+      h1 { font-size: clamp(49px, 18vw, 76px); }
+      .map-card { min-height: 390px; }
+      .lead-ticket { left: 15px; right: 15px; bottom: 15px; }
+      .fact-row { grid-template-columns: 1fr; gap: 6px; }
+      .step { grid-template-columns: 38px minmax(0,1fr); gap: 12px; padding: 16px; }
+      .step::before { width: 38px; height: 38px; }
+      summary { padding: 22px 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand"><span class="brand-mark"></span> SIDE IDEA / 018</div>
+      <div class="top-meta">FACT-GROUNDED · 10 AUG 2026 · 5 MIN</div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow"><span class="chip">Data subscription</span><span class="chip">Solar leads</span><span class="chip">EU open data</span></div>
+          <h1 id="page-title">Roof<span>Lead</span> 250</h1>
+          <p class="hero-lede">把分散的建筑许可与开放地理数据，筛成商业屋顶光伏安装商愿意订阅的<strong>新项目线索周报</strong>。</p>
+          <div class="hero-note"><i></i><span>它卖“更早发现项目”，不卖法律结论，也不承诺屋顶一定能装、项目一定成交。</span></div>
+        </div>
+        <div class="map-card" aria-label="建筑地块与屋顶候选的抽象地图视觉">
+          <div class="map-label"><span>REGION / 01</span><span>CHANGE DETECTED</span></div>
+          <div class="parcel p1"></div><div class="parcel p2"></div><div class="parcel p3"></div>
+          <div class="roof r1"></div><div class="roof r2"></div><div class="roof r3"></div>
+          <div class="pin pin1"></div><div class="pin pin2"></div><div class="pin pin3"></div><div class="scan"></div>
+          <div class="lead-ticket">
+            <div class="ticket-top"><span>Candidate RL-018-024</span><span style="color:var(--lime)">HIGH CONF.</span></div>
+            <div class="ticket-title">新建非住宅屋顶候选</div>
+            <div class="ticket-meta"><span>许可原文 ✓</span><span>建筑轮廓 ✓</span><span>面积字段 ✓</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="metrics">
+    <div class="shell metric-grid">
+      <div class="metric"><span class="metric-value" data-count="250" data-prefix=">" data-suffix="㎡">&gt;250㎡</span><span class="metric-label">新建非住宅建筑的关键面积门槛</span></div>
+      <div class="metric"><span class="metric-value" data-count="2026">2026</span><span class="metric-label">欧盟实施时间表进入年底窗口</span></div>
+      <div class="metric"><span class="metric-value" data-count="199" data-prefix="€">€199</span><span class="metric-label">建议的单地区月订阅价格假设</span></div>
+    </div>
+  </div>
+
+  <div class="shell layout">
+    <nav class="toc" aria-label="文章目录">
+      <b>FIELD NOTES</b>
+      <a href="#business">01 什么生意</a><a href="#now">02 为什么现在</a><a href="#buyer">03 谁会付钱</a><a href="#system">04 如何运转</a><a href="#money">05 自动赚钱</a><a href="#verdict">06 最终判断</a>
+    </nav>
+
+    <main>
+      <section id="business" class="reveal">
+        <div class="section-no">01 / THE BUSINESS</div>
+        <h2>把找项目的苦活，变成每周到达的数据商品</h2>
+        <p class="lead">区域光伏安装商知道“新楼、翻修、扩建”是好线索，却常常只能让销售人员轮流翻市政许可网页、规划公示和地图。</p>
+        <p>RoofLead 250 每周交付一批带证据的候选：项目名称、许可日期与状态、用途、地址和坐标、建筑轮廓、公开面积、原文链接，以及数据匹配置信度。客户一键导入 CRM，自行调查业主、总包方和采购阶段。</p>
+        <div class="callout"><strong>最小可售单元：</strong>一个指定地区、一个月的周更线索订阅；交付数据源中所有符合公开规则的候选，不承诺固定条数。</div>
+        <div class="cards">
+          <article class="card"><div class="card-kicker">INPUT</div><h3>许可 + 地图</h3><p>只接入授权明确的地方记录、建筑轮廓和土地利用数据。</p></article>
+          <article class="card"><div class="card-kicker">PRODUCT</div><h3>可追溯候选</h3><p>每个字段回到原文；缺失就写未知，匹配冲突就降置信度。</p></article>
+          <article class="card"><div class="card-kicker">OUTCOME</div><h3>更早进入销售</h3><p>卖的是发现速度与筛选效率，不是项目成交保证。</p></article>
+        </div>
+      </section>
+
+      <section id="now" class="reveal">
+        <div class="section-no">02 / WHY NOW</div>
+        <h2>法规提高线索价值，开放数据降低加工摩擦</h2>
+        <div class="fact-row"><div class="fact-date">31 DEC 2026</div><div><p>欧盟委员会时间表列出：新建公共建筑和超过 250㎡ 的新建非住宅建筑，应在技术适用、经济与功能可行的前提下部署太阳能；各国仍需制定标准和例外。</p><a href="https://energy.ec.europa.eu/topics/energy-efficiency/energy-performance-buildings/energy-performance-buildings-directive/solar-energy-buildings_en">EU Commission · Solar energy in buildings ↗</a></div></div>
+        <div class="fact-row"><div class="fact-date">01 JUL 2026</div><div><p>INSPIRE Geoportal 退役，相关地理空间数据转入 European Data Portal，新增地理过滤、地图查看和高价值数据入口。</p><a href="https://data.europa.eu/en/news-events/news/inspire-datasets-move-european-data-portal">European Data Portal · INSPIRE move ↗</a></div></div>
+        <div class="fact-row"><div class="fact-date">JUL 2026</div><div><p>门户通讯介绍了数据集版本功能，可访问、下载和比较历史版本，为增量变化检测提供条件。</p><a href="https://data.europa.eu/en/newsletter-july-2026">European Data Portal · July newsletter ↗</a></div></div>
+        <div class="callout"><strong>事实边界：</strong>统一的是地理数据入口，不是全欧统一的施工许可数据库。地方许可仍然碎片化，恰好构成产品机会，也构成最大运营风险。</div>
+      </section>
+
+      <section id="buyer" class="reveal">
+        <div class="section-no">03 / THE BUYER</div>
+        <h2>只服务一种客户：区域商业屋顶光伏安装商</h2>
+        <div class="cards">
+          <article class="card"><div class="card-kicker">WHO</div><h3>有销售，没数据团队</h3><p>已经在一个欧盟地区经营，愿意跟进商业屋顶项目。</p></article>
+          <article class="card"><div class="card-kicker">TRIGGER</div><h3>销售管道变薄</h3><p>进入新城市，或想在能源方案确定前接触业主和总包方。</p></article>
+          <article class="card"><div class="card-kicker">SWITCH</div><h3>少翻网页，少漏项目</h3><p>替代人工搜索、地图盲找和过宽的建筑项目数据库。</p></article>
+        </div>
+        <p>它不争“全欧洲最全”，而争“一个地区更新快、筛选窄、证据清楚”。客户是否真愿意付 €199，必须用真实试订验证；点赞和“听起来不错”都不算需求。</p>
+      </section>
+
+      <section id="system" class="reveal">
+        <div class="section-no">04 / OPERATING SYSTEM</div>
+        <h2>一条线索如何从公开记录走进 CRM</h2>
+        <div class="diagram">
+          <div class="diagram-title"><span>ROOFLEAD DATA PIPELINE</span><span>EVIDENCE FIRST</span></div>
+          <pre class="mermaid">flowchart LR
+  A[地方许可/规划数据] --> C[标准化与变化检测]
+  B[建筑轮廓/土地利用] --> D[地址与空间匹配]
+  C --> D
+  D --> E[用途/面积/日期筛选]
+  E --> F[异常标记与抽样复核]
+  F --> G[周报/CSV/CRM]</pre>
+        </div>
+        <div class="steps">
+          <div class="step"><p><strong>接数据。</strong>只用开放 API、可下载登记册或许可明确的来源；不绕验证码，不抓禁止自动访问的网站。</p></div>
+          <div class="step"><p><strong>统一字段。</strong>映射许可编号、日期、状态、地址、用途和面积，同时保存原文与抓取时间。</p></div>
+          <div class="step"><p><strong>做空间匹配。</strong>用坐标或地址关联建筑轮廓；不唯一时降置信度，不让 AI 猜。</p></div>
+          <div class="step"><p><strong>筛选并交付。</strong>按公开规则生成候选，自动发网页与 CSV，收集客户对误配和过期记录的反馈。</p></div>
+        </div>
+        <div class="callout"><strong>明确不做：</strong>不判断法律义务、屋顶承重、并网条件和项目预算，也不自动收集未公开的个人联系方式。</div>
+      </section>
+
+      <section id="money" class="reveal">
+        <div class="section-no">05 / UNIT ECONOMICS</div>
+        <h2>按地区订阅；自动化卖重复出现的新变化</h2>
+        <div class="economics">
+          <div class="price-card"><small>SUGGESTED PRICE / HYPOTHESIS</small><div class="price">€199</div><p>每地区 / 每月<br>周更网页 + CSV + 一种 CRM 格式</p></div>
+          <div class="cost-card">
+            <div class="cost-line"><span>云服务、地理编码、存储</span><b>€25</b></div>
+            <div class="cost-line"><span>抽样质检与异常预留</span><b>€30</b></div>
+            <div class="cost-line"><span>渠道与客户支持预留</span><b>€40</b></div>
+            <div class="cost-line"><span>单订阅贡献毛利</span><b>€104</b></div>
+          </div>
+        </div>
+        <div class="cards">
+          <article class="card"><div class="card-kicker">AUTO</div><h3>机器完成</h3><p>定时下载、增量比对、字段映射、空间关联、筛选、周报和 CRM 推送。</p></article>
+          <article class="card"><div class="card-kicker">HUMAN</div><h3>人承担</h3><p>数据许可、地址冲突、抽样查错、来源解释、客户支持与当地沟通。</p></article>
+          <article class="card"><div class="card-kicker">LIMIT</div><h3>2 分钟 / 条</h3><p>平均人工一旦超过这个停止线，它就退化成低毛利数据外包。</p></article>
+        </div>
+        <p>50 个订阅时，算术贡献毛利为 50 × (€199 − €95) = €5,200/月。这不是销量预测，且未计开发时间、税费和固定成本。</p>
+      </section>
+
+      <section id="verdict" class="reveal">
+        <div class="section-no">06 / VERDICT</div>
+        <h2>先验证一个地区的数据，不要先造全欧平台</h2>
+        <div class="verdict">
+          <div class="verdict-tag">CONDITIONAL GO</div>
+          <h3>有条件值得关注</h3>
+          <p>亮点是把明确的项目时间窗与刚改善的地理数据入口，做成安装商可直接消费的窄线索流。真正待证伪的是地方数据的开放性、时效与质量，而不是欧盟政策本身。</p>
+          <div class="stop-list">
+            <div class="stop"><b>&lt;15</b>90 天付费地区订阅</div>
+            <div class="stop"><b>&lt;20</b>候选 / 地区 / 月</div>
+            <div class="stop"><b>&gt;15%</b>错误或过期率</div>
+            <div class="stop"><b>&gt;2 min</b>人工质检 / 条</div>
+            <div class="stop"><b>&lt;€80</b>订阅贡献毛利</div>
+          </div>
+        </div>
+        <h3>你的能力放在哪里？</h3>
+        <p>系统架构与自动化能力适合做字段模型、增量管道、置信度和熔断机制。缺口是当地许可语义、光伏销售、数据许可与隐私判断：前两项找当地安装商共创，合规审查交给所在国专业人士。角色只影响执行，不影响创意是否入选。</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="shell appendix-wrap">
+    <details>
+      <summary><span>事实与推演附录 · 来源、经济模型、90 天路线与合规边界</span></summary>
+      <div class="appendix">
+        <h3>A. 行业坐标与商业系统</h3>
+        <ul><li>主行业：建筑科技 / 分布式能源 / 商业数据服务。</li><li>商业模式：B2B 区域数据订阅；价值链位置在项目公开之后、安装商获客之前。</li><li>最小可售单元：一地区 × 一个月 × 周更线索流。</li><li>系统：开放数据 → 标准化 → 空间匹配 → 候选筛选 → 证据化交付 → 反馈修正。</li></ul>
+
+        <h3>B. 市场证据与事实来源</h3>
+        <div class="table-wrap"><table><thead><tr><th>日期</th><th>一手来源与事实</th><th>AI 推断</th><th>局限</th></tr></thead><tbody>
+          <tr><td>2026-12-31</td><td><a href="https://energy.ec.europa.eu/topics/energy-efficiency/energy-performance-buildings/energy-performance-buildings-directive/solar-energy-buildings_en">欧盟委员会时间表</a>列出新建公共及 &gt;250㎡ 新建非住宅建筑，并注明适用性与可行性条件。</td><td>这类项目对安装商的获客优先级上升。</td><td>各国标准、例外和节奏不同。</td></tr>
+          <tr><td>2026-07-01</td><td><a href="https://data.europa.eu/en/news-events/news/inspire-datasets-move-european-data-portal">European Data Portal</a>整合 INSPIRE 地理空间数据搜索。</td><td>建筑轮廓等数据的发现摩擦下降。</td><td>施工许可并未因此统一。</td></tr>
+          <tr><td>2026-07</td><td><a href="https://data.europa.eu/en/newsletter-july-2026">门户 7 月通讯</a>介绍历史数据版本访问、下载和比较。</td><td>可辅助增量变化检测。</td><td>需逐个数据集验证。</td></tr>
+          <tr><td>2024-05-08</td><td><a href="https://eur-lex.europa.eu/eli/dir/2024/1275">Directive (EU) 2024/1275</a>为正式指令文本。</td><td>可据此设计候选字段。</td><td>不能替代成员国法律解释。</td></tr>
+        </tbody></table></div>
+        <p>客户愿付 €199、一个地区能持续产生足够候选、早期线索能提高成交率，均为待验证假设。</p>
+
+        <h3>C. 收入与单位经济</h3>
+        <div class="table-wrap"><table><thead><tr><th>收入项</th><th>建议定价</th><th>可变成本</th><th>毛利逻辑</th><th>复购</th></tr></thead><tbody><tr><td>单地区基础订阅</td><td>€199/月</td><td>€95/月</td><td>同一地区管道可服务多个非竞争客户</td><td>新记录与状态变化</td></tr><tr><td>CRM 格式适配</td><td>首次 €99</td><td>约 €30 人工</td><td>固定映射后可复用</td><td>一次性</td></tr></tbody></table></div>
+
+        <h3>D. 运营与自动化系统</h3>
+        <p><strong>数据模型：</strong>source_record → project → building_match → candidate → delivery → feedback。所有派生字段保存规则版本和证据链接。</p>
+        <p><strong>熔断：</strong>来源条款改变、字段结构突变、下载连续失败、地址匹配大面积失真或出现隐私问题时，暂停该地区交付，不能用旧数据悄悄补位。</p>
+        <p><strong>可沉淀资产：</strong>地方字段映射、用途词典、地址规则、许可台账、误配样本和地区质量评分。</p>
+
+        <h3>E. 30 / 90 天演进路线</h3>
+        <ul><li><strong>0–30 天：</strong>只选一个许可清晰、可下载的地区；核验 100 条历史记录；做真实样例周报；向 20 家当地安装商出售试订。</li><li><strong>31–90 天：</strong>接入第二个同语种地区，加入增量检测和客户纠错；达到 15 个付费订阅后再做 CRM 自动推送。</li><li><strong>沉淀：</strong>地区接入清单、许可审查模板、统一 Schema、置信度规则和反馈标签。</li></ul>
+
+        <h3>F. 风险、合规与停止条件</h3>
+        <ul><li>最大风险：许可数据碎片化导致人工失控，或公开时间晚于获客窗口。</li><li>合规边界：只处理授权允许的数据，保存来源与许可，不推断私人联系方式；个人数据按 GDPR 合法基础、最小化和保存期限逐地区审查。</li><li>任一数据许可或隐私风险无法消除，立即停掉该地区。</li><li>最大未知：哪些地区同时具备可用许可数据、项目密度和愿付费安装商。</li></ul>
+      </div>
+    </details>
+  </div>
+
+  <footer><div class="shell footer-inner"><span>ROOFLEAD 250 · SIDE IDEA 018</span><span>公开证据 ≠ 客户验证 · 不承诺收益</span></div></footer>
+  <button id="backBtn" type="button" aria-label="返回顶部">↑</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, securityLevel: 'loose', theme: 'dark', themeVariables: { primaryColor: '#173424', primaryTextColor: '#eef8ee', primaryBorderColor: '#c1ff5b', lineColor: '#65f0b0', secondaryColor: '#18261d', tertiaryColor: '#07110d', fontFamily: 'Inter, sans-serif' } });
+
+    const revealItems = [...document.querySelectorAll('.reveal')];
+    const showAll = () => revealItems.forEach((item) => item.classList.add('visible'));
+    if ('IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add('visible'); revealObserver.unobserve(entry.target); } }), { threshold: .08 });
+      revealItems.forEach((item) => revealObserver.observe(item));
+      setTimeout(showAll, 800);
+    } else { showAll(); }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const countItems = [...document.querySelectorAll('[data-count]')];
+    const animateCount = (el) => {
+      if (el.dataset.done) return;
+      el.dataset.done = 'true';
+      const target = Number(el.dataset.count);
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      if (reducedMotion) { el.textContent = prefix + target + suffix; return; }
+      const startedAt = performance.now();
+      const duration = 900;
+      const tick = (now) => {
+        const progress = Math.min(1, (now - startedAt) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = prefix + Math.round(target * eased) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    if ('IntersectionObserver' in window) {
+      const countObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { animateCount(entry.target); countObserver.unobserve(entry.target); } }), { threshold: .3 });
+      countItems.forEach((item) => countObserver.observe(item));
+    } else { countItems.forEach(animateCount); }
+
+    const backBtn = document.getElementById('backBtn');
+    window.addEventListener('scroll', () => backBtn.classList.toggle('show', window.scrollY > 700), { passive: true });
+    backBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' }));
+  </script>
+</body>
+</html>
