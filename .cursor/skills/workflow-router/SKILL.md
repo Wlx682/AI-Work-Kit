@@ -6,7 +6,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 # 工作流路由器
 
 定位：**入口 Skill / 路由器**，不是业务执行 Skill。  
-职责：自然语言 → 选择具体 workflow 蓝图 → 运行 `workflow-install.py check` 做启用前置检查 → 启动执行器 → 用 `workflow-status.py` 汇报人话状态 → 把下一步交给阶段 Skill。
+职责：自然语言 → 选择具体 workflow 蓝图 → 复用电脑/Kit 级安装检查缓存并只做必要运行时预检 → 启动执行器 → 用 `workflow-status.py` 汇报任务状态 → 仅在缺失时创建阶段 Plan → 把下一步交给阶段 Skill。
 
 ## 触发
 
@@ -37,7 +37,7 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
 
 ## 执行
 
-硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill 或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，Epic 工作流运行 `workflow-plan-init.py --workflow <name> --epic <path>`，轻流程运行 `workflow-plan-init.py --workflow <name> --title <标题>`；禁止跳过这一步直接执行阶段工作。
+硬门禁：一旦选中 workflow，必须先完成“选蓝图 → 缓存感知 preflight → status → 必要时 plan-init → status”，再调用阶段 Skill 或进入业务代码。安装静态项是电脑/Kit 级状态，不得要求用户为每个项目重复安装；`status` 和条件式 `plan-init` 是任务级动作，由 Agent 内部执行，不要求用户复制粘贴例行命令。若 `workflow-status.py` 显示缺当前阶段子 plan，Epic 工作流运行 `workflow-plan-init.py --workflow <name> --epic <path>`，轻流程运行 `workflow-plan-init.py --workflow <name> --title <标题>`；禁止跳过这一步直接执行阶段工作。
 
 1. 选择蓝图：
    - 显式 `workflow=xxx` 优先
@@ -49,15 +49,17 @@ description: 自然语言工作流入口。用户说全流程开发、启动项�
    - 不把抽象执行器当成业务 workflow，也不用它给 `client-dev` 兜底
    - 语义判断只选择现有业务蓝图；一句话同时像多个蓝图时先问清楚
 2. 启用前置检查：
-   - 选定蓝图后先运行 `python3 scripts/workflow-install.py check --workflow <name>`
+   - 选定蓝图后运行 `python3 scripts/workflow-install.py check --workflow <name>`；静态电脑/Kit 检查命中缓存时只保留看板端口等运行时检查，不得全量重检
+   - 首次使用、缓存因 Kit/Skill/Hook/全局指令变化而失效，或显式排查环境时才重新执行静态检查；强制重检使用 `--refresh`
    - 若出现 `BLOCK`，先处理 Skill 多端入口、全局工作流优先级、pre-commit hook、看板端口互斥或缺失脚本
-   - 可自动修复的本地 hook 用 `python3 scripts/workflow-install.py apply --workflow <name>`；Skill 全局同步需用户明确授权再加 `--sync-skills`
+   - `apply` 是首次安装或修复动作，不是每项目动作；可自动修复的本地 hook 用 `python3 scripts/workflow-install.py apply --workflow <name>`，Skill 全局同步需用户明确授权再加 `--sync-skills`
 3. 启动看板:
    - `client-dev` 的 `.workflows/blueprints/client-dev.json` 固化 `startup.createBoard=true`
    - `usesEpic=true` 的蓝图必须先有 Epic；`client-dev` 用 `Templates/Epic模板-client-dev.md`，`learning-loop` 用 `Templates/Epic模板-learning-loop.md`
    - 已有/刚创建 Epic：`bash scripts/workflow-board-boot.sh --epic Plans/Epic/xxx.md`
    - `--new-requirement` 只允许临时启动空看板服务，不算完成 client-dev 启动
 4. 看状态：
+   - 下列 `status` / `plan-init` 命令由 Agent 内部执行；只有执行环境不可用或需要用户授权时才交给用户
    - 有 Epic：`python3 scripts/workflow-status.py --workflow <name> --epic Plans/Epic/xxx.md`
    - 有 Epic 且缺当前阶段 Plan：`python3 scripts/workflow-plan-init.py --workflow <name> --epic Plans/Epic/xxx.md`，再重新 status
    - 有项目名：`python3 scripts/workflow-status.py --workflow <name> --project <模块名>`

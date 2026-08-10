@@ -44,6 +44,8 @@ python3 scripts/workflow-status.py --workflow computer-mgmt
 
 底层详情才看 `scripts/workflow-gate.sh --json`；日常优先看 `workflow-status.py`。
 
+`workflow-install.py apply` 只用于电脑/Kit 首次安装或环境修复。`workflow-install.py check` 首次运行会缓存工具、Skill、Hook 与全局指令等静态检查；后续任务命中同一环境指纹时只检查端口等运行时状态，环境变化或传入 `--refresh` 才全量重检。`workflow-status.py` 按任务运行，`workflow-plan-init.py` 仅在当前阶段 Plan 缺失时运行。
+
 ## License
 
 团队内部使用；开源前检查 `Contexts/`、`Plans/` 敏感信息。

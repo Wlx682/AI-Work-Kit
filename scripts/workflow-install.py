@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -9,6 +10,8 @@ import socket
 import stat
 import subprocess
 import sys
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -18,6 +21,8 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / ".workflows" / "install.json"
 BLUEPRINT_DIR = ROOT / ".workflows" / "blueprints"
+CACHE_SCHEMA_VERSION = 1
+DEFAULT_CACHE_FILE = Path.home() / ".cache" / "ai-work-kit" / "workflow-install-state.json"
 
 
 STATUS_ORDER = {"ok": 0, "warn": 1, "block": 2}
@@ -63,6 +68,112 @@ def split_command(command: str) -> list[str]:
 
 def run_command(command: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(split_command(command), cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+
+
+def cache_file_path(explicit: str | None) -> Path:
+    override = explicit or os.environ.get("AI_WORK_KIT_INSTALL_CACHE")
+    return Path(override).expanduser().resolve() if override else DEFAULT_CACHE_FILE
+
+
+def load_cache(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {"schemaVersion": CACHE_SCHEMA_VERSION, "roots": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"schemaVersion": CACHE_SCHEMA_VERSION, "roots": {}}
+    if not isinstance(data, dict) or data.get("schemaVersion") != CACHE_SCHEMA_VERSION or not isinstance(data.get("roots"), dict):
+        return {"schemaVersion": CACHE_SCHEMA_VERSION, "roots": {}}
+    return data
+
+
+def save_cache(path: Path, cache: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
+            json.dump(cache, handle, ensure_ascii=False, indent=2, sort_keys=True)
+            handle.write("\n")
+            temp_name = handle.name
+        Path(temp_name).replace(path)
+    finally:
+        if temp_name:
+            temp_path = Path(temp_name)
+            if temp_path.exists():
+                temp_path.unlink()
+
+
+def hash_path(hasher: Any, label: str, path: Path) -> None:
+    hasher.update(f"{label}\0{path}\0".encode("utf-8"))
+    if not path.exists():
+        hasher.update(b"missing\0")
+        return
+    if path.is_file():
+        hasher.update(b"file\0")
+        try:
+            hasher.update(path.read_bytes())
+        except OSError as exc:
+            hasher.update(f"unreadable:{exc.__class__.__name__}\0".encode("utf-8"))
+        return
+    if path.is_dir():
+        hasher.update(b"dir\0")
+        try:
+            children = sorted(item for item in path.rglob("*") if item.is_file())
+        except OSError as exc:
+            hasher.update(f"unreadable:{exc.__class__.__name__}\0".encode("utf-8"))
+            return
+        for child in children:
+            try:
+                relative = child.relative_to(path)
+                stat_result = child.stat()
+            except OSError:
+                continue
+            hasher.update(f"{relative}\0{stat_result.st_size}\0{stat_result.st_mtime_ns}\0".encode("utf-8"))
+        return
+    hasher.update(b"other\0")
+
+
+def static_fingerprint(requires: list[str], manifest: dict[str, Any]) -> str:
+    capabilities = manifest.get("capabilities", {})
+    hasher = hashlib.sha256()
+    hasher.update(f"schema:{CACHE_SCHEMA_VERSION}\0root:{ROOT.resolve()}\0".encode("utf-8"))
+    hash_path(hasher, "installer", Path(__file__).resolve())
+    hash_path(hasher, "manifest", MANIFEST)
+    for capability in sorted(requires):
+        cap = capabilities.get(capability, {})
+        static_config = {key: value for key, value in cap.items() if key != "portGuard"}
+        hasher.update(json.dumps(static_config, ensure_ascii=False, sort_keys=True).encode("utf-8"))
+        for command in cap.get("commands", []) or []:
+            hasher.update(f"command:{command}:{shutil.which(str(command)) or 'missing'}\0".encode("utf-8"))
+        for entry in cap.get("paths", []) or []:
+            path_value = entry if isinstance(entry, str) else str(entry.get("path", ""))
+            hash_path(hasher, f"{capability}:path", resolve_path(str(path_value)))
+        for entry in cap.get("globalFiles", []) or []:
+            path_value = str(entry.get("path", ""))
+            hash_path(hasher, f"{capability}:global", resolve_path(path_value))
+        hook = cap.get("hook")
+        if isinstance(hook, dict):
+            hash_path(hasher, f"{capability}:hook-source", resolve_path(str(hook.get("source", ""))))
+            hash_path(hasher, f"{capability}:hook-target", resolve_path(str(hook.get("target", ""))))
+        for path_value in cap.get("fingerprintPaths", []) or []:
+            hash_path(hasher, f"{capability}:fingerprint", resolve_path(str(path_value)))
+    return hasher.hexdigest()
+
+
+def cache_profiles(cache: dict[str, Any]) -> dict[str, Any]:
+    roots = cache.setdefault("roots", {})
+    root_entry = roots.setdefault(str(ROOT.resolve()), {})
+    return root_entry.setdefault("profiles", {})
+
+
+def mark_cache(cache: dict[str, Any], fingerprint: str, workflow: str) -> None:
+    profiles = cache_profiles(cache)
+    previous = profiles.get(fingerprint, {})
+    workflows = sorted(set([*(previous.get("workflows", []) or []), workflow]))
+    profiles[fingerprint] = {
+        "checkedAt": datetime.now(timezone.utc).isoformat(),
+        "workflows": workflows,
+    }
 
 
 def check_commands(capability: str, cap: dict[str, Any]) -> list[dict[str, str]]:
@@ -217,20 +328,23 @@ def workflow_names(explicit: str | None) -> list[str]:
     return sorted(path.stem for path in BLUEPRINT_DIR.glob("*.json"))
 
 
-def capability_results(capability: str, cap: dict[str, Any]) -> list[dict[str, str]]:
+def static_capability_results(capability: str, cap: dict[str, Any]) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
     items.extend(check_commands(capability, cap))
     items.extend(check_paths(capability, cap))
     items.extend(check_global_files(capability, cap))
     items.extend(check_sync(capability, cap))
     items.extend(check_hook(capability, cap))
-    items.extend(check_port_guard(capability, cap))
     if not items:
-        items.append(result("ok", capability, "无额外检查项"))
+        items.append(result("ok", capability, "无静态检查项"))
     return items
 
 
-def check_workflow(name: str, manifest: dict[str, Any]) -> dict[str, Any]:
+def runtime_capability_results(capability: str, cap: dict[str, Any]) -> list[dict[str, str]]:
+    return check_port_guard(capability, cap)
+
+
+def check_workflow(name: str, manifest: dict[str, Any], cache: dict[str, Any], refresh: bool = False) -> dict[str, Any]:
     bp = load_blueprint(name)
     enablement = bp.get("enablement")
     if not isinstance(enablement, dict):
@@ -241,14 +355,37 @@ def check_workflow(name: str, manifest: dict[str, Any]) -> dict[str, Any]:
     capabilities = manifest.get("capabilities")
     if not isinstance(capabilities, dict):
         raise InstallError(".workflows/install.json 缺少 capabilities")
+    fingerprint = static_fingerprint(requires, manifest)
+    hit = not refresh and fingerprint in cache_profiles(cache)
     results: list[dict[str, str]] = []
+    if hit:
+        results.append(result("ok", "install-cache", f"电脑/Kit 静态环境缓存有效: {fingerprint[:12]}"))
+        static_ok = True
+    else:
+        for capability in requires:
+            cap = capabilities.get(capability)
+            if not isinstance(cap, dict):
+                results.append(result("block", capability, f"安装清单缺少能力: {capability}"))
+                continue
+            results.extend(static_capability_results(capability, cap))
+        static_ok = not any(item["status"] == "block" for item in results)
+        if static_ok:
+            mark_cache(cache, fingerprint, name)
+            results.append(result("ok", "install-cache", f"电脑/Kit 静态环境已检查并缓存: {fingerprint[:12]}"))
+
     for capability in requires:
         cap = capabilities.get(capability)
-        if not isinstance(cap, dict):
-            results.append(result("block", capability, f"安装清单缺少能力: {capability}"))
-            continue
-        results.extend(capability_results(capability, cap))
-    return {"workflow": name, "results": results}
+        if isinstance(cap, dict):
+            results.extend(runtime_capability_results(capability, cap))
+    return {
+        "workflow": name,
+        "results": results,
+        "cache": {
+            "hit": hit,
+            "fingerprint": fingerprint[:12],
+            "static_ok": static_ok,
+        },
+    }
 
 
 def summarize(reports: list[dict[str, Any]]) -> str:
@@ -283,27 +420,36 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="检查或安装 AI-Work-Kit workflow 启用前置环境。")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    check = sub.add_parser("check", help="只读检查 workflow 启用环境")
+    check = sub.add_parser("check", help="缓存感知地检查 workflow 启用环境；首次通过后记录静态环境指纹")
     check.add_argument("--workflow", help="蓝图 name；不传则检查全部蓝图")
+    check.add_argument("--cache-file", help="覆盖电脑级静态检查缓存路径（测试或隔离环境使用）")
+    check.add_argument("--refresh", action="store_true", help="忽略缓存并重新执行静态环境检查")
     check.add_argument("--json", action="store_true", help="输出 JSON")
 
     apply = sub.add_parser("apply", help="安装可自动修复的本地启用项")
     apply.add_argument("--workflow", required=True, help="蓝图 name")
     apply.add_argument("--sync-skills", action="store_true", help="同时运行 Skill 多端同步（会覆盖项目同名全局 Skill）")
+    apply.add_argument("--cache-file", help="覆盖电脑级静态检查缓存路径（测试或隔离环境使用）")
     apply.add_argument("--json", action="store_true", help="输出 JSON")
 
     args = parser.parse_args()
     try:
         manifest = load_json(MANIFEST)
+        cache_path = cache_file_path(getattr(args, "cache_file", None))
+        cache = load_cache(cache_path)
         actions: list[str] = []
         if args.command == "apply":
             actions = apply_workflow(args.workflow, manifest, args.sync_skills)
-        reports = [check_workflow(name, manifest) for name in workflow_names(getattr(args, "workflow", None))]
+        reports = []
+        for name in workflow_names(getattr(args, "workflow", None)):
+            reports.append(check_workflow(name, manifest, cache, refresh=args.command == "apply" or getattr(args, "refresh", False)))
+        if any(report.get("cache", {}).get("static_ok") and not report.get("cache", {}).get("hit") for report in reports):
+            save_cache(cache_path, cache)
     except InstallError as exc:
         print(f"BLOCKED:workflow-install:{exc}", file=sys.stderr)
         return 1
 
-    payload = {"actions": actions, "reports": reports, "status": summarize(reports)}
+    payload = {"actions": actions, "reports": reports, "status": summarize(reports), "cacheFile": str(cache_path)}
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

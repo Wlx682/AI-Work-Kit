@@ -23,11 +23,11 @@
 只做：
 
 1. 选择 workflow 蓝图
-2. 运行蓝图 `enablement.preflight`，确认工具入口、hook、全局优先级与互斥环境可用
+2. 复用电脑/Kit 级静态安装检查缓存，只重复检查端口等运行时状态
 3. 确保客户端开发 Epic 存在并启动看板
-4. 运行 `workflow-status.py` 输出人话状态
+4. 在 Agent 内部运行 `workflow-status.py` 输出当前任务的人话状态
 5. 必要时再查看 `workflow-gate.sh --json` 详情
-6. 任一工作流缺当前阶段 plan 时，用 `workflow-plan-init.py` 创建当前阶段 plan；Epic 工作流传 `--epic` 并严格写入 `plans.<epicField>` 指定路径
+6. 仅当当前任务缺少阶段 plan 时，在 Agent 内部用 `workflow-plan-init.py` 创建；Epic 工作流传 `--epic` 并严格写入 `plans.<epicField>` 指定路径
 
 不做：
 
@@ -39,7 +39,7 @@
 
 ## 蓝图选择
 
-硬门禁：一旦选中 workflow，必须先完成“选蓝图 → preflight → status → 必要时 plan-init → status”，再调用阶段 Skill或进入业务代码。若 `workflow-status.py` 显示缺当前阶段子 plan，Epic 工作流运行 `workflow-plan-init.py --workflow <name> --epic <path>`，轻流程运行 `workflow-plan-init.py --workflow <name> --title <标题>`；禁止跳过这一步直接执行阶段工作。
+硬门禁：一旦选中 workflow，必须先完成“选蓝图 → 缓存感知 preflight → status → 必要时 plan-init → status”，再调用阶段 Skill或进入业务代码。安装静态项是电脑/Kit 级状态，不得要求用户为每个项目重复安装；`status` 和条件式 `plan-init` 是任务级动作，由 Agent 内部完成。若 `workflow-status.py` 显示缺当前阶段子 plan，Epic 工作流运行 `workflow-plan-init.py --workflow <name> --epic <path>`，轻流程运行 `workflow-plan-init.py --workflow <name> --title <标题>`；禁止跳过这一步直接执行阶段工作。
 
 优先级：
 
@@ -77,17 +77,21 @@ python3 scripts/test-workflow-refactor.py
 
 ## 启用前置检查
 
-选定蓝图后，启动看板或创建阶段 plan 前先执行蓝图声明的 preflight：
+选定蓝图后，启动看板或创建阶段 plan 前执行蓝图声明的缓存感知 preflight：
 
 ```bash
 python3 scripts/workflow-install.py check --workflow <name>
 ```
+
+首次运行会检查电脑/Kit 静态环境并写入用户级缓存；后续项目命中相同环境指纹时，只检查看板端口等运行时状态。Kit、Skill、全局指令或 Hook 改动会自动使缓存失效；显式重检使用 `--refresh`。
 
 若输出 `BLOCK`，先处理安装项：Skill 多端入口、全局工作流优先级、pre-commit hook、看板端口互斥或缺失脚本。可自动修复的本地 hook 用：
 
 ```bash
 python3 scripts/workflow-install.py apply --workflow <name>
 ```
+
+`apply` 只用于首次安装或修复，不是每项目命令。例行 `status` 和必要的 `plan-init` 应由 Agent 执行，除非当前工具环境无法运行，不能让用户重复复制粘贴。
 
 ## client-dev Epic 硬门禁
 

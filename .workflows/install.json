@@ -1,7 +1,7 @@
 {
   "name": "ai-work-kit-workflow-install",
   "version": "0.1.0",
-  "description": "Workflow enablement contract: checks local tools, agent entrypoints, hooks, global workflow priority, and runtime conflicts before a workflow starts.",
+  "description": "Workflow enablement contract: caches computer/Kit static checks and rechecks only runtime conflicts before each workflow starts.",
   "capabilities": {
     "core-tools": {
       "label": "核心命令与脚本",
@@ -9,6 +9,7 @@
       "paths": [
         {"path": ".workflows/blueprints", "type": "dir"},
         {"path": ".workflows/schemas/workflow-blueprint.schema.json", "type": "file"},
+        {"path": "scripts/workflow-install.py", "type": "file"},
         {"path": "scripts/validate-workflow-blueprint.py", "type": "file"},
         {"path": "scripts/workflow-gate.sh", "type": "file"},
         {"path": "scripts/workflow-status.py", "type": "file"},
@@ -22,6 +23,10 @@
         {"path": ".claude/skills", "type": "dir"},
         {"path": ".codex/skills", "type": "dir"},
         {"path": "Skills", "type": "dir"}
+      ],
+      "fingerprintPaths": [
+        "~/.claude/skills/workflow-router",
+        "~/.codex/skills/workflow-router"
       ],
       "syncCheckCommand": "bash scripts/sync-agent-skills.sh --check",
       "syncCommand": "bash scripts/sync-agent-skills.sh --sync"

@@ -133,6 +133,9 @@ class WorkflowRefactorTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertIn("workflow-router", text)
             self.assertIn("workflow-gate", text)
+            self.assertIn("缓存", text)
+            self.assertIn("--refresh", text)
+            self.assertIn("Agent", text)
 
     def test_client_dev_blueprint_has_manifest_driven_full_workflow(self) -> None:
         bp = json.loads((ROOT / ".workflows/blueprints/client-dev.json").read_text(encoding="utf-8"))
@@ -522,6 +525,54 @@ class WorkflowRefactorTests(unittest.TestCase):
             )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("缺少 enablement", proc.stderr)
+
+    def test_workflow_install_reuses_static_machine_check_across_workflows(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache_file = Path(td) / "workflow-install-state.json"
+            first = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-install.py",
+                    "check",
+                    "--workflow",
+                    "bugfix",
+                    "--cache-file",
+                    str(cache_file),
+                    "--refresh",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(first.returncode, 0, first.stderr or first.stdout)
+            first_payload = json.loads(first.stdout)
+            self.assertFalse(first_payload["reports"][0]["cache"]["hit"])
+            self.assertTrue(cache_file.is_file())
+
+            second = subprocess.run(
+                [
+                    "python3",
+                    "scripts/workflow-install.py",
+                    "check",
+                    "--workflow",
+                    "client-dev",
+                    "--cache-file",
+                    str(cache_file),
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(second.returncode, 0, second.stderr or second.stdout)
+            second_payload = json.loads(second.stdout)
+            report = second_payload["reports"][0]
+            self.assertTrue(report["cache"]["hit"])
+            self.assertTrue(any(item["capability"] == "install-cache" for item in report["results"]))
+            self.assertFalse(any(item["capability"] == "skills" for item in report["results"]))
 
     def test_workflow_blueprints_require_dedicated_regression_before_generic_smoke(self) -> None:
         forbidden = {
