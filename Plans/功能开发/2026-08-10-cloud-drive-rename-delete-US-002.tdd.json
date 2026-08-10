@@ -1,0 +1,37 @@
+{
+  "story_id": "US-002",
+  "candidate_state": "working_tree_partial",
+  "red": {
+    "status": "NOT_RECORDED",
+    "reason": "首次失败输出未单独留存，不补造 Red 历史。"
+  },
+  "green": {
+    "command": "flutter test test/core/personal_cloud test/features/cloud_drive",
+    "exit_code": 0,
+    "test_count": 105,
+    "at": "2026-08-10T12:25:26+08:00"
+  },
+  "refactor": {
+    "command": "flutter analyze lib/core/personal_cloud lib/features/cloud_drive/browser lib/features/cloud_drive/rename lib/features/cloud_drive/deletion lib/app/personal_cloud_runtime.dart lib/app/composition_root.dart test/core/personal_cloud test/features/cloud_drive",
+    "exit_code": 0,
+    "at": "2026-08-10T12:25:26+08:00"
+  },
+  "quality_gates": {
+    "format": "PASS",
+    "task_id_naming": "PASS",
+    "diff_check": "PASS",
+    "flutter_review": "PASS_P0_P1_CLEAR",
+    "ios_review": "PASS_P0_P1_CLEAR"
+  },
+  "acceptance": [
+    {"ac_id": "GWT-010", "automation_pass": true},
+    {"ac_id": "GWT-011", "automation_pass": true},
+    {"ac_id": "GWT-012", "automation_pass": true, "delivery_verified": false, "reason": "缺真实账号永久删除证据"},
+    {"ac_id": "GWT-013", "automation_pass": true},
+    {"ac_id": "GWT-014", "automation_pass": true},
+    {"ac_id": "GWT-015", "automation_pass": true},
+    {"ac_id": "GWT-016", "automation_pass": true},
+    {"ac_id": "GWT-017", "automation_pass": true},
+    {"ac_id": "GWT-018", "automation_pass": true, "delivery_verified": false, "reason": "缺多形态真机窗口切换证据"}
+  ]
+}

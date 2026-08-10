@@ -1,0 +1,25 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "BUS-052",
+      "title": "个人云盘文件重命名",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["BUS-046"],
+      "priority": "P0",
+      "reason": "先用可逆的单项目 mutation 落实名称校验、单飞、owner fence、结果未知对账和分页/搜索失效",
+      "confirmed": true
+    },
+    {
+      "id": "BUS-054",
+      "title": "个人云盘文件永久删除",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["BUS-046", "BUS-052"],
+      "priority": "P0",
+      "reason": "删除不可恢复，复用已验证机制后再接入危险确认，降低一致性风险",
+      "confirmed": true
+    }
+  ]
+}

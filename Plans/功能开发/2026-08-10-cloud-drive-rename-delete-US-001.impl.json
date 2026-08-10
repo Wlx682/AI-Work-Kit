@@ -1,0 +1,62 @@
+{
+  "story_id": "US-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/core/personal_cloud/personal_cloud_protocol.dart", "reason": "现有 YunPan typed client 端口与 outcomeUnknown 结果"},
+    {"path": "lib/core/personal_cloud/dio_personal_cloud_client.dart", "reason": "现有 token 单次刷新、签名、mutation 与 exact-path exists 实现"},
+    {"path": "lib/features/cloud_drive/folder_creation/application/folder_creation_controller.dart", "reason": "复用 draft、policy、single-flight、generation fence 状态模式"},
+    {"path": "lib/features/cloud_drive/move/data/cloud_move_repository_impl.dart", "reason": "复用 mutation resultUnknown 与精确路径 reconcile 模式"},
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "个人云盘操作菜单与成功后 refresh 宿主"},
+    {"path": "lib/app/personal_cloud_runtime.dart", "reason": "会话 owner 与 Feature Repository 运行时边界"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/core/personal_cloud/personal_cloud_protocol.dart", "purpose": "为 PersonalCloudClient 增加 typed rename 方法", "layer": "Core Contract"},
+      {"path": "lib/core/personal_cloud/dio_personal_cloud_client.dart", "purpose": "编码 File.rename 参数、签名键与 mutation 结果语义", "layer": "Core Data"},
+      {"path": "lib/app/personal_cloud_runtime.dart", "purpose": "暴露 rename owner 与 repository", "layer": "App Runtime"},
+      {"path": "lib/app/composition_root.dart", "purpose": "按当前 session 组装 rename adapter、审核 client 与 owner guard", "layer": "App Composition"},
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "添加重命名菜单入口并在成功后刷新 active query", "layer": "Presentation Integration"},
+      {"path": "lib/l10n/app_zh.arb", "purpose": "增加重命名中文可见文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_en.arb", "purpose": "增加重命名英文可见文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_vi.arb", "purpose": "增加重命名越南文可见文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_localizations.dart", "purpose": "由 gen-l10n 更新生成接口", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_zh.dart", "purpose": "由 gen-l10n 更新中文实现", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_en.dart", "purpose": "由 gen-l10n 更新英文实现", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_vi.dart", "purpose": "由 gen-l10n 更新越南文实现", "layer": "Generated Localization"},
+      {"path": "test/core/personal_cloud/dio_personal_cloud_client_test.dart", "purpose": "验证 File.rename 参数、签名和 unknown 分类", "layer": "Core Unit Test"},
+      {"path": "test/features/cloud_drive/personal_cloud_repository_adapters_test.dart", "purpose": "验证 rename adapter owner fence 与旧/新路径 reconcile", "layer": "Data Unit Test"},
+      {"path": "test/features/cloud_drive/browser/presentation/cloud_browser_page_personal_cloud_integration_test.dart", "purpose": "验证操作入口和成功刷新生产宿主合同", "layer": "Widget Integration Test"}
+    ],
+    "create": [
+      {"path": "lib/features/cloud_drive/rename/domain/cloud_drive_rename_models.dart", "reason": "owner、command、policy/result/reconcile/phase 值对象", "naming_basis": "长期重命名业务语义", "layer": "Domain"},
+      {"path": "lib/features/cloud_drive/rename/domain/cloud_drive_rename_repository.dart", "reason": "窄 policy/rename/reconcile/invalidate 端口", "naming_basis": "重命名业务能力", "layer": "Domain Port"},
+      {"path": "lib/features/cloud_drive/rename/data/cloud_drive_rename_repository_impl.dart", "reason": "Nami 审核、YunPan rename 与旧/新路径对账", "naming_basis": "重命名数据适配", "layer": "Data Adapter"},
+      {"path": "lib/features/cloud_drive/rename/application/cloud_drive_rename_controller.dart", "reason": "校验、single-flight、owner fence 和 unknown 状态机", "naming_basis": "重命名应用状态", "layer": "Application"},
+      {"path": "lib/features/cloud_drive/rename/presentation/cloud_drive_rename_dialog.dart", "reason": "iOS 基线自适应输入对话框", "naming_basis": "重命名交互", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/rename/testing/fake_cloud_drive_rename_repository.dart", "reason": "确定性 policy/mutation/reconcile Fake", "naming_basis": "对应 Repository", "layer": "Testing"},
+      {"path": "test/features/cloud_drive/rename/application/cloud_drive_rename_controller_test.dart", "reason": "Red 覆盖名称规则、policy、single-flight、owner 和 unknown", "naming_basis": "被测 Controller", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/rename/presentation/cloud_drive_rename_dialog_test.dart", "reason": "Red 覆盖预填、错误保稿、提交防退出和三档", "naming_basis": "被测 Dialog", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Browser intent → Rename Presentation → Application → Domain Repository → Data Adapter → Personal Cloud Core",
+    "dependency_rule": "rename 不 import browser/folder_creation/move；Browser 仅传 typed item/owner 并消费终态；Data 不暴露 transport 类型"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/cloud_drive/rename/application/cloud_drive_rename_controller_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/rename/application/cloud_drive_rename_controller_test.dart"},
+      {"path": "test/features/cloud_drive/rename/presentation/cloud_drive_rename_dialog_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/rename/presentation/cloud_drive_rename_dialog_test.dart"},
+      {"path": "test/core/personal_cloud/dio_personal_cloud_client_test.dart", "command": "flutter test --no-pub test/core/personal_cloud/dio_personal_cloud_client_test.dart"},
+      {"path": "test/features/cloud_drive/personal_cloud_repository_adapters_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/personal_cloud_repository_adapters_test.dart"}
+    ]
+  },
+  "risks": [
+    "iOS 禁止 emoji 的边界需用明确 Unicode 规则锁测试，不能依赖新增包",
+    "File.rename 为非幂等 mutation，transport/HTTP/decoding unknown 不得自动重发",
+    "内容审核明确拒绝要阻止，网络降级才允许继续",
+    "Android 固定源码不可访问，真实多形态验收仍缺证据"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

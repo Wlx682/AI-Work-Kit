@@ -1,0 +1,61 @@
+{
+  "story_id": "US-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/core/personal_cloud/personal_cloud_protocol.dart", "reason": "现有 typed mutation client 端口"},
+    {"path": "lib/core/personal_cloud/dio_personal_cloud_client.dart", "reason": "现有 token/signature/outcomeUnknown 和 exact-path exists"},
+    {"path": "lib/features/cloud_drive/move/application/cloud_move_controller.dart", "reason": "single-flight、owner fence、reconcile 与 invalidation 状态模式"},
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "操作菜单和 active query 刷新宿主"},
+    {"path": "lib/app/personal_cloud_runtime.dart", "reason": "session owner 与 Feature adapter 生命周期"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/core/personal_cloud/personal_cloud_protocol.dart", "purpose": "为 PersonalCloudClient 增加 permanentDelete typed 方法", "layer": "Core Contract"},
+      {"path": "lib/core/personal_cloud/dio_personal_cloud_client.dart", "purpose": "编码 File.delete fname/is_clean_master=1 与 mutation 结果语义", "layer": "Core Data"},
+      {"path": "lib/app/personal_cloud_runtime.dart", "purpose": "暴露 deletion owner 与 repository", "layer": "App Runtime"},
+      {"path": "lib/app/composition_root.dart", "purpose": "按当前 session 组装 deletion adapter 与 owner guard", "layer": "App Composition"},
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "添加危险删除入口并在成功后刷新 active query", "layer": "Presentation Integration"},
+      {"path": "lib/l10n/app_zh.arb", "purpose": "增加永久删除中文文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_en.arb", "purpose": "增加永久删除英文文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_vi.arb", "purpose": "增加永久删除越南文文案", "layer": "Localization Source"},
+      {"path": "lib/l10n/app_localizations.dart", "purpose": "由 gen-l10n 更新生成接口", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_zh.dart", "purpose": "由 gen-l10n 更新中文实现", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_en.dart", "purpose": "由 gen-l10n 更新英文实现", "layer": "Generated Localization"},
+      {"path": "lib/l10n/app_localizations_vi.dart", "purpose": "由 gen-l10n 更新越南文实现", "layer": "Generated Localization"},
+      {"path": "test/core/personal_cloud/dio_personal_cloud_client_test.dart", "purpose": "验证 File.delete 参数与 unknown 分类", "layer": "Core Unit Test"},
+      {"path": "test/features/cloud_drive/personal_cloud_repository_adapters_test.dart", "purpose": "验证 deletion owner fence 与不存在性 reconcile", "layer": "Data Unit Test"},
+      {"path": "test/features/cloud_drive/browser/presentation/cloud_browser_page_personal_cloud_integration_test.dart", "purpose": "验证取消不请求、确认入口与成功刷新", "layer": "Widget Integration Test"}
+    ],
+    "create": [
+      {"path": "lib/features/cloud_drive/deletion/domain/cloud_drive_deletion_models.dart", "reason": "owner、command、result/reconcile/phase 值对象", "naming_basis": "长期永久删除业务语义", "layer": "Domain"},
+      {"path": "lib/features/cloud_drive/deletion/domain/cloud_drive_deletion_repository.dart", "reason": "窄 delete/reconcile/invalidate 端口", "naming_basis": "永久删除业务能力", "layer": "Domain Port"},
+      {"path": "lib/features/cloud_drive/deletion/data/cloud_drive_deletion_repository_impl.dart", "reason": "YunPan 永久删除与源路径不存在对账", "naming_basis": "永久删除数据适配", "layer": "Data Adapter"},
+      {"path": "lib/features/cloud_drive/deletion/application/cloud_drive_deletion_controller.dart", "reason": "确认后 single-flight、owner fence 和 unknown 状态机", "naming_basis": "永久删除应用状态", "layer": "Application"},
+      {"path": "lib/features/cloud_drive/deletion/presentation/cloud_drive_deletion_dialog.dart", "reason": "不可恢复危险确认自适应对话框", "naming_basis": "永久删除交互", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/deletion/testing/fake_cloud_drive_deletion_repository.dart", "reason": "确定性 mutation/reconcile Fake", "naming_basis": "对应 Repository", "layer": "Testing"},
+      {"path": "test/features/cloud_drive/deletion/application/cloud_drive_deletion_controller_test.dart", "reason": "Red 覆盖 single-flight、owner、成功/失败/unknown", "naming_basis": "被测 Controller", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/deletion/presentation/cloud_drive_deletion_dialog_test.dart", "reason": "Red 覆盖取消、危险文案、提交防退出和三档", "naming_basis": "被测 Dialog", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Browser intent → Deletion Presentation → Application → Domain Repository → Data Adapter → Personal Cloud Core",
+    "dependency_rule": "deletion 不 import browser/rename；只有确认 UI 创建删除命令；Data 不暴露 transport 类型"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/cloud_drive/deletion/application/cloud_drive_deletion_controller_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/deletion/application/cloud_drive_deletion_controller_test.dart"},
+      {"path": "test/features/cloud_drive/deletion/presentation/cloud_drive_deletion_dialog_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/deletion/presentation/cloud_drive_deletion_dialog_test.dart"},
+      {"path": "test/core/personal_cloud/dio_personal_cloud_client_test.dart", "command": "flutter test --no-pub test/core/personal_cloud/dio_personal_cloud_client_test.dart"},
+      {"path": "test/features/cloud_drive/personal_cloud_repository_adapters_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/personal_cloud_repository_adapters_test.dart"}
+    ]
+  },
+  "risks": [
+    "永久删除不可恢复，取消/返回必须保证零网络请求",
+    "File.delete 为非幂等 mutation，unknown 时只能 exists 对账不能自动重发",
+    "成功后必须重拉 active query，不能只从当前分页局部移除",
+    "真实账号永久删除证据缺失前不得宣称 VERIFIED"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

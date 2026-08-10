@@ -1,0 +1,31 @@
+{
+  "scope_confirmed": true,
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "重命名当前个人云盘文件或文件夹",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-10-cloud-drive-rename-delete-US-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["GWT-001", "GWT-002", "GWT-003", "GWT-004", "GWT-005", "GWT-006", "GWT-007", "GWT-008", "GWT-009", "GWT-015", "GWT-016", "GWT-017", "GWT-018"],
+      "architecture_refs": ["ADR-002", "ADR-003", "ADR-004", "ADR-005"]
+    },
+    {
+      "id": "US-002",
+      "title": "确认后永久删除个人云盘文件或文件夹",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-10-cloud-drive-rename-delete-US-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-001"],
+      "acceptance_criteria": ["GWT-010", "GWT-011", "GWT-012", "GWT-013", "GWT-014", "GWT-015", "GWT-016", "GWT-017", "GWT-018"],
+      "architecture_refs": ["ADR-001", "ADR-002", "ADR-003", "ADR-004"]
+    }
+  ]
+}
