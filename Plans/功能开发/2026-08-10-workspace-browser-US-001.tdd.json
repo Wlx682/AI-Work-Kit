@@ -1,0 +1,39 @@
+{
+  "story_id": "US-001",
+  "red": {
+    "status": "captured",
+    "tests": [
+      "workspace browser controller test initially failed to compile because the feature contract and controller did not exist"
+    ]
+  },
+  "green": {
+    "status": "passed",
+    "tests": [
+      "flutter test --no-pub test/features/workspace/browser: 20/20 passed",
+      "flutter test --no-pub test/core/personal_cloud test/features/cloud_drive test/features/workspace/browser test/claw/runtime/gateway_contract_client_test.dart test/claw/runtime/rpc_wire_contract_test.dart: 179/179 passed"
+    ]
+  },
+  "refactor": {
+    "status": "passed",
+    "checks": [
+      "dart format --output=none --set-exit-if-changed: passed",
+      "flutter analyze --no-pub on changed Cloud Drive and Workspace paths: passed",
+      "python3 scripts/validate-task-id-naming.py: passed",
+      "git diff --check: passed"
+    ]
+  },
+  "acceptance": {
+    "status": "partial",
+    "evidence": [
+      "Gateway adapter covers agent offset, session timestamp, final/process offset and typed failures",
+      "session final pagination excludes the process virtual directory from the server offset",
+      "canonical filesystem.ws.search covers global mixed, agent, session final and process scopes with next_offset pagination and METHOD_NOT_FOUND degradation",
+      "legacy top-level INVALID_REQUEST plus unknown-method message is classified as unsupported before protocol decoding",
+      "workspace schema identity and page fields reject wrong JSON types instead of coercing them",
+      "workspace metadata hides Gateway local_path and follows the iOS count/date/size semantics",
+      "Files Tab host test proves current environment/account/workspace/gateway/generation owner wiring",
+      "Compact/Medium/Expanded widget test preserves the same controller state",
+      "missing real Gateway account and Android Phone/Pad/Fold plus iPhone/iPad evidence"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "scope_confirmed": true,
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "分层浏览、分页和搜索工作区文件",
+      "priority": "P0",
+      "story_points": 8,
+      "sprint_scope": true,
+      "vertical_slice": true,
+      "status": "in_progress",
+      "path": "Plans/功能开发/2026-08-10-workspace-browser-US-001.md",
+      "plan": "Plans/功能开发/2026-08-10-workspace-browser-US-001.md"
+    },
+    {
+      "id": "US-002",
+      "title": "文件目录独立页面、统一面包屑与完整动作菜单",
+      "priority": "P0",
+      "story_points": 8,
+      "sprint_scope": true,
+      "vertical_slice": true,
+      "status": "in_progress",
+      "path": "Plans/功能开发/2026-08-10-workspace-browser-US-002.md",
+      "plan": "Plans/功能开发/2026-08-10-workspace-browser-US-002.md"
+    }
+  ]
+}

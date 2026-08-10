@@ -1,0 +1,50 @@
+{
+  "story_id": "US-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "确认 AI 菜单被 IgnorePointer 禁用、用户上传菜单仅三项"},
+    {"path": "lib/features/cloud_drive/browser/presentation/personal_cloud_browser_view.dart", "reason": "确认目录在当前 Controller 内刷新且面包屑样式独立"},
+    {"path": "lib/features/workspace/browser/presentation/workspace_browser_view.dart", "reason": "确认工作空间目录原地切层且文件无更多菜单"},
+    {"path": "lib/features/workspace/browser/application/workspace_browser_controller.dart", "reason": "确认层级、owner、分页和迟到响应语义"},
+    {"path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Features/CloudDrive/Tabs/UserUpload/Handler/NMCloudDrivePopupMenuHandler.swift", "reason": "固定提交 4d405cf 的用户上传文件/文件夹动作 Oracle"},
+    {"path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Features/CloudDrive/Tabs/WorkSpace/Models/WorkspaceConfiguration.swift", "reason": "固定提交 4d405cf 的 AI/工作空间动作集合与条件 Oracle"},
+    {"path": "/Users/wanglongxiang/git/namiwork-flutter/lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "Figma 30371:42190 已通过 MCP 读取，当前页面为视觉实现落点"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "三分区动作菜单与独立详情页 push 接线", "layer": "Integration"},
+      {"path": "lib/features/cloud_drive/browser/presentation/personal_cloud_browser_view.dart", "purpose": "目录点击委托宿主 push，复用共享面包屑", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "purpose": "AI 文件动作在 runtime owner 下调用 Repository", "layer": "Application"},
+      {"path": "lib/features/workspace/browser/application/workspace_browser_controller.dart", "purpose": "支持由现有层级快照创建独立详情页 controller", "layer": "Application"},
+      {"path": "lib/features/workspace/browser/presentation/workspace_browser_view.dart", "purpose": "目录 push 回调、共享面包屑与文件菜单槽位", "layer": "Presentation"},
+      {"path": "lib/l10n/app_en.arb", "purpose": "动作与失败反馈文案", "layer": "Localization"},
+      {"path": "lib/l10n/app_zh.arb", "purpose": "动作与失败反馈文案", "layer": "Localization"},
+      {"path": "lib/l10n/app_vi.arb", "purpose": "动作与失败反馈文案", "layer": "Localization"}
+    ],
+    "create": [
+      {"path": "lib/design_system/components/file_breadcrumb.dart", "reason": "三类文件目录页共享 Figma/iOS 面包屑", "naming_basis": "长期 UI 语义", "layer": "Design System"},
+      {"path": "lib/design_system/components/file_action_menu.dart", "reason": "共享白色浮层、动作项和 iOS 条件化菜单模型", "naming_basis": "长期 UI 语义", "layer": "Design System"},
+      {"path": "test/design_system/components/file_breadcrumb_test.dart", "reason": "Red 锁定 Figma 尺寸、滚动与点击", "naming_basis": "被测组件", "layer": "Widget Test"},
+      {"path": "test/design_system/components/file_action_menu_test.dart", "reason": "Red 锁定动作顺序、动态高度和选择回调", "naming_basis": "被测组件", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Files Integration → Feature View/Controller → Domain Repository/Gateway；共享组件只承载视觉与 typed action intent",
+    "dependency_rule": "design_system 不 import Feature；个人云盘与 workspace 不互相 import；未知/未交付动作显式失败；owner/generation fence 不下沉到 Widget"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/design_system/components/file_breadcrumb_test.dart", "command": "flutter test --no-pub test/design_system/components/file_breadcrumb_test.dart"},
+      {"path": "test/features/cloud_drive/browser/presentation/cloud_browser_page_personal_cloud_integration_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/browser/presentation/cloud_browser_page_personal_cloud_integration_test.dart"},
+      {"path": "test/features/workspace/browser/presentation/workspace_browser_view_test.dart", "command": "flutter test --no-pub test/features/workspace/browser/presentation/workspace_browser_view_test.dart"}
+    ]
+  },
+  "risks": [
+    "工作空间详情页必须复用同一 owner/repository，但不得共享可变 Controller 导致父页状态被覆盖",
+    "AI/工作空间条件动作依赖渠道与会话字段，缺字段时必须隐藏",
+    "BUS-051、BUS-059、BUS-060 的真实下载/系统分享仍是独立交付边界，当前菜单不得伪造成功"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

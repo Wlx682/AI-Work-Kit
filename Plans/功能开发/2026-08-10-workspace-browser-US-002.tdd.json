@@ -1,0 +1,55 @@
+{
+  "story_id": "US-002",
+  "red": {
+    "status": "captured",
+    "tests": [
+      "file_breadcrumb_test.dart and file_action_menu_test.dart initially failed to compile because the shared Figma/iOS components did not exist",
+      "Cloud Browser integration tests initially had no independent folder route and no AI/Workspace action-menu entry points",
+      "the nested-Navigator regression failed because a pushed folder detail left the shell bottom tab visible",
+      "navigation-title regressions failed because folder AppBars and the global AppBarTheme did not explicitly opt into centered titles",
+      "the 320px RTL long-title geometry regression initially placed the title center at x=138 instead of x=160 because asymmetric AppBar actions clamped the nominally centered title",
+      "the pushed Personal folder regression measured both navigation assets at 24x24pt instead of the Figma/iOS 36x36pt resource canvas",
+      "the Workspace breadcrumb hierarchy regression found one Divider below the breadcrumb even though the Figma/iOS detail layout has a continuous white background"
+    ]
+  },
+  "green": {
+    "status": "passed",
+    "tests": [
+      "flutter test --no-pub test/design_system/components/file_breadcrumb_test.dart test/design_system/components/file_action_menu_test.dart: passed",
+      "Cloud Browser page integration covers personal folder push, personal five-action file menu, AI conditional menu and Workspace progressive push/menu",
+      "folder detail routes use the root Navigator so Compact shell bottom tabs are covered and restored on back",
+      "light and dark AppBarTheme plus Personal and Workspace folder AppBars explicitly center navigation titles",
+      "symmetric folder AppBar side regions keep long Personal titles centered at 320/360/390px under 3x LTR/RTL text and keep the Workspace title centered at 320px under 3x RTL text",
+      "Personal folder search and add assets render at 36x36pt while retaining 48pt tap targets; the full Cloud Browser page integration suite passes 34/34",
+      "Workspace breadcrumb levels render without a Divider in both the browser view hierarchy and the production pushed folder route",
+      "flutter test --no-pub test/design_system/theme_test.dart test/app/file_attachment_action_available_provider_test.dart test/design_system/components/file_breadcrumb_test.dart test/design_system/components/file_action_menu_test.dart test/design_system/components/file_list_item_test.dart test/features/cloud_drive test/features/workspace test/claw/runtime/gateway_contract_client_test.dart test/claw/runtime/rpc_wire_contract_test.dart: 218/218 passed"
+    ]
+  },
+  "refactor": {
+    "status": "passed",
+    "checks": [
+      "dart format --output=none --set-exit-if-changed on changed Dart paths: passed",
+      "flutter analyze --no-pub on changed Files/Workspace component, controller, view and test paths: passed",
+      "python3 scripts/validate-task-id-naming.py: passed",
+      "git diff --check: passed"
+    ]
+  },
+  "acceptance": {
+    "status": "partial",
+    "evidence": [
+      "User Upload and Workspace navigable nodes now push independent pages instead of mutating the parent controller",
+      "User Upload and Workspace folder detail pages push on the application root Navigator, cover Compact bottom tabs, and restore the parent shell and list state on back",
+      "all standard navigation bars inherit centered titles from both light and dark AppBarTheme; Files root and folder detail AppBars additionally pin the rule explicitly and use symmetric side bounds where asymmetric actions could otherwise clamp long titles",
+      "shared breadcrumb matches Figma 30371:42190 and frozen iOS BreadcrumbView hierarchy, spacing, typography and horizontal scrolling",
+      "User Upload file menu is Share, Download, Move, Delete, Rename; folder menu remains Move, Delete, Rename",
+      "AI menu exposes Share, Download, Export to My Uploads, Reference, View task files and conditionally View original chat",
+      "Workspace file menu exposes Share, Download, Export to My Uploads, Reference and conditionally View original chat",
+      "pushed personal/workspace routes fail closed on runtime-owner replacement and breadcrumbs pop the real Navigator stack",
+      "search-direct deep folders replace absent breadcrumb routes without popping the Files root",
+      "local targets hide export and preserve iOS ordering; attachment capability uses reactive cloud config plus channel.link credential rules and owner fences",
+      "uninstalled share/download downstream consumers return explicit unavailable feedback without sending RPC or claiming false success",
+      "attached iPhone VM Inspector screenshot proves independent Auto Backup page, breadcrumb and the five-item User Upload file menu while flutter run remains attached",
+      "real Gateway channel-capability probing, system share/save, export, reference, task-file navigation and original-chat navigation remain owned by separate formal tasks and are not falsely reported as delivered"
+    ]
+  }
+}

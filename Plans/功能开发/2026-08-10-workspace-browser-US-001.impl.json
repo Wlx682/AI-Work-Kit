@@ -1,0 +1,56 @@
+{
+  "story_id": "US-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/claw/api/gateways/filesystem_gateway.dart", "reason": "现有生产 typed RPC 边界"},
+    {"path": "lib/claw/runtime/gateways/filesystem_gateway_impl.dart", "reason": "确认三类分页参数和搜索能力"},
+    {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "reason": "确认旧 workspace 实现缺少分页且 refresh 依赖标题匹配"},
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "确认 Files Tab 生产入口与硬编码文案"},
+    {"path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Features/CloudDrive/Tabs/NewWorkSpace/ViewModel/NMNewWorkspaceViewModel.swift", "reason": "iOS 分层、游标、过程文件与 SWR 行为 Oracle"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "以独立 WorkspaceBrowserHost 替换旧内嵌区", "layer": "Integration"},
+      {"path": "lib/app/composition_root.dart", "purpose": "按当前 Gateway runtime 装配 Repository", "layer": "Composition"},
+      {"path": "lib/claw/api/gateways/filesystem_gateway.dart", "purpose": "补 canonical filesystem.ws.search typed contract", "layer": "Gateway Contract"},
+      {"path": "lib/claw/runtime/gateways/filesystem_gateway_impl.dart", "purpose": "发送 global/agent/session+scope 搜索参数", "layer": "Gateway Runtime"},
+      {"path": "lib/claw/runtime/gateway_runtime.dart", "purpose": "保持 runtime owner fence 转发 workspace search", "layer": "Gateway Runtime"},
+      {"path": "lib/claw/api/fakes/fake_claw_api.dart", "purpose": "提供 workspace search typed Fake", "layer": "Gateway Testing"},
+      {"path": "lib/claw/api/models/rpc_catalog.dart", "purpose": "登记只读搜索自测响应契约", "layer": "Gateway Catalog"},
+      {"path": "lib/features/claw_probe/claw_self_test.dart", "purpose": "将 workspace search 纳入只读自测", "layer": "Gateway Probe"},
+      {"path": "lib/l10n/app_en.arb", "purpose": "工作区用户文案", "layer": "Localization"},
+      {"path": "lib/l10n/app_zh.arb", "purpose": "工作区中文文案", "layer": "Localization"},
+      {"path": "lib/l10n/app_vi.arb", "purpose": "工作区越南语文案", "layer": "Localization"}
+    ],
+    "create": [
+      {"path": "lib/features/workspace/browser/domain/workspace_browser_models.dart", "reason": "owner/node/route/page/failure/capability", "naming_basis": "长期业务语义", "layer": "Domain"},
+      {"path": "lib/features/workspace/browser/domain/workspace_browser_repository.dart", "reason": "窄读取端口", "naming_basis": "用户能力", "layer": "Domain Port"},
+      {"path": "lib/features/workspace/browser/data/gateway_workspace_browser_repository.dart", "reason": "双层信封与字段 codec", "naming_basis": "生产 provider", "layer": "Data"},
+      {"path": "lib/features/workspace/browser/application/workspace_browser_controller.dart", "reason": "route/query/cursor/generation 状态机", "naming_basis": "页面业务状态", "layer": "Application"},
+      {"path": "lib/features/workspace/browser/presentation/workspace_browser_view.dart", "reason": "三档 renderer", "naming_basis": "用户界面能力", "layer": "Presentation"},
+      {"path": "lib/features/workspace/browser/testing/fake_workspace_browser_repository.dart", "reason": "确定性 pending Fake", "naming_basis": "公开 Repository", "layer": "Testing"},
+      {"path": "test/features/workspace/browser/data/gateway_workspace_browser_repository_test.dart", "reason": "Red 锁定 codec/失败", "naming_basis": "被测 adapter", "layer": "Unit Test"},
+      {"path": "test/features/workspace/browser/application/workspace_browser_controller_test.dart", "reason": "Red 锁定分页/search/owner fence", "naming_basis": "被测 controller", "layer": "Unit Test"},
+      {"path": "test/features/workspace/browser/presentation/workspace_browser_view_test.dart", "reason": "Red 锁定三档/导航/错误恢复", "naming_basis": "被测 view", "layer": "Widget Test"}
+      ,{"path": "test/features/workspace/browser/presentation/workspace_browser_host_integration_test.dart", "reason": "Red 锁定 Files Tab 与 owner 五元生产接线", "naming_basis": "真实宿主", "layer": "Widget Integration Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Presentation → Application → Domain Repository → FilesystemGateway adapter",
+    "dependency_rule": "workspace Feature 不暴露 GatewayPayload；不 import personal cloud Feature；共享宿主仅做装配；任务 ID 不进入技术命名"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/workspace/browser/application/workspace_browser_controller_test.dart", "command": "flutter test --no-pub test/features/workspace/browser/application/workspace_browser_controller_test.dart"},
+      {"path": "test/features/workspace/browser/presentation/workspace_browser_view_test.dart", "command": "flutter test --no-pub test/features/workspace/browser/presentation/workspace_browser_view_test.dart"}
+    ]
+  },
+  "risks": [
+    "Gateway schema 的三类分页游标不同，禁止统一成页码",
+    "旧 Files Tab workspace 状态由 Riverpod 内嵌实现持有，替换时需防重复首屏请求",
+    "真实账号和五形态设备缺证据时不得升级 VERIFIED"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
