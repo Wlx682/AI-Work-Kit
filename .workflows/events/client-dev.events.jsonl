@@ -1,0 +1,1 @@
+{"type": "gate_fail", "stage": "requirement", "workflow": "client-dev", "project": null, "epic": null, "child_plan": null, "reason": "无 Epic plan（Plans/Epic/）；须先 bootstrap Epic", "git_commit": "e653d0909172dd10292476f30b62cfe2d1ca0f67", "plan_snapshot": null, "created_at": "2026-08-10T10:17:51+08:00"}

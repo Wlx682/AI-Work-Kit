@@ -1,0 +1,45 @@
+{
+  "story_id": "US-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "现有 move 使用自由文本目标路径，需替换"},
+    {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "reason": "现有 moveItem 直接调用宽 Repository"},
+    {"path": "lib/features/cloud_drive/browser/domain/cloud_drive_repository.dart", "reason": "确认现有 move 契约缺 destination browse/reconcile"},
+    {"path": "lib/features/cloud_drive/sdk/cloud_drive_models.dart", "reason": "确认现有 CloudDriveItem 字段与路径解析"},
+    {"path": "lib/design_system/tokens.dart", "reason": "复用弹层尺寸/圆角/间距 token"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "文件菜单改为打开独立 CloudMoveSheet 并消费 typed result", "layer": "Presentation Integration"},
+      {"path": "lib/app/composition_root.dart", "purpose": "注入同一云盘 runtime 的 move adapter", "layer": "App Composition"}
+    ],
+    "create": [
+      {"path": "lib/features/cloud_drive/move/domain/cloud_move_models.dart", "reason": "owner/source/destination/page/operation/reconcile 模型", "naming_basis": "云盘移动业务语义", "layer": "Domain"},
+      {"path": "lib/features/cloud_drive/move/domain/cloud_move_repository.dart", "reason": "窄目录列表/move/reconcile/invalidate 端口", "naming_basis": "用户能力而非任务 ID", "layer": "Domain Port"},
+      {"path": "lib/features/cloud_drive/move/application/cloud_move_controller.dart", "reason": "路径栈、非法目标、single-flight、owner fence、双目录失效", "naming_basis": "云盘移动状态", "layer": "Application"},
+      {"path": "lib/features/cloud_drive/move/presentation/cloud_move_sheet.dart", "reason": "还原 iOS 目录移动底部弹层", "naming_basis": "产品界面语义", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/move/testing/fake_cloud_move_repository.dart", "reason": "确定性目录/move/reconcile Fake", "naming_basis": "对应 Repository", "layer": "Testing"},
+      {"path": "lib/features/cloud_drive/move/data/cloud_move_repository_impl.dart", "reason": "调用 YunPan 目录列表、move 及 source/destination 调和", "naming_basis": "云盘移动数据适配", "layer": "Data Adapter"},
+      {"path": "test/features/cloud_drive/move/application/cloud_move_controller_test.dart", "reason": "Red 覆盖导航、非法目标、失败、unknown、owner fence", "naming_basis": "被测 Controller", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/move/presentation/cloud_move_sheet_test.dart", "reason": "Red 覆盖 iOS 结构、空/错态、返回和三档", "naming_basis": "被测 Sheet", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Browser move intent → Move Presentation → Application → Domain Repository",
+    "dependency_rule": "move 不 import browser Controller/Repository；source/owner/root 通过 typed 参数传入；目录列表只返回 directory model"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/cloud_drive/move/application/cloud_move_controller_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/move/application/cloud_move_controller_test.dart"},
+      {"path": "test/features/cloud_drive/move/presentation/cloud_move_sheet_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/move/presentation/cloud_move_sheet_test.dart"}
+    ]
+  },
+  "risks": [
+    "iOS 固定实现的 pathStack 追加和自身过滤存在缺陷，Flutter 必须使用规范路径单源",
+    "move resultUnknown 需要生产 source/destination 查询才能解锁重试",
+    "移动弹层内新建需通过 typed callback 组合，不得跨 Feature import Controller"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,35 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "BUS-046",
+      "title": "个人云盘文件浏览",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "纠正当前个人云盘 provider 语义，并为创建和移动提供唯一目录真值",
+      "confirmed": true
+    },
+    {
+      "id": "BUS-048",
+      "title": "新建云盘文件夹",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["BUS-046"],
+      "priority": "P0",
+      "reason": "先用较小 mutation 验证名称 policy、single-flight、owner fence 和当前目录失效",
+      "confirmed": true
+    },
+    {
+      "id": "BUS-053",
+      "title": "个人云盘文件移动",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["BUS-046", "BUS-048"],
+      "priority": "P0",
+      "reason": "复用已确认目录与创建能力，完成目标选择、非法目标防护和双目录对账",
+      "confirmed": true
+    }
+  ]
+}

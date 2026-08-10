@@ -1,0 +1,37 @@
+{
+  "story_id": "US-001",
+  "commit": "7be6420",
+  "candidate_state": "committed_checkpoint",
+  "red": {
+    "command": "flutter test --no-pub test/features/cloud_drive/browser/application/personal_cloud_browser_controller_test.dart test/features/cloud_drive/folder_creation/application/folder_creation_controller_test.dart test/features/cloud_drive/move/application/cloud_move_controller_test.dart",
+    "exit_code": 1,
+    "reason": "测试先失败，仅因 personal cloud browser 的模型、Repository、Controller 与 Fake 尚未实现",
+    "at": "2026-08-10T10:10:00+08:00"
+  },
+  "green": {
+    "command": "flutter test --no-pub test/core/personal_cloud test/features/cloud_drive test/widget_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-10T11:30:57+08:00"
+  },
+  "refactor": {
+    "command": "flutter analyze lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart lib/core/personal_cloud/dio_personal_cloud_client.dart test/core/personal_cloud/dio_personal_cloud_client_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-10T11:18:13+08:00"
+  },
+  "integration_smoke": {
+    "command": "flutter test --no-pub test/core/personal_cloud test/features/cloud_drive test/widget_test.dart",
+    "exit_code": 0,
+    "test_count": 76,
+    "at": "2026-08-10T11:30:57+08:00"
+  },
+  "acceptance": [
+    {"ac_id": "GWT-001", "pass": false, "reason": "YunPan 生产 adapter、token/signature 与 App 入口已接线；尚缺真实账号服务端目录冒烟"},
+    {"ac_id": "GWT-002", "pass": true},
+    {"ac_id": "GWT-003", "pass": true},
+    {"ac_id": "GWT-004", "pass": true},
+    {"ac_id": "GWT-005", "pass": true},
+    {"ac_id": "GWT-006", "pass": true},
+    {"ac_id": "GWT-017", "pass": false, "reason": "已完成三档 Widget 与宿主状态回归，尚缺真机窗口切换时的滚动位置证据"},
+    {"ac_id": "GWT-018", "pass": true}
+  ]
+}

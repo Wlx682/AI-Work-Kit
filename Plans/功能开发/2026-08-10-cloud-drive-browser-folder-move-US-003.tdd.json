@@ -1,0 +1,36 @@
+{
+  "story_id": "US-003",
+  "commit": "7be6420",
+  "candidate_state": "committed_checkpoint",
+  "red": {
+    "command": "flutter test --no-pub test/features/cloud_drive/browser/application/personal_cloud_browser_controller_test.dart test/features/cloud_drive/folder_creation/application/folder_creation_controller_test.dart test/features/cloud_drive/move/application/cloud_move_controller_test.dart",
+    "exit_code": 1,
+    "reason": "测试先失败，仅因 cloud move 的模型、Repository、Controller 与 Fake 尚未实现",
+    "at": "2026-08-10T10:10:00+08:00"
+  },
+  "green": {
+    "command": "flutter test --no-pub test/core/personal_cloud test/features/cloud_drive test/widget_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-10T11:30:57+08:00"
+  },
+  "refactor": {
+    "command": "flutter analyze lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart lib/core/personal_cloud/dio_personal_cloud_client.dart test/core/personal_cloud/dio_personal_cloud_client_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-10T11:18:13+08:00"
+  },
+  "integration_smoke": {
+    "command": "flutter test --no-pub test/core/personal_cloud test/features/cloud_drive test/widget_test.dart",
+    "exit_code": 0,
+    "test_count": 76,
+    "at": "2026-08-10T11:30:57+08:00"
+  },
+  "acceptance": [
+    {"ac_id": "GWT-012", "pass": true},
+    {"ac_id": "GWT-013", "pass": true},
+    {"ac_id": "GWT-014", "pass": false, "reason": "move/list/reconcile 生产 adapter、入口与双目录刷新已接线；尚缺受控真实账号移动冒烟"},
+    {"ac_id": "GWT-015", "pass": true},
+    {"ac_id": "GWT-016", "pass": true},
+    {"ac_id": "GWT-017", "pass": false, "reason": "已完成三档 Widget 与路径状态测试，尚缺真机窗口切换与边缘手势证据"},
+    {"ac_id": "GWT-018", "pass": true}
+  ]
+}

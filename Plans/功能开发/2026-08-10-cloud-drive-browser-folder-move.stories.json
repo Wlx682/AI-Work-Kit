@@ -1,0 +1,44 @@
+{
+  "scope_confirmed": true,
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "浏览搜索并进入个人云盘目录",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-10-cloud-drive-browser-folder-move-US-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["GWT-001", "GWT-002", "GWT-003", "GWT-004", "GWT-005", "GWT-006", "GWT-017", "GWT-018"],
+      "architecture_refs": ["ADR-001", "ADR-002", "ADR-003", "ADR-006"]
+    },
+    {
+      "id": "US-002",
+      "title": "在当前个人云盘目录新建文件夹",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-10-cloud-drive-browser-folder-move-US-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-001"],
+      "acceptance_criteria": ["GWT-007", "GWT-008", "GWT-009", "GWT-010", "GWT-011", "GWT-017", "GWT-018"],
+      "architecture_refs": ["ADR-002", "ADR-003", "ADR-004", "ADR-006"]
+    },
+    {
+      "id": "US-003",
+      "title": "选择目标目录并移动个人云盘文件或文件夹",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-10-cloud-drive-browser-folder-move-US-003.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-001", "US-002"],
+      "acceptance_criteria": ["GWT-012", "GWT-013", "GWT-014", "GWT-015", "GWT-016", "GWT-017", "GWT-018"],
+      "architecture_refs": ["ADR-002", "ADR-003", "ADR-004", "ADR-005", "ADR-006"]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "story_id": "US-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "现有文件入口、个人云盘/AI/Workspace 混合 UI 与硬编码文案"},
+    {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "reason": "现有 Gateway runtime owner 和列表状态"},
+    {"path": "lib/features/cloud_drive/browser/domain/cloud_drive_repository.dart", "reason": "现有宽 Repository 混合三类 provider 与 mutation"},
+    {"path": "lib/features/cloud_drive/browser/data/filesystem_cloud_drive_repository.dart", "reason": "确认个人云盘当前错误委托 Gateway filesystem"},
+    {"path": "lib/features/cloud_drive/sdk/cloud_drive_sdk.dart", "reason": "确认 wire method 与 Gateway payload 泄漏边界"},
+    {"path": "test/features/cloud_drive/browser/application/cloud_browser_runtime_owner_test.dart", "reason": "现有 runtime replacement 防迟到测试"},
+    {"path": "lib/main.dart", "reason": "确认 AppDestination.files 已真实接入 CloudBrowserPage"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "将个人云盘区改为窄 Controller 并挂 create/move typed intent，保留 AI/Workspace 现状", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "purpose": "剥离个人云盘的 Gateway 假 owner，补 query/cursor/generation/partial error/scroll state", "layer": "Application"},
+      {"path": "lib/app/composition_root.dart", "purpose": "以当前 AuthSession/environment/generation 串行装配真实云盘 runtime 与窄 Repository", "layer": "App Composition"},
+      {"path": "lib/main.dart", "purpose": "登录/退出/切号/切环境时更换云盘内存 owner 快照", "layer": "App Integration"},
+      {"path": "lib/l10n/app_en.arb", "purpose": "增加云盘用户可见文案模板及属性", "layer": "Localization"},
+      {"path": "lib/l10n/app_zh.arb", "purpose": "增加中文云盘文案", "layer": "Localization"},
+      {"path": "lib/l10n/app_vi.arb", "purpose": "增加越南语云盘文案", "layer": "Localization"}
+    ],
+    "create": [
+      {"path": "lib/features/cloud_drive/browser/domain/personal_cloud_browser_models.dart", "reason": "定义 owner/query/page/item/failure/capability", "naming_basis": "长期业务语义 personal cloud browser", "layer": "Domain"},
+      {"path": "lib/features/cloud_drive/browser/domain/personal_cloud_browser_repository.dart", "reason": "隔离个人云盘窄读取契约", "naming_basis": "用户能力而非任务 ID/provider wire", "layer": "Domain Port"},
+      {"path": "lib/features/cloud_drive/browser/application/personal_cloud_browser_controller.dart", "reason": "承载浏览/搜索/分页/导航 owner 状态机", "naming_basis": "个人云盘页面状态", "layer": "Application"},
+      {"path": "lib/features/cloud_drive/browser/presentation/personal_cloud_browser_view.dart", "reason": "独立个人云盘浏览、搜索、面包屑和列表视图", "naming_basis": "个人云盘展示能力", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/browser/testing/fake_personal_cloud_browser_repository.dart", "reason": "确定性 pending Fake", "naming_basis": "对应公开 Repository", "layer": "Testing"},
+      {"path": "lib/core/personal_cloud/personal_cloud_protocol.dart", "reason": "三个真实消费者共用的 YunPan token/node/result 协议模型", "naming_basis": "稳定的个人云盘能力", "layer": "Core Contract"},
+      {"path": "lib/core/personal_cloud/personal_cloud_signer.dart", "reason": "逐字节对齐 iOS common sign 算法", "naming_basis": "云盘协议签名", "layer": "Core Infrastructure"},
+      {"path": "lib/core/personal_cloud/personal_cloud_token_source.dart", "reason": "通过已有 SignedHttpClient 请求 /api/yp/tokens 并单航刷新", "naming_basis": "云盘 workspace token", "layer": "Core Infrastructure"},
+      {"path": "lib/core/personal_cloud/dio_personal_cloud_client.dart", "reason": "隔离 Dio 并实现 YunPan list/search/mkdir/move/调和", "naming_basis": "第三方云盘 transport", "layer": "Core Infrastructure"},
+      {"path": "lib/features/cloud_drive/browser/data/personal_cloud_browser_repository_impl.dart", "reason": "将核心节点映射为 browser 窄领域模型", "naming_basis": "个人云盘浏览适配", "layer": "Data Adapter"},
+      {"path": "test/core/personal_cloud/personal_cloud_signer_test.dart", "reason": "Red 锁定排序、编码与 MD5 向量", "naming_basis": "被测 signer", "layer": "Unit Test"},
+      {"path": "test/core/personal_cloud/dio_personal_cloud_client_test.dart", "reason": "Red 锁定请求形状、响应映射与 token 只刷新一次", "naming_basis": "被测 client", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/browser/application/personal_cloud_browser_controller_test.dart", "reason": "Red 覆盖分页、重叠搜索、owner fence", "naming_basis": "被测 Controller", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/browser/presentation/personal_cloud_browser_view_test.dart", "reason": "Red 覆盖加载/空/错态与三档状态保持", "naming_basis": "个人云盘展示能力", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Presentation → Application → Domain Repository → core/personal_cloud；App Composition 是唯一凭据与实现组装点",
+    "dependency_rule": "Feature 不 import Gateway payload/sdk/Dio；core 不 import Feature；AuthSession 只在 App 内存 runtime 流转；AI/Workspace 不反向依赖个人云盘类型；任务 ID 不进入技术命名"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/cloud_drive/browser/application/personal_cloud_browser_controller_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/browser/application/personal_cloud_browser_controller_test.dart"},
+      {"path": "test/features/cloud_drive/browser/presentation/personal_cloud_browser_view_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/browser/presentation/personal_cloud_browser_view_test.dart"}
+    ]
+  },
+  "risks": [
+    "真实 Cloud HTTP 无受控账号/测试环境时不执行写探测，写链路保持 PARTIAL 直到真机取证",
+    "现有 CloudBrowserPage 同时承载 AI/Workspace，重构不得回归这些已接入口",
+    "用户已明确授权当前 Agent 作为共享 l10n 与 Composition Root 的唯一串行集成 Owner"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

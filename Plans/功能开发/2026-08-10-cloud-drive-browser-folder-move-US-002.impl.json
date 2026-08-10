@@ -1,0 +1,45 @@
+{
+  "story_id": "US-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "reason": "现有通用 AlertDialog 新建入口和成功提示"},
+    {"path": "lib/features/cloud_drive/browser/application/cloud_browser_controller.dart", "reason": "现有 createFolder 直接委托宽 Repository"},
+    {"path": "lib/features/cloud_drive/browser/domain/cloud_drive_repository.dart", "reason": "确认创建契约目前与浏览耦合"},
+    {"path": "lib/design_system/tokens.dart", "reason": "复用间距、圆角和三档宽度 token"},
+    {"path": "lib/core/result/app_result.dart", "reason": "对齐现有 typed result/error 语义"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/cloud_drive/browser/presentation/cloud_browser_page.dart", "purpose": "入口改为打开独立 CreateFolderDialog 并消费 typed result", "layer": "Presentation Integration"},
+      {"path": "lib/app/composition_root.dart", "purpose": "注入同一云盘 runtime 的 folder adapter", "layer": "App Composition"}
+    ],
+    "create": [
+      {"path": "lib/features/cloud_drive/folder_creation/domain/folder_creation_models.dart", "reason": "owner/command/policy/result/failure/invalidation 模型", "naming_basis": "新建文件夹业务语义", "layer": "Domain"},
+      {"path": "lib/features/cloud_drive/folder_creation/domain/folder_creation_repository.dart", "reason": "窄 policy/create/reconcile/invalidate 端口", "naming_basis": "用户能力而非任务 ID", "layer": "Domain Port"},
+      {"path": "lib/features/cloud_drive/folder_creation/application/folder_creation_controller.dart", "reason": "草稿、policy、single-flight、owner fence、resultUnknown 状态机", "naming_basis": "新建文件夹状态", "layer": "Application"},
+      {"path": "lib/features/cloud_drive/folder_creation/presentation/folder_creation_dialog.dart", "reason": "还原 iOS 居中弹窗与键盘交互", "naming_basis": "产品界面语义", "layer": "Presentation"},
+      {"path": "lib/features/cloud_drive/folder_creation/testing/fake_folder_creation_repository.dart", "reason": "确定性 policy/mutation Fake", "naming_basis": "对应 Repository", "layer": "Testing"},
+      {"path": "lib/features/cloud_drive/folder_creation/data/folder_creation_repository_impl.dart", "reason": "调用 Nami 审核及 YunPan mkdir/reconcile", "naming_basis": "文件夹创建数据适配", "layer": "Data Adapter"},
+      {"path": "test/features/cloud_drive/folder_creation/application/folder_creation_controller_test.dart", "reason": "Red 覆盖空白、policy、single-flight、切 owner、unknown", "naming_basis": "被测 Controller", "layer": "Unit Test"},
+      {"path": "test/features/cloud_drive/folder_creation/presentation/folder_creation_dialog_test.dart", "reason": "Red 覆盖 iOS 布局、键盘、错误保稿和三档", "naming_basis": "被测 Dialog", "layer": "Widget Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "Browser intent → Folder Creation Presentation → Application → Domain Repository",
+    "dependency_rule": "folder_creation 不 import browser Controller/Repository；父目录与 owner 通过 typed 参数传入；生产 adapter 后续注入"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/cloud_drive/folder_creation/application/folder_creation_controller_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/folder_creation/application/folder_creation_controller_test.dart"},
+      {"path": "test/features/cloud_drive/folder_creation/presentation/folder_creation_dialog_test.dart", "command": "flutter test --no-pub test/features/cloud_drive/folder_creation/presentation/folder_creation_dialog_test.dart"}
+    ]
+  },
+  "risks": [
+    "iOS 名称风控是独立 Nami API，审核网络失败必须显式 degraded，不得伪造通过",
+    "用户已授权共享 l10n 与 Composition Root 串行接线",
+    "create command 超时需要服务端查询能力才能完整 reconcile"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
