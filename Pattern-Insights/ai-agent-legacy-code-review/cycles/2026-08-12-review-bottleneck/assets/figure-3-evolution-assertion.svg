@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg3" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#07111f"/><stop offset="1" stop-color="#15172c"/></linearGradient>
+    <linearGradient id="line3" x1="0" x2="1"><stop stop-color="#2be0a6"/><stop offset=".55" stop-color="#4eb8ff"/><stop offset="1" stop-color="#a981ff"/></linearGradient>
+    <filter id="sh3"><feDropShadow dx="0" dy="14" stdDeviation="17" flood-color="#000" flood-opacity=".38"/></filter>
+    <marker id="arr3" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0 0L12 6 0 12z" fill="#67c8e9"/></marker>
+  </defs>
+  <rect width="1600" height="900" rx="34" fill="url(#bg3)"/>
+  <circle cx="1260" cy="180" r="330" fill="#9169ff" opacity=".05"/><circle cx="280" cy="750" r="350" fill="#20dea5" opacity=".04"/>
+  <text x="88" y="105" fill="#f7fbff" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="46" font-weight="700">进化本身也必须可断言</text>
+  <text x="90" y="154" fill="#91a8c3" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="24">系统不能直接“自我改写”；每次改变先成为可检查、可比较、可撤销的候选产物</text>
+
+  <path d="M170 456H1415" fill="none" stroke="url(#line3)" stroke-width="10" stroke-linecap="round"/>
+  <g font-family="PingFang SC, Microsoft YaHei, sans-serif" filter="url(#sh3)">
+    <g><circle cx="190" cy="456" r="74" fill="#122f39" stroke="#2be0a6" stroke-width="5"/><text x="190" y="447" text-anchor="middle" fill="#83f5cd" font-size="23" font-weight="700">候选变化</text><text x="190" y="480" text-anchor="middle" fill="#a8c8c8" font-size="17">依据与风险</text></g>
+    <g><circle cx="440" cy="456" r="74" fill="#133044" stroke="#38cddd" stroke-width="5"/><text x="440" y="447" text-anchor="middle" fill="#8cecff" font-size="23" font-weight="700">历史回放</text><text x="440" y="480" text-anchor="middle" fill="#a9c5d3" font-size="17">旧轨迹验证</text></g>
+    <g><circle cx="690" cy="456" r="74" fill="#142d47" stroke="#4fb9ff" stroke-width="5"/><text x="690" y="447" text-anchor="middle" fill="#9ad8ff" font-size="23" font-weight="700">影子比较</text><text x="690" y="480" text-anchor="middle" fill="#a9c0d5" font-size="17">新旧版本并行</text></g>
+    <g><circle cx="940" cy="456" r="74" fill="#1a2948" stroke="#6ca0ff" stroke-width="5"/><text x="940" y="447" text-anchor="middle" fill="#b5cdff" font-size="23" font-weight="700">受限试运行</text><text x="940" y="480" text-anchor="middle" fill="#b3bed7" font-size="17">限制影响半径</text></g>
+    <g><circle cx="1190" cy="456" r="74" fill="#252343" stroke="#927fff" stroke-width="5"/><text x="1190" y="447" text-anchor="middle" fill="#c9bfff" font-size="23" font-weight="700">结果判定</text><text x="1190" y="480" text-anchor="middle" fill="#c2b9d8" font-size="17">真实成败证据</text></g>
+  </g>
+  <g fill="#07111f"><circle cx="315" cy="456" r="14"/><circle cx="565" cy="456" r="14"/><circle cx="815" cy="456" r="14"/><circle cx="1065" cy="456" r="14"/><circle cx="1315" cy="456" r="14"/></g>
+
+  <path d="M1250 390C1340 285 1452 310 1452 414" fill="none" stroke="#35dea7" stroke-width="6" marker-end="url(#arr3)"/>
+  <rect x="1310" y="232" width="210" height="74" rx="24" fill="#123629" stroke="#39df9e"/>
+  <text x="1415" y="279" text-anchor="middle" fill="#87f3c7" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="25" font-weight="700">通过：版本化发布</text>
+  <path d="M1190 530C1190 700 740 746 346 645" fill="none" stroke="#ff6e83" stroke-width="6" stroke-dasharray="13 10" marker-end="url(#arr3)"/>
+  <rect x="89" y="628" width="260" height="74" rx="24" fill="#3a1b2a" stroke="#ff6680"/>
+  <text x="219" y="675" text-anchor="middle" fill="#ffb3c0" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="25" font-weight="700">变差：立即回滚</text>
+
+  <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+    <rect x="90" y="758" width="1420" height="74" rx="23" fill="#0d1a2b" stroke="#283b55"/>
+    <text x="800" y="805" text-anchor="middle" fill="#e5f0f8" font-size="27" font-weight="700">目标不是保证每次进化都正确，而是保证错误进化能早暴露、影响有限、可以恢复</text>
+  </g>
+</svg>

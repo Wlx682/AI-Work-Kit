@@ -1,4 +1,4 @@
 interface:
   display_name: "模式洞见创作工作流"
-  short_description: "研究、主张、文章润色、HTML 发布与反馈进化"
-  default_prompt: "Use $pattern-insight-workflow to turn evidence and my own judgments into a polished reader-facing article and a verified HTML page."
+  short_description: "研究、润色、HTML、知乎发布与反馈进化"
+  default_prompt: "Use $pattern-insight-workflow to turn evidence and my judgments into a polished article, verified HTML, and a safely published Zhihu answer."
