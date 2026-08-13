@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="椅电换：电动轮椅电池匹配、正规供货、本地换装与旧件交接的单创意副业洞察。"/>
+<title>椅电换 · 电动轮椅电池匹配与上门换新站</title>
+<style>
+  :root{
+    --bg:#070a0e;--bg2:#0b1117;--panel:#0e1720;--panel2:#111e29;
+    --ink:#edf6f5;--ink2:#b4c5c4;--muted:#738a89;--line:#203138;
+    --mint:#54e1bb;--cyan:#62c8ff;--amber:#f4bc65;--red:#ff7b7b;
+    --read:780px;--wide:1080px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.82;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:var(--mint);text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}
+  #progress{position:fixed;z-index:90;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,var(--mint),var(--cyan));box-shadow:0 0 14px rgba(84,225,187,.6)}
+  .topbar{position:fixed;z-index:80;left:0;right:0;top:0;height:54px;display:flex;align-items:center;padding:0 clamp(18px,4vw,46px);background:rgba(7,10,14,.76);backdrop-filter:blur(16px);border-bottom:1px solid rgba(32,49,56,.8)}
+  .brand{display:flex;align-items:center;gap:10px;font:700 13px var(--mono);letter-spacing:.4px}.brand-mark{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(145deg,var(--mint),var(--cyan));color:#04211d;font-weight:900}
+  .readtime{margin-left:auto;color:var(--muted);font:12px var(--mono)}
+  .hero{position:relative;min-height:720px;display:grid;align-items:center;padding:110px clamp(20px,5vw,48px) 70px;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(900px 500px at 72% 30%,rgba(84,225,187,.13),transparent 65%),radial-gradient(650px 400px at 25% 70%,rgba(98,200,255,.1),transparent 68%)}
+  .hero:after{content:"";position:absolute;inset:0;opacity:.25;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(to bottom,#000,transparent 92%)}
+  .hero-grid{position:relative;z-index:2;width:min(100%,var(--wide));margin:auto;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:clamp(34px,6vw,78px);align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;color:var(--mint);font:12px var(--mono);letter-spacing:1.2px}.pulse{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.3}}
+  h1{font-size:clamp(38px,6.4vw,70px);line-height:1.04;letter-spacing:-2px;margin:24px 0 22px;background:linear-gradient(125deg,#fff 18%,#b9fff0 62%,#9fdcff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-copy{font-size:clamp(17px,2vw,20px);color:var(--ink2);max-width:650px;margin:0}.hero-copy strong{color:#fff}
+  .tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:30px}.tag{padding:5px 10px;border-radius:7px;background:rgba(84,225,187,.07);border:1px solid rgba(84,225,187,.2);color:#aaf4df;font:12px var(--mono)}
+  .visual{position:relative;aspect-ratio:1/1;max-width:410px;width:100%;margin:auto;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,rgba(17,30,41,.9),rgba(9,15,21,.84));box-shadow:0 34px 90px -40px rgba(84,225,187,.35);overflow:hidden}
+  .visual:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 60% 35%,rgba(84,225,187,.18),transparent 42%)}
+  .wheel{position:absolute;width:42%;height:42%;left:13%;bottom:13%;border:clamp(12px,2.2vw,20px) solid #334c54;border-radius:50%;box-shadow:inset 0 0 0 2px var(--mint),0 0 28px rgba(84,225,187,.11)}
+  .seat{position:absolute;width:31%;height:25%;left:38%;top:27%;border-left:13px solid var(--cyan);border-bottom:13px solid var(--cyan);border-radius:5px;transform:skew(-5deg)}
+  .frame{position:absolute;left:47%;top:47%;width:29%;height:27%;border-left:9px solid #58747b;border-bottom:9px solid #58747b;transform:skew(-13deg)}
+  .small-wheel{position:absolute;width:15%;height:15%;right:14%;bottom:18%;border:8px solid #334c54;border-radius:50%}
+  .battery{position:absolute;right:10%;top:12%;width:31%;height:24%;border:2px solid var(--mint);border-radius:12px;background:rgba(84,225,187,.08);box-shadow:0 0 25px rgba(84,225,187,.12);display:grid;place-items:center;color:var(--mint);font:800 25px var(--mono)}
+  .battery:before{content:"";position:absolute;right:-8px;width:7px;height:36%;border-radius:0 4px 4px 0;background:var(--mint)}
+  .scan{position:absolute;left:7%;right:7%;height:2px;top:20%;background:linear-gradient(90deg,transparent,var(--mint),transparent);box-shadow:0 0 14px var(--mint);animation:scan 4s ease-in-out infinite}@keyframes scan{50%{top:82%}}
+  .hero-note{position:absolute;left:22px;right:22px;bottom:18px;padding:10px 12px;border-radius:10px;background:rgba(7,10,14,.8);border:1px solid var(--line);font:11px/1.5 var(--mono);color:var(--muted)}
+  .metrics{position:relative;z-index:3;width:min(calc(100% - 40px),var(--wide));margin:-42px auto 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .metric{min-height:145px;padding:22px;border:1px solid var(--line);border-radius:18px;background:rgba(14,23,32,.94);box-shadow:0 24px 60px -36px #000}.metric .num{font:850 clamp(35px,5vw,50px)/1 var(--mono);color:var(--mint);letter-spacing:-2px}.metric:nth-child(2) .num{color:var(--cyan)}.metric:nth-child(3) .num{color:var(--amber)}.metric b{display:block;margin-top:14px}.metric small{color:var(--muted)}
+  main{max-width:var(--read);margin:auto;padding:10px clamp(20px,5vw,38px) 110px}
+  section{position:relative;padding:52px 0;border-bottom:1px solid var(--line)}.js-reveal section{opacity:0;transform:translateY(18px);transition:.65s ease}.js-reveal section.in{opacity:1;transform:none}
+  .secno{color:var(--mint);font:12px var(--mono);letter-spacing:1.8px;margin-bottom:8px}h2{font-size:clamp(25px,4vw,34px);line-height:1.25;margin:0 0 20px;letter-spacing:-.5px}h3{font-size:19px;margin:30px 0 10px;color:#dff7f0}p{color:#c9d8d7;margin:16px 0}strong{color:#fff}code{font-family:var(--mono)}
+  .lead{font-size:18px;color:var(--ink2)}.lead:first-letter{float:left;font-size:58px;line-height:.9;padding:6px 13px 0 0;color:var(--mint);font-weight:850}
+  .callout{margin:24px 0;padding:18px 20px;border-radius:14px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--mint)}.callout.warn{border-left-color:var(--amber)}.callout b{display:block;margin-bottom:4px}.callout span{color:var(--ink2)}
+  .list{display:grid;gap:12px;margin:22px 0}.item{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:15px 16px;border-radius:13px;background:var(--panel);border:1px solid var(--line)}.item i{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:rgba(84,225,187,.12);color:var(--mint);font:700 12px var(--mono);font-style:normal}.item p{margin:0}.item strong{display:block}
+  figure{margin:30px 0;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--panel),#091017);overflow:hidden;min-width:0}.figbar{padding:11px 15px;border-bottom:1px solid var(--line);color:var(--muted);font:11px var(--mono)}.dots{letter-spacing:4px;color:var(--red)}.mermaid{padding:24px 10px;text-align:center;overflow:auto;min-width:0}figcaption{padding:0 18px 16px;text-align:center;color:var(--muted);font-size:13px}
+  .money{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:25px 0}.money-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}.money-card span{display:block;color:var(--muted);font:11px var(--mono)}.money-card strong{font-size:23px;color:var(--amber)}
+  .decision{padding:25px;border:1px solid rgba(84,225,187,.35);background:linear-gradient(135deg,rgba(84,225,187,.09),rgba(98,200,255,.05));border-radius:18px}.decision .label{font:12px var(--mono);color:var(--mint);letter-spacing:1.3px}.decision h3{font-size:25px;margin:8px 0 12px}
+  .appendix{max-width:var(--wide);margin:0 auto 110px;padding:0 clamp(20px,5vw,42px)}details{border:1px solid var(--line);border-radius:20px;background:var(--bg2);overflow:hidden}summary{cursor:pointer;list-style:none;padding:24px clamp(18px,4vw,30px);font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}summary::-webkit-details-marker{display:none}summary:after{content:"+";margin-left:auto;color:var(--mint);font:28px var(--mono)}details[open] summary:after{content:"−"}.appendix-body{padding:0 clamp(18px,4vw,30px) 32px;border-top:1px solid var(--line)}.appendix h3{margin-top:34px}.appendix ul,.appendix ol{padding-left:22px;color:#c9d8d7}.appendix li{margin:8px 0}
+  .table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:13px;margin:18px 0}table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}th,td{padding:12px 13px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{position:sticky;top:0;background:var(--panel2);color:var(--muted);font:11px var(--mono)}tr:last-child td{border-bottom:0}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.fact{padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}.fact b{color:var(--mint);display:block}.fact p{margin:7px 0 0;font-size:14px}
+  .skillrun{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;border-radius:13px;border:1px solid var(--line);background:#06090c;color:#9edbcf;font:12px/1.7 var(--mono)}
+  footer{padding:34px 20px 80px;text-align:center;color:var(--muted);border-top:1px solid var(--line);font-size:13px}.template{position:fixed;left:13px;bottom:13px;padding:5px 9px;border:1px solid var(--line);border-radius:7px;background:rgba(7,10,14,.88);color:var(--muted);font:10px var(--mono);z-index:70}.top{position:fixed;right:18px;bottom:18px;width:44px;height:44px;border:1px solid rgba(84,225,187,.35);border-radius:12px;background:rgba(84,225,187,.1);color:var(--mint);cursor:pointer;opacity:0;pointer-events:none;transition:.25s;z-index:70}.top.show{opacity:1;pointer-events:auto}
+  @media(max-width:760px){.hero{min-height:auto;padding-top:105px}.hero-grid{grid-template-columns:1fr}.visual{max-width:330px}.metrics{margin-top:-24px}.readtime{display:none}.template{display:none}.hero-note{font-size:10px}h1{letter-spacing:-1px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav class="topbar"><div class="brand"><span class="brand-mark">椅</span>副业创意洞察</div><div class="readtime">2026-08-10 · 约 5 分钟</div></nav>
+
+<header class="hero">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow"><span class="pulse"></span>国内交易 · 康复辅具 · 实物撮合</span>
+      <h1>椅电换</h1>
+      <p class="hero-copy">给电动轮椅电池出问题的家庭，卖一笔<strong>“型号匹配 + 正规供货 + 本地换装 + 旧件交接”</strong>订单。全国线上获客、首批只在一个城市履约；新强制安全标准已经发布，现在值得提前看。</p>
+      <div class="tags"><span class="tag">付款者：成年家属</span><span class="tag">最小单元：一笔换新订单</span><span class="tag">不是咨询</span></div>
+    </div>
+    <div class="visual" aria-label="电动轮椅电池扫描概念图">
+      <div class="scan"></div><div class="wheel"></div><div class="seat"></div><div class="frame"></div><div class="small-wheel"></div><div class="battery">24V?</div>
+      <div class="hero-note">AI 只找候选 · 合作门店最终复核 · 安全责任不自动化</div>
+    </div>
+  </div>
+</header>
+
+<div class="metrics">
+  <div class="metric"><div class="num" data-count="2027" data-suffix=".06">2027.06</div><b>新强制标准实施</b><small>GB 47741—2026，现为即将实施</small></div>
+  <div class="metric"><div class="num" data-count="14" data-suffix=" 部门">14 部门</div><b>联合推康复辅具扩能</b><small>2026-07-09 发布三年行动方案</small></div>
+  <div class="metric"><div class="num" data-count="1" data-suffix=" 单">1 单</div><b>从窄交易开始</b><small>电池 + 换装 + 旧件交接，不做泛商城</small></div>
+</div>
+
+<main>
+  <section id="s1">
+    <div class="secno">01 — 先看懂</div><h2>卖的不是一块电池，而是“别买错、有人装、出问题找得到人”</h2>
+    <p class="lead">说明性示例：一位老人每天依赖电动轮椅下楼，原电池已经无法满足日常使用。家属上传整车铭牌、电池标签和插头照片，系统先找候选，合作门店做最终确认，随后约时间上门换装、通电检查，并留下旧件交接记录。</p>
+    <p>电动轮椅同时带有康复辅具、电气安全和家庭刚需三种属性。错误匹配不只是退货麻烦，还可能造成无法安装、充电器不匹配、设备停用或安全风险。平台不自行改电池包，只做原厂或供货方书面确认过的适配关系。</p>
+    <div class="callout"><b>最小可售单元</b><span>一笔“指定轮椅型号的电池组 + 本地换装 + 旧件交接”订单。首版只收录少量型号。</span></div>
+  </section>
+
+  <section id="s2">
+    <div class="secno">02 — 为什么现在</div><h2>一条强制标准 + 一份产业行动方案，把“正规换新”推到台前</h2>
+    <p><strong>2026 年 5 月 25 日：</strong>GB 47741—2026《电动轮椅车用电池安全技术规范》发布，2027 年 6 月 1 日实施。它不要求消费者现在替换所有旧电池，但给未来供给增加了清晰的安全分界线。<a href="https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=524FDF24793BCC6D2BE9CDA52A418114">查看国家标准原页</a></p>
+    <p><strong>2026 年 7 月 9 日：</strong>14 个部门联合发布康复辅具产业扩能提质三年行动方案，明确家庭和社区应用、供需对接、跨场景服务网络及可持续运营模式。<a href="https://policy.mofcom.gov.cn/claw/clawContent.shtml?id=106377">查看法规原文</a></p>
+    <p><strong>长期人群基础：</strong>国家统计局公布 2025 年末 60 岁及以上人口为 32338 万人；这只说明辅具需求背景，不能直接当成电池客户数。<a href="https://www.stats.gov.cn/xxgk/jd/sjjd2020/202601/t20260119_1962338.html">查看人口数据</a></p>
+    <div class="callout warn"><b>最重要的事实边界</b><span>新标准尚未实施，不能用“旧电池已经违法”制造恐慌，也不能自行出具任何合规证明。</span></div>
+  </section>
+
+  <section id="s3">
+    <div class="secno">03 — 谁付钱</div><h2>只盯一个人：替老人处理设备问题的成年家属</h2>
+    <div class="list">
+      <div class="item"><i>客</i><p><strong>唯一付费客户</strong>正在替父母或其他长辈处理电动轮椅电池问题的成年家属。</p></div>
+      <div class="item"><i>触</i><p><strong>购买触发</strong>轮椅无法完成原有日常使用、充不进电，或售后明确建议换电池；平台不凭照片诊断故障。</p></div>
+      <div class="item"><i>替</i><p><strong>当前替代</strong>找品牌售后、自行比参数、问本地维修店。椅电换把询价、确认、安装和凭证合成一单。</p></div>
+    </div>
+    <p>浙江省药监局 2025 年公开过电动轮椅车因电气安全要求和输入功率不符合技术要求而主动召回的信息。它不能证明问题来自电池，却足以提醒：电气售后需要有责任主体。<a href="https://mpa.zj.gov.cn/art/2025/8/28/art_1229893270_58941820.html">查看召回信息</a></p>
+    <blockquote class="callout">页面首要按钮应该是“拍三张图，确认能不能换”，而不是“咨询专家”。</blockquote>
+  </section>
+
+  <section id="s4">
+    <div class="secno">04 — 怎么运转</div><h2>系统找候选，门店为最终匹配负责</h2>
+    <figure>
+      <div class="figbar"><span class="dots">● ● ●</span>&nbsp; order-flow.mmd</div>
+      <pre class="mermaid">
+flowchart LR
+    A["上传三张图&lt;br/&gt;整车·电池·插头"] --> B["OCR 预识别&lt;br/&gt;型号·电压·类型"]
+    B --> C["适配规则库&lt;br/&gt;只给有依据的候选"]
+    C --> D["门店人工复核&lt;br/&gt;库存与安装条件"]
+    D --> E["一口价下单&lt;br/&gt;预约上门"]
+    E --> F["通电记录&lt;br/&gt;旧件交接·售后档案"]
+      </pre>
+      <figcaption>识别只是录入加速器；最终安全判断留给供货方和安装者。</figcaption>
+    </figure>
+    <p>底层真值表记录轮椅型号、电池型号、充电器、插头、尺寸、供货方和安装区域。每条适配关系必须有厂家资料、供货方书面确认或实物核验记录。OCR 置信度不足、照片冲突、设备经过改装时直接熔断，不自动报价。</p>
+    <div class="callout"><b>完成定义</b><span>匹配件交付、设备正常通电、旧件完成约定交接、售后凭证可查。平台不拆修电芯、不做医疗承诺、不用来源不明的梯次电池拼装。</span></div>
+  </section>
+
+  <section id="s5">
+    <div class="secno">05 — 怎么赚钱</div><h2>抽交易佣金，自动化到预约前；安全责任不自动化</h2>
+    <p><strong>建议定价假设：</strong>首批一笔含电池、换装和旧件交接的订单定在 799–1499 元区间，平台抽成交额的 15%–20%。这不是市场行情，必须用具体型号的真实进货、安装和售后成本重算。</p>
+    <div class="money"><div class="money-card"><span>说明性成交价</span><strong>999 元</strong></div><div class="money-card"><span>按 18% 抽成</span><strong>179.82 元</strong></div><div class="money-card"><span>扣 70 元准备后</span><strong>109.82 元</strong></div></div>
+    <p>上述单笔贡献还没有扣获客和固定成本。只有当获客成本低于约 60 元时，才留有异常处理空间。电池换新本身不是高频订阅，资产应沉淀在型号适配库、区域履约网络和家庭后续辅具需求，而不是硬造月费。</p>
+    <div class="list">
+      <div class="item"><i>自</i><p><strong>可自动化</strong>图片预识别、候选检索、库存、报价、预约、分账、凭证和提醒。</p></div>
+      <div class="item"><i>人</i><p><strong>必须人工</strong>故障排除、最终适配、安装通电、异常件、旧件交接和安全投诉。</p></div>
+      <div class="item"><i>限</i><p><strong>自动化上限</strong>若超过 30% 订单要创始人反复解释型号，规则库没有形成复用，副业模型不成立。</p></div>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="secno">06 — 最终判断</div><h2>有条件值得：先做窄目录交易站，不做泛银发商城</h2>
+    <div class="decision"><div class="label">VERDICT · 有条件值得继续关注</div><h3>刚被标准照亮的窄交易，比泛泛做“银发平台”更容易收钱</h3><p>价值明确、订单边界清楚，但它不是纯软件生意。不能为了“全自动”跳过供货、安装和责任边界。</p></div>
+    <p>三个失败点最现实：型号资料不完整导致伪自动化；单城订单密度不足导致上门成本吃掉佣金；电池、充电器、整车和旧件处理的责任没有书面划清。建议停止条件是：30 个有效询单中安全确认不足 24 个；平台贡献率低于成交额 10%；90 天售后争议率超过 5%。</p>
+    <p>你的系统架构能力适合搭型号真值表、规则引擎、熔断和订单追溯，但这只是选中后的执行适配。康复辅具供应链、医疗器械网络销售边界、电池运输和旧件处置，必须交给相应专业方确认。</p>
+  </section>
+</main>
+
+<aside class="appendix">
+  <details>
+    <summary>事实与推演附录 <small style="font-size:12px;color:var(--muted);font-weight:500">点击展开完整证据、测算与边界</small></summary>
+    <div class="appendix-body">
+      <h3>A. 行业坐标与商业系统</h3>
+      <div class="facts">
+        <div class="fact"><b>主行业</b><p>康复辅助器具 / 电动轮椅售后零部件</p></div>
+        <div class="fact"><b>商业模式</b><p>垂直交易撮合 + 本地履约网络</p></div>
+        <div class="fact"><b>唯一付款者</b><p>替老人处理设备问题的成年家属</p></div>
+        <div class="fact"><b>最小单元</b><p>电池组 + 换装 + 旧件交接订单</p></div>
+      </div>
+      <p><strong>价值链：</strong>电池生产商或品牌售后 → 区域供货商/康复器械门店 → 椅电换匹配与订单系统 → 上门安装 → 家庭用户 → 旧件约定去向。角色设定没有进入入口筛选。</p>
+
+      <h3>B. 市场证据与事实来源</h3>
+      <div class="table-wrap"><table><thead><tr><th>日期</th><th>来源与事实</th><th>AI 推断</th><th>证据局限</th></tr></thead><tbody>
+        <tr><td>2026-07-09</td><td><a href="https://policy.mofcom.gov.cn/claw/clawContent.shtml?id=106377">民函〔2026〕48号</a>：14 部门要求拓展家庭/社区应用、供需对接与跨场景服务网络。</td><td>区域换新网络符合产品进家庭方向。</td><td>政策不保证平台订单或补贴。</td></tr>
+        <tr><td>2026-05-25</td><td><a href="https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=524FDF24793BCC6D2BE9CDA52A418114">GB 47741—2026</a> 发布，2027-06-01 实施。</td><td>渠道会更重视可追溯安全信息。</td><td>存量电池无需因此提前更换；不能等同 CCC。</td></tr>
+        <tr><td>2026-06-27</td><td><a href="https://std.samr.gov.cn/gb/search/gbDetailed?id=49D34E01CEBDA66CE06397BE0A0ABB77">整车强制安全标准项目</a>处于制定阶段。</td><td>整车与电池规则正在形成体系。</td><td>项目尚非已实施标准。</td></tr>
+        <tr><td>2026-03-10</td><td><a href="https://www.cncaprc.gov.cn/xxzcfg/770823.jhtml">2026 年版康复辅具目录</a>收录 1956 个品名举例产品。</td><td>细分配置需要结构化目录。</td><td>不能推导电池销量。</td></tr>
+        <tr><td>2026-01-19</td><td><a href="https://www.stats.gov.cn/xxgk/jd/sjjd2020/202601/t20260119_1962338.html">国家统计局</a>：60 岁及以上人口 32338 万人。</td><td>构成辅具长期需求背景。</td><td>不等于轮椅或换电客户。</td></tr>
+        <tr><td>2025-08-28</td><td><a href="https://mpa.zj.gov.cn/art/2025/8/28/art_1229893270_58941820.html">浙江省药监局召回</a>涉及电气安全与输入功率。</td><td>有责任主体的电气售后更有价值。</td><td>不能把召回原因归咎于电池。</td></tr>
+        <tr><td>2023-02-01 起</td><td><a href="https://std.samr.gov.cn/gb/search/gbDetailedCNF?id=EB58F4DA927FB2A2E05397BE0A0A7D33">GB/T 18029.25—2022</a>覆盖电池和充电器。</td><td>数据库应同时记录充电器关系。</td><td>不能自动证明具体适配。</td></tr>
+      </tbody></table></div>
+      <p><strong>审计结论：</strong>标准、政策、人口、目录和召回均为公开事实；购买溢价、价格、识别率、订单密度和利润均为 AI 推断或建议假设，尚无成交验证。</p>
+
+      <h3>C. 收入与单位经济</h3>
+      <div class="table-wrap"><table><thead><tr><th>项目</th><th>建议假设</th><th>逻辑</th><th>未知</th></tr></thead><tbody>
+        <tr><td>客户成交价</td><td>999 元/单</td><td>只用于展示公式</td><td>型号与地区真实价格</td></tr>
+        <tr><td>平台服务费</td><td>18% = 179.82 元</td><td>渠道与系统服务</td><td>伙伴接受度</td></tr>
+        <tr><td>支付/客服/售后准备</td><td>70 元/单</td><td>建议预留</td><td>真实售后率</td></tr>
+        <tr><td>单笔平台贡献</td><td>109.82 元</td><td>未扣获客和固定成本</td><td>真实 CAC</td></tr>
+      </tbody></table></div>
+      <p>公式：月平台毛收入 = 完成订单数 × 平均成交额 × 抽成比例。任何示例订单数都不是收益承诺。</p>
+
+      <h3>D. 运营与自动化系统</h3>
+      <ol><li><code>wheelchair_model</code>：品牌、整车型号、铭牌样例和资料。</li><li><code>battery_sku</code>：电压、类型、尺寸、插头、充电器、供应商与资料。</li><li><code>compatibility_evidence</code>：适配依据、确认人、日期、限制与版本。</li><li><code>service_order</code>：识别、人工复核、安装、序列号、通电、旧件和售后。</li></ol>
+      <p><strong>熔断：</strong>置信度不足、铭牌缺失、照片冲突、非原装改造、无书面适配依据、运输或上门条件不明时不自动报价。不同类型旧电池的处置要求分别确认，平台不自行拆解或囤放未知电池。</p>
+
+      <h3>E. 30 / 90 天演进路线</h3>
+      <ul><li><strong>0–30 天：</strong>一个城市、一种电池体系、20 个整车型号；建证据卡、三图表单、门店后台和复核队列。</li><li><strong>31–90 天：</strong>100 个型号、3–5 个履约点；加入库存、自动报价、分账、售后时钟和交接凭证。</li><li><strong>可沉淀：</strong>版本化适配库、铭牌图片集、异常案例、供应商履约和售后原因。</li></ul>
+
+      <h3>F. 风险、合规与停止条件</h3>
+      <ul><li><strong>医疗器械边界：</strong>电动轮椅车公开召回记录含医疗器械注册证号；单独电池与具体交易形态是否涉及网络销售或经营要求，需按产品与所在地监管口径确认。</li><li><strong>标准边界：</strong>新强标到 2027-06-01 才实施，不得恐吓换新或自发合规证明。</li><li><strong>运输回收：</strong>不自行邮寄、囤放、拆解状态不明电池；铅酸、锂电及损坏件分别确认规则。</li><li><strong>停止条件：</strong>确认率 &lt;80%；贡献率 &lt;10%；90 天争议率 &gt;5%；发生重大安全事件，任一命中即暂停。</li><li><strong>未知：</strong>品牌资料开放度、单城型号集中度、真实退换率、门店分成和消费者溢价意愿。</li></ul>
+
+      <h3>反馈（skill_run）</h3>
+      <pre class="skillrun">skill_run:
+  skill: creative-capture-assistant
+  workflow_stage: single-idea
+  plan: Plans/创意捕捉/2026-08-10-副业创意-椅电换电动轮椅电池匹配站.md
+  date: 2026-08-10
+  contexts_used:
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "每次只深挖一个有公开市场证据的副业创意，并用五分钟正文与事实附录分离理解和审计。"
+  contexts_missing: []
+  contexts_stale: []</pre>
+    </div>
+  </details>
+</aside>
+
+<footer>公开桌面证据不等于客户验证 · 所有价格与停止条件均为建议假设<br/>HTML 骨架 A · 单栏叙事式 · 事实附录默认折叠</footer>
+<div class="template">TEMPLATE A · SINGLE SCROLL</div><button class="top" id="backTop" aria-label="返回顶部">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'13px',lineColor:'#597078',primaryColor:'#10242a',primaryBorderColor:'#3c756b',primaryTextColor:'#edf6f5'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:35,rankSpacing:42,padding:12}});}catch(error){console.error(error);}
+  var progressBar=document.getElementById('progress');
+  addEventListener('scroll',function(){var root=document.documentElement,max=root.scrollHeight-root.clientHeight;progressBar.style.width=(max>0?root.scrollTop/max*100:0)+'%';},{passive:true});
+  document.body.classList.add('js-reveal');
+  var revealObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('in');revealObserver.unobserve(entry.target);}});},{threshold:.06});
+  document.querySelectorAll('section').forEach(function(section){revealObserver.observe(section);});
+  setTimeout(function(){document.querySelectorAll('section:not(.in)').forEach(function(section){section.classList.add('in');});},2500);
+  var countObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var node=entry.target,target=Number(node.dataset.count),suffix=node.dataset.suffix||'',start=performance.now(),duration=900;function tick(now){var p=Math.min(1,(now-start)/duration),value=Math.round(target*(1-Math.pow(1-p,3)));node.textContent=value+suffix;if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);countObserver.unobserve(node);});},{threshold:.35});
+  document.querySelectorAll('[data-count]').forEach(function(node){countObserver.observe(node);});
+  var backTopButton=document.getElementById('backTop');backTopButton.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});addEventListener('scroll',function(){backTopButton.classList.toggle('show',scrollY>600);},{passive:true});
+</script>
+</body>
+</html>

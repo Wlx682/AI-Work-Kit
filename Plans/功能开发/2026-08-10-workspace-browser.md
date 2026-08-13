@@ -61,6 +61,40 @@ skill_run:
   revisit_needed: false
 ```
 
+## 移动弹层根遮罩增量自检
+
+- 用户反馈：移动弹层打开后，底部 Tab 与 Home Indicator SafeArea 仍浮在遮罩和弹层上方，视觉层级不完整。
+- 实现：`showModalBottomSheet` 使用根 Navigator；遮罩覆盖完整 viewport，弹层覆盖底部 Tab 与 SafeArea，底部操作内容继续由弹层内部 `SafeArea` 避让 Home Indicator。
+- 保持项：弹层仍为全宽、窗口高度减 100pt、顶部圆角 32pt、白色背景；移动状态、请求和关闭语义均未改变。
+- 自动化验证：构造 390×844、顶部 47pt/底部 34pt inset、根 Scaffold + 分支 Navigator + BottomNavigationBar；锁定 barrier 从 `(0,0)` 覆盖完整窗口，底部区域不可穿透。目标测试 `6/6 PASS`，定向 analyze 无问题。
+- 真机验证：有线 iPhone 保持 `flutter run` 连接，通过 VM Inspector 截图确认底部 Tab 不再浮于弹层之上。
+- 自评：`9/10`；唯一缺口为用户未提供该弹层对应的 Figma node-id，无法补 MCP 设计节点截图。本次只按用户明确的层级裁决修改，不改变既有视觉参数。
+
+```yaml
+skill_run:
+  skill: figma-ui
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-10-workspace-browser.md
+  date: 2026-08-10
+  contexts_used:
+    - path: Contexts/Figma/项目设计规范.md
+      utility: high
+      reason: "约束本次只调整容器层级，保持弹层尺寸、颜色、圆角和 SafeArea 内容避让"
+    - path: Contexts/Figma/Figma界面开发最佳实践.md
+      utility: high
+      reason: "按根路由层级、边界状态和真机截图完成 UI 收口"
+    - path: Templates/Figma还原自检表.md
+      utility: high
+      reason: "记录度量保持项、遮罩交互、验证证据与设计节点缺口"
+  contexts_missing:
+    - "移动弹层对应的 Figma node-id"
+  contexts_stale: []
+  outcome_status: pass
+  friction: "用户只提供运行截图，没有 Figma node-id，无法执行 MCP 设计节点截图"
+  verdict_score: 9
+  revisit_needed: false
+```
+
 ```yaml
 skill_run:
   skill: feature-dev-assistant

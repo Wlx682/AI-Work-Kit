@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>体况卡｜犬猫月测柜台包</title>
+  <meta name="description" content="卖给国内独立宠物洗护店的犬猫体型趋势记录实物柜台包。">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root{--ink:#fff8ee;--muted:#b8adb9;--bg:#0c0910;--panel:#15101a;--line:#33283a;--peach:#ff916f;--mint:#7ee6c5;--lilac:#c8a7ff;--yellow:#f4d76e;--danger:#ff6f7d;--max:1120px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--bg)}body{margin:0;color:var(--ink);background:radial-gradient(circle at 12% 0,#372036 0,transparent 31rem),radial-gradient(circle at 90% 18%,#12382f 0,transparent 29rem),var(--bg);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.75;overflow-x:hidden}a{color:var(--mint);text-decoration:none}a:hover{text-decoration:underline}.shell{width:min(var(--max),calc(100% - 40px));margin:auto}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--mint)}
+    .hero{min-height:94vh;display:grid;grid-template-columns:1.05fr .85fr;gap:clamp(34px,6vw,78px);align-items:center;padding:clamp(56px,8vw,104px) 0 58px}.hero h1{font-size:clamp(54px,7vw,88px);line-height:.94;letter-spacing:-.065em;margin:18px 0 25px}.hero h1 em{font-style:normal;color:var(--peach)}.lead{font-size:clamp(18px,2.1vw,24px);color:#d8ccd8;max-width:650px}.meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:28px}.pill{display:inline-flex;border:1px solid #4a3a50;padding:7px 11px;border-radius:99px;color:#cabfcb;font-size:12px;font-weight:800}.pill.hot{background:var(--peach);color:#2e110c;border-color:var(--peach)}
+    .pose-board{position:relative;width:100%;max-width:455px;aspect-ratio:.82;margin:auto;border:1px solid #51415d;border-radius:34px;background:linear-gradient(#241a2a99 1px,transparent 1px),linear-gradient(90deg,#241a2a99 1px,transparent 1px),#110d16;background-size:34px 34px;box-shadow:0 60px 130px #000c;overflow:hidden}.pose-board:before{content:"TOP / SIDE";position:absolute;left:22px;top:18px;font-size:10px;letter-spacing:.22em;color:#8d7995;font-weight:900}.axis-x,.axis-y{position:absolute;background:#7ee6c555}.axis-x{height:1px;left:8%;right:8%;top:52%}.axis-y{width:1px;top:8%;bottom:8%;left:50%}.pet{position:absolute;left:50%;top:48%;width:190px;height:112px;transform:translate(-50%,-50%)}.body{position:absolute;left:28px;top:28px;width:122px;height:65px;border:5px solid var(--peach);border-radius:52% 47% 43% 49%;box-shadow:0 0 30px #ff916f2d}.head{position:absolute;right:2px;top:12px;width:54px;height:54px;border:5px solid var(--peach);border-radius:50%}.ear{position:absolute;right:10px;top:0;width:22px;height:29px;border:5px solid var(--peach);border-bottom:0;transform:rotate(23deg);border-radius:100% 0 0 0}.tail{position:absolute;left:2px;top:24px;width:36px;height:38px;border:5px solid var(--peach);border-right:0;border-bottom:0;border-radius:100% 0 0 0;transform:rotate(-25deg)}.leg{position:absolute;top:82px;width:5px;height:26px;background:var(--peach);border-radius:4px}.l1{left:56px}.l2{left:125px}.waist{position:absolute;left:77px;top:18px;width:46px;height:86px;border:2px dashed var(--yellow);border-radius:50%}.photo-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 6px #7ee6c51d}.d1{left:12%;top:48%}.d2{right:12%;top:48%}.d3{left:49%;top:12%}.board-card{position:absolute;left:18px;right:18px;bottom:17px;padding:13px 15px;border:1px solid #51415d;background:#100c15e8;border-radius:14px;color:#bfb2c1;font-size:12px}.board-card b{color:var(--mint)}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:84px}.metric{min-height:160px;border:1px solid var(--line);background:linear-gradient(150deg,#19131e,#110d15);border-radius:21px;padding:24px;display:flex;flex-direction:column;justify-content:space-between}.metric strong{font-size:clamp(38px,6vw,58px);line-height:1;letter-spacing:-.055em;color:var(--peach)}.metric:nth-child(2) strong{color:var(--mint)}.metric:nth-child(3) strong{color:var(--lilac)}.metric span{font-size:13px;color:var(--muted)}
+    section{padding:clamp(68px,8vw,100px) 0;border-top:1px solid #241b29}.section-head{display:grid;grid-template-columns:118px 1fr;gap:22px;margin-bottom:36px}.num{color:var(--mint);font-size:12px;font-weight:900;letter-spacing:.17em}.section-head h2{font-size:clamp(34px,5vw,56px);line-height:1.08;letter-spacing:-.045em;margin:0;max-width:880px}.copy{max-width:840px;margin-left:140px}.copy p{font-size:17px;color:#d0c4d0}.spotlight{margin:28px 0;padding:22px 24px;border-left:4px solid var(--peach);background:linear-gradient(90deg,#311a1b,transparent);border-radius:0 16px 16px 0}.spotlight b{color:#ffaf94}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px;margin-top:26px}.card{padding:23px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,#1a141f,#120e16)}.card .tag{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--mint);border:1px solid #315e55;border-radius:99px;padding:4px 8px;margin-bottom:13px}.card h3{font-size:20px;line-height:1.35;margin:0 0 8px}.card p{font-size:14px;margin:0;color:var(--muted)}.fact{border-color:#31584f}.inference{border-color:#684035}.inference .tag{color:#ffaf94;border-color:#6b4035}.diagram{background:#100d15;border:1px solid #41334a;border-radius:20px;padding:22px;margin:30px 0;overflow:auto}.diagram-title{font-size:11px;color:#96869c;letter-spacing:.14em;font-weight:800;margin-bottom:10px}.boundary{display:grid;grid-template-columns:1fr 1fr;gap:14px}.boundary .card:first-child{border-color:#356350}.boundary .card:last-child{border-color:#693b45}.yes{color:var(--mint)}.no{color:var(--danger)}
+    .kit{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:28px 0}.kit-item{min-height:132px;padding:18px;border:1px solid var(--line);border-radius:16px;background:#130f18}.kit-icon{font-size:27px;color:var(--yellow);font-weight:950}.kit-item b{display:block;margin:8px 0 3px}.kit-item span{font-size:12px;color:var(--muted)}.price-block{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.price-card{min-height:260px;padding:28px;border:1px solid #693e35;border-radius:22px;background:radial-gradient(circle at 90% 10%,#512521,transparent 19rem),#181011}.price{font-size:clamp(72px,11vw,118px);font-weight:950;line-height:.92;letter-spacing:-.09em;color:var(--peach)}.price small{font-size:15px;letter-spacing:0;color:#c7adb0}.formula{font-size:clamp(24px,3vw,34px);line-height:1.3;margin-top:24px;font-weight:850}.automation{padding:28px;border:1px solid #3d3854;border-radius:22px;background:#110f18}.automation h3{font-size:24px;margin:0 0 10px}.automation p{font-size:14px;color:var(--muted)}.automation .gate{display:inline-block;color:#16100d;background:var(--yellow);padding:7px 10px;border-radius:8px;font-weight:900;font-size:12px}
+    .kill{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kill-card{padding:18px;border:1px solid #57343d;background:#1a1015;border-radius:15px;text-align:center}.kill-card strong{display:block;font-size:24px;color:var(--danger)}.kill-card span{font-size:12px;color:#bea8ae}.verdict{font-size:clamp(27px,4vw,42px);line-height:1.35;margin:34px 0;padding-left:22px;border-left:5px solid var(--mint);font-weight:850}.appendix{padding:70px 0 100px}.appendix h2{font-size:clamp(34px,5vw,48px);letter-spacing:-.04em}.appendix details{border-top:1px solid var(--line);padding:18px 0}.appendix summary{cursor:pointer;font-weight:850;list-style:none}.appendix summary::-webkit-details-marker{display:none}.appendix summary:after{content:"＋";float:right;color:var(--mint)}.appendix details[open] summary:after{content:"－"}.appendix p,.appendix li{color:var(--muted);font-size:14px}.appendix table{width:100%;border-collapse:collapse;margin:15px 0;font-size:13px}.appendix th,.appendix td{padding:11px;border:1px solid var(--line);vertical-align:top;text-align:left}.appendix th{color:var(--ink);background:#18121c}.source-list li{margin:8px 0}footer{padding:28px 0;border-top:1px solid var(--line);color:#837586;font-size:12px}
+    .reveal{opacity:1;transform:none}.js .reveal{opacity:0;transform:translateY(18px);transition:opacity .48s ease,transform .48s ease}.js .reveal.visible{opacity:1;transform:none}
+    @media(max-width:820px){.hero{grid-template-columns:1fr;min-height:auto}.pose-board{width:min(100%,450px)}.section-head{grid-template-columns:1fr;gap:8px}.copy{margin-left:0}.price-block,.boundary{grid-template-columns:1fr}.kit{grid-template-columns:1fr 1fr}.appendix{overflow:hidden}.appendix table{display:block;overflow-x:auto}}
+    @media(max-width:480px){.shell{width:min(var(--max),calc(100% - 24px))}.hero h1{font-size:50px}.pose-board{border-radius:23px}.pet{transform:translate(-50%,-50%) scale(.82)}.section-head h2{font-size:34px}.metrics{grid-template-columns:1fr}.metric{min-height:140px}.kit{grid-template-columns:1fr}.price-card,.automation{padding:21px}.appendix table{font-size:12px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .reveal{opacity:1;transform:none;transition:none}}
+  </style>
+</head>
+<body>
+  <header class="shell hero">
+    <div>
+      <div class="eyebrow">ONE IDEA · CHINA PET RETAIL PRODUCT</div>
+      <h1>洗护之后<br><em>留张体型月卡</em></h1>
+      <p class="lead">给独立宠物洗护店的实物柜台包：主人自己拍照、量围度、看趋势；门店不诊断，卖家靠首包和记录卡补货赚钱。</p>
+      <div class="meta"><span class="pill hot">建议定价 ¥199 / 首包</span><span class="pill">实物 + 耗材</span><span class="pill">全国可发货</span><span class="pill">非动物诊疗</span></div>
+    </div>
+    <div class="pose-board" aria-label="犬猫固定角度拍照定位垫示意">
+      <div class="axis-x"></div><div class="axis-y"></div>
+      <div class="photo-dot d1"></div><div class="photo-dot d2"></div><div class="photo-dot d3"></div>
+      <div class="pet"><div class="tail"></div><div class="body"></div><div class="head"></div><div class="ear"></div><div class="leg l1"></div><div class="leg l2"></div><div class="waist"></div></div>
+      <div class="board-card"><b>固定位置，才有可比趋势。</b><br>定位垫只帮助拍出同角度照片，不输出健康结论。</div>
+    </div>
+  </header>
+
+  <div class="shell metrics" aria-label="三个关键锚点">
+    <div class="metric"><strong>2026·9·1</strong><span>犬猫体况评分推荐性国家标准开始实施</span></div>
+    <div class="metric"><strong data-value="1.26" data-decimals="2" data-suffix="亿">1.26亿</strong><span>2025 年我国城镇犬猫数量，来自白皮书公开数据</span></div>
+    <div class="metric"><strong data-value="199" data-prefix="¥">¥199</strong><span>首包建议定价假设，不是市场成交事实</span></div>
+  </div>
+
+  <main>
+    <section id="s1" class="reveal"><div class="shell"><div class="section-head"><div class="num">01 / PRODUCT</div><h2>不是测肥胖，是把“看不出来的慢变化”留下来</h2></div><div class="copy">
+      <p>主人天天见宠物，很难察觉腰线在几个月里慢慢改变；洗护店员又不应该凭肉眼下健康结论。体况卡把洗护后的 3 分钟变成一份可对照记录：固定角度照片、一个围度、日期和主人自选的观察状态。</p>
+      <div class="kit"><div class="kit-item"><div class="kit-icon">▦</div><b>定位垫</b><span>俯视与侧视拍照位置</span></div><div class="kit-item"><div class="kit-icon">⌁</div><b>软尺</b><span>记录约定位置围度</span></div><div class="kit-item"><div class="kit-icon">▤</div><b>100 张卡</b><span>编号、日期与免责声明</span></div><div class="kit-item"><div class="kit-icon">⌘</div><b>二维码页</b><span>只做前后趋势对照</span></div></div>
+      <div class="spotlight"><b>最小可售单元：</b>199 元首包，含定位垫、软尺、柜台牌、100 张记录卡和 90 天趋势页；49 元卖 100 张补充卡。均为建议定价假设。</div>
+    </div></div></section>
+
+    <section id="s2" class="reveal"><div class="shell"><div class="section-head"><div class="num">02 / WHY NOW</div><h2>一个新标准，撞上精细化养宠</h2></div><div class="copy">
+      <div class="cards">
+        <div class="card fact"><span class="tag">2026·02·27</span><h3>国家标准已发布</h3><p>GB/T 47217—2026《犬猫体况评分技术规范》将于 9 月 1 日实施，主要起草单位包括中国农业大学、中农大动物医院和中国兽医协会。</p></div>
+        <div class="card fact"><span class="tag">2025 市场</span><h3>1.26 亿只城镇犬猫</h3><p>白皮书公开数据称，2025 年消费规模为 3126 亿元；新华社称增长正转向单宠精细化消费。</p></div>
+        <div class="card fact"><span class="tag">2025 研究</span><h3>体重管理关注上升</h3><p>《中国饲料》综述称犬只超重肥胖问题越来越严重，主人也越来越重视。</p></div>
+        <div class="card inference"><span class="tag">AI 推断</span><h3>标准会创造柜台新品类</h3><p>事实能证明共同语言出现，不能证明店主会为这套商品付款。</p></div>
+      </div>
+    </div></div></section>
+
+    <section id="s3" class="reveal"><div class="shell"><div class="section-head"><div class="num">03 / PAYER</div><h2>唯一客户：想给洗护增加“看得见价值”的小店</h2></div><div class="copy">
+      <p>目标是只有 1—3 家门店、没有自研系统的独立宠物洗护店。购买触发不是政策合规，而是同城洗护价格越来越像，店主需要一个 200 元以内、开箱就能用的老客理由。</p>
+      <div class="cards"><div class="card"><span class="tag">今天怎么凑合</span><h3>洗前洗后照片 + 口头提醒</h3><p>角度不一致，无法比较，也没有下一次打开的记录。</p></div><div class="card"><span class="tag">为什么可能切换</span><h3>一套动作产出三样东西</h3><p>给主人月卡、给门店规整内容、给下次洗护自然提醒。</p></div></div>
+      <div class="spotlight"><b>受益者不是付款者：</b>店主买商品，主人使用记录。若主人不愿参与，不能影响正常洗护，也不能默认收集联系方式。</div>
+    </div></div></section>
+
+    <section id="s4" class="reveal"><div class="shell"><div class="section-head"><div class="num">04 / FLOW</div><h2>主人做观察，系统做对照，异常交给兽医</h2></div><div class="copy">
+      <div class="diagram"><div class="diagram-title">柜台包的五步履约</div><pre class="mermaid">flowchart LR
+ A[门店扫码激活首包] --> B[主人同意记录&lt;br/&gt;宠物站上定位垫]
+ B --> C[固定角度拍照&lt;br/&gt;记录围度与日期]
+ C --> D[主人选择观察状态&lt;br/&gt;生成月度体况卡]
+ D --> E[下月并排对照&lt;br/&gt;变化只提示咨询兽医]
+ E --> F[记录卡不足&lt;br/&gt;自动提醒补货]</pre></div>
+      <div class="boundary"><div class="card"><span class="tag yes">商品会做</span><h3>摆位、记录、前后对照、补货</h3><p>每张卡带日期、角度和“非诊疗记录”水印。</p></div><div class="card"><span class="tag no">商品不做</span><h3>健康检查、诊断、喂食量、用药</h3><p>不称国标认证，不复制标准图表，不接病历。</p></div></div>
+    </div></div></section>
+
+    <section id="s5" class="reveal"><div class="shell"><div class="section-head"><div class="num">05 / ECONOMICS</div><h2>卖 199 元首包，靠纸卡消耗复购</h2></div><div class="copy">
+      <div class="price-block"><div class="price-card"><div class="price"><span data-value="199" data-prefix="¥">¥199</span><small> / 首包</small></div><div class="formula">199 − 129 = <span style="color:var(--mint)">70 元贡献</span></div><p style="color:#c6adb1">物料、仓配、支付售后、获客和二维码服务均为建议测算；未扣固定成本、税费与退货。</p></div><div class="automation"><span class="gate">自动化上限</span><h3>每店每月人工 ≤ 10 分钟</h3><p>收款、第三方仓发货、门店码、对照卡、补货提醒和发票可自动化。</p><p>兽医审核、退货、照片申诉、删除请求和合规复查必须人工。</p></div></div>
+      <p>49 元补充包若可变成本为 21 元，贡献约 28 元。假设门店每月有 30 位主人记录，100 张卡约 3 个月用完；这只是复购模型，不是市场事实。</p>
+    </div></div></section>
+
+    <section id="s6" class="reveal"><div class="shell"><div class="section-head"><div class="num">06 / VERDICT</div><h2>有条件值得：记录与诊疗必须隔一堵墙</h2></div><div class="copy">
+      <div class="kill"><div class="kill-card"><strong>&lt;40%</strong><span>60 天首包激活率</span></div><div class="kill-card"><strong>&lt;25%</strong><span>90 天补充包购买率</span></div><div class="kill-card"><strong>&gt;8%</strong><span>首包综合退款率</span></div><div class="kill-card"><strong>&gt;10分</strong><span>每店月客服时间</span></div><div class="kill-card"><strong>诊疗暗示</strong><span>无法消除即停止</span></div></div>
+      <div class="verdict">它的新鲜之处，不是又做一个宠物 App，而是把国家标准出现后的认知变化，装进一个能全国发货、自动补货的小商品。</div>
+      <p>系统能力适合完成二维码页面、自动仓配和数据最小化，但这不是选中它的原因。真正需要外包的是执业兽医审核、包装打样、渠道和法律边界。无论谁执行，都不要把它改写成宠物健康咨询。</p>
+    </div></div></section>
+  </main>
+
+  <aside id="appendix" class="shell appendix">
+    <div class="eyebrow">FACTS & ASSUMPTIONS</div><h2>事实与推演附录</h2>
+    <details><summary>A｜行业坐标与最小商业系统</summary><p>主行业：宠物用品 / 洗护增值商品。商业模式：B2B 实物首包 + 纸质耗材补充包，二维码页是配套。付款者是独立宠物店，使用者是主人。价值链为打样—电商成交—第三方仓配—门店使用—耗材补货。角色设定没有参与入口筛选。</p></details>
+    <details><summary>B｜完整事实来源</summary><ul class="source-list">
+      <li><a href="https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=29A40C6C3A58B990787D061B68B6A8F5">国家标准全文公开系统</a>：GB/T 47217—2026 发布与实施日期、主管和发布单位。</li>
+      <li><a href="https://std.samr.gov.cn/gb/search/gbDetailed?id=4C1BF798CB0A83B0E06397BE0A0A640A">全国标准信息公共服务平台项目页</a>：标准性质、归口和主要起草单位。</li>
+      <li><a href="https://tv.cctv.com/2026/04/29/VIDEphwmDqTwXiREo8KhMPVj260429.shtml">央视网</a>：2025 年城镇犬猫数量 1.26 亿只。</li>
+      <li><a href="https://www.news.cn/20260612/62c75b0abfeb4df1aeb3534ffaba2424/c.html">新华社 / 经济参考报</a>：3126 亿元消费规模及精细化消费趋势。</li>
+      <li><a href="https://journal.chinafeed.com.cn/EN/Y2025/V1/I15/144">《中国饲料》研究综述</a>：犬只超重肥胖和主人关注的研究背景。</li>
+      <li><a href="https://petdata.cn/infodetail_7655568014426112.html">派读行业案例</a>：洗护门店客流与服务差异化问题；项目方营销稿，仅作弱证据。</li>
+      <li><a href="https://xmsyj.moa.gov.cn/gzdt/202209/t20220909_6408940.htm">农业农村部《动物诊疗机构管理办法》</a>：健康检查、诊断和治疗的许可边界。</li>
+      <li><a href="https://www.npc.gov.cn/WZWSREL25wYy9jMi9jMzA4MzQvMjAyMTA4L3QyMDIxMDgyMF8zMTMwODguaHRtbD9yZWY9aW1i">《个人信息保护法》</a>：告知、同意、撤回和最小必要的数据处理要求。</li>
+    </ul></details>
+    <details><summary>C｜事实、推断、定价与未知</summary><p><b>事实：</b>国家标准将在 9 月 1 日实施；城镇犬猫数量和消费规模庞大；研究综述确认体重管理关注；动物诊疗需要许可。<br><b>AI 推断：</b>独立洗护店愿意购买一个低价、可见的增值商品。<br><b>定价假设：</b>199 元首包、49 元补充包、70 元与 28 元单包贡献。<br><b>未知：</b>店主采购价、主人参与率、耗材消耗速度、标准图示版权和拍摄可比性。</p></details>
+    <details><summary>D｜30 / 90 天路线</summary><p>0—30 天：合法获取标准全文，请执业兽医与法律顾问审词，完成原创图示、材料打样和二维码静态原型。31—90 天：只销售一个首包，通过电商与宠物用品批发商获客，接第三方仓；只统计激活、记录、退款、客服分钟和补充包购买。达不到门槛就停止，不扩展诊疗功能。</p></details>
+    <details><summary>E｜单位经济与自动化</summary><p>首包建议价 199 元；物料 48、包装快递 18、支付售后 8、获客 50、二维码服务 5，贡献假设 70 元。补充包建议价 49 元、可变成本 21 元、贡献假设 28 元。收款、仓配、门店码、月卡和补货提醒自动化；内容审核、异常、退货和删除请求人工。</p></details>
+    <details><summary>F｜合规与停止条件</summary><p>不做健康检查、诊断、治疗、目标体重、处方、用药或病历；不声称“国标认证”；不复制标准图表；不默认公开照片。100 个首包后，60 天激活低于 40%、90 天补货低于 25%、退款高于 8%、每店月客服超过 10 分钟，或诊疗暗示无法消除时停止。</p></details>
+  </aside>
+
+  <footer><div class="shell">体况卡 · 单创意副业洞察 · 证据截止 2026-08-11 · 公开桌面证据不等于客户验证，不构成收益承诺</div></footer>
+  <script>
+    mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{primaryColor:'#233a34',primaryTextColor:'#fff8ee',primaryBorderColor:'#7ee6c5',lineColor:'#ff916f',secondaryColor:'#3a2025',tertiaryColor:'#15101a',fontFamily:'PingFang SC, Microsoft YaHei, sans-serif'}});
+    const revealEls=[...document.querySelectorAll('.reveal')];
+    const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');revealObserver.unobserve(entry.target)}}),{threshold:.05});
+    revealEls.forEach(el=>revealObserver.observe(el));setTimeout(()=>revealEls.forEach(el=>el.classList.add('visible')),2400);
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const countObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;const el=entry.target;if(el.dataset.done)return;el.dataset.done='1';const target=Number(el.dataset.value),prefix=el.dataset.prefix||'',suffix=el.dataset.suffix||'',decimals=Number(el.dataset.decimals||0);if(reduced){el.textContent=prefix+target.toLocaleString('zh-CN',{minimumFractionDigits:decimals,maximumFractionDigits:decimals})+suffix;return}const started=performance.now();const tick=now=>{const progress=Math.min(1,(now-started)/900);const eased=1-Math.pow(1-progress,3);const value=target*eased;el.textContent=prefix+value.toLocaleString('zh-CN',{minimumFractionDigits:decimals,maximumFractionDigits:decimals})+suffix;if(progress<1)requestAnimationFrame(tick)};requestAnimationFrame(tick);countObserver.unobserve(el)}),{threshold:.45});
+    document.querySelectorAll('[data-value]').forEach(el=>countObserver.observe(el));
+  </script>
+</body>
+</html>

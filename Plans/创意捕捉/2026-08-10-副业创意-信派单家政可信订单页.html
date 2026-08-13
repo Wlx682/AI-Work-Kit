@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>信派单｜家政可信订单页</title>
+  <meta name="description" content="一个基于中国家政信用基础设施的 B2B SaaS 副业创意。">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root{--bg:#07110f;--panel:#0d1a17;--panel2:#12231f;--text:#f0f8f5;--muted:#9db2aa;--line:#24413a;--mint:#70f5bf;--gold:#ffd36a;--pink:#ff7db8;--max:1120px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 75% 0,#173b30 0,transparent 32rem),var(--bg);color:var(--text);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.75;overflow-x:hidden}a{color:var(--mint);text-decoration:none}a:hover{text-decoration:underline}.shell{width:min(var(--max),calc(100% - 40px));margin:auto}.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint);font-weight:800}.hero{min-height:92vh;display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:center;padding:72px 0 52px}.hero h1{font-size:clamp(48px,7vw,92px);line-height:.96;letter-spacing:-.06em;margin:16px 0 22px;max-width:720px}.hero h1 span{color:var(--mint)}.lead{font-size:clamp(18px,2vw,23px);color:#c9dad4;max-width:680px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.btn{padding:12px 18px;border-radius:999px;font-weight:750;border:1px solid var(--line);background:#10241f;color:var(--text)}.btn.primary{background:var(--mint);color:#05251a;border-color:var(--mint)}.phone-wrap{position:relative}.halo{position:absolute;inset:7% -3%;background:var(--mint);filter:blur(90px);opacity:.13}.phone{position:relative;max-width:420px;margin:auto;background:#f5fbf8;color:#10231e;border:9px solid #182c27;border-radius:38px;padding:22px;box-shadow:0 38px 90px #0009;transform:rotate(1.5deg)}.phone-top{display:flex;justify-content:space-between;color:#667a73;font-size:12px}.order-id{font-size:12px;color:#547067;margin-top:20px}.phone h2{font-size:26px;line-height:1.25;margin:6px 0 10px}.person{display:flex;gap:12px;align-items:center;padding:14px;background:white;border-radius:18px;border:1px solid #dfeae6}.avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#183d32;color:white;font-weight:900}.person b{display:block}.person small{color:#70837c}.chips{display:flex;gap:7px;flex-wrap:wrap;margin:13px 0}.chip{font-size:12px;font-weight:750;padding:5px 9px;border-radius:99px;background:#dff7ed;color:#176344}.chip.gold{background:#fff1c9;color:#735610}.price{display:flex;justify-content:space-between;align-items:end;border-top:1px dashed #bad0c8;padding-top:14px;margin-top:8px}.price strong{font-size:30px}.verify{display:block;text-align:center;background:#123f32;color:#fff;border-radius:14px;padding:12px;margin-top:15px;font-weight:800}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0 auto 80px}.metric{padding:24px;border:1px solid var(--line);background:#0b1916cc;border-radius:18px}.metric strong{font-size:clamp(34px,5vw,52px);display:block;letter-spacing:-.04em;color:var(--gold)}.metric span{color:var(--muted)}section{padding:82px 0;border-top:1px solid #18302a}.section-head{display:grid;grid-template-columns:120px 1fr;gap:20px;margin-bottom:34px}.num{font-size:13px;color:var(--mint);letter-spacing:.14em;font-weight:900}.section-head h2{font-size:clamp(32px,5vw,54px);line-height:1.08;letter-spacing:-.04em;margin:0;max-width:850px}.copy{max-width:820px;margin-left:140px}.copy p{color:#c5d5d0;font-size:17px}.callout{padding:22px 24px;margin:26px 0;border-left:3px solid var(--mint);background:linear-gradient(90deg,#102a23,transparent);border-radius:0 14px 14px 0}.callout b{color:var(--mint)}.evidence-grid,.product-grid,.money-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:26px}.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);padding:24px;border-radius:18px}.card h3{margin:0 0 8px;font-size:20px}.card p{margin:0;color:var(--muted);font-size:15px}.tag{display:inline-flex;padding:4px 9px;border:1px solid #356456;border-radius:99px;color:var(--mint);font-size:11px;font-weight:850;letter-spacing:.07em;margin-bottom:14px}.diagram{background:#f5fbf8;border-radius:18px;padding:22px;margin:28px 0;overflow:auto}.privacy{border-color:#73526a;background:linear-gradient(145deg,#271827,#121818)}.privacy .tag{color:var(--pink);border-color:#764561}.big-price{font-size:clamp(58px,10vw,108px);line-height:1;color:var(--gold);font-weight:900;letter-spacing:-.08em}.big-price small{font-size:16px;letter-spacing:0;color:var(--muted)}.steps{counter-reset:step;display:grid;gap:12px}.step{counter-increment:step;display:grid;grid-template-columns:54px 1fr;gap:16px;padding:20px;border:1px solid var(--line);border-radius:16px;background:#0b1815}.step:before{content:counter(step);display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--mint);color:#063325;font-weight:900}.step h3{margin:0 0 5px}.step p{margin:0;color:var(--muted)}.stop-list{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.stop{padding:18px 12px;border-radius:14px;background:#1b1717;border:1px solid #543531;text-align:center}.stop strong{display:block;font-size:24px;color:#ff937d}.stop span{font-size:12px;color:#b9a9a6}.question{font-size:clamp(25px,4vw,40px);line-height:1.35;border-left:5px solid var(--gold);padding-left:24px;margin:38px 0;color:white;font-weight:750}.appendix{padding:64px 0 100px}.appendix h2{font-size:34px}.appendix details{border-top:1px solid var(--line);padding:18px 0}.appendix summary{cursor:pointer;font-weight:800;list-style:none}.appendix summary::-webkit-details-marker{display:none}.appendix summary:after{content:'＋';float:right;color:var(--mint)}.appendix details[open] summary:after{content:'－'}.appendix li,.appendix p{color:var(--muted)}footer{padding:28px 0;border-top:1px solid var(--line);color:#779087;font-size:13px}.reveal{opacity:0;transform:translateY(16px);transition:.55s ease}.reveal.visible{opacity:1;transform:none}
+    @media(max-width:820px){.hero{grid-template-columns:1fr;padding-top:54px}.hero-copy{text-align:left}.phone-wrap{margin-top:12px}.halo{inset:7% 0}.metrics{grid-template-columns:1fr}.section-head{grid-template-columns:1fr;gap:8px}.copy{margin-left:0}.evidence-grid,.product-grid,.money-grid{grid-template-columns:1fr}.stop-list{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.shell{width:min(100% - 24px,var(--max))}.hero{gap:32px;min-height:auto}.hero h1{font-size:49px}.phone{border-width:6px;border-radius:28px;padding:16px}.section-head h2{font-size:34px}section{padding:62px 0}.stop-list{grid-template-columns:1fr}.actions .btn{width:100%;text-align:center}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
+  </style>
+</head>
+<body>
+  <header class="shell hero">
+    <div class="hero-copy">
+      <div class="eyebrow">CHINA SIDE-BUSINESS SIGNAL · 2026</div>
+      <h1>一张让家政订单<br><span>敢成交</span>的页面</h1>
+      <p class="lead">信派单是一套面向中小家政公司的轻量 SaaS：把本人授权的官方核验入口、服务、价格、合同和到家码装进同一笔订单。</p>
+      <div class="actions"><a class="btn primary" href="#s1">5 分钟读懂</a><a class="btn" href="#appendix">查看事实来源</a></div>
+    </div>
+    <div class="phone-wrap" aria-label="可信订单页示意图"><div class="halo"></div><div class="phone">
+      <div class="phone-top"><span>09:41</span><span>可信订单 · 待确认</span></div>
+      <div class="order-id">订单 XP-0826-014</div><h2>周六日常保洁 · 3 小时</h2>
+      <div class="person"><div class="avatar">王</div><div><b>王师傅</b><small>由安心家政指派 · 本人已授权核验</small></div></div>
+      <div class="chips"><span class="chip">官方核验入口</span><span class="chip">保险有效</span><span class="chip gold">价格已锁定</span></div>
+      <div class="price"><span>服务内容与加价条件<br><small>进门前可查看合同</small></span><strong>¥168</strong></div>
+      <span class="verify">核验并确认订单 →</span>
+    </div></div>
+  </header>
+
+  <div class="shell metrics" aria-label="关键数字">
+    <div class="metric"><strong data-count="900" data-suffix="万+">0</strong><span>官方已归集服务员信用信息</span></div>
+    <div class="metric"><strong data-count="1" data-suffix=" 张">0</strong><span>每笔订单只给消费者一个入口</span></div>
+    <div class="metric"><strong data-count="399" data-prefix="¥" data-suffix="/月">0</strong><span>首版订阅价格假设，不是承诺</span></div>
+  </div>
+
+  <main>
+    <section id="s1" class="reveal"><div class="shell"><div class="section-head"><div class="num">01 / CONCLUSION</div><h2>不是私人征信，而是可信成交工具</h2></div><div class="copy">
+      <p>消费者付款前常问：谁来、查得到吗、有没有保险、到底多少钱、出了问题找谁？小公司把执照、照片、报价、保险截图散落在微信里，材料很多，信任仍没有形成。</p>
+      <div class="callout"><b>最小可售产品：</b>一家公司的月度工作台。录入订单、指派人员、发起授权、生成消费者页面、记录签约与完工；首个客户是拥有约 10—50 名活跃人员、仍靠微信派单的本地家政公司。</div>
+      <p>官方平台继续负责信用信息。信派单不复制敏感记录、不打“信用分”，只负责把核验动作同真实的人、服务、价格和合同连接起来。</p>
+    </div></div></section>
+
+    <section id="s2" class="reveal"><div class="shell"><div class="section-head"><div class="num">02 / WHY NOW</div><h2>政策已经把“查信用”推向订单现场</h2></div><div class="copy">
+      <div class="evidence-grid">
+        <div class="card"><span class="tag">国家信号</span><h3>2 万多家企业 · 900 多万人</h3><p>商务部披露的“家政信用查”信息归集规模，说明权威底座已经存在。</p></div>
+        <div class="card"><span class="tag">流程信号</span><h3>下单 → 派单 → 授权 → 查询</h3><p>官方公开描述了核验嵌入订单流程的目标，并提到用标准化第三方平台支持中小企业。</p></div>
+        <div class="card"><span class="tag">地方现实</span><h3>多数机构小、盈利弱、人员流动大</h3><p>上海公开答复显示，本地平台注册机构 2,268 家、人员 22.21 万，轻订阅比定制系统更贴近现实。</p></div>
+        <div class="card"><span class="tag">商业推断</span><h3>政策不是付费理由</h3><p>客户只有在客服解释变少、订单确认变快、争议更可追溯时才会续费。</p></div>
+      </div>
+    </div></div></section>
+
+    <section id="s3" class="reveal"><div class="shell"><div class="section-head"><div class="num">03 / PRODUCT</div><h2>一笔订单，一个消费者入口</h2></div><div class="copy">
+      <div class="diagram"><pre class="mermaid">flowchart LR
+ A[公司创建订单<br/>服务与价格] --> B[指派服务人员]
+ B --> C[人员授权官方查询]
+ C --> D[生成可信订单页]
+ D --> E[消费者核验并签约]
+ E --> F[到家码与完工评价]</pre></div>
+      <div class="product-grid">
+        <div class="card"><span class="tag">消费者只看五件事</span><h3>公司 · 人 · 服务 · 价格 · 责任</h3><p>官方核验入口、明确范围、加价条件、合同、到家码和投诉入口集中呈现。</p></div>
+        <div class="card"><span class="tag">自动化</span><h3>模板、提醒、页面、签约、报告</h3><p>保险或培训标签只在凭证有效时亮起；过期自动隐藏，异常转人工。</p></div>
+        <div class="card privacy"><span class="tag">红线</span><h3>不抓取敏感原始记录</h3><p>只保存授权用途、时间、状态、官方入口和必要审计记录；不把“已授权”宣传成“信用良好”。</p></div>
+        <div class="card"><span class="tag">人工处理</span><h3>接口审批、投诉、理赔、材料冲突</h3><p>系统自动跑常规订单，人只介入高风险和非标准场景。</p></div>
+      </div>
+    </div></div></section>
+
+    <section id="s4" class="reveal"><div class="shell"><div class="section-head"><div class="num">04 / MONEY</div><h2>先收软件订阅费，不碰交易资金</h2></div><div class="copy">
+      <div class="money-grid"><div class="card"><div class="big-price">399<small> 元 / 月 / 公司</small></div><p>假设包含 20 名活跃人员和每月 200 张订单页。短信、电子签和获批接口费用按用量另计。</p></div><div class="card"><span class="tag">示意单位经济</span><h3>399 − 80 = 319 元月贡献</h3><p>若获客成本按 800 元假设，静态回收约 2.5 个月。所有数字都需真实客户验证，不是收益承诺。</p></div></div>
+      <div class="callout"><b>为什么不向消费者收费？</b> 官方核验已有公共入口。企业付的是流程、成交和留痕效率，而不是查询信息本身。</div>
+    </div></div></section>
+
+    <section id="s5" class="reveal"><div class="shell"><div class="section-head"><div class="num">05 / 90 DAYS</div><h2>先不用官方 API，也能验证第一笔钱</h2></div><div class="copy"><div class="steps">
+      <div class="step"><div><h3>第 1—10 天：只做订单页原型</h3><p>访谈 10 家微信派单公司，用虚构数据演示，观察能否替代至少三次解释。</p></div></div>
+      <div class="step"><div><h3>第 11—30 天：卖给一家真实公司</h3><p>先使用官方现有二维码或深链完成授权核验，单月试用可从 199 元起，不承诺接口直连。</p></div></div>
+      <div class="step"><div><h3>第 31—90 天：只补真实需求</h3><p>根据订单接电子签、保险凭证和地方合同模板；获正式授权后再申请标准化第三方接口。</p></div></div>
+    </div><p>你的系统架构能力适合授权状态机、证据有效期、多租户隔离和审计日志；渠道销售、隐私法律审查和保险理赔流程应由外部专业人员补齐。这仍是软件生意，不会退化为咨询服务。</p></div></div></section>
+
+    <section id="s6" class="reveal"><div class="shell"><div class="section-head"><div class="num">06 / KILL RULES</div><h2>用五个数字，尽早否决坏生意</h2></div><div class="copy">
+      <div class="stop-list"><div class="stop"><strong>&lt;70%</strong><span>人员授权完成率</span></div><div class="stop"><strong>&lt;70%</strong><span>公司 60 天留存</span></div><div class="stop"><strong>&gt;10m</strong><span>每单人工支持</span></div><div class="stop"><strong>&gt;4月</strong><span>获客成本回收</span></div><div class="stop"><strong>1 次</strong><span>未授权敏感泄露</span></div></div>
+      <div class="question">家政公司是否愿意每月付 399 元，换取更少解释、更快签约和可追溯的订单证据？</div>
+      <p>目前结论是：有政策信号、有流程缺口、尚无付费验证。答案若是否定的，就不要包装成“大平台”；若是肯定的，再从一个城市的轻量 SaaS 向电子合同、保险和行业软件渠道扩张。</p>
+    </div></div></section>
+  </main>
+
+  <aside id="appendix" class="shell appendix">
+    <div class="eyebrow">AUDITABLE APPENDIX</div><h2>事实附录</h2>
+    <details><summary>来源与一手证据</summary><ul>
+      <li><a href="https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_4f7753bfa9db4f51ba867282ebd3ad2c.html">商务部等 9 部门促进家政服务消费措施</a>：信用核查、合同、数字化、隐私与明码标价。</li>
+      <li><a href="https://www.mofcom.gov.cn/xwfbzt/2026/swbzkcjjzfwygzlztxwfbh/index.html">商务部专题新闻发布会</a>：归集规模、订单授权查询流程和第三方平台方向。</li>
+      <li><a href="https://fwmytj-jz.mofcom.gov.cn/jzjc/notice">商务部家政服务信用信息平台</a>：官方桌面端和移动端入口。</li>
+      <li><a href="https://swj.xuchang.gov.cn/tzgg/20260703/816ddce2-3780-4892-88f2-545dc296e2b7.html">许昌市商务局消费者指南</a>：扫码并经服务员授权后核验。</li>
+      <li><a href="https://sww.sh.gov.cn/xxgkjytablqk/20260615/95f8af6a35e1473cbb184732f10fee0d.html">上海市商务委公开答复</a>：地方机构和人员规模、小微经营现实。</li>
+      <li><a href="https://jnbusiness.jinan.gov.cn/col/col117355/art/2026/art_3939686eb6ee40ed8794ea484963fdc0.html">济南市商务局公开答复</a>：本地平台接入规模与明码标价。</li>
+      <li><a href="https://www.npc.gov.cn/WZWSREL25wYy9jMi9jMzA4MzQvMjAyMTA4L3QyMDIxMDgyMF8zMTMwODguaHRtbD9yZWY9aW1i">《个人信息保护法》</a>：敏感信息、充分必要与单独同意。</li>
+      <li><a href="https://www.samr.gov.cn/cms_files/filemanager/samr/www/samrnew/samrgkml/nsjg/fgs/202204/W020220426552839095096.pdf">明码标价和禁止价格欺诈规定</a>：服务内容、价格或计价方法应明确。</li>
+    </ul></details>
+    <details><summary>事实、推断与未知</summary><p><b>事实：</b>公共信用底座存在，政策推动核验入单，服务须明码标价并保护隐私。<br><b>AI 推断：</b>统一页面能够减少解释并提高成交。<br><b>假设：</b>399 元定价、80 元成本、800 元获客成本。<br><b>未知：</b>接口准入、地方合同差异、消费者打开率和公司续费率。</p></details>
+    <details><summary>风险与数据边界</summary><p>不得复制官方敏感记录、私自评分、公开传播个人信息、用过期凭证展示“有保险”，也不得在未授权时声称与官方平台直连。一次未授权敏感信息泄露即停止产品。</p></details>
+    <details><summary>创意评分</summary><p>新鲜度 8/10 · 事实强度 9/10 · 自动化潜力 8/10 · 副业可进入性 7/10 · 收益确定性 5/10。</p></details>
+  </aside>
+
+  <footer><div class="shell">信派单 · 单创意副业洞察 · 证据截止 2026-08-10 · 仅供商业研究，不构成收益或法律承诺</div></footer>
+  <script>
+    mermaid.initialize({startOnLoad:true,theme:'base',securityLevel:'loose',themeVariables:{primaryColor:'#dff7ed',primaryTextColor:'#10231e',primaryBorderColor:'#70b89d',lineColor:'#356456',fontFamily:'PingFang SC, Microsoft YaHei, sans-serif'}});
+    const reveal=()=>document.querySelectorAll('.reveal').forEach(el=>{if(el.getBoundingClientRect().top<innerHeight*.92)el.classList.add('visible')});addEventListener('scroll',reveal,{passive:true});reveal();
+    const ease=t=>1-Math.pow(1-t,3);document.querySelectorAll('[data-count]').forEach(el=>{const n=+el.dataset.count,p=el.dataset.prefix||'',s=el.dataset.suffix||'',start=performance.now();const tick=now=>{const t=Math.min(1,(now-start)/1000);el.textContent=p+Math.round(n*ease(t)).toLocaleString('zh-CN')+s;if(t<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)});
+  </script>
+</body>
+</html>
