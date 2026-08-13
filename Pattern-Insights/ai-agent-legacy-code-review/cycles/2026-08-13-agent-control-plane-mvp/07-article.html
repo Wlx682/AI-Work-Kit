@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Agent
+接入生产后，真正缺的不是日志，而是一面可控制的系统镜像</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0c1a2b;--ink:#eaf2fb;--muted:#9eb1c5;--line:#20364d;--cyan:#62d7e6;--amber:#f1b24d;--read:790px;--side:250px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color-scheme:dark}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(900px 480px at 12% -10%,#12375d 0,transparent 60%),var(--bg);color:var(--ink);font-size:17px;line-height:1.85;overflow-x:hidden}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+    #progress{position:fixed;z-index:20;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,#3aa7dc,var(--cyan),var(--amber))}
+    .hero{padding:92px clamp(22px,6vw,72px) 52px;border-bottom:1px solid var(--line)}.hero-in{max-width:1220px;margin:auto}.eyebrow{font:600 12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase}.hero h1{max-width:20ch;margin:18px 0 20px;font-size:clamp(32px,5vw,58px);line-height:1.14;letter-spacing:-1.4px;background:linear-gradient(120deg,#fff,#bde7ef 75%);-webkit-background-clip:text;color:transparent}.hero p{max-width:780px;margin:0;color:var(--muted);font-size:clamp(16px,2vw,20px)}
+    .shell{max-width:1220px;min-width:0;margin:auto;display:grid;grid-template-columns:var(--side) minmax(0,var(--read));gap:58px;padding:44px clamp(22px,6vw,72px) 110px;align-items:start}nav{min-width:0;max-width:100%;position:sticky;top:28px;padding:18px 0;border-left:1px solid var(--line)}nav>ul{max-width:100%;margin:0;padding:0;list-style:none}nav li{margin:0}nav a{display:block;padding:7px 14px;color:var(--muted);font-size:13px;line-height:1.35;border-left:2px solid transparent;margin-left:-1px}nav a:hover{color:var(--ink);border-left-color:var(--cyan);text-decoration:none}nav ul ul{display:none}
+    main{min-width:0}main>p:first-child{font-size:20px;color:#dbeaf5;margin-top:0}h2{scroll-margin-top:24px;margin:60px 0 20px;padding-top:8px;font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.4px}h2:before{content:"";display:block;width:42px;height:3px;margin-bottom:16px;background:linear-gradient(90deg,var(--cyan),var(--amber));border-radius:3px}p{margin:17px 0;color:#cbd9e8}strong{color:#fff}blockquote{margin:28px 0;padding:18px 22px;border-left:3px solid var(--cyan);background:#0d2033;border-radius:0 14px 14px 0}table{display:block;width:100%;overflow-x:auto;border-collapse:collapse;margin:28px 0;border:1px solid var(--line);border-radius:14px}th,td{padding:13px 16px;border-bottom:1px solid var(--line);text-align:left;min-width:180px}th{background:#10243a;color:#dcebf5;font-size:14px}td{color:#bcd0e0;font-size:15px}ol,ul{padding-left:1.4em}li{margin:.55em 0;color:#cbd9e8}figure{margin:34px 0}img{display:block;max-width:100%;height:auto;margin:30px auto;border-radius:16px;border:1px solid var(--line);box-shadow:0 24px 70px rgba(0,0,0,.35)}em{color:var(--muted)}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#9de7dd;background:#10233a;border:1px solid var(--line);border-radius:5px;padding:1px 5px}hr{border:0;border-top:1px solid var(--line);margin:46px 0}
+    .foot{max-width:790px;margin:0 auto 80px;padding:24px;border-top:1px solid var(--line);color:#758ca2;font-size:13px}
+    @media(max-width:880px){.shell{grid-template-columns:minmax(0,1fr);gap:20px}.hero{padding-top:66px}.hero h1{font-size:34px}nav{position:static;border-left:0;border-bottom:1px solid var(--line);padding:0 0 20px;overflow:hidden}nav>ul{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px}nav li{flex:0 0 auto}nav a{border:1px solid var(--line);border-radius:999px;margin:0;padding:7px 12px;white-space:nowrap}main>p:first-child{font-size:18px}}
+    @media(max-width:430px){body{font-size:16px}.shell{padding-left:18px;padding-right:18px}.hero{padding-left:18px;padding-right:18px}.hero h1{font-size:30px}h2{font-size:24px;margin-top:46px}th,td{min-width:150px;padding:11px 12px}}
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+  <header class="hero"><div class="hero-in"><div class="eyebrow">SYSTEM DIFFERENTIAL · TECHNICAL ESSAY</div><h1>Agent
+接入生产后，真正缺的不是日志，而是一面可控制的系统镜像</h1><p>事件记录不等于系统状态。本文把详尽监控重新定义为一面连接目标、证据、行动、权限、现实结果与恢复路径的动态系统镜像。</p></div></header>
+  <div class="shell">
+    <nav aria-label="文章目录"><ul>
+<li><a href="#看见事件和认识状态是两件事"
+id="toc-看见事件和认识状态是两件事">“看见事件”和“认识状态”是两件事</a></li>
+<li><a href="#动态系统镜像到底要重建什么"
+id="toc-动态系统镜像到底要重建什么">动态系统镜像到底要重建什么</a></li>
+<li><a href="#agent-改变哪部分现实监控就必须抵达哪里"
+id="toc-agent-改变哪部分现实监控就必须抵达哪里">Agent
+改变哪部分现实，监控就必须抵达哪里</a></li>
+<li><a href="#监控只有进入控制回路才有价值"
+id="toc-监控只有进入控制回路才有价值">监控只有进入控制回路才有价值</a></li>
+<li><a href="#真正的被控对象不只是模型节点"
+id="toc-真正的被控对象不只是模型节点">真正的被控对象，不只是模型节点</a></li>
+<li><a href="#控制面一旦失明自主权就必须收缩"
+id="toc-控制面一旦失明自主权就必须收缩">控制面一旦失明，自主权就必须收缩</a></li>
+<li><a href="#高风险能力必须有一条独立退路"
+id="toc-高风险能力必须有一条独立退路">高风险能力必须有一条独立退路</a></li>
+<li><a href="#详尽必须由控制价值约束"
+id="toc-详尽必须由控制价值约束">“详尽”必须由控制价值约束</a></li>
+<li><a href="#人类要驾驭的是一个持续变化的系统"
+id="toc-人类要驾驭的是一个持续变化的系统">人类要驾驭的是一个持续变化的系统</a></li>
+</ul></nav>
+    <main><p>Agent
+正在从“给人建议的工具”变成“直接改变系统的行动者”。它不只生成代码和文本，还会调用接口、修改数据、触发部署、发送消息，甚至影响资金与权限。</p>
+<p>多数团队仍沿用普通软件的观测方式来管理它：记录
+token、延迟、错误率、调用链和模型评分。这些数据能说明一次调用发生了什么，却很难回答生产控制真正关心的问题——Agent
+为什么采取这个行动，它依据的事实是否仍然有效，外部世界是否已经改变，以及出错后还有没有来得及生效的退路。</p>
+<p>当 Agent
+可以自主行动时，事件记录不再等于系统状态。日志即使完整，人类仍可能不知道自己正在控制什么。</p>
+<p>本文的判断是：详尽监控不应被理解为收集更多数据，而应被设计成一面面向控制的动态系统镜像。它持续连接目标、证据、行动、权限、现实结果和恢复路径，是人类对
+Agent
+实施精细控制的认识基础。没有这面镜像，权限、Judge、回滚和人工审批都可能在控制一个已经过时或从未真实存在的世界。</p>
+<h2 id="看见事件和认识状态是两件事">“看见事件”和“认识状态”是两件事</h2>
+<p>日志告诉我们已经发生了哪些事件。控制需要知道的却是：系统现在处于什么状态，正在偏离什么，还有哪些动作可以把它带回安全范围。</p>
+<p>这两类信息并不等价。</p>
+<p>一次工具调用返回
+<code>success</code>，只能证明某个接口接受了请求。它不能证明第三方已经完成处理，也不能证明异步任务没有重复执行，更不能证明
+Agent 的目标判断本身正确。</p>
+<p>假设一个 Agent
+负责为退款超时用户补发优惠券。它查询订单、判断资格、调用发券接口。第一次请求超时，于是
+Agent 再试一次。两次请求都被第三方处理，最终用户收到两张券。</p>
+<p>这是一个用于解释机制的假设场景，不是真实事故复盘。日志可能完整记录两次请求、一次超时和两个返回值，但它仍回答不了：第一次调用是否已经改变外部世界，第二次行动是否还被允许，异常发生后谁能立即冻结发券能力。</p>
+<p>完整事件，不等于完整状态。</p>
+<h2 id="动态系统镜像到底要重建什么">动态系统镜像到底要重建什么</h2>
+<p>一面面向控制的动态镜像，不需要保存 Agent 的每个
+token。它需要持续回答会改变控制决定的问题：</p>
+<table>
+<thead>
+<tr>
+<th>控制问题</th>
+<th>发券场景中的状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前目标是什么</td>
+<td>为指定退款单完成一次补偿，而不是“调用一次发券接口”</td>
+</tr>
+<tr>
+<td>判断依据是什么</td>
+<td>退款时间、用户资格、历史补偿记录，以及各自的来源和有效期</td>
+</tr>
+<tr>
+<td>准备改变什么</td>
+<td>为指定用户新增一张有金额上限的券</td>
+</tr>
+<tr>
+<td>当前是否有资格行动</td>
+<td>任务、对象、额度、策略版本和时间窗口是否仍然匹配</td>
+</tr>
+<tr>
+<td>现实实际发生了什么</td>
+<td>券平台最终入账数量，而不是接口是否返回成功</td>
+</tr>
+<tr>
+<td>出错后还有什么退路</td>
+<td>冻结发券能力、对账、撤销或补偿、转入人工流程</td>
+</tr>
+</tbody>
+</table>
+<p>这些状态必须被连接起来，而不是散落在不同日志和仪表盘里。控制器需要知道某个判断来自哪份数据、数据何时读取、环境之后是否变化，以及一项权限依赖哪些仍然有效的证据。</p>
+<p>这正是“镜像”的含义：它不是复制系统的全部细节，而是重建与当前控制目标有关的状态。</p>
+<p><a href="https://doi.org/10.1137/0301010">Kalman
+对可观测性与可控性的区分</a>来自线性动态系统，并不直接给出 Agent
+监控方案；但它提供了一条可靠边界：能看到输入输出，不代表掌握了足以控制系统的内部状态。<a
+href="https://doi.org/10.1080/00207727008920220">Conant 与
+Ashby</a>则进一步说明，在给定假设下，有效调节器需要一个与调节目标相适配的系统模型。</p>
+<p>映射到 Agent
+系统，这意味着监控不能从“我们能采集什么”出发，而要从“我们准备做什么控制决定”反推需要认识哪些状态。</p>
+<h2 id="agent-改变哪部分现实监控就必须抵达哪里">Agent
+改变哪部分现实，监控就必须抵达哪里</h2>
+<p>软件团队习惯把工具回执当成完成证据，因为传统调用大多有相对明确的接口边界。Agent
+把多个工具和系统串起来后，这种假设变得危险。</p>
+<p><code>git push</code>
+成功，不代表正确版本已经安全运行；数据库更新返回成功，不代表下游副本已经一致；发布接口返回成功，也不代表目标用户看到的是正确内容。</p>
+<p>工具回执描述的是动作，真实结果描述的是世界。</p>
+<p>如果 Agent
+改变了账务状态，监控就必须连接最终账本；如果它改变了权限，监控就必须读取最终权限状态；如果它发布了内容，监控就必须验证公开位置、对象和可见结果。</p>
+<p>否则，系统会在最关键的地方形成一个闭环幻觉：Agent
+根据自己的计划行动，再根据工具返回值证明自己已经成功。整个过程内部一致，却没有和现实发生校准。</p>
+<h2 id="监控只有进入控制回路才有价值">监控只有进入控制回路才有价值</h2>
+<p>详尽监控是认识基础，不是完整控制。</p>
+<p>系统即使准确发现 Agent
+正在重复发券，如果只能向一个过载的值班群发送告警，而发券凭证仍然有效，损失就会继续扩大。</p>
+<p>完整闭环需要把状态认识连接到能够真正生效的动作：</p>
+<p><img src="./assets/figure-agent-control-loop-v3.png"
+alt="从观测到现实核验的 Agent 控制闭环" /></p>
+<p><em>图
+1｜监控只有接入可生效的控制动作，并由现实结果再次核验，才形成闭环。</em></p>
+<p>这条链上任何一段断开，控制都会变成假象。</p>
+<p>状态镜像过期，控制器依据的就是旧世界；告警没有撤权和隔离通道，系统只能旁观失控；“暂停”只改变数据库里的一个字段，却没有真正阻止调用，仪表盘虽然变绿，权限仍在生效。</p>
+<p>所以，监控项是否有价值，不能只看它记录了多少信息。更重要的是它能否改变一个控制决定，这个决定能否通过不可绕过的动作生效，最后又能否由现实结果验证。</p>
+<h2
+id="真正的被控对象不只是模型节点">真正的被控对象，不只是模型节点</h2>
+<p>重复发券可能来自模型误判，也可能来自第三方重试、缓存延迟、凭证没有真正撤销、审批队列过载，或者业务目标鼓励团队绕开门禁。</p>
+<p>如果监控只盯着模型输入输出，系统会把大量关键扰动留在视野之外。</p>
+<p>真正需要重建的是“Agent—工具—环境—人—组织”组成的社会技术系统。Agent
+在任务环境中选择行动，工具负责执行，外部环境产生真实结果，人和组织又决定权限、目标、响应时间和否决权。</p>
+<p><a
+href="https://direct.mit.edu/books/oa-monograph/2908/Engineering-a-Safer-WorldSystems-Thinking-Applied">Leveson
+的 STAMP 系统安全理论</a>并不研究
+LLM，但它揭示了复杂事故的一类共同机制：安全约束可能没有被发出、执行得太晚、作用对象错误，或者控制器依据了过期的系统模型。</p>
+<p>这也是为什么增加几个 Judge 并不自然得到可靠控制。如果 Judge 与 Agent
+使用相同模型、相同上下文和相同错误数据，它们可能只是用不同措辞重复同一个盲点。</p>
+<p>证据不仅要多，还要有来源、时间、版本和相对独立的故障路径。</p>
+<h2
+id="控制面一旦失明自主权就必须收缩">控制面一旦失明，自主权就必须收缩</h2>
+<p>生产自主权不应是 Agent
+获得一次后永久保留的等级。它更像一组持续续期的运行资格：关键状态仍然可见，控制动作仍然可达，安全退路仍然可用，这项能力才可以继续自主运行。</p>
+<p>如果退款资格数据已经过期，自动发券就应暂停；如果无法确认撤权命令真正生效，就应在更外层冻结凭证；如果对账链路中断，对应能力就只能降为只读或转人工。</p>
+<p>这里不需要整个系统一刀切停机。哪个关键状态不可见，就收缩依赖该状态的能力；哪个控制动作不可达，就撤掉需要它兜底的资格。</p>
+<p>因此，真正被授权的不是“这个
+Agent”，而是在指定任务、对象、范围、版本和时间窗口内执行的一项具体能力。</p>
+<p>模型能力决定 Agent
+会做什么，控制覆盖决定系统此刻允许它自主做什么。</p>
+<h2 id="高风险能力必须有一条独立退路">高风险能力必须有一条独立退路</h2>
+<p>当 Agent
+本身失灵时，系统还需要一条不依赖它继续正确工作的安全通道。</p>
+<p>在发券场景里，第一步不是要求 Agent
+自己重新分析，而是从独立位置冻结新增发券，阻止影响继续扩大。之后再对账，确认哪些券已经入账，最后决定撤销还是补偿。</p>
+<p>安全退路、回滚和补偿是三件事。安全退路先停止扩散，回滚恢复内部版本，补偿处理已经进入现实、无法简单撤销的副作用。</p>
+<p><a
+href="https://ntrs.nasa.gov/api/citations/20180006312/downloads/20180006312.pdf">NASA
+关于自主系统运行时保障的研究</a>提供了一种可借鉴的结构：高性能但不完全可信的功能可以运行，监控、切换和替代安全通道则由更可信、相对独立的机制承担。替代通道不需要和主功能一样强，只需要把系统带到更安全的状态。</p>
+<p>对软件
+Agent，这可能是撤销生产凭证、切换只读、保持旧版本、隔离消息消费者，或者进入经过演练的人工流程。</p>
+<p>没有独立且可验证的退路，高风险能力就不应自主进入生产。</p>
+<h2 id="详尽必须由控制价值约束">“详尽”必须由控制价值约束</h2>
+<p>详尽监控最容易走向另一个极端：保存全部过程、增加更多字段、建设更多仪表盘，再把每个未知都交给人工审批。</p>
+<p>这样的系统可能很少出错，也可能根本无法工作。它会带来时延、噪声、存储、隐私和审批疲劳，最后把
+Agent 的自动化收益全部转化为组织成本。</p>
+<p>判断一个监控项是否值得建设，可以连续追问三次：它会改变哪个控制决定？这个决定通过什么动作真正生效？最终用什么现实结果证明动作有效？</p>
+<p>如果一个字段不改变任何决定，它大概率只是记录；如果一个告警没有对应动作，它只是通知；如果一个动作没有现实验证，它只是控制器的自我声明。</p>
+<p>第一个控制面也不需要覆盖所有
+Agent。可以选择一项带真实副作用、结果能够核验的高风险能力，比较现有流程、只增加观测的流程和形成完整闭环的流程。只有当静默失败和真实损失下降，而且收益大于误杀、时延、人工与基础设施成本，这面镜像才创造了生产价值。</p>
+<h2
+id="人类要驾驭的是一个持续变化的系统">人类要驾驭的是一个持续变化的系统</h2>
+<p>Agent
+系统之所以难以驾驭，不只是因为模型输出存在不确定性。目标会变化，证据会过期，工具会重试，权限会漂移，外部环境也会在
+Agent 行动之后继续变化。</p>
+<p>普通日志擅长保存这些变化留下的事件，却不会自动告诉我们：系统现在是什么，正在偏离什么，我们还能做什么。</p>
+<p>一面面向控制的动态镜像，要持续回答的正是这三个问题。</p>
+<p>它不保证 Agent 永远正确，也不试图替 Agent
+决定每一步。它让人类能够在现实还来得及改变时，看见足以判断的状态，调用足以生效的动作，并用真实结果校准下一次控制。</p>
+<p>详尽监控的价值，不是让我们看见更多 Agent 活动。</p>
+<p>而是让我们终于知道，自己是否仍然有能力驾驭它。</p></main>
+  </div>
+  <div class="foot">系统微分 · 面向 Agent 生产系统的工程观察与架构推演</div>
+  <script>
+    const p=document.getElementById('progress');addEventListener('scroll',()=>{const d=document.documentElement,m=d.scrollHeight-d.clientHeight;p.style.width=(m?d.scrollTop/m*100:0)+'%'},{passive:true});
+  </script>
+</body>
+</html>
