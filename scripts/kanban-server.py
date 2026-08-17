@@ -87,6 +87,8 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
             "git_commit": (e.get("git_commit") or "")[:7],
             "inferred": bool(e.get("inferred")),
             "passed_stages": e.get("passed_stages") or [],
+            "child_plan": e.get("child_plan"),
+            "plan_snapshot": e.get("plan_snapshot"),
         }
         for e in reversed(gate_events)
     ][:12]
@@ -97,12 +99,90 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
             "stage": last_stage,
             "at": (last.get("created_at") or "")[:10],
             "reason": (last.get("reason") or "").split(";")[0].strip(),
+            "child_plan": last.get("child_plan"),
+            "plan_snapshot": last.get("plan_snapshot"),
         },
         "consecutive_fails": consecutive_fails,
         "recent": recent,
         "total": len(gate_events),
         "passes": passes,
     }
+
+
+def _gate_matches_current_plan(event: dict[str, Any] | None, plan_rel: str | None) -> bool:
+    """Only project a gate result while it still proves the current plan bytes.
+
+    Gate events are an audit trail, not mutable state.  An event without a plan
+    snapshot cannot prove that a later edit still satisfies the gate, so it is
+    intentionally excluded from the current-state projection.
+    """
+    if not event or not plan_rel:
+        return False
+    child_plan = str(event.get("child_plan") or "").strip()
+    if child_plan and child_plan != str(plan_rel).strip():
+        return False
+    expected = str(event.get("plan_snapshot") or "").strip()
+    if not expected:
+        return False
+    try:
+        plan = resolve_plan(str(plan_rel))
+        actual = hashlib.sha256(plan.read_bytes()).hexdigest()
+    except (OSError, ValueError):
+        return False
+    return actual == expected
+
+
+_ACTIVE_PLAN_STATUSES = {"草稿", "进行中", "评审中", "待开发", "待确认", "draft", "in_progress", "review"}
+_EXPECTED_PROGRESS_MARKERS = {
+    "requirement": ("status 须为",),
+    "prioritization": ("status 须为", "backlogPrioritized:"),
+    "architecture": ("status 须为",),
+    "story-split": ("status 须为", "storyScopeReady:"),
+    "implementation-design": ("implementationDesignReady:",),
+    "story-development": ("storyTddComplete:",),
+    "integration-test-plan": ("testPlanApproved:",),
+    "integration-test": ("integrationReportPass:",),
+}
+
+
+def _gate_failure_is_expected_progress(stage: str, plan_status: str, reason: str) -> bool:
+    """Treat an unmet exit criterion as progress while its Plan is explicitly active.
+
+    The gate still prevents stage advancement.  This only separates normal
+    work-in-progress from a contradiction where a Plan claims completion but
+    its exit gate fails.
+    """
+    if str(plan_status).strip() not in _ACTIVE_PLAN_STATUSES:
+        return False
+    return any(marker in str(reason) for marker in _EXPECTED_PROGRESS_MARKERS.get(stage, ()))
+
+
+def _display_gate_history(
+    history: dict[str, Any] | None,
+    current_gate: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Project current expected gate failures as pending without rewriting audit events."""
+    if not history or not current_gate or current_gate.get("result") != "pending":
+        return history
+    projected = json.loads(json.dumps(history, ensure_ascii=False))
+    stage = current_gate.get("stage")
+    snapshot = current_gate.get("plan_snapshot")
+    for event in projected.get("recent", []):
+        if (
+            event.get("stage") == stage
+            and event.get("result") == "fail"
+            and event.get("plan_snapshot") == snapshot
+        ):
+            event["result"] = "pending"
+    last = projected.get("last_gate") or {}
+    if (
+        last.get("stage") == stage
+        and last.get("result") == "fail"
+        and last.get("plan_snapshot") == snapshot
+    ):
+        last["result"] = "pending"
+    projected["consecutive_fails"] = 0
+    return projected
 
 
 def _event_file_for_write(epic_rel: str) -> Path:
@@ -582,8 +662,23 @@ def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[s
     meta = {
         "index": str(index_path.relative_to(ROOT)) if index_path.is_relative_to(ROOT) else str(index_path),
         "scope_confirmed": payload.get("scope_confirmed") is True,
+        "epic_scope": payload.get("epic_scope") if isinstance(payload.get("epic_scope"), list) else [],
+        "current_implementation_scope": (
+            payload.get("current_implementation_scope")
+            if isinstance(payload.get("current_implementation_scope"), list)
+            else []
+        ),
     }
     return cards, meta
+
+
+def _delivery_story_cards(stories: list[dict[str, Any]], story_meta: dict[str, Any]) -> list[dict[str, Any]]:
+    """Whole Epic exit scope; legacy indexes fall back to rotating sprint scope."""
+    epic_scope = [str(item) for item in story_meta.get("epic_scope", []) if str(item).strip()]
+    if epic_scope:
+        by_id = {str(story.get("id") or ""): story for story in stories}
+        return [by_id[story_id] for story_id in epic_scope if story_id in by_id]
+    return [story for story in stories if story.get("sprint_scope")]
 
 
 def _integration_pass(plan_by_stage: dict[str, str]) -> bool:
@@ -650,20 +745,21 @@ def _test_plan_facts(plan_by_stage: dict[str, str]) -> dict[str, Any]:
 
 def _test_health(plan_by_stage: dict[str, str], plans: list[dict[str, Any]]) -> dict[str, Any]:
     if "integration" in plan_by_stage or "prioritization" in plan_by_stage:
-        stories, _ = _load_story_cards(plan_by_stage.get("development"))
-        scoped = [s for s in stories if s.get("sprint_scope")]
+        stories, story_meta = _load_story_cards(plan_by_stage.get("development"))
+        scoped = _delivery_story_cards(stories, story_meta)
         done = [s for s in scoped if s.get("tdd_complete")]
         integration_ok = _integration_pass(plan_by_stage)
         test_plan = _test_plan_facts(plan_by_stage)
-        blockers = []
+        pending = []
         if not scoped:
-            blockers.append("未确认迭代 Scope")
+            pending.append("未确认迭代 Scope")
         if scoped and len(done) < len(scoped):
-            blockers.append(f"Scope Story TDD {len(done)}/{len(scoped)}")
+            pending.append(f"Scope Story TDD {len(done)}/{len(scoped)}")
         if scoped and len(done) == len(scoped) and not integration_ok:
-            blockers.append("集成测试计划待审核" if not test_plan["approved"] else "全量集成测试未通过")
+            pending.append("集成测试计划待审核" if not test_plan["approved"] else "全量集成测试待完成")
         return {
-            "health": "green" if integration_ok else ("amber" if scoped else "red"),
+            # 未完成是 client-dev 的正常进度；真实风险由当前门禁 fail/P0 投影。
+            "health": "green" if integration_ok else "blue",
             "requirement_plan": plan_by_stage.get("requirement"),
             "test_plan": plan_by_stage.get("integration"),
             "planning_plan": plan_by_stage.get("integration_plan"),
@@ -680,7 +776,8 @@ def _test_health(plan_by_stage: dict[str, str], plans: list[dict[str, Any]]) -> 
             "coverage_pct": round(len(done) / len(scoped) * 100) if scoped else None,
             "ac_total": len(scoped),
             "ac_covered": len(done),
-            "blockers": blockers,
+            "pending": pending,
+            "blockers": [],
         }
     req_rel = plan_by_stage.get("requirement")
     test_rel = plan_by_stage.get("test")
@@ -765,9 +862,12 @@ def _build_workflow_map(
         stage_keys.index(current_stage) if current_stage in stage_keys else 0
     )
     scoped = [story for story in stories if story.get("sprint_scope")]
+    delivery_stories = _delivery_story_cards(stories, story_meta)
     implementation_ready = [story for story in scoped if story.get("implementation_design_ready")]
-    tdd_done = [story for story in scoped if story.get("tdd_complete")]
+    scoped_tdd_done = [story for story in scoped if story.get("tdd_complete")]
+    tdd_done = [story for story in delivery_stories if story.get("tdd_complete")]
     points_total = sum(int(story.get("story_points") or 0) for story in scoped)
+    delivery_points_total = sum(int(story.get("story_points") or 0) for story in delivery_stories)
     points_done = sum(int(story.get("story_points") or 0) for story in tdd_done)
     epic_mapping = blueprint.get("epicMapping") or {}
     stages: list[dict[str, Any]] = []
@@ -783,7 +883,18 @@ def _build_workflow_map(
                 plan_exists = resolve_plan(str(plan_path)).is_file()
             except ValueError:
                 plan_exists = False
-        gate = latest_gate_by_stage.get(key)
+        raw_gate = latest_gate_by_stage.get(key)
+        gate = raw_gate if _gate_matches_current_plan(raw_gate, str(plan_path or "")) else None
+        if gate and gate.get("result") == "fail" and _gate_failure_is_expected_progress(
+            key,
+            str(plan.get("status") or ""),
+            str(gate.get("reason") or ""),
+        ):
+            gate = {**gate, "result": "pending"}
+        # A stage that is still current has not exited.  A historical pass for
+        # the same stage therefore belongs to an older scope/plan revision.
+        if index == current_index and gate and gate.get("result") == "pass":
+            gate = None
 
         if current_stage == "done" or index < current_index:
             state = "completed"
@@ -791,8 +902,6 @@ def _build_workflow_map(
             state = "upcoming"
         else:
             is_blocked = not plan_exists or bool(gate and gate.get("result") == "fail")
-            if key in {"integration-test-plan", "integration-test"} and test_health.get("blockers"):
-                is_blocked = True
             state = "blocked" if is_blocked else "active"
 
         summary = str(plan.get("status") or ("子 Plan 未创建" if not plan_exists else "待推进"))
@@ -802,7 +911,7 @@ def _build_workflow_map(
         elif key == "implementation-design":
             summary = f"落点设计 {len(implementation_ready)}/{len(scoped)} Story"
         elif key == "story-development":
-            summary = f"TDD {len(tdd_done)}/{len(scoped)} Story · {points_done}/{points_total} 点"
+            summary = f"TDD {len(tdd_done)}/{len(delivery_stories)} Story · {points_done}/{delivery_points_total} 点"
         elif key == "integration-test-plan":
             summary = (
                 f"测试审核已通过 · {test_health.get('test_case_count') or 0} 用例"
@@ -810,26 +919,29 @@ def _build_workflow_map(
                 else f"待测试审核 · {test_health.get('test_case_count') or 0} 用例"
             )
         elif key == "integration-test":
-            summary = "全量集成已通过" if test_health.get("integration_pass") else "全量集成未通过"
+            summary = "全量集成已通过" if test_health.get("integration_pass") else "全量集成待完成"
         if state == "upcoming" and not plan_exists:
             summary = "尚未到创建阶段"
 
         blocker = ""
+        progress_note = ""
         if index == current_index and current_stage != "done":
             if gate and gate.get("result") == "fail":
                 blocker = str(gate.get("reason") or "门禁未通过")
             elif not plan_exists:
                 blocker = f"{stage.get('label') or key}：子 Plan 不存在"
             elif key == "integration-test-plan" and not test_health.get("test_plan_approved"):
-                blocker = "集成测试计划尚未通过测试审核"
-            elif key == "integration-test" and test_health.get("blockers"):
-                blocker = str(test_health["blockers"][0])
+                progress_note = "集成测试计划正在准备或等待审核"
+            elif key == "integration-test" and not test_health.get("integration_pass"):
+                progress_note = "全量集成测试正在准备或执行"
             elif key == "story-split" and not story_meta.get("scope_confirmed"):
-                blocker = "Story Scope 未确认"
+                progress_note = "Story Scope 正在拆分或等待确认"
             elif key == "implementation-design" and len(implementation_ready) < len(scoped):
-                blocker = f"还有 {len(scoped) - len(implementation_ready)} 个 Story 缺实现落点"
-            elif key == "story-development" and len(tdd_done) < len(scoped):
-                blocker = f"还有 {len(scoped) - len(tdd_done)} 个 Story 未完成 TDD"
+                progress_note = f"还有 {len(scoped) - len(implementation_ready)} 个 Story 待完成实现落点"
+            elif key == "story-development" and len(scoped_tdd_done) < len(scoped):
+                progress_note = f"当前 Scope 还有 {len(scoped) - len(scoped_tdd_done)} 个 Story 正在完成 TDD"
+            elif key == "story-development" and len(tdd_done) < len(delivery_stories):
+                progress_note = f"当前 Story 已完成，Epic 还有 {len(delivery_stories) - len(tdd_done)} 个 Story 待激活或完成"
 
         stages.append(
             {
@@ -839,6 +951,7 @@ def _build_workflow_map(
                 "state": state,
                 "summary": summary,
                 "blocker": blocker,
+                "progress_note": progress_note,
                 "skills": stage.get("skills") or [],
                 "template": stage.get("template") or "",
                 "required_outputs": stage.get("requiredSections") or [],
@@ -920,7 +1033,8 @@ def scan_epic(path: Path) -> dict[str, Any]:
     total_cnt = len(enriched)
     if is_client_dev:
         scoped = [s for s in stories if s.get("sprint_scope")]
-        story_done = [s for s in scoped if s.get("tdd_complete")]
+        delivery_stories = _delivery_story_cards(stories, story_meta)
+        story_done = [s for s in delivery_stories if s.get("tdd_complete")]
         status_by_stage = {p.get("stage_key"): p.get("status") for p in plans}
         adopted = {"已采纳", "已完成", "done", "completed"}
         if status_by_stage.get("requirement") not in adopted:
@@ -933,7 +1047,7 @@ def scan_epic(path: Path) -> dict[str, Any]:
             cur_stage = "story-split"
         elif scoped and any(not s.get("implementation_design_ready") for s in scoped):
             cur_stage = "implementation-design"
-        elif not scoped or len(story_done) < len(scoped):
+        elif not delivery_stories or len(story_done) < len(delivery_stories):
             cur_stage = "story-development"
         elif not _test_plan_facts(plan_by_stage)["approved"]:
             cur_stage = "integration-test-plan"
@@ -942,31 +1056,11 @@ def scan_epic(path: Path) -> dict[str, Any]:
         else:
             cur_stage = "done"
         done_cnt = len(story_done)
-        total_cnt = len(scoped)
+        total_cnt = len(delivery_stories)
     else:
         # 含 WBS 的其他工作流：第一个未完成切片所属 stage key。
         cur_stage = next((e["stage_key"] for e in enriched if not e["done"]), "done")
-    consec = (gh or {}).get("consecutive_fails", 0)
     p0 = int(fm.get("p0_open", "0") or "0")
-    # 健康等级（指挥官排序依据）：archived 已归档（置灰，排最后）；
-    # red 连续fail≥2 或 P0未闭环；amber 有未完成或最近fail；green 全通过。
-    if fm.get("status") == "已归档":
-        health = "archived"
-    elif consec >= 2 or p0 > 0:
-        health = "red"
-    elif cur_stage == "done":
-        health = "green"
-    elif (gh and gh["last_gate"]["result"] == "fail") or total_cnt > done_cnt:
-        health = "amber"
-    else:
-        health = "blue"
-    blocker = ""
-    if is_client_dev and cur_stage != "done":
-        running = next((s for s in stories if s.get("state") == "running"), None)
-        pending = next((s for s in stories if s.get("sprint_scope") and not s.get("tdd_complete")), None)
-        blocker = (running or pending or {}).get("title") or cur_stage
-    elif first_open is not None:
-        blocker = next((e["title"] for e in enriched if e["n"] == first_open), f"WBS {first_open}")
     workflow_map = _build_workflow_map(
         workflow=effective_workflow,
         current_stage=cur_stage,
@@ -976,6 +1070,58 @@ def scan_epic(path: Path) -> dict[str, Any]:
         test_health=test_health,
         gate_history=gh,
     )
+    current_flow_stage = next(
+        (stage for stage in workflow_map.get("stages", []) if stage.get("key") == cur_stage),
+        {},
+    )
+    current_gate = current_flow_stage.get("gate") if current_flow_stage else None
+    gh = _display_gate_history(gh, current_gate)
+    current_failures = 0
+    if current_gate and current_gate.get("result") == "fail":
+        expected_snapshot = current_gate.get("plan_snapshot")
+        started = False
+        for event in (gh or {}).get("recent", []):
+            if not started:
+                if event is current_gate or (
+                    event.get("stage") == cur_stage
+                    and event.get("result") == "fail"
+                    and event.get("plan_snapshot") == expected_snapshot
+                ):
+                    started = True
+                else:
+                    continue
+            if (
+                event.get("stage") != cur_stage
+                or event.get("result") != "fail"
+                or event.get("plan_snapshot") != expected_snapshot
+            ):
+                break
+            current_failures += 1
+
+    # 健康等级只消费「当前阶段 + 当前 Plan 快照」的门禁事实。
+    # 正常 active 阶段是 blue，不再因「还没做完」变成 amber/red。
+    if fm.get("status") == "已归档":
+        health = "archived"
+    elif p0 > 0 or current_failures >= 2:
+        health = "red"
+    elif cur_stage == "done":
+        health = "green"
+    elif current_flow_stage.get("state") == "blocked" or (current_gate and current_gate.get("result") == "fail"):
+        health = "amber"
+    else:
+        health = "blue"
+
+    blocker_hint = ""
+    progress_hint = ""
+    if cur_stage != "done":
+        if current_flow_stage.get("state") == "blocked":
+            blocker_hint = str(current_flow_stage.get("blocker") or cur_stage)
+        elif is_client_dev:
+            running = next((s for s in stories if s.get("state") == "running"), None)
+            pending = next((s for s in stories if s.get("sprint_scope") and not s.get("tdd_complete")), None)
+            progress_hint = str((running or pending or {}).get("title") or current_flow_stage.get("progress_note") or cur_stage)
+        elif first_open is not None:
+            progress_hint = next((e["title"] for e in enriched if e["n"] == first_open), f"WBS {first_open}")
     return {
         "file": rel,
         "name": path.stem,
@@ -996,12 +1142,22 @@ def scan_epic(path: Path) -> dict[str, Any]:
         "gate_history": gh,
         "progress_history": ph,
         "health": health,
+        "current_gate": current_gate,
+        "current_gate_failures": current_failures,
         "current_stage": cur_stage,
         "slices_done": done_cnt,
         "slices_total": total_cnt,
-        "story_points_done": sum(int(s.get("story_points") or 0) for s in stories if s.get("sprint_scope") and s.get("tdd_complete")),
-        "story_points_total": sum(int(s.get("story_points") or 0) for s in stories if s.get("sprint_scope")),
-        "blocker_hint": blocker,
+        "story_points_done": sum(
+            int(s.get("story_points") or 0)
+            for s in (_delivery_story_cards(stories, story_meta) if is_client_dev else [])
+            if s.get("tdd_complete")
+        ),
+        "story_points_total": sum(
+            int(s.get("story_points") or 0)
+            for s in (_delivery_story_cards(stories, story_meta) if is_client_dev else [])
+        ),
+        "blocker_hint": blocker_hint,
+        "progress_hint": progress_hint,
         "workflow_map": workflow_map,
     }
 
@@ -1087,9 +1243,9 @@ def _legacy_lightweight_title(path: Path, stage: dict[str, Any], body: str) -> s
     return stem or path.stem
 
 
-def _lightweight_gate_results() -> dict[str, str]:
-    """子 Plan 的最后一次门禁结果是阶段是否完成的首选事实。"""
-    results: dict[str, str] = {}
+def _lightweight_gate_results() -> dict[str, dict[str, Any]]:
+    """返回子 Plan 的最后一次门禁事件；是否有效由当前 Plan 快照决定。"""
+    results: dict[str, dict[str, Any]] = {}
     if not EVENT_DIR.is_dir():
         return results
     for event_file in sorted(EVENT_DIR.glob("*.events.jsonl")):
@@ -1102,7 +1258,7 @@ def _lightweight_gate_results() -> dict[str, str]:
                 continue
             child = str(event.get("child_plan") or "").strip()
             if child and event.get("type") in ("gate_pass", "gate_fail"):
-                results[child] = "pass" if event["type"] == "gate_pass" else "fail"
+                results[child] = event
     return results
 
 
@@ -1142,7 +1298,10 @@ def lightweight_payload() -> list[dict[str, Any]]:
                 previous = task["plans"].get(stage_key)
                 if previous is None or updated_ns > previous["updated_ns"]:
                     status = str(fm.get("status") or "").strip()
-                    gate_result = gate_results.get(rel, "")
+                    gate_event = gate_results.get(rel)
+                    gate_result = ""
+                    if _gate_matches_current_plan(gate_event, rel):
+                        gate_result = "pass" if gate_event.get("type") == "gate_pass" else "fail"
                     task["plans"][stage_key] = {
                         "path": rel,
                         "status": status,
@@ -1218,9 +1377,20 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
     case_count = sum((e.get("test_health") or {}).get("case_count", 0) for e in epics)
     test_risk = sum(1 for e in epics if (e.get("test_health") or {}).get("health") in ("red", "amber"))
     n_epics = len(epics)
-    blocked = sum(1 for e in epics if e.get("health") in ("red", "amber"))
+    current_flow_stages = [
+        next(
+            (
+                stage
+                for stage in (e.get("workflow_map") or {}).get("stages", [])
+                if stage.get("key") == e.get("current_stage")
+            ),
+            {},
+        )
+        for e in epics
+    ]
+    blocked = sum(1 for stage in current_flow_stages if stage.get("state") == "blocked")
     healthy = sum(1 for e in epics if e.get("health") == "green")
-    running = sum(1 for e in epics if e.get("health") == "blue")
+    running = sum(1 for stage in current_flow_stages if stage.get("state") == "active")
     pass_rate = round(passes / total_events * 100) if total_events else None
     top_blockers = [{"stage": s, "count": c} for s, c in stage_fail.most_common(3)]
     # 整体健康灯：任一 red→red；有 amber→amber；否则 green。

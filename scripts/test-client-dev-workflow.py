@@ -213,6 +213,59 @@ class ClientDevWorkflowTests(unittest.TestCase):
                 "acceptance": [{"ac_id": "AC1", "pass": True}],
             })
             self.run_validator(root, "story-development", plan, ok=True)
+            self.write(root / "Plans/功能开发/us-2.md", """
+                ---
+                story_id: US-2
+                status: 待开发
+                tdd_evidence: Plans/功能开发/us-2.tdd.json
+                ---
+                # US-2
+            """)
+            self.dump(root / "Plans/功能开发/demo.stories.json", {
+                "scope_confirmed": True,
+                "epic_scope": ["US-1", "US-2"],
+                "current_implementation_scope": ["US-1"],
+                "stories": [
+                    {
+                        "id": "US-1", "title": "用户可以创建草稿", "path": "Plans/功能开发/us-1.md",
+                        "story_points": 5, "estimate_confirmed": True, "priority": "P0",
+                        "sprint_scope": True, "dependencies": [], "acceptance_criteria": ["AC1"],
+                        "architecture_refs": ["ADR-1"], "vertical_slice": True,
+                    },
+                    {
+                        "id": "US-2", "title": "用户可以发布草稿", "path": "Plans/功能开发/us-2.md",
+                        "story_points": 5, "estimate_confirmed": True, "priority": "P0",
+                        "sprint_scope": False, "dependencies": ["US-1"], "acceptance_criteria": ["AC2"],
+                        "architecture_refs": ["ADR-1"], "vertical_slice": True,
+                    },
+                ],
+            })
+            incomplete_epic = self.run_validator(root, "story-development", plan, ok=False)
+            self.assertIn("US-2 status 未完成", incomplete_epic.stderr)
+            single_story = subprocess.run(
+                [
+                    "python3", str(VALIDATOR), "story-development", "--root", str(root),
+                    "--plan", str(plan), "--story-id", "US-1",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(single_story.returncode, 0, single_story.stderr)
+            self.assertIn("OK:client-dev:story-development", single_story.stdout)
+            inactive_story = subprocess.run(
+                [
+                    "python3", str(VALIDATOR), "story-development", "--root", str(root),
+                    "--plan", str(plan), "--story-id", "US-2",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(inactive_story.returncode, 0)
+            self.assertIn("不是当前滚动 Scope", inactive_story.stderr)
             self.assertTrue(story.exists())
 
     def test_ac10_integration_report_must_match_target_commit(self) -> None:
@@ -707,6 +760,187 @@ skill_run:
             self.assertFalse(stage["plan"]["exists"])
             self.assertEqual(stage["summary"], "尚未到创建阶段")
             self.assertEqual(stage["blocker"], "")
+
+    def test_kanban_active_work_is_progress_not_blocker(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="client-dev-kanban-progress-") as raw:
+            root = Path(raw)
+            dev = self.write(root / "Plans/功能开发/demo.md", "# development")
+            spec = importlib.util.spec_from_file_location("kanban_server_progress", ROOT / "scripts/kanban-server.py")
+            assert spec and spec.loader
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.ROOT = root
+            mod.BLUEPRINT_DIR = ROOT / ".workflows/blueprints"
+
+            story = {
+                "id": "US-1", "title": "用户可以创建草稿", "story_points": 5,
+                "sprint_scope": True, "implementation_design_ready": True, "tdd_complete": False,
+            }
+            development_flow = mod._build_workflow_map(
+                "client-dev", "story-development",
+                [{"stage_key": "development", "path": "Plans/功能开发/demo.md", "status": "进行中"}],
+                [story], {"scope_confirmed": True}, {"blockers": []}, None,
+            )
+            development = next(stage for stage in development_flow["stages"] if stage["key"] == "story-development")
+            self.assertEqual(development["state"], "active")
+            self.assertEqual(development["blocker"], "")
+            self.assertIn("正在完成 TDD", development["progress_note"])
+
+            active_snapshot = hashlib.sha256(dev.read_bytes()).hexdigest()
+            active_gate = {
+                "result": "fail", "stage": "story-development", "child_plan": "Plans/功能开发/demo.md",
+                "plan_snapshot": active_snapshot,
+                "reason": "逐用户故事 TDD 开发：storyTddComplete: US-1 status 未完成",
+            }
+            active_flow = mod._build_workflow_map(
+                "client-dev", "story-development",
+                [{"stage_key": "development", "path": "Plans/功能开发/demo.md", "status": "进行中"}],
+                [story], {"scope_confirmed": True}, {"blockers": []}, {"recent": [active_gate]},
+            )
+            active_stage = next(stage for stage in active_flow["stages"] if stage["key"] == "story-development")
+            self.assertEqual(active_stage["state"], "active")
+            self.assertEqual(active_stage["blocker"], "")
+            self.assertEqual(active_stage["gate"]["result"], "pending")
+
+            claimed_done_flow = mod._build_workflow_map(
+                "client-dev", "story-development",
+                [{"stage_key": "development", "path": "Plans/功能开发/demo.md", "status": "已完成"}],
+                [story], {"scope_confirmed": True}, {"blockers": []}, {"recent": [active_gate]},
+            )
+            claimed_done = next(
+                stage for stage in claimed_done_flow["stages"] if stage["key"] == "story-development"
+            )
+            self.assertEqual(claimed_done["state"], "blocked")
+            self.assertEqual(claimed_done["gate"]["result"], "fail")
+            self.assertIn("status 未完成", claimed_done["blocker"])
+
+            projected_history = mod._display_gate_history(
+                {"last_gate": active_gate, "recent": [active_gate], "consecutive_fails": 1},
+                active_stage["gate"],
+            )
+            self.assertEqual(projected_history["last_gate"]["result"], "pending")
+            self.assertEqual(projected_history["recent"][0]["result"], "pending")
+            self.assertEqual(projected_history["consecutive_fails"], 0)
+
+            integration_plan_flow = mod._build_workflow_map(
+                "client-dev", "integration-test-plan",
+                [{"stage_key": "integration_plan", "path": "Plans/功能开发/demo.md", "status": "进行中"}],
+                [{**story, "tdd_complete": True}], {"scope_confirmed": True},
+                {"blockers": [], "test_plan_approved": False}, None,
+            )
+            integration_plan = next(
+                stage for stage in integration_plan_flow["stages"] if stage["key"] == "integration-test-plan"
+            )
+            self.assertEqual(integration_plan["state"], "active")
+            self.assertEqual(integration_plan["blocker"], "")
+            self.assertIn("等待审核", integration_plan["progress_note"])
+
+            old_snapshot = hashlib.sha256(dev.read_bytes()).hexdigest()
+            stale_gate = {
+                "result": "fail", "stage": "story-development", "child_plan": "Plans/功能开发/demo.md",
+                "plan_snapshot": old_snapshot, "reason": "旧版门禁失败",
+            }
+            dev.write_text(dev.read_text(encoding="utf-8") + "\nnew scope\n", encoding="utf-8")
+            stale_flow = mod._build_workflow_map(
+                "client-dev", "story-development",
+                [{"stage_key": "development", "path": "Plans/功能开发/demo.md", "status": "进行中"}],
+                [story], {"scope_confirmed": True}, {"blockers": []}, {"recent": [stale_gate]},
+            )
+            stale_stage = next(stage for stage in stale_flow["stages"] if stage["key"] == "story-development")
+            self.assertEqual(stale_stage["state"], "active")
+            self.assertIsNone(stale_stage["gate"])
+
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+        self.assertIn("selected.progress_note", html)
+        self.assertIn("flow-progress-note", html)
+
+    def test_kanban_future_gate_failures_do_not_mark_current_work_red(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="client-dev-kanban-health-") as raw:
+            root = Path(raw)
+            for folder in [
+                "Plans/Epic", "Plans/需求分析", "Plans/需求排序", "Plans/技术方案", "Plans/功能开发", ".workflows/events",
+            ]:
+                (root / folder).mkdir(parents=True, exist_ok=True)
+            epic = self.write(root / "Plans/Epic/demo.md", """
+                ---
+                workflow: client-dev
+                status: 进行中
+                p0_open: 0
+                plans:
+                  requirement: Plans/需求分析/demo.md
+                  prioritization: Plans/需求排序/demo.md
+                  architecture: Plans/技术方案/demo.md
+                  development: Plans/功能开发/demo.md
+                ---
+                # Demo
+            """)
+            for rel in ["Plans/需求分析/demo.md", "Plans/需求排序/demo.md", "Plans/技术方案/demo.md"]:
+                self.write(root / rel, "---\nstatus: 已采纳\n---\n# done")
+            self.write(root / "Plans/功能开发/demo.md", """
+                ---
+                status: 进行中
+                story_index: Plans/功能开发/demo.stories.json
+                ---
+                # Stories
+            """)
+            self.dump(root / "Plans/功能开发/demo.stories.json", {
+                "scope_confirmed": True,
+                "epic_scope": ["US-1", "US-2"],
+                "current_implementation_scope": ["US-1"],
+                "stories": [
+                    {
+                        "id": "US-1", "title": "用户可以创建草稿", "path": "Plans/功能开发/us-1.md",
+                        "story_points": 5, "priority": "P0", "sprint_scope": True, "dependencies": [],
+                    },
+                    {
+                        "id": "US-2", "title": "用户可以发布草稿", "path": "Plans/功能开发/us-2.md",
+                        "story_points": 5, "priority": "P0", "sprint_scope": False, "dependencies": ["US-1"],
+                    },
+                ],
+            })
+            self.write(root / "Plans/功能开发/us-1.md", """
+                ---
+                story_id: US-1
+                status: 已完成
+                implementation_design: Plans/功能开发/us-1.impl.json
+                tdd_evidence: Plans/功能开发/us-1.tdd.json
+                ---
+                # US-1
+            """)
+            self.dump(root / "Plans/功能开发/us-1.impl.json", {"confirmed": True, "blocked_questions": []})
+            self.dump(root / "Plans/功能开发/us-1.tdd.json", {
+                "story_id": "US-1", "commit": "abc123", "red": {"exit_code": 1},
+                "green": {"exit_code": 0}, "refactor": {"exit_code": 0}, "integration_smoke": {"exit_code": 0},
+            })
+            self.write(root / "Plans/功能开发/us-2.md", """
+                ---
+                story_id: US-2
+                status: 待开发
+                ---
+                # US-2
+            """)
+            self.write(root / ".workflows/events/demo.events.jsonl", """
+                {"type":"gate_fail","stage":"integration-test-plan","reason":"未创建","created_at":"2026-08-17T10:00:00+08:00"}
+                {"type":"gate_fail","stage":"integration-test-plan","reason":"未创建","created_at":"2026-08-17T10:01:00+08:00"}
+            """)
+
+            spec = importlib.util.spec_from_file_location("kanban_server_health", ROOT / "scripts/kanban-server.py")
+            assert spec and spec.loader
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.ROOT = root
+            mod.RUN_DIR = root / ".workflows/runs"
+            mod.EVENT_DIR = root / ".workflows/events"
+            mod.BLUEPRINT_DIR = ROOT / ".workflows/blueprints"
+            data = mod.scan_epic(epic)
+
+        self.assertEqual(data["current_stage"], "story-development")
+        self.assertEqual(data["health"], "blue")
+        self.assertIsNone(data["current_gate"])
+        self.assertEqual(data["blocker_hint"], "")
+        self.assertIn("Epic 还有 1 个 Story", data["progress_hint"])
+        self.assertEqual(data["slices_done"], 1)
+        self.assertEqual(data["slices_total"], 2)
 
 
 if __name__ == "__main__":

@@ -855,6 +855,50 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertTrue(tasks["登录失败"]["blocked"])
         self.assertEqual(tasks["登录失败"]["stages_done"], 1)
 
+    def test_kanban_lightweight_gate_pass_expires_after_plan_edit(self) -> None:
+        with self.fixture_repo() as tmp:
+            rel = "Plans/Bug排查/2026-07-03-复现-价格错误.md"
+            plan = tmp / rel
+            write_file(
+                plan,
+                """
+                ---
+                status: 进行中
+                date: 2026-07-03
+                workflow: bugfix
+                workflow_stage: reproduce
+                task_id: bugfix-2026-07-03-价格错误
+                task_title: 价格错误
+                ---
+                # 复现：价格错误
+                """,
+            )
+            snapshot = hashlib.sha256(plan.read_bytes()).hexdigest()
+            write_file(
+                tmp / ".workflows/events/price.events.jsonl",
+                json.dumps({
+                    "type": "gate_pass", "stage": "reproduce", "child_plan": rel,
+                    "plan_snapshot": snapshot, "created_at": "2026-08-17T10:00:00+08:00",
+                }, ensure_ascii=False),
+            )
+            plan.write_text(plan.read_text(encoding="utf-8") + "\n通过后又修改了复现边界。\n", encoding="utf-8")
+
+            spec = importlib.util.spec_from_file_location("kanban_server_stale_light", ROOT / "scripts/kanban-server.py")
+            assert spec and spec.loader
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+            mod.RUN_DIR = tmp / ".workflows/runs"
+            mod.EVENT_DIR = tmp / ".workflows/events"
+            mod.BLUEPRINT_DIR = tmp / ".workflows/blueprints"
+            mod.ORPHAN_FEEDBACK = tmp / "进化/孤立反馈记录.md"
+            task = next(item for item in mod.lightweight_payload() if item["name"] == "价格错误")
+
+        self.assertEqual(task["current_stage"], "reproduce")
+        self.assertFalse(task["blocked"])
+        self.assertEqual(task["stages_done"], 0)
+        self.assertEqual(task["stages"][0]["plan"]["gate_result"], "")
+
     def test_kanban_reads_hyphenated_learning_plan_keys(self) -> None:
         with self.fixture_repo() as tmp:
             spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")

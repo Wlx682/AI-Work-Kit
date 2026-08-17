@@ -122,9 +122,29 @@ def validate_story_metadata(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return stories
 
 
+def delivery_scope(payload: dict[str, Any], stories: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Resolve the whole Epic delivery scope, falling back to legacy sprint scope.
+
+    `sprint_scope` may rotate one Story at a time during implementation.  It is
+    therefore a work-in-progress selector, not the exit criterion for the
+    entire story-development stage.
+    """
+    epic_scope = payload.get("epic_scope")
+    if epic_scope is not None:
+        require(isinstance(epic_scope, list) and epic_scope, "epic_scope 必须是非空数组")
+        wanted = [str(item).strip() for item in epic_scope]
+        require(all(wanted) and len(set(wanted)) == len(wanted), "epic_scope 不得包含空值或重复 Story")
+        by_id = {str(story.get("id") or ""): story for story in stories}
+        missing = [story_id for story_id in wanted if story_id not in by_id]
+        require(not missing, "epic_scope 引用不存在的 Story: " + ", ".join(missing))
+        return [by_id[story_id] for story_id in wanted]
+    return [story for story in stories if story.get("sprint_scope") is True]
+
+
 def validate_story_scope(root: Path, plan: Path) -> None:
     _, payload = story_index(root, plan)
-    validate_story_metadata(payload)
+    stories = validate_story_metadata(payload)
+    require(delivery_scope(payload, stories), "Epic 交付 Scope 至少需要一个用户故事")
 
 
 def require_run(evidence: dict[str, Any], key: str, expect_zero: bool) -> None:
@@ -161,11 +181,17 @@ def validate_story_evidence(root: Path, story: dict[str, Any]) -> None:
     require(not missing, f"{sid} 缺少通过的 AC: {', '.join(missing)}")
 
 
-def validate_story_development(root: Path, plan: Path) -> None:
+def validate_story_development(root: Path, plan: Path, story_id: str | None = None) -> None:
     _, payload = story_index(root, plan)
     stories = validate_story_metadata(payload)
-    scoped = [story for story in stories if story.get("sprint_scope") is True]
+    scoped = delivery_scope(payload, stories)
     require(scoped, "Scope 内至少需要一个用户故事")
+    if story_id:
+        story = next((item for item in scoped if str(item.get("id")) == story_id), None)
+        require(story is not None, f"story_id 不属于 Epic Scope: {story_id}")
+        require(story.get("sprint_scope") is True, f"story_id 不是当前滚动 Scope: {story_id}")
+        validate_story_evidence(root, story)
+        return
     for story in scoped:
         validate_story_evidence(root, story)
 
@@ -176,7 +202,7 @@ def validate_test_plan(root: Path, plan: Path) -> None:
     require(target_commit, "集成测试计划缺少 target_commit")
     _, story_payload = story_index(root, plan)
     stories = validate_story_metadata(story_payload)
-    scoped = [story for story in stories if story.get("sprint_scope") is True]
+    scoped = delivery_scope(story_payload, stories)
     require(scoped, "Scope 内至少需要一个用户故事")
 
     case_index_path = resolve(root, frontmatter.get("test_case_index", ""), "test_case_index")
@@ -261,9 +287,8 @@ def validate_integration(root: Path, plan: Path) -> None:
     require(isinstance(stories, list), "Story index.stories 必须是数组")
     if stories:
         validate_story_metadata(payload)
-        for story in stories:
-            if story.get("sprint_scope") is True:
-                validate_story_evidence(root, story)
+        for story in delivery_scope(payload, stories):
+            validate_story_evidence(root, story)
 
 
 def validate_implementation_design(root: Path, plan: Path) -> None:
@@ -299,6 +324,7 @@ def main() -> int:
     parser.add_argument("command", choices=sorted(COMMANDS))
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument("--plan", required=True)
+    parser.add_argument("--story-id", help="仅验收当前滚动 Scope 的单个 Story；不影响无参数的全 Epic 退出门禁")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -306,7 +332,11 @@ def main() -> int:
     if not plan.is_absolute():
         plan = root / plan
     try:
-        COMMANDS[args.command](root, plan.resolve())
+        if args.story_id:
+            require(args.command == "story-development", "--story-id 仅适用于 story-development")
+            validate_story_development(root, plan.resolve(), args.story_id)
+        else:
+            COMMANDS[args.command](root, plan.resolve())
     except (ValidationError, OSError) as exc:
         print(f"BLOCKED:client-dev:{args.command}:{exc}", file=sys.stderr)
         return 1

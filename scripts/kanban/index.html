@@ -198,6 +198,7 @@
     .timeline li::before { content: ""; position: absolute; left: -1.1rem; top: 5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--bg-2); }
     .timeline li.fail::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
     .timeline li.pass::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .timeline li.pending::before { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
     .timeline li.progress-event::before { background: var(--neon-c); box-shadow: 0 0 8px var(--neon-c); }
     .timeline .tl-top { display: flex; gap: 0.5rem; align-items: baseline; }
     .timeline .tl-at { color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -293,6 +294,7 @@
     .criteria-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
     .criteria-list span { font-size: 0.66rem; color: var(--muted); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--stroke); }
     .flow-blocker { margin-top: 0.8rem; padding: 0.7rem 0.8rem; color: var(--red); background: rgba(255,84,112,0.08); border: 1px solid rgba(255,84,112,0.28); border-radius: 10px; font-size: 0.76rem; }
+    .flow-progress-note { margin-top: 0.8rem; padding: 0.7rem 0.8rem; color: var(--blue); background: rgba(77,156,255,0.08); border: 1px solid rgba(77,156,255,0.28); border-radius: 10px; font-size: 0.76rem; }
     .story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.65rem; margin-top: 1rem; }
     .story-card { padding: 0.72rem; border-radius: 10px; background: var(--panel-solid); border: 1px solid var(--stroke); }
     .story-card.done { border-color: rgba(53,224,138,0.25); }
@@ -432,7 +434,7 @@
       const kpiRow = `
         <div class="kpi-row">
           <div class="kpi fade-in">
-            <div class="k-label">📥 待推进 Epic</div>
+            <div class="k-label">⚠ 阻塞 Epic</div>
             <div class="k-num" data-count="${k.blocked || 0}">0</div>
             <div class="k-sub">共 ${k.n_epics || 0} 个 · 其中 ${redN} 个亟需救火</div>
           </div>
@@ -454,14 +456,17 @@
         const pct = storyMode
           ? (e.story_points_total ? Math.round(e.story_points_done / e.story_points_total * 100) : 0)
           : (e.slices_total ? Math.round(e.slices_done / e.slices_total * 100) : 0);
-        const consec = gh.consecutive_fails || 0;
+        const gate = e.current_gate || null;
+        const consec = e.current_gate_failures || 0;
         const badge = e.health === 'archived'
           ? '<span class="arch-tag">✓ 已归档</span>'
-          : (gh.last_gate
-            ? `<span class="gate-badge ${gh.last_gate.result}">${gh.last_gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
+          : (gate
+            ? `<span class="gate-badge ${gate.result}">${gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
             : '');
         const hint = e.blocker_hint && e.current_stage !== 'done'
           ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
+        const progressHint = !e.blocker_hint && e.progress_hint && e.current_stage !== 'done'
+          ? `<div class="blocker-hint">▶ 当前 <b>${esc(e.progress_hint)}</b></div>` : '';
         const th = e.test_health || {};
         const testLabel = storyMode
           ? (th.integration_pass ? '全量集成已通过' : `TDD ${th.story_done || 0}/${th.story_total || 0} Story`)
@@ -480,7 +485,7 @@
               <div class="bar"><i data-w="${pct}"></i></div>
               <div class="meta"><span>${storyMode ? `${e.story_points_done || 0}/${e.story_points_total || 0} 点` : `${e.slices_done}/${e.slices_total} 切片`}</span><span>${pct}%</span></div>
             </div>
-            ${hint}
+            ${hint || progressHint}
             ${testChip}
           </button>`;
       }).join('');
@@ -520,7 +525,7 @@
       const tl = allEvents.slice(0, 10).map(ev => `
         <li class="${ev.result}">
           <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span>${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : (ev.result === 'pending' ? `进行中 · ${esc(ev.reason || '退出条件待完成')}` : esc(ev.reason || '未过'))}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
           <div class="tl-commit">${esc(ev.epic)} · ${esc(ev.git_commit || '')}</div>
         </li>`).join('') || '<li>暂无门禁事件</li>';
 
@@ -725,7 +730,7 @@
       const currentTitle = e.current_stage === 'done' ? '全流程已完成' : `当前：${zhStage(e.current_stage)}`;
       const currentMessage = e.current_stage === 'done'
         ? '所有阶段和出口门禁已通过'
-        : (current?.blocker || current?.summary || '待推进');
+        : (current?.blocker || current?.progress_note || current?.summary || '待推进');
 
       const stageCards = stages.map(stage => {
         const plan = stage.plan || {};
@@ -755,8 +760,8 @@
       const selectedEvents = ((e.gate_history || {}).recent || []).filter(event => event.stage === selected.key);
       const timeline = selectedEvents.map(event => `
         <li class="${event.result}">
-          <div class="tl-top"><span class="tl-at">${esc(event.at)}</span> <span class="tl-stage"><code>${zhStage(event.stage)}</code></span> ${event.result === 'pass' ? '✅' : '⚠'}</div>
-          <div class="tl-reason">${event.result === 'pass' ? '门禁通过' : esc(event.reason || '未过')}</div>
+          <div class="tl-top"><span class="tl-at">${esc(event.at)}</span> <span class="tl-stage"><code>${zhStage(event.stage)}</code></span> ${event.result === 'pass' ? '✅' : (event.result === 'pending' ? '▶' : '⚠')}</div>
+          <div class="tl-reason">${event.result === 'pass' ? '门禁通过' : (event.result === 'pending' ? `进行中 · ${esc(event.reason || '退出条件待完成')}` : esc(event.reason || '未过'))}</div>
           ${event.git_commit ? `<div class="tl-commit">commit ${esc(event.git_commit)}</div>` : ''}
         </li>`).join('') || '<li>该阶段暂无门禁事件</li>';
 
@@ -777,7 +782,7 @@
         const health = e.test_health || {};
         workspace = `<div class="stage-facts" style="margin-top:1rem">
           <div class="stage-fact"><div class="label">测试用例</div><b>${health.test_case_count || 0}</b></div>
-          <div class="stage-fact"><div class="label">审核状态</div><b style="color:${health.test_plan_approved ? 'var(--green)' : 'var(--red)'}">${health.test_plan_approved ? '已通过' : '待审核'}</b></div>
+          <div class="stage-fact"><div class="label">审核状态</div><b style="color:${health.test_plan_approved ? 'var(--green)' : 'var(--blue)'}">${health.test_plan_approved ? '已通过' : '待审核'}</b></div>
           <div class="stage-fact"><div class="label">审核人</div><b>${esc(health.test_reviewer || '—')}</b></div>
         </div>`;
       } else if (storyMode && selected.key === 'integration-test') {
@@ -785,7 +790,7 @@
         workspace = `<div class="stage-facts" style="margin-top:1rem">
           <div class="stage-fact"><div class="label">Scope Story</div><b>${health.story_done || 0}/${health.story_total || 0}</b></div>
           <div class="stage-fact"><div class="label">故事点</div><b>${health.story_points_done || 0}/${health.story_points_total || 0}</b></div>
-          <div class="stage-fact"><div class="label">集成结果</div><b style="color:${health.integration_pass ? 'var(--green)' : 'var(--red)'}">${health.integration_pass ? '已通过' : '未通过'}</b></div>
+          <div class="stage-fact"><div class="label">集成结果</div><b style="color:${health.integration_pass ? 'var(--green)' : 'var(--blue)'}">${health.integration_pass ? '已通过' : '待完成'}</b></div>
         </div>`;
       } else if (!storyMode) {
         const slices = (e.slices || []).filter(slice => slice.stage_key === selected.key);
@@ -834,6 +839,7 @@
             </div>
             ${criteria ? `<div class="criteria-list">${criteria}</div>` : ''}
             ${selected.blocker ? `<div class="flow-blocker">⚠ ${esc(selected.blocker)}</div>` : ''}
+            ${!selected.blocker && selected.progress_note ? `<div class="flow-progress-note">▶ ${esc(selected.progress_note)}</div>` : ''}
             ${workspace}
           </section>
           <aside class="flow-audit fade-in"><h3>${zhStage(selected.key)} · 门禁记录</h3><ul class="timeline">${timeline}</ul></aside>
@@ -908,8 +914,8 @@
       const gh = e.gate_history || {};
       const tl = (gh.recent || []).map(ev => `
         <li class="${ev.result}">
-          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : '⚠'}${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : esc(ev.reason || '未过')}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
+          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : (ev.result === 'pending' ? '▶' : '⚠')}${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
+          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : (ev.result === 'pending' ? `进行中 · ${esc(ev.reason || '退出条件待完成')}` : esc(ev.reason || '未过'))}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
           ${ev.git_commit ? `<div class="tl-commit">commit ${esc(ev.git_commit)}</div>` : ''}
         </li>`).join('') || '<li>暂无门禁事件</li>';
       const ph = e.progress_history || {};
