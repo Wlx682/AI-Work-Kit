@@ -16,7 +16,7 @@ description: 在已确认架构、Scope 和实现落点设计下实现一个纵�
 4. **Refactor**：重构后再次运行并保持通过。
 5. 合并前运行 `integration_smoke`，避免等到最终阶段才首次集成。
 6. 把全部证据写到 Plan 的 `tdd_evidence` JSON；AC 必须逐条 `pass: true`。
-7. 先运行 `python3 scripts/validate-client-dev.py implementation-design --plan Plans/功能开发/父Plan.md`，再运行 `python3 scripts/validate-client-dev.py story-development --plan Plans/功能开发/父Plan.md`。
+7. 先运行 `python3 scripts/validate-client-dev.py implementation-design --plan Plans/功能开发/父Plan.md`，再运行 `python3 scripts/validate-client-dev.py story-development --plan Plans/功能开发/父Plan.md --story-id US-xxx` 验收当前 Story。`workflow-gate.sh` 不传 `--story-id`，继续按整个 Epic Scope 判断阶段退出。
 8. 故事完成后 `status: 已完成`；主 Plan 最后一个 `skill_run` 写 `workflow_stage: story-development`。
 
 ## 边界
