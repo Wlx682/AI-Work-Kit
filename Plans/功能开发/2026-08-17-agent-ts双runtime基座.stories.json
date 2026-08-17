@@ -1,0 +1,23 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户：开始改吧",
+  "confirmed_at": "2026-08-17",
+  "stories": [
+    {
+      "id": "US-TS-001",
+      "title": "双 TypeScript Runtime 基座与角色隔离",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-17-agent-ts双runtime基座-US-TS-001.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC1", "AC2", "AC3", "AC4", "AC5"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+        "Plans/代码重构/2026-08-17-agent控制系统工程落点-v0.1.md"
+      ]
+    }
+  ]
+}

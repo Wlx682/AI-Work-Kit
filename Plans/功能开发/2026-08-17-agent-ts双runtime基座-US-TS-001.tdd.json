@@ -1,0 +1,62 @@
+{
+  "story_id": "US-TS-001",
+  "commit": "c9db93d",
+  "red": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 1,
+    "at": "2026-08-17T16:58:32+08:00",
+    "reason": "contracts 的 runtime-role.js 与 Learning Runtime 的 graph.js 尚未实现；隔离测试已经通过，两个功能测试只因目标模块不存在而失败"
+  },
+  "green": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-17T16:59:21+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 typecheck",
+    "exit_code": 0,
+    "at": "2026-08-17T17:00:22+08:00"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 install --frozen-lockfile && corepack pnpm@11.7.0 typecheck && corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 start:langgraph -- \"  evaluate first  \"",
+    "exit_code": 0,
+    "at": "2026-08-17T17:00:29+08:00"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC1",
+      "pass": true,
+      "evidence": "pnpm 11.7.0 frozen install、严格 TypeScript typecheck 与 Vitest 全部通过"
+    },
+    {
+      "ac_id": "AC2",
+      "pass": true,
+      "evidence": "@langchain/langgraph 1.4.10 StateGraph 输出 normalize 节点事件，终态 normalized=evaluate first"
+    },
+    {
+      "ac_id": "AC3",
+      "pass": true,
+      "evidence": "RuntimeRole guard 测试接纳 production/dsh，拒绝 learning/langgraph"
+    },
+    {
+      "ac_id": "AC4",
+      "pass": true,
+      "evidence": "静态隔离测试扫描 packages 源码，未发现 @agent/langgraph-learning 或 labs/runtimes/langgraph-ts 依赖"
+    },
+    {
+      "ac_id": "AC5",
+      "pass": true,
+      "evidence": "实现与提交只发生在 /Users/wanglongxiang/git/agent-ts-rewrite；原 agent 仍为 M infrastructure/llm.py、M tests/test_llm.py、?? Contexts/"
+    }
+  ],
+  "discarded_runs": [
+    {
+      "at": "2026-08-17T16:58:00+08:00",
+      "reason": "pnpm 首次安装因 esbuild 构建审批失败，未进入测试，不计为 Red"
+    },
+    {
+      "at": "2026-08-17T17:00:05+08:00",
+      "reason": "命令退出码为 0，但 CLI 错把透传分隔符 -- 当成输入；结果语义不可信，修复后重新执行，不计为最终 integration smoke"
+    }
+  ]
+}

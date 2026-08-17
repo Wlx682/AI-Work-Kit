@@ -1,0 +1,51 @@
+{
+  "story_id": "US-TS-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent-ts-rewrite",
+  "codebase_read": [
+    {"path": "README.md", "reason": "确认当前 Python Agent 定位、运行入口和目录"},
+    {"path": "orchestration/langgraph.py", "reason": "提取 run/stream/resume 的最小行为语义"},
+    {"path": "core/models.py", "reason": "提取 Runtime 技术状态与事件命名"},
+    {"path": "tests/test_runtime.py", "reason": "提取首个 Runtime 行为测试样本"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "README.md", "purpose": "增加 TS workspace 与 LangGraph.js Learning Runtime 启动说明，不移除旧 Python 说明", "layer": "Repository Guide"}
+    ],
+    "create": [
+      {"path": "package.json", "reason": "定义 pnpm workspace、typecheck/test/start 脚本与固定工具链", "naming_basis": "Node/pnpm 根清单惯例", "layer": "Build"},
+      {"path": "pnpm-workspace.yaml", "reason": "声明 packages 与 labs workspace", "naming_basis": "pnpm workspace 标准文件", "layer": "Build"},
+      {"path": "tsconfig.base.json", "reason": "共享 strict TypeScript 配置", "naming_basis": "TypeScript monorepo 基础配置惯例", "layer": "Build"},
+      {"path": "packages/contracts/package.json", "reason": "声明稳定 contracts workspace package", "naming_basis": "目标架构 packages/contracts", "layer": "Contract"},
+      {"path": "packages/contracts/tsconfig.json", "reason": "contracts 独立类型检查", "naming_basis": "workspace package 配置惯例", "layer": "Contract"},
+      {"path": "packages/contracts/src/runtime-role.ts", "reason": "定义 RuntimeManifest、production|learning 和生产守卫", "naming_basis": "ENG-011 runtimeRole 隔离", "layer": "Contract"},
+      {"path": "packages/contracts/src/index.ts", "reason": "提供稳定公共导出", "naming_basis": "TypeScript package barrel", "layer": "Contract"},
+      {"path": "packages/contracts/test/runtime-role.spec.ts", "reason": "Red：生产接纳 DSH、拒绝 Learning Runtime", "naming_basis": "AC3", "layer": "Contract Test"},
+      {"path": "labs/runtimes/langgraph-ts/package.json", "reason": "固定 LangGraph.js/Core 与学习运行脚本", "naming_basis": "ENG-011 Learning Runtime", "layer": "Learning Runtime Build"},
+      {"path": "labs/runtimes/langgraph-ts/tsconfig.json", "reason": "Learning Runtime 独立类型检查", "naming_basis": "workspace package 配置惯例", "layer": "Learning Runtime Build"},
+      {"path": "labs/runtimes/langgraph-ts/src/graph.ts", "reason": "实现最小真实 StateGraph、stream 与终态", "naming_basis": "旧 orchestration/langgraph.py + LangGraph.js Graph API", "layer": "Learning Runtime"},
+      {"path": "labs/runtimes/langgraph-ts/src/main.ts", "reason": "提供独立学习 CLI", "naming_basis": "旧 main.py 学习入口", "layer": "Learning Runtime App"},
+      {"path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts", "reason": "Red：真实 StateGraph 节点事件与终态", "naming_basis": "AC2 + 旧 test_runtime.py", "layer": "Learning Runtime Test"},
+      {"path": "tests/integration/learning-runtime-isolation.spec.ts", "reason": "Red：生产 packages 不反向依赖 Lab", "naming_basis": "AC4", "layer": "Isolation Test"},
+      {"path": "vitest.config.ts", "reason": "统一发现 packages/labs/tests 的 Vitest", "naming_basis": "Vitest workspace 测试入口", "layer": "Test Build"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "root build → packages/contracts；labs/langgraph-ts → packages/contracts + @langchain/langgraph；production guard → packages/contracts；production packages must not import labs",
+    "dependency_rule": "contracts 不 import DSH、LangGraph 或 Lab；LangGraph.js 仅在 labs/runtimes/langgraph-ts；production runtime guard 只接受 runtimeRole=production/runtimeType=dsh；本 Story 不建立 live Runtime Adapter，不修改或删除 Python 文件"
+  },
+  "tests": {
+    "red": [
+      {"path": "packages/contracts/test/runtime-role.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/contracts/test/runtime-role.spec.ts"},
+      {"path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts", "command": "corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime.spec.ts"},
+      {"path": "tests/integration/learning-runtime-isolation.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/integration/learning-runtime-isolation.spec.ts"}
+    ]
+  },
+  "risks": [
+    "LangGraph.js API 与旧 Python 行为不逐实现等价；本 Story 只承诺最小 graph/stream 行为",
+    "Learning Runtime 若被 production packages import，会变成未授权第二生产 Runtime",
+    "当前主工作区有用户脏文件；所有写入必须限制在独立 worktree"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,1 @@
+{"type": "gate_fail", "stage": "preflight", "workflow": "merge-code", "project": "agent-ts双runtime分支合并", "epic": null, "child_plan": null, "reason": "合并前预检：子 Plan 未创建（Plans/代码重构/）", "git_commit": "6d505850176367c014a8807b89ef223665098ee1", "plan_snapshot": null, "created_at": "2026-08-17T17:31:55+08:00"}
