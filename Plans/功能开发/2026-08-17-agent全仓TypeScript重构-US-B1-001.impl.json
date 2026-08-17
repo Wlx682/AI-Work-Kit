@@ -1,0 +1,339 @@
+{
+  "story_id": "US-B1-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "package.json",
+      "reason": "确认当前 Node>=20、TypeScript 7.0.2 和 pnpm 11.7.0 的实际工具链漂移"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "reason": "确认当前 workspace 尚未纳入 plugins/bundles，且未对 DSH rc.6 闭包做 wildcard override"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "reason": "组合冻结需绑定真实解析后的依赖图，不只相信 package.json 声明"
+    },
+    {
+      "path": "packages/contracts/src/runtime-role.ts",
+      "reason": "复用 production=dsh、learning=langgraph 的稳定运行时角色边界"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "reason": "确认新组合契约的公开导出落点"
+    },
+    {
+      "path": "tests/integration/learning-runtime-isolation.spec.ts",
+      "reason": "保持 production DSH 与 Learning Runtime 的依赖图隔离检查"
+    }
+  ],
+  "verified_upstream_facts": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness",
+    "architecture": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+    "cordis_primer": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cordis-primer.md",
+    "adding_a_package": "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cookbook/adding-a-package.md",
+    "dsh_version": "0.1.0-rc.6",
+    "dsh_integrity": "sha512-brpZfED7ieRa2PQ5tUxMhHrM1pb2CmKFVM/f6yMULBDMicahk+Z2OsHgTwTDnoiZm23Ftu9rQz0NN4pflaoJcg==",
+    "cordis_version": "4.0.1",
+    "profile_layer_order": [
+      "profile manifest 中的 bundles（列表顺序）",
+      "profile/cordis.patch.yml",
+      "CLI --patch overlay"
+    ],
+    "activation_semantics": "Bundle 层顺序是组合语义；普通配置行顺序不是插件启动顺序，Cordis 通过 service/inject 依赖激活 Fiber",
+    "lifecycle_semantics": "ctx.effect()/ctx.on() 是可逆 Effect，fiber.dispose() 卸载，Fiber 初始化失败时 Cordis 自动清理已登记 Effect"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "精确锁定 Node 22.19.0、TypeScript 6.0.3、pnpm 11.7.0，增加 DSH 组合冻结/校验/受控启动命令",
+        "layer": "Build/CLI"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "purpose": "纳入 plugins/* 与 bundles/*；在 pnpm v11 的 workspace 真理源中锁死 @deepseek-ai/dsh-* rc.6 和 Cordis 4.0.1，白名单审核后的 install scripts",
+        "layer": "Dependency Governance"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "固化实际 DSH/Cordis 依赖闭包，供组合指纹和 CI 漂移门禁校验",
+        "layer": "Dependency Evidence"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 RuntimeCompositionManifest 与 COMPOSITION_MISMATCH 稳定契约",
+        "layer": "Contract"
+      },
+      {
+        "path": "tests/integration/learning-runtime-isolation.spec.ts",
+        "purpose": "扩展隔离门禁，禁止 Learning Runtime 导入 dsh-bridge、Cordis 插件或 production Profile",
+        "layer": "Architecture Test"
+      }
+    ],
+    "create": [
+      {
+        "path": ".node-version",
+        "reason": "把运行时基线从宽泛 engines 约束收紧为可重放版本",
+        "naming_basis": "通用 Node 版本管理器可识别的根文件",
+        "layer": "Toolchain"
+      },
+      {
+        "path": "packages/contracts/src/runtime-composition.ts",
+        "reason": "定义组合清单、Artifact、lock hash、Bundle 层、Provider 选择、final config hash 和错误码",
+        "naming_basis": "与 runtime-role.ts 同属稳定 runtime 契约",
+        "layer": "Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/runtime-composition.v1.json",
+        "reason": "为持久化 composition.lock.json 提供运行时 Schema",
+        "naming_basis": "沿用 schema-name.v1.json 版本化约定",
+        "layer": "Contract Schema"
+      },
+      {
+        "path": "packages/dsh-bridge/package.json",
+        "reason": "声明唯一 DSH/Cordis 适配边界和精确 peer/dependency 版本",
+        "naming_basis": "架构已采纳的 packages/dsh-bridge seam",
+        "layer": "Runtime Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/tsconfig.json",
+        "reason": "隔离 DSH host 聚合的 TypeScript 类型边界",
+        "naming_basis": "与现有 workspace package 一致",
+        "layer": "Runtime Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/src/index.ts",
+        "reason": "只导出组合验证与受控启动 API，不重写 Agent Loop",
+        "naming_basis": "workspace package 公开入口",
+        "layer": "Runtime Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "reason": "解析真实 lock/profile/bundle/dump 并计算 canonical SHA-256，漂移抛 COMPOSITION_MISMATCH",
+        "naming_basis": "按 seam 能力命名，不泄露到 domain",
+        "layer": "Runtime Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/src/launcher.ts",
+        "reason": "在委托官方 dsh CLI 前执行失败关闭验证，禁止未纳入指纹的 --patch",
+        "naming_basis": "将进程边界与纯组合算法分离",
+        "layer": "Runtime Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/test/composition.spec.ts",
+        "reason": "覆盖 canonicalization、完整指纹和错误码的快速单测",
+        "naming_basis": "与 composition.ts 同名",
+        "layer": "Adapter Test"
+      },
+      {
+        "path": "plugins/runtime-composition/package.json",
+        "reason": "定义真正 out-of-tree Cordis 插件及 Cordis peer 边界",
+        "naming_basis": "插件只拥有已验证的 runtime composition identity",
+        "layer": "Cordis Plugin"
+      },
+      {
+        "path": "plugins/runtime-composition/tsconfig.json",
+        "reason": "独立类型检查 Cordis Context augmentation",
+        "naming_basis": "与 workspace package 统一",
+        "layer": "Cordis Plugin"
+      },
+      {
+        "path": "plugins/runtime-composition/src/index.ts",
+        "reason": "注册 runtimeComposition Service、typed event/listener 与可逆 Effect；卸载后全部撤销",
+        "naming_basis": "Cordis 插件公开入口",
+        "layer": "Cordis Plugin"
+      },
+      {
+        "path": "bundles/control-base/package.json",
+        "reason": "按 dsh.bundle.patch 官方格式声明基础控制插件层",
+        "naming_basis": "架构中的 control-base Bundle",
+        "layer": "DSH Bundle"
+      },
+      {
+        "path": "bundles/control-base/cordis.patch.yml",
+        "reason": "把 runtime-composition 插件加入 DSH 配置树",
+        "naming_basis": "DSH Bundle 官方 patch 分发格式",
+        "layer": "DSH Bundle"
+      },
+      {
+        "path": "bundles/control-production/package.json",
+        "reason": "声明 production-only 覆盖层",
+        "naming_basis": "架构中的 control-production Bundle",
+        "layer": "DSH Bundle"
+      },
+      {
+        "path": "bundles/control-production/cordis.patch.yml",
+        "reason": "固定 production Provider 选择与配置，不依赖普通行顺序推断激活顺序",
+        "naming_basis": "将 production override 与基础插件层分离",
+        "layer": "DSH Bundle"
+      },
+      {
+        "path": "profiles/controlled/package.json",
+        "reason": "按 dsh.profile.bundles 官方格式固定 dsh-base→dsh-headless→control-base→control-production 层顺序",
+        "naming_basis": "唯一 production Profile 名称 controlled",
+        "layer": "DSH Profile"
+      },
+      {
+        "path": "profiles/controlled/cordis.yml",
+        "reason": "保留 DSH 官方 Profile 结构的空根，配置树只由 patch 层组合",
+        "naming_basis": "dsh initProfile 生成格式",
+        "layer": "DSH Profile"
+      },
+      {
+        "path": "profiles/controlled/cordis.patch.yml",
+        "reason": "保留显式、可 hash 的 Profile 最上层补丁，v0.1 默认为空",
+        "naming_basis": "DSH Profile 官方用户 patch 层",
+        "layer": "DSH Profile"
+      },
+      {
+        "path": "profiles/controlled/pnpm-workspace.yaml",
+        "reason": "保持 Profile 的 hoisted、autoInstallPeers=false 官方安装边界",
+        "naming_basis": "dsh initProfile 生成格式",
+        "layer": "DSH Profile"
+      },
+      {
+        "path": "profiles/controlled/pnpm-lock.yaml",
+        "reason": "锁定 Profile 自身的 out-of-tree Bundle/插件链接证据",
+        "naming_basis": "Profile 是独立 pnpm workspace，需独立 lock",
+        "layer": "Dependency Evidence"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "reason": "提交可审计的 DSH artifact、双 lock、层、Provider、patch 和 final config 指纹",
+        "naming_basis": "Profile 就近保存组合冻结结果",
+        "layer": "Composition Evidence"
+      },
+      {
+        "path": "scripts/runtime/freeze-composition.ts",
+        "reason": "调用真实 dsh --profile controlled --dump-config 并在 --write 时生成 lock，默认不自愈漂移",
+        "naming_basis": "scripts/<capability>/<verb>.ts 工程 CLI 约定",
+        "layer": "Build/CLI"
+      },
+      {
+        "path": "scripts/runtime/verify-composition.ts",
+        "reason": "校验当前解析图与已提交 lock，任一漂移非零退出",
+        "naming_basis": "冻结写入与默认验证分离",
+        "layer": "Build/CLI"
+      },
+      {
+        "path": "tests/acceptance/dsh-composition.spec.ts",
+        "reason": "验证官方 rc.6 artifact、层顺序、双 lock 和真实 final config 指纹",
+        "naming_basis": "对应 GWT-005 的用户可见组合产物",
+        "layer": "Acceptance Test"
+      },
+      {
+        "path": "tests/fault-injection/composition-drift.spec.ts",
+        "reason": "注入 artifact/lock/patch/Bundle/Provider/dump 漂移，验证启动前 COMPOSITION_MISMATCH",
+        "naming_basis": "对应 GWT-006 的故障注入",
+        "layer": "Fault Injection Test"
+      },
+      {
+        "path": "tests/plugin-lifecycle/runtime-composition.spec.ts",
+        "reason": "在真 Cordis Context 上安装/卸载生产插件，观测 Service/Event/Effect 全撤销",
+        "naming_basis": "对应 GWT-007 的插件生命周期",
+        "layer": "Plugin Lifecycle Test"
+      },
+      {
+        "path": "tests/plugin-lifecycle/partial-failure.spec.ts",
+        "reason": "用测试专用失败插件在登记部分 Effect 后抛错，证明 Fiber 回滚无残留",
+        "naming_basis": "对应 GWT-008，不向生产插件添加假的 failAfterService 开关",
+        "layer": "Plugin Lifecycle Test"
+      },
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "reason": "执行真实 --dump-config 和 headless --help 无凭证启动 smoke，证明 Profile 可组装而不发起模型请求",
+        "naming_basis": "对应 production Profile 的进程级验收",
+        "layer": "Integration Test"
+      },
+      {
+        "path": "docs/runbooks/dsh-composition.md",
+        "reason": "记录安装白名单、freeze/verify、漂移停止、Profile 插件管理和官方边界",
+        "naming_basis": "按运维能力 dsh-composition 命名",
+        "layer": "Runbook"
+      }
+    ]
+  },
+  "composition_contract": {
+    "manifest_fields": [
+      "schemaVersion",
+      "manifestId",
+      "runtimeRole=production",
+      "runtimeType=dsh",
+      "DSH repository/version/integrity",
+      "Cordis version",
+      "Node/pnpm/TypeScript versions",
+      "rootLockSha256",
+      "profileLockSha256",
+      "orderedBundleLayers",
+      "profileAndBundlePatchSha256",
+      "explicitProviderSelections",
+      "finalConfigSha256",
+      "compositionFingerprint"
+    ],
+    "fingerprint_rule": "对除 compositionFingerprint 外的 manifest 做稳定 key 排序后 SHA-256；finalConfigSha256 来自真实 dsh --dump-config 字节；不用普通 YAML 行顺序伪造插件启动顺序",
+    "launch_rule": "受控 launcher 必须先 verify，再委托官方 dsh CLI；未记录 --patch、安装图或配置变化均禁止启动/演练"
+  },
+  "module_boundary": {
+    "layer": "profiles/controlled → DSH bundles → plugins/runtime-composition → contracts；packages/dsh-bridge 仅适配 DSH Profile/组合/进程；scripts 调用 bridge；tests 消费公开契约",
+    "dependency_rule": "domain/contracts 不 import DSH/Cordis；DSH/Cordis 只允许出现在 dsh-bridge、plugins、bundles/profile 组装与测试边界；Learning Runtime 不 import 任何 production DSH 模块；dsh-bridge 不实现 Agent Loop"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/acceptance/dsh-composition.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/dsh-composition.spec.ts"
+      },
+      {
+        "path": "tests/fault-injection/composition-drift.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/fault-injection/composition-drift.spec.ts"
+      },
+      {
+        "path": "tests/plugin-lifecycle/runtime-composition.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/plugin-lifecycle/runtime-composition.spec.ts"
+      },
+      {
+        "path": "tests/plugin-lifecycle/partial-failure.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/plugin-lifecycle/partial-failure.spec.ts"
+      },
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-controlled-profile.spec.ts"
+      },
+      {
+        "path": "tests/integration/learning-runtime-isolation.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/integration/learning-runtime-isolation.spec.ts"
+      }
+    ]
+  },
+  "implementation_order": [
+    "先提交 6 组 Red，证明当前无 DSH Profile、无指纹、无插件生命周期证据",
+    "锁定 Node/pnpm/TypeScript 与 DSH/Cordis 依赖闭包，重新安装并审计 allowBuilds",
+    "实现纯 contracts 和 runtime-composition Cordis 插件，先让卸载/部分失败回滚 Green",
+    "实现 dsh-bridge 的 freeze/verify 与 COMPOSITION_MISMATCH，再让漂移故障注入 Green",
+    "按官方格式组装 Bundle/Profile，生成 composition.lock.json",
+    "最后运行真实 --dump-config、headless --help、全量 TS/Python baseline 回归与 typecheck"
+  ],
+  "risks": [
+    "直接安装 @deepseek-ai/dsh@0.1.0-rc.6 会因上游内部 caret 依赖尝试解析尚不完整的 rc.7，已实测 ETARGET；不能只锁根包",
+    "pnpm 11 不从 package.json#pnpm.overrides 读取 workspace override，必须以根 pnpm-workspace.yaml 为真理源",
+    "DSH 包含 node-pty、koffi、dsh-subprocess-local 等需构建依赖；不得为通过安装而放开全局 scripts",
+    "如果指纹只 hash 声明版本而不 hash 真实 lock 和 final config，Provider/Patch 漂移可绕过门禁",
+    "Profile 的 Bundle 层顺序可绑定，但 Cordis Fiber 启动由 service/inject 决定；错把 YAML 行顺序当激活顺序会产生虚假证据",
+    "headless 真正任务运行需要模型凭证；B1 只用 --help 验证树启动并用 --dump-config 验证组合，不伪造模型调用成功",
+    "如 rc.6 在精确 override 和审核后 allowBuilds 下仍无法安装、加载或清理 Fiber，必须标记 UPSTREAM_INCOMPATIBLE 并停止，不 fork/魔改 DSH 凑 Green"
+  ],
+  "stop_conditions": [
+    "任一 @deepseek-ai/dsh-* 解析为非 0.1.0-rc.6 或 Cordis 非 4.0.1",
+    "未审核 install script 被执行，或安装需要扩大为全局 allowScripts",
+    "无法从真实 DSH CLI 获得稳定 final config dump",
+    "部分初始化失败后 Context 仍有 Service/listener/Effect 残留",
+    "受控 launcher 在验证失败后仍能调用 DSH",
+    "为通过验收需要 fork DSH、重写 Agent Loop 或伪造模型请求成功"
+  ],
+  "blocked_questions": [],
+  "confirmed": true,
+  "confirmed_by": "用户：在门禁摘要后回复“继续”",
+  "confirmed_at": "2026-08-17"
+}

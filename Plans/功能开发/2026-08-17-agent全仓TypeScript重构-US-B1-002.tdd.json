@@ -1,0 +1,84 @@
+{
+  "story_id": "US-B1-002",
+  "commit": "27e5a1c2c114a7f7b2f70d26ebdf2c6f568c09c0",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-17T20:45:31+08:00",
+    "reason": "The durable LearningRuntime and transcript modules did not exist, so the suite failed only because SQLite checkpoint resume had not been implemented."
+  },
+  "red_checks": [
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+      "exit_code": 1,
+      "reason": "runtime.ts and transcript.ts did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/cli.spec.ts",
+      "exit_code": 1,
+      "reason": "the isolated launcher did not exist, so a second process could not resume the checkpoint"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/learning-runtime-isolation.spec.ts",
+      "exit_code": 1,
+      "reason": "the production launcher returned ENOENT before rejecting the learning manifest with RUNTIME_ROLE_DENIED"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/learning-credential-isolation.spec.ts",
+      "exit_code": 1,
+      "reason": "the environment-allowlist launcher and non-deployable runtime manifest did not exist"
+    }
+  ],
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts labs/runtimes/langgraph-ts/test/cli.spec.ts tests/integration/learning-runtime-isolation.spec.ts tests/integration/learning-credential-isolation.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-17T20:47:52+08:00",
+    "result": "Four target suites / eight tests passed: fresh-runtime SQLite resume, two-process CLI resume, production role rejection, dependency/deployment scans, child credential isolation and non-deployable manifest."
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/controlled install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 audit --prod --registry=https://registry.npmjs.org",
+    "exit_code": 0,
+    "at": "2026-08-17T20:51:29+08:00",
+    "result": "19 TypeScript files / 52 tests passed, typecheck passed, Python baseline remained 60/60, both workspaces installed frozen, composition verified and the official registry audit reported no known vulnerabilities. The first audit exposed high GHSA-qqgx-2p2h-9c37 through ini@1.3.0; an exact ini@1.3.8 override removed it before completion."
+  },
+  "integration_smoke": {
+    "command": "start:langgraph run; start:langgraph resume in a second process; start:dsh -- --help; composition:verify",
+    "exit_code": 0,
+    "at": "2026-08-17T20:52:09+08:00",
+    "result": "The Learning CLI paused and resumed the same SQLite thread in a new process with a new runId and recovered checkpoint; the child reported Node 22.19.0 and no production credential keys. The verified official DSH rc.6 controlled profile still displayed headless help."
+  },
+  "learning_runtime_evidence": {
+    "manifest": "/Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/runtime.manifest.json",
+    "runtime_role": "learning",
+    "runtime_type": "langgraph",
+    "network": "offline",
+    "credential_profile": "none",
+    "deployable": false,
+    "langgraph_version": "1.4.10",
+    "checkpoint_package": "@langchain/langgraph-checkpoint-sqlite@1.0.3",
+    "sqlite_native_version": "better-sqlite3@12.11.1",
+    "security_override": "ini@1.3.8",
+    "security_audit": "no known vulnerabilities",
+    "production_composition_fingerprint": "e59e8be7e3e5b54458aa426292b5452217aef2ac49ce18e520f3009d2bceb31a"
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-013",
+      "pass": true,
+      "evidence": "A real LangGraph.js StateGraph pauses at interrupt, persists through official SqliteSaver, closes the first runtime/process, resumes the same thread from a fresh process with Command({resume}), and appends paused/completed offline JSONL transcript facts with checkpoint lineage."
+    },
+    {
+      "ac_id": "GWT-014",
+      "pass": true,
+      "evidence": "The production launcher rejects a learning/langgraph manifest with RUNTIME_ROLE_DENIED before composition or runner access; production artifacts contain no Lab import, the Lab contains no DSH/Cordis/profile dependency, and its child cannot see injected production credentials."
+    }
+  ],
+  "human_gates": [
+    {
+      "id": "IMPLEMENTATION_DESIGN",
+      "status": "approved",
+      "approved_by": "wanglongxiang",
+      "evidence": "User replied 继续 after the four implementation gates covering official SQLite resume, environment allowlist, production role gate, four Red suites and native build / DSH refreeze controls."
+    }
+  ]
+}

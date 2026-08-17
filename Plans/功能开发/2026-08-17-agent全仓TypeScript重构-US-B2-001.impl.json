@@ -1,0 +1,141 @@
+{
+  "story_id": "US-B2-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "capabilities/act.py",
+      "reason": "提取 M001—M011 的既有 Action session、审批、unknown、人工处置、虚拟输入和不可信工具输出语义；只作行为基线，不逐行翻译"
+    },
+    {
+      "path": "tests/test_act.py",
+      "reason": "逐项核对 11 条 Python 可观察语义、边界输入和不得重放工具调用的断言"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "发现 M001—M011 仍指向旧 packages/agent-loop 与 safety-policy 路径，和已采纳需求矩阵的 Learning Lab 落点漂移"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+      "reason": "确认 Learning Runtime 已有原生 StateGraph/interrupt 边界，Action 语义应作为 Lab 内可检查点组件，而非新增生产 Agent Loop"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+      "reason": "确认现有 SQLite checkpoint、跨进程 resume 和离线 transcript 能为后续单 Agent Story 消费 Action session，但本 Story 不扩大到完整会话编排"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/package.json",
+      "reason": "确认 Lab 仅依赖共享 contracts 与 LangGraph.js，可新增 action 子路径导出而不引入 DSH、Cordis、生产凭证或工具适配器"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "reason": "确认共享契约包只承载无副作用类型/Schema，适合放置可序列化 Learning Action session 契约"
+    },
+    {
+      "path": "tests/acceptance/legacy-test-map.spec.ts",
+      "reason": "确认迁移索引已有 M001—M060 唯一性门禁，但尚未断言 B2 目标路径与已采纳需求矩阵一致"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M001—M011 的 targetRed 从已废弃 packages/agent-loop/safety-policy 路径同步到已采纳的 Lab act.spec.ts 与 contracts action.spec.ts；不改 sourceNodeId、语义或 disposition",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "增加 M001—M011 目标路径断言，防止后续再次漂回第二生产 Agent Loop",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 Learning Action session 的版本化、可序列化类型与状态枚举，不导出执行器或生产权限能力",
+        "layer": "Shared Contracts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "增加 ./action 子路径导出；保持依赖集合不新增 DSH、Cordis、模型 SDK、生产工具或凭证包",
+        "layer": "Learning Runtime Package Boundary"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "共享 contracts 新增持久化 Action 类型后，显式审核并重冻本地 artifact 哈希与组合总指纹；不得由 verify 静默改写",
+        "layer": "Production Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/action.ts",
+        "reason": "定义 action ID、pending call、action event、approval/input/unknown interruption 与 resolution 的判别联合，保证 checkpoint 数据可穷尽处理",
+        "naming_basis": "对应需求矩阵 packages/contracts/test/action.spec.ts 与架构 ENG-008",
+        "layer": "Shared Contracts"
+      },
+      {
+        "path": "packages/contracts/schemas/learning-action-session.v1.json",
+        "reason": "对跨 checkpoint/进程的 Learning Action session 提供版本化 JSON Schema；明确它不是 production action-intent/action-receipt",
+        "naming_basis": "用 learning 前缀隔离未来 B4 production Safety contracts",
+        "layer": "Persistent Contract"
+      },
+      {
+        "path": "packages/contracts/test/action.spec.ts",
+        "reason": "验证 Schema 必填字段、状态闭集、虚拟 input 无 actionId、unknown 不得直接映射 success",
+        "naming_basis": "直接对应 M001 与已采纳 TypeScript Red 目标",
+        "layer": "Contract Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/action.ts",
+        "reason": "实现 Lab 内纯 Action session 状态机：规范化模型调用、顺序推进、审批/拒绝、unknown 人工处置、input 恢复和不可信输出封装；所有现实执行通过注入 port，模块本身不持凭证",
+        "naming_basis": "沿用需求矩阵 act.spec.ts 命名，并避免 packages/agent-loop 形成第二生产 Runtime",
+        "layer": "Learning Runtime Domain"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/act.spec.ts",
+        "reason": "以 11 个具名 Red 用例逐项覆盖 M001—M011，包含 execute spy 证明人工恢复不重放、拒绝后丢弃同轮后续调用及工具输出不改变安全规则",
+        "naming_basis": "与 Python tests/test_act.py 和已采纳迁移矩阵一一映射",
+        "layer": "Learning Runtime Acceptance Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "model tool calls → Lab action session（纯状态机）→ injected learning-only policy/tool ports → serializable interruption/session → LangGraph checkpoint；shared contracts 只承载类型与 Schema",
+    "dependency_rule": "labs/runtimes/langgraph-ts/src/action.ts 可以依赖 @agent/contracts，但不得依赖 dsh-bridge、Cordis、DSH Profile/Bundle、生产凭证、services/safety-executor 或旧 Python。共享 contracts 不依赖 Runtime/数据库/UI。现实工具调用必须经测试注入 port；虚拟 request_user_input 永不获得 actionId。B4 的 production ActionIntent/Receipt 与 Safety Executor 不在本 Story 实现。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/action.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/act.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/act.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "若把实现放入 packages/agent-loop 或接入 production launcher，会形成第二生产 Agent Loop，违反 ENG-011，必须停止",
+    "M005 的 Learning unknown 语义不等于 B4 的现实效果核验；本 Story 只保留 pending call/actionId 与人工 resolution，不宣称 Safety Executor 已实现",
+    "人工 succeeded resolution 如果没有对注入工具 output contract 做校验，会把伪造结果写入 checkpoint；Red 必须覆盖非法结果仍保持 pending",
+    "审批拒绝只丢弃同一模型轮次的后续调用，不能误删更早已落账的安全调用",
+    "工具输出即使包含指令也只能成为不可信 tool message 数据，不能修改 system policy、tool allowlist 或触发额外执行",
+    "现有 migration map 与需求矩阵路径漂移；只修正目标证据路径，禁止借机改变 60 条 sourceNodeId 或 disposition"
+    ,
+    "共享 contracts 属于受控 DSH 组合的本地 artifact；新增 action contract 会使 contracts 哈希与 compositionFingerprint 漂移，必须确认其余 DSH/Cordis/Profile 字段不变后显式重冻"
+  ],
+  "stop_conditions": [
+    "需要导入 DSH/Cordis/production Profile 或生产凭证才能完成 M001—M011",
+    "无法用 execute spy 证明 unknown 人工恢复不重放现实调用",
+    "为了复用 Python 行为而在运行时调用旧 Python 模块",
+    "必须提前实现 B4 Safety Executor 或 B2-003 完整单 Agent 会话才能让本 Story 独立验收",
+    "M001—M011 任一语义只能用注释或静态扫描证明，不能形成真实 Red→Green 行为测试"
+  ],
+  "blocked_questions": [],
+  "confirmed": true,
+  "confirmed_by": "用户：在 US-B2-001 四项落点门禁摘要后回复‘继续’",
+  "confirmed_at": "2026-08-17"
+}

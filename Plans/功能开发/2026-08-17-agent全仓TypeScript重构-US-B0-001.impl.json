@@ -1,0 +1,60 @@
+{
+  "story_id": "US-B0-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {"path": "package.json", "reason": "确认现有 TS/Vitest/评估脚本、Node engine 与实际工具链漂移"},
+    {"path": "packages/contracts/src/evaluation.ts", "reason": "复用四态评估和证据引用契约，不把 Git/pytest 引入 contracts"},
+    {"path": "packages/evaluation-domain/src/qualify-case.ts", "reason": "确认资格函数当前只消费一个负对照，存在控制证据未进入领域不变量的缺口"},
+    {"path": "packages/evaluation-domain/test/qualify-case.spec.ts", "reason": "定位资格 Red 的现有测试风格和缺失场景"},
+    {"path": "packages/evaluation-oracles/src/file-state.ts", "reason": "复用稳定文件 hash、禁止副作用和坏环境证据语义"},
+    {"path": "evaluation/cases/legacy-agent-definition-v1/case.json", "reason": "确认当前人工签署字段只引用部分证据，尚无完整 bundle digest"},
+    {"path": "evaluation/cases/legacy-agent-definition-v1/src/run.ts", "reason": "确认 Case 实际运行正例、两个负例和坏环境，但 qualification 只接收一个负例"},
+    {"path": "evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts", "reason": "确认当前完整控制由测试外围断言，尚未由 qualified 字段自身保证"},
+    {"path": "tests/test_runtime.py", "reason": "抽查旧 Python 行为测试与 pytest node ID，作为 60 项映射证据来源"},
+    {"path": "tests/test_act.py", "reason": "抽查 action/unknown/人工恢复语义，防止映射只保留数量"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "package.json", "purpose": "增加 baseline 冻结、验证与 60-test map 校验命令", "layer": "Build/CLI"},
+      {"path": "packages/contracts/src/index.ts", "purpose": "导出 BaselineManifest 纯类型契约", "layer": "Contract"},
+      {"path": "packages/evaluation-domain/src/qualify-case.ts", "purpose": "要求多个负对照、坏环境与 review bundle hash 共同通过", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/test/qualify-case.spec.ts", "purpose": "新增任一强制控制失败即 blocked 的 Red", "layer": "Domain Test"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/case.json", "purpose": "让人工 review 绑定完整 evidence bundle digest；证据变化触发重新签署", "layer": "Qualification Fixture"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/src/run.ts", "purpose": "生成完整稳定 evidence bundle 并将所有控制输入资格函数", "layer": "Evaluation Case"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts", "purpose": "验证 bundle 稳定、漂移失效和全部控制纳入 qualification", "layer": "Qualification Test"}
+    ],
+    "create": [
+      {"path": "packages/contracts/src/baseline.ts", "reason": "定义不依赖工具实现的 BaselineManifest、TestEvidence 与 ArtifactEvidence 类型", "naming_basis": "与 runtime-role.ts/evaluation.ts 按稳定业务名平铺", "layer": "Contract"},
+      {"path": "packages/contracts/schemas/baseline-manifest.v1.json", "reason": "为持久化、CI 归档和重放提供运行时 Schema", "naming_basis": "采用架构约定 schema-name.v1.json", "layer": "Contract Schema"},
+      {"path": "scripts/baseline/freeze.ts", "reason": "对显式 commit 采集 Git、pytest、资产 hash、dirty tree 与工具链证据", "naming_basis": "按 scripts/<capability>/<verb>.ts 组织一次性工程 CLI", "layer": "Build/CLI"},
+      {"path": "migration/legacy-test-map.json", "reason": "提交 M001—M060 的稳定 node ID、语义、TS 目标与 migrate 处置", "naming_basis": "迁移证据独立于 Learning Runtime 实现目录", "layer": "Migration Evidence"},
+      {"path": "tests/acceptance/baseline-manifest.spec.ts", "reason": "验证 SHA、测试日志、脏树、0/0 与资产证据门禁", "naming_basis": "按可验收产物 baseline-manifest 命名", "layer": "Acceptance Test"},
+      {"path": "tests/acceptance/legacy-test-map.spec.ts", "reason": "验证 M001—M060 连续唯一、无静默 waiver 且目标 Red 非空", "naming_basis": "与 legacy-test-map.json 同名", "layer": "Acceptance Test"},
+      {"path": "docs/runbooks/baseline-freeze.md", "reason": "记录冻结、重放、证据漂移、人工重新签署和停止流程", "naming_basis": "按运维动作 baseline-freeze 命名", "layer": "Runbook"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "scripts/baseline → contracts；evaluation case → evaluation-domain + evaluation-oracles → contracts；tests 只消费公开契约",
+    "dependency_rule": "contracts 不 import Git、pytest、DSH、Cordis、文件系统或 shell；freeze CLI 不定义评估结论；evaluation-domain 不执行外部命令；Case review 必须绑定完整 evidence bundle"
+  },
+  "tests": {
+    "red": [
+      {"path": "tests/acceptance/baseline-manifest.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/baseline-manifest.spec.ts"},
+      {"path": "tests/acceptance/legacy-test-map.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"},
+      {"path": "packages/evaluation-domain/test/qualify-case.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/qualify-case.spec.ts"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts", "command": "corepack pnpm@11.7.0 vitest run evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts"}
+    ]
+  },
+  "risks": [
+    "当前 HEAD 与未提交 Case 签署变更不同；冻结必须针对显式 baseline commit，不能把 dirty tree 当提交事实",
+    "若 review 只绑定正例 hash，负对照或坏环境变化后仍可能错误保留 qualified=true",
+    "pytest 0/0、缺日志或错误 Python 环境可能伪造 100% baseline；必须把发现数和命令退出码写入证据",
+    "迁移矩阵若只记录 M001—M060 范围而不保存 node ID 与语义，会掩盖重复或错配",
+    "生成文件路径或时间戳若进入 bundle hash，重复运行会产生非语义漂移；canonicalization 必须独立测试"
+  ],
+  "blocked_questions": [],
+  "confirmed": true,
+  "confirmed_by": "用户：确认，继续",
+  "confirmed_at": "2026-08-17"
+}

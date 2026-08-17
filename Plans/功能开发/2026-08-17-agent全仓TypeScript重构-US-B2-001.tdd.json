@@ -1,0 +1,51 @@
+{
+  "story_id": "US-B2-001",
+  "story_points": 8,
+  "commit": "bded643f54700136681b0a819034c7d21fc1e65f",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action.spec.ts; nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/act.spec.ts; nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-17T21:26:54+08:00",
+    "reason": "两个新测试分别因 contracts/action 与 Learning/action 模块不存在而失败；迁移索引测试因 M001—M011 仍指向旧 packages/agent-loop/safety-policy 路径而失败，均只由本 Story 尚未实现导致"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action.spec.ts labs/runtimes/langgraph-ts/test/act.spec.ts tests/acceptance/legacy-test-map.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-17T21:29:08+08:00",
+    "result": "3 files / 15 tests passed；contracts 与 Learning Lab 定向 typecheck 通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action.spec.ts labs/runtimes/langgraph-ts/test/act.spec.ts tests/acceptance/legacy-test-map.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 tsc --noEmit -p packages/contracts/tsconfig.json && nvm exec 22.19.0 corepack pnpm@11.7.0 tsc --noEmit -p labs/runtimes/langgraph-ts/tsconfig.json",
+    "exit_code": 0,
+    "at": "2026-08-17T21:29:28+08:00",
+    "result": "收紧 ActionInterruption 类型、移除实现 any，并补强 not_executed 清除 pending call；15/15 保持通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && python3 -m pytest -q && forbidden production dependency scan",
+    "exit_code": 0,
+    "at": "2026-08-17T21:30:26+08:00",
+    "result": "TypeScript 66/66、Python 60/60、全仓 typecheck、DSH composition verify 与 Learning/production 依赖边界通过",
+    "composition_fingerprint": "80f0fc8e5024808d88ddf64bbfffcd42a917e75bcabb72ad3a93c7c13346701e"
+  },
+  "acceptance": [
+    { "ac_id": "M001-M011", "pass": true, "evidence": "M001—M011 逐项具名 Vitest 15/15，并由迁移索引断言固定目标路径" },
+    { "ac_id": "M001", "pass": true, "evidence": "现实工具调用获得 32 位 runtime actionId；虚拟输入除外" },
+    { "ac_id": "M002", "pass": true, "evidence": "人工确认未执行后清除 pending call 并以 failed 关闭" },
+    { "ac_id": "M003", "pass": true, "evidence": "人工 succeeded 结果通过校验后继续，execute spy 为 0 次" },
+    { "ac_id": "M004", "pass": true, "evidence": "非法人工结果保持 unknown interruption 与原 actionId/pending call" },
+    { "ac_id": "M005", "pass": true, "evidence": "执行响应未知时保留 pending call/actionId，不映射为 succeeded" },
+    { "ac_id": "M006", "pass": true, "evidence": "同轮安全调用先形成 called event，再暂停高风险审批" },
+    { "ac_id": "M007", "pass": true, "evidence": "审批拒绝后清空同轮后续调用" },
+    { "ac_id": "M008", "pass": true, "evidence": "session system context 包含执行器上下文与最少非敏感输入规则" },
+    { "ac_id": "M009", "pass": true, "evidence": "工具输出以 UNTRUSTED_TOOL_OUTPUT 数据消息进入，不能改写 system rules" },
+    { "ac_id": "M010", "pass": true, "evidence": "request_user_input 调用不含 actionId" },
+    { "ac_id": "M011", "pass": true, "evidence": "缺输入暂停；恢复后清除基于猜测生成的陈旧调用" }
+  ],
+  "architecture_evidence": {
+    "learning_only": true,
+    "production_dependencies_found": [],
+    "production_agent_loop_created": false,
+    "safety_executor_claimed_complete": false,
+    "composition_change": "仅 contracts artifact SHA 与总 compositionFingerprint 更新；DSH/Cordis/Profile/finalConfig 不变"
+  }
+}

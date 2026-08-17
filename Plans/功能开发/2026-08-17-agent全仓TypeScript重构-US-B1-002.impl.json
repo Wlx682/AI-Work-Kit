@@ -1,0 +1,233 @@
+{
+  "story_id": "US-B1-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+      "reason": "确认当前只有一次性 normalize StateGraph，没有 checkpointer、interrupt、恢复或 transcript"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/main.ts",
+      "reason": "确认当前 CLI 只拼接输入并执行一次，不能跨进程恢复"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts",
+      "reason": "确认现有测试只验证单节点 invoke，不足以证明 GWT-013"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/package.json",
+      "reason": "确认 LangGraph.js 1.4.10 已固定，但尚无 durable checkpointer 依赖或独立 launcher"
+    },
+    {
+      "path": "packages/contracts/src/runtime-role.ts",
+      "reason": "复用 production=dsh、learning=langgraph 与 RUNTIME_ROLE_DENIED，不另造 Runtime 角色体系"
+    },
+    {
+      "path": "packages/dsh-bridge/src/launcher.ts",
+      "reason": "定位生产 launcher 在读取组合和启动 DSH 前增加 manifest role gate 的唯一落点"
+    },
+    {
+      "path": "tests/integration/learning-runtime-isolation.spec.ts",
+      "reason": "确认当前只有源码字符串扫描，尚未验证 launcher 拒绝、部署边界和凭证隔离"
+    },
+    {
+      "path": "orchestration/langgraph.py",
+      "reason": "只作为旧行为证据，确认 checkpoint/thread/resume 的原始语义；不从 Python 复制框架 Adapter"
+    },
+    {
+      "path": "tests/test_runtime.py",
+      "reason": "确认旧测试包含新进程 SQLite 恢复、同 thread、不同 run 与 recovered checkpoint 语义，后续 B2 继续完整迁写"
+    },
+    {
+      "path": "package.json",
+      "reason": "确认根 start:langgraph、typecheck 和 start:dsh 入口，规划两个 Runtime 的独立命令"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "reason": "确认新增 better-sqlite3 原生构建必须经过 pnpm 11 allowBuilds 最小白名单"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认根 lock 与 dsh-bridge 源码变化会触发生产组合指纹重冻，不能静默治愈"
+    }
+  ],
+  "verified_upstream_facts": {
+    "langgraph_version": "1.4.10",
+    "sqlite_checkpointer_package": "@langchain/langgraph-checkpoint-sqlite",
+    "sqlite_checkpointer_version": "1.0.3",
+    "sqlite_checkpointer_integrity": "sha512-odOy8z45HvbWerx4t9g//fA38QNq0Rr6cw8UeHbx1LDOXbarMsfJ5CrmmJs5FlhK16MTlsyaF2m+JJ2cXkTLPg==",
+    "sqlite_api": "SqliteSaver.fromConnString(path) implements BaseCheckpointSaver and supports get/list/put/deleteThread",
+    "sqlite_native_dependency": "better-sqlite3@^12.10.0",
+    "resume_api": "StateGraph compiled with checkpointer resumes the same thread by invoking Command({ resume }) with configurable.thread_id"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "保持 start:dsh 为生产入口，并让 start:langgraph 只调用隔离 Learning launcher；全量测试/typecheck 纳入新增文件",
+        "layer": "Build/CLI"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "purpose": "仅将 better-sqlite3 加入审核后的 allowBuilds，不放开全局 install scripts",
+        "layer": "Dependency Governance"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "锁定官方 SQLite checkpointer 及其实际依赖闭包，并触发生产组合根 lock 漂移重验",
+        "layer": "Dependency Evidence"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "精确增加官方 SQLite checkpointer 1.0.3，并分开环境清理 launcher 与内部 Learning CLI",
+        "layer": "Learning Runtime"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+        "purpose": "将一次性 normalize 图改为可注入 checkpointer 的原生 StateGraph，并使用 interrupt/Command 形成真实暂停恢复边界",
+        "layer": "Learning Runtime"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/main.ts",
+        "purpose": "保持为薄入口，只委托 CLI；不读取生产配置、凭证或 DSH Profile",
+        "layer": "Learning CLI"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts",
+        "purpose": "保留确定性 StateGraph 快速测试，并适配显式 runtime/checkpointer 生命周期",
+        "layer": "Learning Runtime Test"
+      },
+      {
+        "path": "packages/dsh-bridge/src/launcher.ts",
+        "purpose": "把受控启动参数收敛为 options seam，并在读取组合、凭证或调用 runner 前执行 assertProductionRuntime",
+        "layer": "Production Runtime Gate"
+      },
+      {
+        "path": "packages/dsh-bridge/src/index.ts",
+        "purpose": "导出 typed launch options 和固定 production Runtime manifest，不导出 Learning Adapter",
+        "layer": "Production Runtime Gate"
+      },
+      {
+        "path": "scripts/runtime/launch-controlled.ts",
+        "purpose": "适配 typed production launch options，继续只启动 controlled DSH Profile",
+        "layer": "Production CLI"
+      },
+      {
+        "path": "tests/fault-injection/composition-drift.spec.ts",
+        "purpose": "适配 launcher options API，并保留 verify 失败与参数逃逸均不调用 DSH 的证据",
+        "layer": "Production Fault Test"
+      },
+      {
+        "path": "tests/integration/learning-runtime-isolation.spec.ts",
+        "purpose": "扩展为 launcher role gate、production 包/Profile/Bundle/脚本反向依赖扫描和 Learning→DSH 禁止依赖扫描",
+        "layer": "Architecture Test"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "在明确审核根 lock 与 dsh-bridge 变化后重冻生产组合；不得由 verify 自动改写",
+        "layer": "Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "labs/runtimes/langgraph-ts/runtime.manifest.json",
+        "reason": "提交可扫描的 learning/langgraph、offline、deployable=false、credentials=none 运行时声明",
+        "naming_basis": "与 requirement 的 Runtime Manifest 及 production composition lock 对称",
+        "layer": "Learning Runtime Contract"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+        "reason": "封装 SqliteSaver、StateGraph run/resume、thread/run/checkpoint 标识和显式 close 生命周期",
+        "naming_basis": "将图定义与有状态运行时编排分开，避免 main.ts 成为业务容器",
+        "layer": "Learning Runtime"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/transcript.ts",
+        "reason": "以 JSONL 追加 paused/resumed/completed 离线事实，不复用或伪造 DSH Session Log",
+        "naming_basis": "按用户可验收产物 offline transcript 命名",
+        "layer": "Learning Evidence"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/cli.ts",
+        "reason": "解析 run/resume、thread、checkpoint、transcript 和 decision 参数，并输出机器可读结果",
+        "naming_basis": "将参数协议从进程入口分离以便单测和真实 CLI smoke 共用",
+        "layer": "Learning CLI"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/launcher.ts",
+        "reason": "父进程以显式最小环境启动内部 CLI，剥离 HOME、DSH_HOME、云厂商和模型密钥",
+        "naming_basis": "Learning 专属启动器留在 Lab 内，不进入 dsh-bridge 或生产 Profile",
+        "layer": "Learning Security Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+        "reason": "使用临时 SQLite，关闭首个 runtime 后由新实例恢复同一 thread，并检查 checkpoint 和 transcript",
+        "naming_basis": "直接对应 GWT-013 labs/runtime-resume",
+        "layer": "Acceptance Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "reason": "用两个真实子进程分别 run/resume，防止把同进程调用伪装成持久恢复",
+        "naming_basis": "Learning CLI 的进程级验收",
+        "layer": "CLI Integration Test"
+      },
+      {
+        "path": "tests/integration/learning-credential-isolation.spec.ts",
+        "reason": "注入假生产密钥并证明 Learning 子进程不可见，同时验证 manifest 不可部署且无生产凭证配置",
+        "naming_basis": "对应架构 NFR 的 credential/fault test",
+        "layer": "Security Integration Test"
+      },
+      {
+        "path": "docs/runbooks/learning-runtime.md",
+        "reason": "记录独立 run/resume 命令、SQLite/transcript 位置、环境隔离和明确非生产限制",
+        "naming_basis": "按可操作 Runtime 命名，与 dsh-composition runbook 并列",
+        "layer": "Runbook"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "root start:langgraph → Lab launcher(sanitized child env) → Learning CLI → LearningRuntime → native LangGraph.js StateGraph + SqliteSaver → lab-local SQLite/JSONL；root start:dsh → dsh-bridge role gate → composition verify → official DSH CLI",
+    "dependency_rule": "Learning Lab 只依赖 @agent/contracts、LangGraph.js、官方 checkpoint 包和离线文件；不得 import dsh-bridge/Cordis/DSH/Profile/Bundle、读取 HOME/DSH_HOME 或进入部署清单。Production launcher 只接受 production/dsh manifest，并在任何组合/凭证/runner 行为前拒绝 learning manifest。Learning transcript 不是 DSH Session Log，也不得写入生产 Ledger。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/cli.spec.ts"
+      },
+      {
+        "path": "tests/integration/learning-runtime-isolation.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/learning-runtime-isolation.spec.ts"
+      },
+      {
+        "path": "tests/integration/learning-credential-isolation.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/learning-credential-isolation.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "SQLite checkpointer 引入 better-sqlite3 原生构建；只允许该包进入 allowBuilds，若 Node 22.19.0 无可验证构建或要求放开更多脚本则停止",
+    "同进程 MemorySaver 或手写 JSON 状态不能证明跨进程 checkpoint 恢复；必须关闭首个 runtime 并由新进程/新实例恢复",
+    "仅扫描 import 字符串不能证明凭证隔离；必须向父进程注入假密钥并从 Learning 子进程观测不可见",
+    "若 Learning launcher 继承 HOME、NODE_OPTIONS、DSH_HOME 或任意 *_TOKEN/*_SECRET，仍可能间接获取生产能力；采用环境 allowlist 而非敏感键 blacklist",
+    "根 pnpm-lock 和 dsh-bridge 变化会让已冻结 DSH 组合失配；必须显式审核后 composition:freeze -- --write，再运行 verify 和真实 DSH smoke",
+    "本 Story 只证明最小原生 StateGraph checkpoint/interrupt/Command 与隔离，不宣称旧 Python 单 Agent/Team 的全部 60 tests 已迁移；完整语义属于 B2 Stories"
+  ],
+  "stop_conditions": [
+    "只有共享生产 launcher、生产凭证或 DSH Adapter 才能让 Learning Runtime 运行",
+    "恢复只能在同一内存进程完成，或 transcript 无法证明 resumed checkpoint/thread",
+    "Learning 子进程仍可见假生产密钥、HOME、DSH_HOME 或 NODE_OPTIONS",
+    "生产包/Profile/Bundle/controlled launcher 对 Lab 形成反向依赖",
+    "新增依赖导致 DSH rc.6/Cordis 4.0.1 漂移，或组合重冻后真实 DSH smoke 失败",
+    "better-sqlite3 需要超出单包 allowBuilds 的安装脚本权限"
+  ],
+  "blocked_questions": [],
+  "confirmed": true,
+  "confirmed_by": "用户：在四项实现门禁摘要后回复继续",
+  "confirmed_at": "2026-08-17"
+}

@@ -1,0 +1,65 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "B0",
+      "title": "可信基线与评估准绳冻结",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "先固定 baseline、60 tests、真实 transcript、Case/Oracle/负对照与回滚引用；评估不能区分正确、错误和坏环境时停止",
+      "confirmed": true
+    },
+    {
+      "id": "B1",
+      "title": "双 TypeScript Runtime 可评价基座",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["B0"],
+      "priority": "P0",
+      "reason": "建立可由同一准绳检查的固定 DSH rc.6 生产组合和隔离 LangGraph.js Learning Runtime，不以目录完成代替行为完成",
+      "confirmed": true
+    },
+    {
+      "id": "B2",
+      "title": "可信评估驱动的行为与 60 tests 语义迁写",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["B0", "B1"],
+      "priority": "P0",
+      "reason": "逐项 Red→Green 迁写 Definition、Tools、Capabilities 和 Runtime 行为；证据不足允许 ABSTAIN、INVALID 或 blocked",
+      "confirmed": true
+    },
+    {
+      "id": "B3",
+      "title": "可重放控制闭环",
+      "business_value": "high",
+      "urgency": "medium",
+      "dependencies": ["B1", "B2"],
+      "priority": "P0",
+      "reason": "在 Runtime 与评估语义稳定后接入 ledger、observer、supervisor 和 outcome-feedback，避免先固化错误事件模型",
+      "confirmed": true
+    },
+    {
+      "id": "B4",
+      "title": "独立安全执行与故障隔离",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["B1", "B2", "B3"],
+      "priority": "P0",
+      "reason": "基于 ActionIntent/Receipt 契约落地独立 Safety Executor、Watchdog 和旁路证明，并验证幂等与未知效果处理",
+      "confirmed": true
+    },
+    {
+      "id": "B5",
+      "title": "全量验收与一次 cutover",
+      "business_value": "high",
+      "urgency": "medium",
+      "dependencies": ["B0", "B1", "B2", "B3", "B4"],
+      "priority": "P0",
+      "reason": "全量门禁与人工签署全部通过后才一次性删除 Python；任一失败保持可重放基线",
+      "confirmed": true
+    }
+  ]
+}

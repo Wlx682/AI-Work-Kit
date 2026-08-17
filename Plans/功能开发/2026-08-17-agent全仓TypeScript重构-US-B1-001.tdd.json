@@ -1,0 +1,108 @@
+{
+  "story_id": "US-B1-001",
+  "commit": "738c9cfc0265345c76cca3f91ccca66ffc640031",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/dsh-composition.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-17T20:21:57+08:00",
+    "reason": "The acceptance test could not resolve @agent/dsh-bridge because the controlled DSH composition, bridge, bundles, profile and composition lock had not been implemented."
+  },
+  "red_checks": [
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/dsh-composition.spec.ts",
+      "exit_code": 1,
+      "reason": "@agent/dsh-bridge and the frozen controlled composition did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/fault-injection/composition-drift.spec.ts",
+      "exit_code": 1,
+      "reason": "the composition verifier and COMPOSITION_MISMATCH failure path did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/plugin-lifecycle/runtime-composition.spec.ts",
+      "exit_code": 1,
+      "reason": "the production Cordis runtime-composition plugin did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/plugin-lifecycle/partial-failure.spec.ts",
+      "exit_code": 1,
+      "reason": "the Cordis partial-initialization rollback fixture did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/dsh-controlled-profile.spec.ts",
+      "exit_code": 1,
+      "reason": "the controlled DSH profile and launcher did not exist"
+    },
+    {
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/learning-runtime-isolation.spec.ts",
+      "exit_code": 1,
+      "reason": "the production bridge, plugin and profile paths required by the new isolation assertions did not exist"
+    }
+  ],
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/dsh-composition.spec.ts tests/fault-injection/composition-drift.spec.ts tests/plugin-lifecycle/runtime-composition.spec.ts tests/plugin-lifecycle/partial-failure.spec.ts tests/integration/dsh-controlled-profile.spec.ts tests/integration/learning-runtime-isolation.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-17T20:27:41+08:00",
+    "result": "All six target suites passed, including real profile composition, twelve drift/launcher guards, reversible unload, partial-failure rollback and learning-runtime isolation."
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+    "exit_code": 0,
+    "at": "2026-08-17T20:30:33+08:00",
+    "result": "16 TypeScript test files / 46 tests passed, Python baseline remained 60/60 green, typecheck passed and the committed composition fingerprint verified. Refactor also bound local bridge/plugin/bundle/profile/runtime-script source hashes so workspace links cannot hide implementation drift."
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-17T20:31:13+08:00",
+    "result": "The verified controlled profile delegated to the official DSH 0.1.0-rc.6 CLI and displayed headless help without requesting model credentials. A real --dump-config run also exited 0 and included the local runtime-composition plugin."
+  },
+  "composition_evidence": {
+    "profile": "controlled",
+    "fingerprint": "cfe884f04031d415cd465fb5a064288cce52fb0df0e37b75d21b8ded31cdd681",
+    "dsh_version": "0.1.0-rc.6",
+    "dsh_integrity": "sha512-brpZfED7ieRa2PQ5tUxMhHrM1pb2CmKFVM/f6yMULBDMicahk+Z2OsHgTwTDnoiZm23Ftu9rQz0NN4pflaoJcg==",
+    "cordis_version": "4.0.1",
+    "node_version": "22.19.0",
+    "pnpm_version": "11.7.0",
+    "typescript_version": "6.0.3",
+    "bundle_order": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-headless",
+      "@agent/dsh-bundle-control-base",
+      "@agent/dsh-bundle-control-production"
+    ],
+    "frozen_installs": "root and controlled-profile pnpm --frozen-lockfile installs passed",
+    "target_commit": "738c9cfc0265345c76cca3f91ccca66ffc640031"
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-005",
+      "pass": true,
+      "evidence": "The committed lock binds exact DSH/Cordis/toolchain artifacts, root and profile locks, local source artifacts, ordered bundles, provider selections, patch hashes and the real final config dump to one verified fingerprint."
+    },
+    {
+      "ac_id": "GWT-006",
+      "pass": true,
+      "evidence": "Fault-injection tests mutate every controlled input and receive COMPOSITION_MISMATCH before the DSH runner is invoked; unbound --patch and --profile escape arguments are rejected."
+    },
+    {
+      "ac_id": "GWT-007",
+      "pass": true,
+      "evidence": "The real production Cordis plugin contributes a service, typed ready/probe events and a reversible effect; fiber.dispose removes the service, listener and effect."
+    },
+    {
+      "ac_id": "GWT-008",
+      "pass": true,
+      "evidence": "A test-only plugin registers partial service/listener/effect state and then throws; Cordis initialization rollback removes all registered state and the composition never becomes ready."
+    }
+  ],
+  "human_gates": [
+    {
+      "id": "IMPLEMENTATION_DESIGN",
+      "status": "approved",
+      "approved_by": "wanglongxiang",
+      "evidence": "User replied 继续 after the four implementation-design gates were summarized; the confirmed implementation design records this approval."
+    }
+  ]
+}

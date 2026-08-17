@@ -1,0 +1,87 @@
+{
+  "story_id": "US-B0-001",
+  "commit": "e3fae6ba4c34fd9e41a4f148aa2aae72a69ef6ee",
+  "red": {
+    "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/baseline-manifest.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-17T18:41:32+08:00",
+    "reason": "Baseline freeze module did not exist; the acceptance test failed only because the requested baseline contract and implementation had not been created."
+  },
+  "red_checks": [
+    {
+      "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/baseline-manifest.spec.ts",
+      "exit_code": 1,
+      "reason": "scripts/baseline/freeze.js was absent"
+    },
+    {
+      "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts",
+      "exit_code": 1,
+      "reason": "migration/legacy-test-map.json was absent"
+    },
+    {
+      "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/qualify-case.spec.ts",
+      "exit_code": 1,
+      "reason": "qualification still accepted only one negative control"
+    },
+    {
+      "command": "corepack pnpm@11.7.0 vitest run evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts",
+      "exit_code": 1,
+      "reason": "the Case did not expose a canonical evidence bundle digest"
+    }
+  ],
+  "green": {
+    "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/baseline-manifest.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-17T18:46:53+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-17T18:49:40+08:00",
+    "result": "10 files, 28 tests passed; typecheck passed separately; active Python suite remained 60/60 green"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 evaluate:legacy-case",
+    "exit_code": 0,
+    "at": "2026-08-17T19:54:44+08:00",
+    "result": "reference=PASS, both negative controls=FAIL, invalid environment=INVALID, approved bundle matches and qualification=true"
+  },
+  "baseline_evidence": {
+    "baseline_sha": "3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4",
+    "manifest": "/Users/wanglongxiang/git/agent/evidence/baselines/3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4/baseline-manifest.v1.json",
+    "collected": 60,
+    "passed": 60
+  },
+  "evaluation_evidence": {
+    "case_id": "legacy-agent-definition-v1",
+    "evidence_bundle_sha256": "3ad17826cb0a4175bba96bed82209ad855435d405e6db2de036a9143a066432c",
+    "qualified": true,
+    "reasons": [],
+    "reviewed_by": "wanglongxiang",
+    "approved_at": "2026-08-17T19:54:44+08:00"
+  },
+  "acceptance": [
+    { "ac_id": "GWT-001", "pass": true, "evidence": "explicit baseline SHA manifest contains clean worktree, 60 node ids, 60 passes, asset hashes, output digest and rollback ref" },
+    { "ac_id": "GWT-002", "pass": true, "evidence": "baseline acceptance rejects unresolved SHA, dirty baseline, zero collection and failed pytest with BASELINE_INCOMPLETE" },
+    { "ac_id": "GWT-003", "pass": true, "evidence": "M001-M060 are mechanically equal to the frozen node-id set and their observable semantics and target Red locations were explicitly confirmed by the user" },
+    { "ac_id": "GWT-004", "pass": true, "evidence": "acceptance test rejects missing, duplicate or non-migrate mapping entries" },
+    { "ac_id": "GWT-009", "pass": true, "evidence": "evaluation-domain regression preserves technical completion while external oracle mismatch returns FAIL" },
+    { "ac_id": "GWT-010", "pass": true, "evidence": "evaluation-domain regression preserves ABSTAIN for outcome unknown and evidence deficiency" },
+    { "ac_id": "GWT-011", "pass": true, "evidence": "invalid-missing-target fixture returns INVALID and is a mandatory qualification input" },
+    { "ac_id": "GWT-012", "pass": true, "evidence": "unsigned review returns HUMAN_REVIEW_INCOMPLETE; previously signed but unbound review returns HUMAN_REVIEW_BUNDLE_MISMATCH" }
+  ],
+  "human_gates": [
+    {
+      "id": "MIGRATION_MAP_SEMANTICS",
+      "status": "approved",
+      "approved_by": "wanglongxiang",
+      "evidence": "User explicitly confirmed M001-M060 semantics and target Red locations."
+    },
+    {
+      "id": "EVALUATION_BUNDLE_REVIEW",
+      "status": "approved",
+      "approved_by": "wanglongxiang",
+      "evidence": "User explicitly approved bundle 3ad17826cb0a4175bba96bed82209ad855435d405e6db2de036a9143a066432c; replay returned qualified=true."
+    }
+  ]
+}
