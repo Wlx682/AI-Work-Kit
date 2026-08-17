@@ -1,0 +1,39 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户：继续（承接可信评估基线阶段）",
+  "confirmed_at": "2026-08-17",
+  "stories": [
+    {
+      "id": "US-EVAL-001",
+      "title": "拒绝虚假成功并判定 Evaluation Case 资格",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-17-agent可信评估资格门禁-US-EVAL-001.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-TS-001"],
+      "acceptance_criteria": ["AC1", "AC2", "AC3", "AC4", "AC5"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+        "Plans/代码重构/2026-08-17-agent可信评估最小改造-v0.1.md"
+      ]
+    },
+    {
+      "id": "US-EVAL-002",
+      "title": "真实遗留定义 Case 与 FileStateOracle 资格预览",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-17-agent可信评估资格门禁-US-EVAL-002.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-EVAL-001"],
+      "acceptance_criteria": ["AC6", "AC7", "AC8", "AC9", "AC10"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+        "Plans/代码重构/2026-08-17-agent可信评估最小改造-v0.1.md"
+      ]
+    }
+  ]
+}

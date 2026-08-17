@@ -1,0 +1,65 @@
+{
+  "codebase_available": true,
+  "codebase_read": [
+    {"path": "core/definition.py", "reason": "提取现有任务和 Agent 配置语义作为 Case 输入"},
+    {"path": "core/models.py", "reason": "确认旧 succeeded 只是技术状态，不可作为现实 PASS"},
+    {"path": "orchestration/langgraph.py", "reason": "提取 run/resume/recover 行为和 transcript；不实现 Adapter"},
+    {"path": "capabilities/act.py", "reason": "提取 Action ID、unknown 和人工补证据场景"},
+    {"path": "tools/registry.py", "reason": "提取工具 schema 和失败样本"},
+    {"path": "tests/", "reason": "提取旧 60 tests 的行为基线和真实任务候选"},
+    {"path": "DeepSeek Harness@47f943859bef60e4160492346772ded9b24f765a", "reason": "核验 Session Log、Cordis 生命周期、Profile/Bundle/Patch 与工具事件"}
+  ],
+  "architecture_decision_confirmed": true,
+  "target_files": {
+    "modify": [],
+    "create": [
+      {"path": "package.json", "reason": "最小 TypeScript/pnpm/DSH 测试基座", "layer": "Build"},
+      {"path": "pnpm-workspace.yaml", "reason": "声明 evaluation-domain、dsh-bridge、plugin 和 profile", "layer": "Build"},
+      {"path": "tsconfig.base.json", "reason": "严格 TypeScript 配置", "layer": "Build"},
+      {"path": "packages/contracts/src/evaluation.ts", "reason": "四态、证据引用、配置指纹和报告类型", "layer": "Contract"},
+      {"path": "packages/contracts/schemas/evaluation-report.v1.json", "reason": "版本化持久化报告契约", "layer": "Contract"},
+      {"path": "packages/evaluation-domain/src/models.ts", "reason": "Case、Config、Verdict、Report 纯领域模型", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/src/qualify-case.ts", "reason": "参考解、负对照、unknown 和坏环境资格", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/src/evaluate.ts", "reason": "technical execution + external evidence → four-state verdict", "layer": "Evaluation Domain"},
+      {"path": "packages/dsh-bridge/src/session.ts", "reason": "唯一将 DSH Session Log 投影成 technical execution/evidence refs", "layer": "DSH Bridge"},
+      {"path": "plugins/evaluation/src/index.ts", "reason": "注册 Evaluation Service/Event/Effect 并保证可逆卸载", "layer": "Cordis Plugin"},
+      {"path": "plugins/evaluation/src/oracles/file-state.ts", "reason": "首个外部文件状态 Oracle", "layer": "Oracle"},
+      {"path": "profiles/evaluation/cordis.patch.yml", "reason": "固定只读/沙箱 Profile、Bundle 和 Provider 组合", "layer": "DSH Profile"},
+      {"path": "tests/qualification/evaluation-verdict.spec.ts", "reason": "四态与 false-success Red", "layer": "Qualification Test"},
+      {"path": "tests/qualification/case-qualification.spec.ts", "reason": "参考解与负对照资格 Red", "layer": "Qualification Test"},
+      {"path": "tests/plugin-lifecycle/evaluation-plugin.spec.ts", "reason": "插件 dispose 无残留 Effect", "layer": "Lifecycle Test"},
+      {"path": "tests/acceptance/legacy-task-parity.spec.ts", "reason": "真实任务与冻结 Python 基线证据对照", "layer": "Acceptance Test"},
+      {"path": "labs/comparisons/src/compare-reports.ts", "reason": "离线比较 DSH 与 LangGraph.js 的同 Case/Oracle 报告，不建立 live Adapter", "layer": "Learning Comparison"},
+      {"path": "tests/integration/learning-runtime-isolation.spec.ts", "reason": "生产依赖图不得引用 LangGraph.js Lab", "layer": "Isolation Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "evaluation plugin → evaluation-domain → contracts；evaluation plugin → dsh-bridge → DSH/Cordis；LangGraph.js Lab → evaluation-domain/contracts（offline reports only）；evaluation plugin → OutcomeOracle → external reality",
+    "dependency_rule": "evaluation-domain 与 contracts 不 import DSH/Cordis/LangGraph；只有 dsh-bridge/plugin 读取 DSH native types；LangGraph.js 只在 Lab；生产不反向依赖 Lab；两个 Runtime 不共享 live Adapter；technical status 不能生成 PASS；Python 只作为 baseline tag/worktree 证据；人工裁决必须版本化且不可覆盖原报告"
+  },
+  "tests": {
+    "red": [
+      {"path": "tests/qualification/evaluation-verdict.spec.ts", "command": "pnpm vitest run tests/qualification/evaluation-verdict.spec.ts"},
+      {"path": "tests/qualification/case-qualification.spec.ts", "command": "pnpm vitest run tests/qualification/case-qualification.spec.ts"},
+      {"path": "tests/plugin-lifecycle/evaluation-plugin.spec.ts", "command": "pnpm vitest run tests/plugin-lifecycle/evaluation-plugin.spec.ts"},
+      {"path": "tests/acceptance/legacy-task-parity.spec.ts", "command": "pnpm vitest run tests/acceptance/legacy-task-parity.spec.ts"},
+      {"path": "tests/integration/learning-runtime-isolation.spec.ts", "command": "pnpm vitest run tests/integration/learning-runtime-isolation.spec.ts"}
+    ]
+  },
+  "risks": [
+    "FileStateOracle 若读取错误工作区或目标路径会制造虚假 PASS/FAIL；artifact identity 必须属于 Case 且人工复核",
+    "参考解或负对照不稳定时 Case 无资格，不能为了切换降低门槛",
+    "DSH Session Log 只能证明模型可见历史和技术执行，不能替代现实 Oracle",
+    "插件 dispose 若残留 Effect，会污染重复评估并产生错误证据",
+    "若生产依赖图反向引用 LangGraph.js Lab，会把学习 Runtime 变成未授权的第二生产 Runtime",
+    "一次切换压力可能诱导把 ABSTAIN/INVALID 改成 PASS；报告状态和人工裁决必须追加版本"
+  ],
+  "blocked_questions": [
+    "首个真实 Case、参考解、负对照与人工责任人尚未确认",
+    "FileStateOracle 是否足够作为第一 Oracle 尚未确认",
+    "DSH 发布包/固定 commit、Node/pnpm 与启动命令尚未确认",
+    "evaluation Profile 的沙箱和工作区身份尚未确认",
+    "报告与原始证据首版存储尚未确认"
+  ],
+  "confirmed": false
+}

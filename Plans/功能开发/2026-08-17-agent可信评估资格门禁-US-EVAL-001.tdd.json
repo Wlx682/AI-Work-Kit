@@ -1,0 +1,63 @@
+{
+  "story_id": "US-EVAL-001",
+  "commit": "35d90db",
+  "red": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 1,
+    "at": "2026-08-17T17:09:03+08:00",
+    "reason": "evaluate.js 与 qualify-case.js 尚未实现；既有 Runtime 和隔离测试保持通过，两个新增功能测试只因目标模块不存在而失败"
+  },
+  "green": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-17T17:09:36+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 typecheck",
+    "exit_code": 0,
+    "at": "2026-08-17T17:10:15+08:00"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 install --frozen-lockfile && corepack pnpm@11.7.0 typecheck && corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 start:langgraph -- \"evaluation boundary smoke\"",
+    "exit_code": 0,
+    "at": "2026-08-17T17:10:20+08:00"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC1",
+      "pass": true,
+      "evidence": "external success 仅在非空可追溯 evidence refs 下生成 PASS"
+    },
+    {
+      "ac_id": "AC2",
+      "pass": true,
+      "evidence": "technicalStatus=completed 与 external failure 组合稳定生成 FAIL"
+    },
+    {
+      "ac_id": "AC3",
+      "pass": true,
+      "evidence": "unknown 与空证据生成 ABSTAIN，invalid Oracle 生成 INVALID"
+    },
+    {
+      "ac_id": "AC4",
+      "pass": true,
+      "evidence": "reference PASS、negative FAIL、同 Case 身份、双方证据和完整人工签署全部满足才 qualified=true；否则返回全部原因"
+    },
+    {
+      "ac_id": "AC5",
+      "pass": true,
+      "evidence": "静态测试确认 evaluation-domain 不含 DSH/Cordis/LangGraph/Lab 依赖；原 agent 脏状态未变化"
+    }
+  ],
+  "discarded_runs": [
+    {
+      "at": "2026-08-17T17:09:59+08:00",
+      "reason": "新增证据防伪回归测试运行通过，但 TypeScript 发现测试 fixture 缺 technicalEvidenceRefs；修复 fixture 后重新执行 Refactor，不把该次记为通过"
+    }
+  ],
+  "limitations": [
+    "本 Story 未选择或运行真实 Evaluation Case",
+    "本 Story 未实现 FileStateOracle、DSH/Cordis plugin 或生产 Profile",
+    "qualified=true 只是领域函数能力测试，不代表任何现实 Case 已通过人工资格门禁"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "story_id": "US-EVAL-002",
+  "commit": "a2a50ae",
+  "red": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 1,
+    "at": "2026-08-17T17:18:34+08:00",
+    "reason": "FileStateOracle 的 file-state.js 和真实 Case runner 的 run.js 尚未实现；两组新增测试均只因目标模块不存在而失败，既有 13 个测试继续通过"
+  },
+  "green": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-17T17:19:21+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 typecheck",
+    "exit_code": 0,
+    "at": "2026-08-17T17:19:48+08:00"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 install --frozen-lockfile && corepack pnpm@11.7.0 typecheck && corepack pnpm@11.7.0 test && corepack pnpm@11.7.0 evaluate:legacy-case",
+    "exit_code": 0,
+    "at": "2026-08-17T17:19:59+08:00"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC6",
+      "pass": true,
+      "evidence": "reference fixture 两次运行一致，PASS；actual/expected sha256 均为 d9ebadbb29b8176d1b86a349cf55efc0c577bf971c1a9c49506525f7e71476ec；唯一变化为 definitions/general-assistant.json"
+    },
+    {
+      "ac_id": "AC7",
+      "pass": true,
+      "evidence": "negative-invalid-version 实际 sha256=ccd6596e3ff7de3d166aef464ab02be4a3e5ce331c89083589a4428732f556e1，与参考不一致，稳定 FAIL"
+    },
+    {
+      "ac_id": "AC8",
+      "pass": true,
+      "evidence": "negative-forbidden-side-effect 虽目标哈希正确，但 unexpectedChangedPaths=[prompts/general-assistant.md]，稳定 FAIL"
+    },
+    {
+      "ac_id": "AC9",
+      "pass": true,
+      "evidence": "缺目标 fixture 与 ../outside.json 路径越界均返回 INVALID，不产生 PASS/FAIL"
+    },
+    {
+      "ac_id": "AC10",
+      "pass": true,
+      "evidence": "reviewer 仅 nominated=wanglongxiang，evidenceReviewed=false/signed=false；qualification=false，唯一原因 HUMAN_REVIEW_INCOMPLETE"
+    }
+  ],
+  "discarded_runs": [
+    {
+      "at": "2026-08-17T17:18:21+08:00",
+      "reason": "Oracle 测试按预期失败，但 Vitest 尚未发现 evaluation/cases 验收测试；修复 include 后重跑，不把覆盖不完整的失败记为有效 Red"
+    }
+  ],
+  "review_gate": {
+    "nominated_reviewer": "wanglongxiang",
+    "evidence_reviewed": false,
+    "signed": false,
+    "qualification": "HUMAN_REVIEW_INCOMPLETE",
+    "note": "用户已确认 Case 设计和 reviewer 身份，但尚未对上述实际运行证据做最终签署"
+  }
+}

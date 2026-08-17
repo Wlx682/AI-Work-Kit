@@ -1,0 +1,50 @@
+{
+  "story_id": "US-EVAL-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent-ts-rewrite",
+  "codebase_read": [
+    {"path": "definitions/general-assistant.json", "reason": "真实 Case baseline 与不可变字段来源"},
+    {"path": "prompts/general-assistant.md", "reason": "禁止副作用 sentinel 来源"},
+    {"path": "core/definition.py", "reason": "语义版本和字段完整性旧基线"},
+    {"path": "packages/contracts/src/evaluation.ts", "reason": "OracleObservation 和 EvaluationReport 契约"},
+    {"path": "packages/evaluation-domain/src/evaluate.ts", "reason": "外部 observation 转四态报告"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "package.json", "purpose": "加入 Oracle/Case typecheck 与 case preview CLI", "layer": "Build"},
+      {"path": "pnpm-workspace.yaml", "purpose": "纳入 evaluation/cases/* workspace", "layer": "Build"}
+    ],
+    "create": [
+      {"path": "packages/evaluation-oracles/package.json", "reason": "通用 Oracle provider package", "naming_basis": "OutcomeOracle capability seam", "layer": "Oracle Build"},
+      {"path": "packages/evaluation-oracles/tsconfig.json", "reason": "Oracle 独立严格类型检查", "naming_basis": "workspace package 惯例", "layer": "Oracle Build"},
+      {"path": "packages/evaluation-oracles/src/file-state.ts", "reason": "安全解析工作区、快照哈希、允许变更和外部观察", "naming_basis": "FileStateOracle", "layer": "Oracle"},
+      {"path": "packages/evaluation-oracles/src/index.ts", "reason": "稳定公共导出", "naming_basis": "TypeScript package barrel", "layer": "Oracle"},
+      {"path": "packages/evaluation-oracles/test/file-state.spec.ts", "reason": "Red：参考、负对照、缺目标、路径越界", "naming_basis": "AC6-AC9", "layer": "Oracle Test"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/package.json", "reason": "版本化 Case runner package", "naming_basis": "首个真实 Case v1", "layer": "Evaluation Case Build"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/tsconfig.json", "reason": "Case runner 严格类型检查", "naming_basis": "workspace package 惯例", "layer": "Evaluation Case Build"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/case.json", "reason": "任务、目标、允许效果、禁止效果和 reviewer 候选", "naming_basis": "versioned Evaluation Case", "layer": "Evaluation Case"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/src/run.ts", "reason": "运行四组 fixture 并输出未签署资格预览", "naming_basis": "AC6-AC10", "layer": "Evaluation Case Runner"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts", "reason": "Red：稳定报告和 HUMAN_REVIEW_INCOMPLETE", "naming_basis": "AC6-AC10", "layer": "Acceptance Test"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/fixtures/**", "reason": "baseline/reference/negative/invalid 可复核工作区", "naming_basis": "真实遗留定义及正负对照", "layer": "Evaluation Fixture"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "evaluation-case → evaluation-oracles + evaluation-domain → contracts；未来 DSH/LangGraph.js 只负责产生候选工作区，不改变 Oracle",
+    "dependency_rule": "Oracle 不依赖 Runtime；工作区/目标路径必须显式且禁止越界；success 必须目标哈希匹配参考且无禁止副作用；自动化不得填充最终 humanReview"
+  },
+  "tests": {
+    "red": [
+      {"path": "packages/evaluation-oracles/test/file-state.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-oracles/test/file-state.spec.ts"},
+      {"path": "evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts", "command": "corepack pnpm@11.7.0 vitest run evaluation/cases/legacy-agent-definition-v1/test/qualification.spec.ts"}
+    ]
+  },
+  "risks": [
+    "路径身份错误可制造对无关文件的虚假 PASS",
+    "只比目标文件而不检查其他文件会漏掉禁止副作用",
+    "fixture 与真实遗留定义漂移会降低参考价值",
+    "把 reviewer 候选写入报告会被误解为已人工签署",
+    "CLI 重复运行若顺序或哈希不稳定则不可用于资格判断"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

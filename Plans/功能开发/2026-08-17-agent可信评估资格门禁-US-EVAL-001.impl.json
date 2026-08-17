@@ -1,0 +1,47 @@
+{
+  "story_id": "US-EVAL-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent-ts-rewrite",
+  "codebase_read": [
+    {"path": "packages/contracts/src/runtime-role.ts", "reason": "确认 contracts 类型和错误边界惯例"},
+    {"path": "packages/contracts/src/index.ts", "reason": "确认公共导出位置"},
+    {"path": "tests/integration/learning-runtime-isolation.spec.ts", "reason": "确认生产包依赖静态检查方式"},
+    {"path": "package.json", "reason": "确认 workspace typecheck/test 命令"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "package.json", "purpose": "将 evaluation-domain 纳入严格 typecheck", "layer": "Build"},
+      {"path": "packages/contracts/src/index.ts", "purpose": "导出 evaluation contract", "layer": "Contract"}
+    ],
+    "create": [
+      {"path": "packages/contracts/src/evaluation.ts", "reason": "定义四态、技术执行、Oracle 观察和报告契约", "naming_basis": "可信评估四态语义", "layer": "Contract"},
+      {"path": "packages/evaluation-domain/package.json", "reason": "声明纯领域 workspace package", "naming_basis": "目标架构 evaluation-domain", "layer": "Evaluation Domain Build"},
+      {"path": "packages/evaluation-domain/tsconfig.json", "reason": "独立严格类型检查", "naming_basis": "workspace package 惯例", "layer": "Evaluation Domain Build"},
+      {"path": "packages/evaluation-domain/src/evaluate.ts", "reason": "technical execution + external observation 生成四态报告", "naming_basis": "AC1-AC3", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/src/qualify-case.ts", "reason": "参考解、负对照和人工签署资格检查", "naming_basis": "AC4", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/src/index.ts", "reason": "稳定领域公共导出", "naming_basis": "TypeScript package barrel", "layer": "Evaluation Domain"},
+      {"path": "packages/evaluation-domain/test/evaluate.spec.ts", "reason": "Red：四态与 false-success", "naming_basis": "AC1-AC3", "layer": "Evaluation Domain Test"},
+      {"path": "packages/evaluation-domain/test/qualify-case.spec.ts", "reason": "Red：资格通过和多原因拒绝", "naming_basis": "AC4", "layer": "Evaluation Domain Test"},
+      {"path": "tests/integration/evaluation-domain-isolation.spec.ts", "reason": "Red：领域层不依赖具体 Runtime", "naming_basis": "AC5", "layer": "Isolation Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "evaluation-domain → contracts；未来 adapters/oracles → evaluation-domain；contracts/evaluation-domain 不依赖 DSH、Cordis、LangGraph 或 Lab",
+    "dependency_rule": "technicalStatus 不得独立产生 PASS；PASS/FAIL 必须有 external evidence；unknown/缺证据为 ABSTAIN；无效目标/Oracle 为 INVALID；Case 未合格不得用于切换；本 Story 不创建任何真实 Case 结论"
+  },
+  "tests": {
+    "red": [
+      {"path": "packages/evaluation-domain/test/evaluate.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/evaluate.spec.ts"},
+      {"path": "packages/evaluation-domain/test/qualify-case.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/qualify-case.spec.ts"},
+      {"path": "tests/integration/evaluation-domain-isolation.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/integration/evaluation-domain-isolation.spec.ts"}
+    ]
+  },
+  "risks": [
+    "把 technicalStatus 当作现实结果会制造虚假 PASS",
+    "把空 evidence 当充分证据会使 Oracle 失去可追溯性",
+    "资格函数若只返回 boolean 会隐藏参考解、负对照或人工签署失败原因",
+    "过早绑定 DSH/LangGraph 会污染纯领域边界"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
