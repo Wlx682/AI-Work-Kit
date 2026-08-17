@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="智能体生产系统真正要控制的，不是模型隐藏思维，而是 Agent 在什么条件下可以继续改变世界。本文解释控制母模型，以及 DSH 与控制系统的四层关系。"/>
+<title>智能体生产系统真正要控制的，不是模型，而是它改变世界的条件</title>
+<style>
+  :root{
+    --bg:#070910;--bg2:#0b0f19;--panel:#0e1422;--panel2:#111a2c;
+    --ink:#edf3ff;--ink2:#b6c2d9;--ink3:#74829d;--line:#202a3f;--line2:#2b3854;
+    --cyan:#55e6d1;--blue:#6da2ff;--violet:#a98cff;--amber:#ffc163;--red:#ff7082;
+    --max:1240px;--side:260px;--read:790px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.9;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;z-index:-3;background:
+    radial-gradient(900px 520px at 10% -8%,rgba(109,162,255,.17),transparent 62%),
+    radial-gradient(760px 460px at 95% 12%,rgba(85,230,209,.1),transparent 66%),var(--bg)}
+  body::after{content:"";position:fixed;inset:0;z-index:-2;opacity:.2;pointer-events:none;background-image:linear-gradient(rgba(109,162,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(109,162,255,.08) 1px,transparent 1px);background-size:52px 52px;mask-image:linear-gradient(#000,transparent 85%)}
+  a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.86em;color:#9bf0df;background:#101a2b;border:1px solid var(--line);border-radius:6px;padding:2px 7px;word-break:break-word}
+  #progress{position:fixed;z-index:80;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--violet));box-shadow:0 0 14px rgba(85,230,209,.7)}
+  .topbar{position:fixed;z-index:70;left:0;right:0;top:0;height:54px;display:flex;align-items:center;padding:0 clamp(18px,4vw,44px);background:rgba(7,9,16,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(43,56,84,.7)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:13.5px;letter-spacing:.3px}.mark{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#06101a;font-family:var(--mono);font-weight:900}
+  .topmeta{margin-left:auto;color:var(--ink3);font-family:var(--mono);font-size:11px}
+  .hero{position:relative;min-height:720px;padding:clamp(112px,13vw,154px) clamp(20px,5vw,52px) 72px;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero-inner{max-width:var(--max);margin:auto;display:grid;grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr);gap:clamp(36px,6vw,80px);align-items:center}
+  .eyebrow{display:inline-flex;gap:9px;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:6px 14px;color:var(--cyan);font:12px var(--mono);letter-spacing:1.2px;margin-bottom:24px;background:rgba(14,20,34,.6)}
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 2.2s infinite}@keyframes pulse{50%{opacity:.25;transform:scale(.75)}}
+  h1{max-width:15ch;margin:0 0 24px;font-size:clamp(38px,5.3vw,68px);line-height:1.08;letter-spacing:-2.4px;font-weight:900;background:linear-gradient(120deg,#fff 12%,#c9dcff 48%,#79eedc 86%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{max-width:720px;color:var(--ink2);font-size:clamp(17px,1.7vw,20px);line-height:1.78;margin:0}.lead strong{color:#fff}
+  .tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.tag{padding:6px 11px;border:1px solid var(--line);border-radius:9px;color:var(--ink3);font:11.5px var(--mono);background:rgba(14,20,34,.62)}
+  .stack{position:relative;min-height:470px;display:grid;align-content:center;gap:12px;perspective:900px}
+  .stack::before{content:"";position:absolute;inset:8% 12%;border-radius:50%;background:rgba(85,230,209,.1);filter:blur(56px)}
+  .layer{position:relative;padding:18px 20px;border:1px solid var(--line2);border-radius:16px;background:linear-gradient(120deg,rgba(17,26,44,.92),rgba(10,15,26,.88));box-shadow:0 24px 60px -34px #000;transform:translateX(var(--x));animation:float 6s ease-in-out infinite;animation-delay:var(--delay)}
+  .layer:nth-child(2){border-color:rgba(169,140,255,.45)}.layer:nth-child(3){border-color:rgba(109,162,255,.45)}.layer:nth-child(4){border-color:rgba(255,193,99,.45)}
+  @keyframes float{50%{transform:translateX(var(--x)) translateY(-6px)}}
+  .layer small{display:block;color:var(--ink3);font:10.5px var(--mono);letter-spacing:1.2px;text-transform:uppercase}.layer b{display:block;margin-top:4px;font-size:17px}.layer span{display:block;color:var(--ink3);font-size:12.5px;line-height:1.55;margin-top:4px}
+  .hero-meta{max-width:var(--max);margin:54px auto 0;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:10px 28px;flex-wrap:wrap;color:var(--ink3);font:12px var(--mono)}.hero-meta b{color:var(--ink2);font-weight:500}
+  .metrics{max-width:var(--max);margin:-1px auto 0;padding:30px clamp(20px,5vw,52px);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;border-bottom:1px solid var(--line)}
+  .metric{min-height:150px;padding:22px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,var(--panel),rgba(11,15,25,.7));display:flex;flex-direction:column;justify-content:center}.metric .num{font:900 clamp(38px,6vw,56px)/1 var(--mono);color:#fff}.metric .num em{font-style:normal;color:var(--cyan)}.metric b{margin-top:13px}.metric p{margin:4px 0 0;color:var(--ink3);font-size:12.5px;line-height:1.55}
+  .shell{max-width:var(--max);margin:auto;display:grid;grid-template-columns:var(--side) minmax(0,1fr);gap:clamp(28px,5vw,64px);padding:44px clamp(20px,5vw,52px) 120px;align-items:start}
+  aside{position:sticky;top:78px}.toc-title{margin:0 0 12px;padding-left:13px;color:var(--ink3);font:11px var(--mono);letter-spacing:1.4px;text-transform:uppercase}.toc{list-style:none;margin:0 0 24px;padding:0;border-left:1px solid var(--line2)}.toc a{display:block;margin-left:-1px;padding:7px 0 7px 13px;border-left:2px solid transparent;color:var(--ink3);font-size:13px;line-height:1.5;transition:.2s}.toc a:hover{color:var(--ink);text-decoration:none}.toc a.on{border-left-color:var(--cyan);color:var(--cyan);font-weight:650}
+  .side-card{border:1px solid var(--line);border-radius:14px;background:rgba(14,20,34,.72);padding:16px;color:var(--ink3);font-size:12.5px;line-height:1.65}.side-card strong{display:block;color:var(--ink2);font:11px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}.formula{display:block;margin:9px 0;color:#fff;font:13px/1.55 var(--mono)}
+  article{max-width:var(--read);min-width:0}.intro-note{padding:20px 22px;border:1px solid rgba(85,230,209,.3);border-radius:14px;background:linear-gradient(90deg,rgba(85,230,209,.08),transparent);color:#d9f7f1;margin-bottom:30px}
+  section{position:relative;scroll-margin-top:76px;padding:12px 0 50px;border-bottom:1px solid var(--line)}section:last-child{border:0}.js-reveal section{opacity:0;transform:translateY(18px);transition:.65s ease}.js-reveal section.in{opacity:1;transform:none}
+  .secno{margin:26px 0 9px;color:var(--cyan);font:12px var(--mono);letter-spacing:2px}h2{font-size:clamp(25px,3vw,34px);line-height:1.3;letter-spacing:-.7px;margin:0 0 22px}p{color:#d2dbeb;margin:17px 0}strong{color:#fff}ul,ol{padding-left:1.4em;color:#d2dbeb}li{margin:8px 0;padding-left:5px}blockquote{margin:26px 0;padding:17px 22px;border-left:3px solid var(--cyan);border-radius:0 13px 13px 0;background:linear-gradient(90deg,rgba(85,230,209,.08),transparent);color:#dffaf5;font-size:17px}
+  .boundary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:24px 0}.boundary{padding:17px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}.boundary b{display:block;margin-bottom:5px}.boundary span{color:var(--ink3);font-size:13px;line-height:1.6}
+  figure.diagram{margin:30px 0;border:1px solid var(--line2);border-radius:17px;overflow:hidden;background:linear-gradient(180deg,var(--panel),#090d16);box-shadow:0 30px 70px -44px #000}.bar{display:flex;align-items:center;gap:7px;padding:12px 16px;border-bottom:1px solid var(--line);color:var(--ink3);font:11.5px var(--mono)}.dot{width:9px;height:9px;border-radius:50%}.r{background:var(--red)}.y{background:var(--amber)}.g{background:#39d6aa}.mermaid{padding:28px 12px;text-align:center;overflow-x:auto}figcaption{padding:0 18px 18px;color:var(--ink3);font-size:12.5px;text-align:center}
+  .callout{margin:22px 0;padding:17px 20px;border:1px solid var(--line2);border-radius:13px;background:var(--panel)}.callout b{display:block;color:var(--amber);font:11px var(--mono);letter-spacing:.8px;text-transform:uppercase}.callout p{margin:6px 0 0;font-size:14px;color:var(--ink2)}
+  .refs{font-size:13.5px}.refs li{margin:11px 0}.badge{position:fixed;left:14px;bottom:14px;z-index:40;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(11,15,25,.88);color:var(--ink3);font:10px var(--mono)}
+  #back{position:fixed;z-index:50;right:20px;bottom:20px;width:44px;height:44px;border-radius:13px;border:1px solid rgba(109,162,255,.45);background:rgba(109,162,255,.14);color:#d7e5ff;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:.25s;backdrop-filter:blur(10px)}#back.show{opacity:1;pointer-events:auto}
+  @media(max-width:900px){.hero{min-height:auto}.hero-inner{grid-template-columns:1fr}.stack{min-height:390px;max-width:660px}.shell{grid-template-columns:1fr;gap:22px}aside{position:static}.toc{display:flex;flex-wrap:wrap;gap:6px;border:0}.toc a{margin:0;padding:5px 10px;border:1px solid var(--line);border-radius:999px;font-size:11px}.toc a.on{border-color:var(--cyan)}.side-card{display:none}.badge{display:none}}
+  @media(max-width:520px){body{font-size:15.8px}.topmeta{display:none}.hero{padding-left:18px;padding-right:18px}.stack{min-height:340px}.layer{padding:14px 16px;--x:0!important}.metrics,.shell{padding-left:18px;padding-right:18px}.mermaid{min-width:680px;text-align:left}figure.diagram{overflow-x:auto}h1{letter-spacing:-1.5px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}.js-reveal section{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="topbar"><div class="brand"><span class="mark">A</span>Agent Control Notes</div><div class="topmeta">architecture / runtime / supervisory-control</div></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow"><span class="pulse"></span>技术观点 · Agent 生产控制</div>
+      <h1>真正要控制的，不是模型，而是它改变世界的条件</h1>
+      <p class="lead">Agent 能写代码、调工具、跑完任务，不等于它已经适合生产。真正的控制系统，需要持续回答：<strong>它依据什么行动、控制是否真正生效、现实世界是否按预期改变。</strong></p>
+      <div class="tags"><span class="tag">Agent Runtime</span><span class="tag">DeepSeek Harness</span><span class="tag">工程控制论</span><span class="tag">可观测性</span><span class="tag">Safety Boundary</span></div>
+    </div>
+    <div class="stack" aria-label="控制系统四层结构">
+      <div class="layer" style="--x:-18px;--delay:-1s"><small>Layer 01 · Supervisory</small><b>框架无关控制面</b><span>目标、账本、投影/估计、偏差、控制决策、结果校准</span></div>
+      <div class="layer" style="--x:12px;--delay:-2.2s"><small>Layer 02 · Seam</small><b>DSH 控制插件 / Adapter</b><span>事件采集、控制接纳、运行时组合证明</span></div>
+      <div class="layer" style="--x:-8px;--delay:-3.3s"><small>Layer 03 · Runtime</small><b>DSH / LangGraph</b><span>Session、Agent Loop、Turn / Step、Prompt、Tools</span></div>
+      <div class="layer" style="--x:18px;--delay:-4.1s"><small>Layer 04 · Enforcement</small><b>Safety Executor / Watchdog</b><span>不可旁路执行、凭证控制、降级与隔离</span></div>
+    </div>
+  </div>
+  <div class="hero-meta"><span><b>文章类型</b> 技术观点</span><span><b>读者</b> Agent 平台负责人 / 架构师</span><span><b>日期</b> 2026-08-14</span><span><b>证据边界</b> 公开文档与架构推导</span></div>
+</header>
+
+<div class="metrics" aria-label="结构锚点，不代表实验指标">
+  <div class="metric"><div class="num"><span data-count="4">4</span><em> 层</em></div><b>完整控制系统装配</b><p>控制面、接缝、Runtime、安全执行域</p></div>
+  <div class="metric"><div class="num"><span data-count="6">6</span><em> 账</em></div><b>从事实到现实结果</b><p>拒绝把日志、估计、命令和效果混在一起</p></div>
+  <div class="metric"><div class="num"><span data-count="2">2</span><em> 环</em></div><b>嵌套反馈关系</b><p>Agent 是下层控制器，人类系统是上层监督控制器</p></div>
+</div>
+
+<div class="shell">
+  <aside>
+    <div class="toc-title">本文目录</div>
+    <ul class="toc" id="toc">
+      <li><a href="#s1" class="on">01 · 功能清单为何不够</a></li>
+      <li><a href="#s2">02 · Agent 是下层控制器</a></li>
+      <li><a href="#s3">03 · 控制论的正确用法</a></li>
+      <li><a href="#s4">04 · 动态系统镜像</a></li>
+      <li><a href="#s5">05 · DSH 与控制系统</a></li>
+      <li><a href="#s6">06 · 全都成功的失败</a></li>
+      <li><a href="#s7">07 · 稳定性的定义</a></li>
+      <li><a href="#s8">08 · MVP 如何验证</a></li>
+      <li><a href="#s9">09 · 是否允许继续</a></li>
+      <li><a href="#refs">参考资料</a></li>
+    </ul>
+    <div class="side-card"><strong>核心判断</strong><span class="formula">控制 ≠ 指令发送</span><span class="formula">Runtime ≠ 控制系统</span><span class="formula">工具成功 ≠ 世界正确</span>先定义被控闭环，再谈功能、平台与 Runtime 选型。</div>
+  </aside>
+
+  <article>
+    <div class="intro-note">智能体生产系统真正要控制的，不是 LLM 的隐藏思维，也不是某一段输出文本，而是 Agent 在什么信息、能力、权限、预算和恢复条件下，可以继续自主地改变世界。</div>
+
+    <section id="s1">
+      <div class="secno">01 — CONTROL OBJECT</div><h2>为什么“再加一个控制功能”解决不了问题</h2>
+      <p>很多 Agent 平台的建设顺序很相似：先接模型和工具，再加执行记录；担心风险，就补审批和权限；任务变长，就加计划、记忆和检查点；效果不稳定，再做评估、画像和进化。</p>
+      <p>每一步单独看都合理，合在一起却未必形成可控性。因为这些模块经常默认了不同的系统边界：</p>
+      <div class="boundary-grid">
+        <div class="boundary"><b>日志</b><span>记录模型和工具发生过什么</span></div><div class="boundary"><b>权限</b><span>控制某个 API 能不能被调用</span></div>
+        <div class="boundary"><b>评估</b><span>判断某份输出好不好</span></div><div class="boundary"><b>编排</b><span>关心任务怎样拆分和分派</span></div>
+        <div class="boundary"><b>暂停按钮</b><span>试图阻止一个正在运行的进程</span></div>
+      </div>
+      <p>但真实任务并不生活在任何一个模块里。一个编码 Agent 可能读了过期需求，基于不完整依赖图修改了正确文件，运行了错误测试，得到成功退出码，然后在用户真正关心的页面上制造了回归。这里没有哪个局部模块必然报错，失败发生在它们之间丢失的因果关系里。</p>
+      <blockquote>第一步不是继续补功能，而是回答：谁在控制谁，系统状态在哪里，什么事实足以触发什么动作？</blockquote>
+    </section>
+
+    <section id="s2">
+      <div class="secno">02 — NESTED LOOPS</div><h2>Agent 不是普通执行器，它本身就是下层控制器</h2>
+      <p>传统软件中的执行器通常接收一个相对确定的命令，再按规则改变外部状态。Agent 不同。它会观察信息、形成任务理解、选择策略、调用工具、读取结果并决定下一步。换句话说，Agent 已经在自己的任务环境里构成了一个控制环。</p>
+      <p>如果人类平台把它继续当成普通执行器，就会走向两个极端。一种是逐步把所有判断写回规则和审批，最后得到一个昂贵的工作流引擎，Agent 的自主价值被消耗掉。另一种是只给目标和工具，等结果不好时再看日志，所谓控制退化成事后审计。</p>
+      <p>更合理的关系是嵌套控制：Agent 是下层控制器，人类生产系统是上层监督控制器。上层不替 Agent 完成每一次判断，而是决定它在什么条件下还能继续判断和行动。</p>
+      <figure class="diagram"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>&nbsp;nested-supervisory-loop.mmd</div><pre class="mermaid">
+flowchart LR
+  H["人类与组织&lt;br/&gt;目标、价值、责任"] -->|"参考与安全边界"| S["上层监督控制器"]
+  subgraph L["下层 Agent—工具—环境闭环"]
+    A["Agent&lt;br/&gt;观察、判断、计划"] -->|"行动意图"| T["工具与执行器"]
+    T --> W["工作对象与现实环境"]
+    W -->|"事实与结果"| A
+  end
+  A -->|"主张、计划、未知"| M["动态系统镜像"]
+  T -->|"调用与回执"| M
+  W -->|"独立状态与延迟结果"| M
+  M --> E["状态估计、偏差与余量"] --> S
+  S -->|"上下文、任务、能力、运行模式"| A
+  S -->|"许可、拒绝、隔离、恢复"| K["确定性安全执行器"]
+  K --> T
+      </pre><figcaption>关键边：现实结果必须回到系统镜像；监督决定必须穿过能力边界真正影响执行。</figcaption></figure>
+      <p>少了现实反馈，系统不知道世界有没有按预期变化；少了能力执行边界，控制只能依赖 Agent 自觉配合。</p>
+    </section>
+
+    <section id="s3">
+      <div class="secno">03 — ENGINEERING CYBERNETICS</div><h2>工程控制论的启发，不是“精确控制 LLM”</h2>
+      <p>钱学森在 1954 年出版的 <em>Engineering Cybernetics</em>，价值不在于给今天的语言模型提供一套现成公式，而在于一种建模次序：先定义系统边界、输入与输出，再讨论反馈、扰动、误差、稳定性和控制装置。</p>
+      <p>这恰好修正了 Agent 平台常见的倒序设计——我们习惯先画控制台和功能模块，再为它们寻找理论解释。</p>
+      <div class="callout"><b>使用边界</b><p>LLM 的隐藏认知不是可以被稳定读取的连续状态，语义输出也不会因为加了反馈就单调收敛。本文不控制隐藏思维，只建模可被外部证伪的功能状态。</p></div>
+      <ul><li>当前行动绑定了哪个目标版本；</li><li>模型实际看到了哪些材料和工具；</li><li>哪些主张有独立证据，哪些仍是未知；</li><li>工具究竟执行了什么，现实效果是否可确认；</li><li>剩余预算、权限、监督和恢复路径是否还能支撑下一步；</li><li>当前模型、提示、技能、记忆和工具组合是否仍处于已验证范围。</li></ul>
+      <p>《工程控制论》第三版序言给出的提醒同样重要：技术科学的前提和命题必须接受工程实践检验，理论本身也会随技术发展被修改。对 Agent 系统而言，模型、上下文、工具或插件一旦变化，旧的能力结论就可能失效，需要重新辨识。</p>
+    </section>
+
+    <section id="s4">
+      <div class="secno">04 — SYSTEM MIRROR</div><h2>从“记录很多”到“形成动态系统镜像”</h2>
+      <p>日志多，不代表系统可观测。真正服务于控制的观测，必须能重建一条因果链：Agent 基于哪个目标，看到了什么，作出了什么主张和承诺，发起了什么行动，执行器实际做了什么，工作世界发生了什么变化，结果又如何校准此前判断。</p>
+      <ol><li><strong>持久事实：</strong>消息、工具调用、结果、参考版本和检查点以追加事件保存，历史不能被后来的估计覆盖。</li><li><strong>确定性投影：</strong>相同事件序列折叠成相同状态，不猜测事实背后的含义。</li><li><strong>认识性估计：</strong>在投影和外部观测之上判断目标冲突、证据充分度和世界状态新鲜度，并允许输出 <code>unknown</code>。</li><li><strong>偏差与控制余量：</strong>分别观察目标、上下文、证据、资源、安全、监督和恢复余量。</li><li><strong>控制命令与实际生效：</strong>“暂停”“补上下文”“撤销写权限”只是命令，Runtime 是否在接纳点应用是另一个事实。</li><li><strong>现实结果：</strong>API 成功、退出码为零和构建通过，不能自动升级成用户目标已完成。</li></ol>
+      <p>六层分开之后，失败才可能被准确归因：是事件丢了、投影错了、估计过期、控制命令错过接纳点、执行器被旁路，还是现实效果根本没有发生。</p>
+    </section>
+
+    <section id="s5">
+      <div class="secno">05 — DSH RELATIONSHIP</div><h2>DSH 不是控制系统，它是被控制的 Runtime</h2>
+      <p>DeepSeek Harness（DSH）最容易被误解的地方，是它看起来已经拥有 Session、Agent Loop、Goal、Prompt、Tools、Sandbox 和插件系统，于是很容易被直接称为“智能体控制系统”。但这些能力首先回答的是：<strong>Agent 怎样运行。</strong></p>
+      <p>本文讨论的控制系统回答的是另一个问题：<strong>Agent 在什么条件下还能继续运行并改变世界。</strong></p>
+      <figure class="diagram"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>&nbsp;dsh-control-system-stack.mmd</div><pre class="mermaid">
+flowchart TB
+  H["人类与组织"] --> CP["框架无关控制面&lt;br/&gt;目标、账本、投影/估计、偏差、控制决策、结果校准"]
+  CP -->|"u_cmd"| P["DSH 控制插件／Bundle&lt;br/&gt;采集事件、接纳控制、证明运行时组合"]
+  P -->|"生命周期与能力接缝"| D["DeepSeek Harness&lt;br/&gt;Session、Agent Loop、Turn/Step、Prompt、Tools"]
+  D -->|"ActionIntent"| S["高权限 Safety Executor&lt;br/&gt;Agent 无配置、卸载、凭证或旁路权"]
+  S --> W["代码、文件、数据库与外部系统"]
+  D -->|"Session／Agent 事实"| P
+  W -->|"独立现实结果"| CP
+      </pre><figcaption>采用 DSH 时不是 fork 上游，而是用 out-of-tree 插件连接 Runtime 与框架无关控制面，并把现实执行权放在更高权限域。</figcaption></figure>
+      <p>DSH 位于下层，继续拥有自己的 Agent Loop、Turn/Step 编排、模型和工具装配。控制系统不应该在外面重写第二套 orchestration。它只通过 out-of-tree Cordis 插件，把“传感器”和“控制接纳点”装进 DSH。</p>
+      <p>插件之上的控制面负责 DSH 没有提供的监督语义：任务参考、认识性状态估计、偏差与余量、控制决定、现实结果校准。插件之下的 Safety Executor 和 Watchdog，则保证 Agent 不能靠修改配置、卸载 Provider、取得长期凭证或绕过执行端点来逃开约束。</p>
+      <p>因此，将来即使把 DSH 换成现有 LangGraph Runtime，也只需要替换插件/Adapter 层，上面的 Mission、Ledger、Projection、Estimate、ControlDecision、Safety 和 Outcome 契约不应随之重写。</p>
+      <h3>DSH 暴露了哪些真实接缝</h3>
+      <p>DSH 把可持久重放的 Session 事实放在 <code>session/event</code>，把队列、状态、prompt 拦截、请求构造和 continuation 等实时协调放在 <code>agent/*</code>。一条 follow-up 消息从入队到进入模型输入，中间还要经过 claim、pre-step、step start 和 request 等接纳点。</p>
+      <p>这暴露出“控制指令已经发送”和“控制已经作用于 Agent”之间的差异。生产系统需要自己定义跨 Runtime 的控制应用回执，把监听器已拦截、继续委托、提前短路、真正接纳、已经应用和效果验证分开记录。<code>ControlApplicationReceipt</code> 是控制系统基于 DSH 事件映射出的契约，并不是 DSH 原生对象。</p>
+      <p>Session Projection 支持把确定性事实投影和不确定状态估计分开，但 Projection 是可选 Runtime 能力，不是世界真相。Goal 原生提供 revision、phase、轮数限制以及进程内 activation/disarm；控制面再把这些事实与授权主体、预算、有效期和撤销状态组合，派生 <code>ContinuationLease</code>。</p>
+      <div class="callout"><b>不要混淆两类可逆</b><p>Cordis 的可逆 effect 只撤销已注册并带 disposer 的效应，不会自动回滚文件、数据库、支付或其他现实副作用。现实恢复仍需查询、对账、隔离或补偿。</p></div>
+      <p>安全边界也不能简单写成“插件不安全、独立进程才安全”。真正的问题是权限：谁能改配置、谁能卸载安全 Provider、谁掌握执行凭证、是否存在旁路。</p>
+    </section>
+
+    <section id="s6">
+      <div class="secno">06 — POSTMORTEM</div><h2>一次“全都成功”的失败</h2>
+      <p>Harness 自己公开的一次 Web Agent 事故复盘，把上述问题变得非常具体。</p>
+      <p>Agent 修改了 GUI 源码，完成了构建，拿到了 HTTP 200，还启动并验证了一个替代服务器。每一步都像是成功的，但它并不知道用户当前页面究竟由哪个 URL、进程和源码目录承载。源码编辑、构建成功、HTTP 200、替代服务器和用户正在看的页面，被当成了可以互换的事实。</p>
+      <p>最终问题不是 Agent 没有执行能力，而是多个局部成功没有共享同一个现实验收对象。修复方向也不是再加一句“请认真验证”的 prompt，而是把当前 URL 和运行模式变成模型可见且可由工具查询的状态，拒绝错误的独立服务器，并针对真正的生产刷新和开发热更新读取外部结果。</p>
+      <blockquote>模型可见的关键世界身份必须可重建，完成声明必须落到同一个外部对象上。</blockquote>
+      <p>内部流程全绿，只能证明流程跑过，不能证明世界正确。</p>
+    </section>
+
+    <section id="s7">
+      <div class="secno">07 — STABILITY</div><h2>稳定不等于每次输出相同</h2>
+      <p>开放语义任务中的稳定，不是同一输入永远得到同一文本，而是几类风险始终有界：</p>
+      <ul><li>目标偏差不会持续扩大而无人察觉；</li><li>循环、重试、并发、token、时间和人工成本不会无限增长；</li><li>真实副作用不超出授权作用域、速率和预算；</li><li>系统能区分有效探索、停滞、退化和完成；</li><li>再行动一步之后，仍保留可达的暂停、隔离、对账或补偿路径；</li><li>任何阶段都有明确的决定者、执行者和接管者；</li><li>新结果能够推翻旧判断，旧版本能力不会被永久继承。</li></ul>
+      <p>这个定义没有一个漂亮的总分，却更接近生产现实。一个统一健康分会掩盖硬缺口：证据余量充足不能抵消安全余量已经耗尽，任务进展很快也不能抵消目标版本已经变化。</p>
+    </section>
+
+    <section id="s8">
+      <div class="secno">08 — MVP</div><h2>MVP 应该先验证闭环，而不是先建平台大全</h2>
+      <p>从这个母模型推导出来的 MVP，不应从多 Agent 名册、编排画布、评估中心和进化实验室同时起步。更小的验证对象是：一个固定版本的 Agent，在一类长任务里，使用少量受控工具，完成一个可以独立验收的现实结果。</p>
+      <ol><li>能否从事件和外部事实重建控制相关状态；</li><li>能否在干预窗口内把控制命令真正作用到 Runtime 或能力边界；</li><li>能否识别工具假成功、目标漂移、上下文丢失和效果未知；</li><li>能否在不显著摧毁任务价值的前提下，保留恢复与人工接管路径。</li></ol>
+      <p>在价值实验前，还需要一个更小的 Runtime 接缝 Spike：让现有 LangGraph Adapter 和 DSH out-of-tree 控制插件通过同一套事实重放、生命周期接纳、控制回执、运行时组合证明、继续授权输入和安全旁路测试。这个 Spike 决定哪一个 Runtime 更适合承载下层闭环，但不改变控制系统本身的领域模型。</p>
+      <p>随后实验分成三组：基线组只有 Agent 与常规日志；观测组增加因果账本、投影和状态估计但只告警；闭环组再加入能力收缩、继续授权、检查点、恢复和效果验证。三组锁定相同模型、工具、任务和故障种子，联合比较任务成功、真实损失、时延、成本、人工负担和误杀。</p>
+      <p>只有闭环组能重复地更早发现关键偏差，并在真实任务价值没有不可接受下降的前提下限制损失，这套控制母模型才获得第一份工程证据。</p>
+    </section>
+
+    <section id="s9">
+      <div class="secno">09 — DECISION</div><h2>先决定 Agent 在什么条件下可以继续</h2>
+      <p>Agent 进入生产以后，最危险的错觉不是“模型会犯错”——这件事大家已经知道。真正危险的是，我们把日志存在、命令发出、API 成功和目标 active，依次误认为状态可观测、控制已生效、现实已改变和任务可继续。</p>
+      <p>工程控制论带来的启发，不是把概率型模型改造成确定性机器，而是迫使我们把这些不同事实拆开：先定义系统，再谈观测；先证明控制可达，再谈策略；先保留恢复路径，再扩大自主权。</p>
+      <blockquote>在当前目标、证据、能力、权限、监督和恢复条件下，这个 Agent 是否仍被允许继续改变世界？</blockquote>
+      <p>当系统能够持续、可验证地回答这个问题，编排、评估、治理和进化才有共同的地基。否则，我们只是用越来越完整的控制台，观看一个仍未被定义的系统运行。</p>
+    </section>
+
+    <section id="refs" class="refs">
+      <div class="secno">REFERENCES</div><h2>参考资料</h2>
+      <ul>
+        <li>H. S. Tsien, <a href="https://books.google.com/books/about/Engineering_Cybernetics.html?id=NfgvAAAAIAAJ" target="_blank" rel="noreferrer"><em>Engineering Cybernetics</em></a>, McGraw-Hill, 1954.</li>
+        <li><a href="https://www.ecsponline.com/book/2018/yz/9787030300942-003007-curved-sam.pdf" target="_blank" rel="noreferrer">《工程控制论》第三版序言及目录</a>，科学出版社。</li>
+        <li>DeepSeek Harness: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/architecture.md" target="_blank" rel="noreferrer">Architecture</a>, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/agent-lifecycle.md" target="_blank" rel="noreferrer">Agent lifecycle</a>, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/subsystems/session-projection.md" target="_blank" rel="noreferrer">Session projection</a>, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/subsystems/goal.md" target="_blank" rel="noreferrer">Goal subsystem</a>.</li>
+        <li>DeepSeek Harness, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/postmortem/0003-web-agent-gui-feedback-loop.md" target="_blank" rel="noreferrer">Post-mortem 0003: Web agent validated a replacement server instead of its current GUI</a>.</li>
+      </ul>
+    </section>
+  </article>
+</div>
+
+<div class="badge">TEMPLATE B · sidebar-docs</div><button id="back" aria-label="返回顶部">↑</button>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  try{mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',lineColor:'#74829d',primaryColor:'#111a2c',primaryBorderColor:'#344463',primaryTextColor:'#edf3ff'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:36,rankSpacing:48,padding:12}});}catch(err){}
+  var progressBar=document.getElementById('progress');
+  addEventListener('scroll',function(){var root=document.documentElement;var maxScroll=root.scrollHeight-root.clientHeight;progressBar.style.width=(maxScroll>0?(root.scrollTop/maxScroll*100):0)+'%';},{passive:true});
+  document.body.classList.add('js-reveal');
+  var revealObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('in');revealObserver.unobserve(entry.target);}});},{threshold:.06,rootMargin:'0px 0px -5% 0px'});
+  document.querySelectorAll('section').forEach(function(sec){revealObserver.observe(sec);});
+  setTimeout(function(){document.querySelectorAll('section:not(.in)').forEach(function(sec){sec.classList.add('in');});},2600);
+  var tocLinks=[].slice.call(document.querySelectorAll('#toc a'));
+  var spyObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){var sectionId=entry.target.id;tocLinks.forEach(function(anchor){anchor.classList.toggle('on',anchor.getAttribute('href')==='#'+sectionId);});}});},{rootMargin:'-38% 0px -55% 0px'});
+  document.querySelectorAll('section[id]').forEach(function(sec){spyObserver.observe(sec);});
+  var backButton=document.getElementById('back');backButton.addEventListener('click',function(){scrollTo({top:0,behavior:'smooth'});});addEventListener('scroll',function(){backButton.classList.toggle('show',scrollY>600);},{passive:true});
+  var countObserver=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var el=entry.target;var targetValue=Number(el.dataset.count);if(matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=String(targetValue);}else{var started=performance.now();function tick(now){var ratio=Math.min(1,(now-started)/700);el.textContent=String(Math.round(targetValue*(1-Math.pow(1-ratio,3))));if(ratio<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);}countObserver.unobserve(el);});},{threshold:.5});
+  document.querySelectorAll('[data-count]').forEach(function(el){countObserver.observe(el);});
+</script>
+</body>
+</html>

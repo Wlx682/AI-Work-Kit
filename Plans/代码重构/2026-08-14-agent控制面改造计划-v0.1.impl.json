@@ -1,0 +1,427 @@
+{
+  "status": "superseded",
+  "execution_authorized": false,
+  "superseded_by": "Plans/代码重构/2026-08-17-agent控制系统工程落点-v0.1.impl.json",
+  "superseded_reason": "2026-08-17 用户确认全仓 TypeScript、DSH 唯一生产 Runtime、LangGraph.js Learning Runtime与一次 cutover；本文件的 Python/LangGraph Adapter 和跨语言落点不得执行",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "execution_prerequisite": {
+    "story": "US-CP-EVAL-000",
+    "plan": "Plans/代码重构/2026-08-17-agent可信评估最小改造-v0.1.md",
+    "implementation_design": "Plans/代码重构/2026-08-17-agent可信评估最小改造-v0.1.impl.json",
+    "rule": "先在现有 agent Runtime 外围通过 RuntimePort、版本化跨语言 RuntimeExecutionEnvelope 与 LangGraph Adapter 证明评估可区分 PASS/FAIL/ABSTAIN/INVALID；未来 DSH 只能通过 Adapter 和共享 contract tests 接入；G-EQ 未通过时，本文件中的 Runtime 迁移、DSH Spike 与控制面落点全部不得开工"
+  },
+  "relationship_summary": "DSH 或现有 LangGraph 是可替换的下层 Agent Runtime；DSH out-of-tree Cordis 插件或 LangGraph Adapter 实现 M2 的观测与控制接纳；control_plane 持有框架无关监督契约；higher-authority safety_executor/watchdog 持有 Agent 不可旁路的执行与降级权。",
+  "codebase_read": [
+    {
+      "path": "README.md",
+      "reason": "确认当前仓库定位为可复用智能体编排底座，以及现有目录和依赖方向"
+    },
+    {
+      "path": "core/models.py",
+      "reason": "确认 RunEvent 与 RunResult 现有契约过于粗粒度，且 succeeded 终态语义不足"
+    },
+    {
+      "path": "orchestration/langgraph.py",
+      "reason": "确认单 Agent 生命周期、checkpoint、interrupt、resume 和 trace 生成位置"
+    },
+    {
+      "path": "orchestration/team_graph.py",
+      "reason": "确认多 Agent 编排及 Reviewer 终态语义，作为本轮延后范围和兼容回归对象"
+    },
+    {
+      "path": "capabilities/act.py",
+      "reason": "确认工具调用、Action ID、审批暂停和工具结果归一化的现有入口"
+    },
+    {
+      "path": "infrastructure/traces.py",
+      "reason": "确认现有 TraceStore 是整份 RunResult JSON 快照，不是追加式因果事实账本"
+    },
+    {
+      "path": "infrastructure/checkpoints.py",
+      "reason": "确认 LangGraph SQLite checkpoint 可作为 Runtime 恢复机制，但不能替代现实副作用恢复"
+    },
+    {
+      "path": "guardrails/safety.py",
+      "reason": "确认现有安全检查是进程内字符串规则，不能承担独立 M7 安全执行器职责"
+    },
+    {
+      "path": "tests/test_runtime.py",
+      "reason": "确认单 Agent 暂停、恢复、回放和 trace 的现有测试基线"
+    },
+    {
+      "path": "tests/test_act.py",
+      "reason": "确认工具执行、审批和结果语义的现有测试落点"
+    },
+    {
+      "path": "Contexts/决策/2026-08-09-开发流程审计报告.md",
+      "reason": "确认生产就绪缺口、已知终态错误、安全弱点和工程化门禁"
+    }
+  ],
+  "runtime_selection_spike": {
+    "story": "US-CP-000",
+    "decision_status": "unselected",
+    "selection_gate": "G2",
+    "candidates": [
+      {
+        "id": "langgraph-current",
+        "integration_mode": "external-runtime-adapter",
+        "codebase_available": true,
+        "artifact_root": "/Users/wanglongxiang/git/agent"
+      },
+      {
+        "id": "deepseek-harness-cordis",
+        "integration_mode": "out-of-tree-cordis-plugin-bundle",
+        "codebase_available": false,
+        "artifact_root": null,
+        "upstream_commit": "47f943859bef60e4160492346772ded9b24f765a",
+        "restriction": "不得修改或 fork 上游；Spike 工作区经用户确认后再补具体 TypeScript 文件落点",
+        "test_runner": "pnpm vitest（具体命令与路径待 artifact_root 确认后填写）",
+        "test_requirements": [
+          "Session durable facts and deriveMessages reconstruction",
+          "agent lifecycle hook admission and waterfall short-circuit",
+          "Profile/Bundle/Patch composition provenance",
+          "Goal native facts export without pretending to be ContinuationLease",
+          "registered effect disposal versus external side-effect recovery",
+          "safety provider configuration/unload/credential/bypass authority"
+        ]
+      }
+    ],
+    "shared_contracts": [
+      "durable fact replay and model-visible input reconstruction",
+      "lifecycle control admission points",
+      "waterfall intercept/delegate/short-circuit receipt mapping",
+      "runtime composition attestation",
+      "native goal facts to ContinuationLease derivation",
+      "safety configuration/credential/unload/bypass authority boundary"
+    ]
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "core/models.py",
+        "purpose": "引入 succeeded/partial/failed/paused/unknown 明确终态，并保留现有 Runtime 结果兼容入口",
+        "layer": "Existing Runtime Contract"
+      },
+      {
+        "path": "orchestration/langgraph.py",
+        "purpose": "迁出现有单 Agent 图执行行为到 runtime/langgraph.py；迁移期只保留兼容导出，不再承载目标架构实现",
+        "layer": "Deprecated Compatibility Layer"
+      },
+      {
+        "path": "orchestration/orchestrator.py",
+        "purpose": "迁移期保留旧 run/resume/recover API，调用方切换到控制面服务与 Runtime Adapter 后删除薄代理",
+        "layer": "Deprecated Compatibility Facade"
+      },
+      {
+        "path": "orchestration/__init__.py",
+        "purpose": "迁移期转发旧导入路径并标记弃用，兼容测试通过后删除 orchestration 包",
+        "layer": "Deprecated Compatibility Export"
+      },
+      {
+        "path": "capabilities/act.py",
+        "purpose": "将有副作用工具从直接执行改为提交 ActionIntent，并消费 ExecutionLease/ActionReceipt",
+        "layer": "Runtime Capability Boundary"
+      },
+      {
+        "path": "infrastructure/traces.py",
+        "purpose": "保留为 Runtime 原始轨迹兼容存储，补清晰边界，禁止被控制面当作 Durable Fact Plane",
+        "layer": "Legacy Runtime Infrastructure"
+      },
+      {
+        "path": "guardrails/safety.py",
+        "purpose": "过渡期改为委托高权限 Safety Executor 客户端，完成迁移后废弃进程内字符串安全根；不得把同进程/跨进程形式本身当作权限边界证明",
+        "layer": "Deprecated Runtime Guard"
+      },
+      {
+        "path": "main.py",
+        "purpose": "在 G2 后装配选定 Runtime Adapter、控制面应用服务与最小监督控制台，不在入口中实现领域规则",
+        "layer": "Composition Root"
+      },
+      {
+        "path": "tui.py",
+        "purpose": "展示事实、未知、偏差、控制接纳状态和人工控制动作，保留现有 TUI 行为兼容",
+        "layer": "Human Supervisory Console"
+      }
+    ],
+    "create": [
+      {
+        "path": "control_plane/__init__.py",
+        "reason": "建立独立控制面包边界",
+        "naming_basis": "母模型的上层监督控制面",
+        "layer": "Package Boundary"
+      },
+      {
+        "path": "control_plane/domain/contracts.py",
+        "reason": "定义 MissionReference、ObservationEvent、ProjectionSnapshot、StateEstimate、DeviationSignal、MarginVector、ControlDecision、RuntimeCompositionSnapshot、ControlApplicationReceipt、OutcomeFeedback 等稳定契约；回执覆盖 intercepted/delegated/short_circuited/effect_verified",
+        "naming_basis": "母模型 M1-M10 的工具与 Runtime 无关领域语言",
+        "layer": "Domain"
+      },
+      {
+        "path": "control_plane/domain/state_machines.py",
+        "reason": "定义 AgentRun、ActionIntent、ControlApplication、ContinuationLease 和结果校准状态机；ContinuationLease 由 Runtime 原生 Goal 事实与控制面授权/预算/有效期/撤销状态共同派生",
+        "naming_basis": "母模型已定义的生命周期对象",
+        "layer": "Domain"
+      },
+      {
+        "path": "control_plane/ports.py",
+        "reason": "定义 Runtime、Ledger、Clock、SafetyExecutor、OutcomeSource 等端口，隔离 LangGraph 外部 Adapter 与 Harness 原生插件实现",
+        "naming_basis": "依赖倒置后的稳定控制端口",
+        "layer": "Application Ports"
+      },
+      {
+        "path": "control_plane/ledger.py",
+        "reason": "实现追加、稳定序号、幂等和按水位读取的 Durable Fact Plane",
+        "naming_basis": "M3 Observation & Causal Ledger",
+        "layer": "Domain Service"
+      },
+      {
+        "path": "control_plane/projector.py",
+        "reason": "按事件前缀和 projection_version 纯折叠 ProjectionSnapshot",
+        "naming_basis": "M4a Deterministic State Projector",
+        "layer": "Domain Service"
+      },
+      {
+        "path": "control_plane/estimator.py",
+        "reason": "从投影、外部观测与版本化模型生成 measured/estimated/unknown 状态及证据链接",
+        "naming_basis": "M4b Epistemic State Estimator",
+        "layer": "Application Service"
+      },
+      {
+        "path": "control_plane/supervisor.py",
+        "reason": "计算偏差与余量并生成最小充分控制动作、接纳点预期及 ContinuationLease",
+        "naming_basis": "M5/M6 Deviation Engine 与 Supervisory Controller",
+        "layer": "Application Service"
+      },
+      {
+        "path": "control_plane/recovery.py",
+        "reason": "区分内部 checkpoint、影响隔离、外部对账和补偿，禁止未知副作用盲重试",
+        "naming_basis": "M8 Recovery Manager",
+        "layer": "Application Service"
+      },
+      {
+        "path": "control_plane/outcomes.py",
+        "reason": "关联即时/延迟结果，驱动 ProvisionallyAccepted 到 Completed/Failed 的校准",
+        "naming_basis": "M9 Outcome Calibrator",
+        "layer": "Application Service"
+      },
+      {
+        "path": "control_plane/service.py",
+        "reason": "编排任务参考、事实、投影、估计、控制、恢复与结果校准，不承载具体 Runtime 实现",
+        "naming_basis": "模块化单体的应用入口",
+        "layer": "Application"
+      },
+      {
+        "path": "runtime_adapters/__init__.py",
+        "reason": "建立可替换 Runtime Adapter 包边界",
+        "naming_basis": "母模型 M2 Agent Runtime Adapter",
+        "layer": "Adapter Boundary"
+      },
+      {
+        "path": "runtime/__init__.py",
+        "reason": "建立下层 Agent 行动循环的 Runtime 包边界，取代 orchestration 作为目标架构层",
+        "naming_basis": "编排是具体 Runtime 的内部机制，不是控制面领域模块",
+        "layer": "Runtime Boundary"
+      },
+      {
+        "path": "runtime/langgraph.py",
+        "reason": "承载从 orchestration/langgraph.py 迁出的计划、模型、工具、观察、checkpoint 和恢复循环",
+        "naming_basis": "LangGraph 具体 Runtime 实现，而非跨 Runtime 通用 Orchestrator",
+        "layer": "Runtime Implementation"
+      },
+      {
+        "path": "runtime_adapters/langgraph.py",
+        "reason": "在控制面端口与 runtime/langgraph.py 之间转换事件、控制命令和接纳回执，不实现 Agent 行动图",
+        "naming_basis": "G2 候选 Runtime 的具名适配器，与 Harness 插件复用同一契约测试",
+        "layer": "Infrastructure Adapter"
+      },
+      {
+        "path": "safety_executor/__init__.py",
+        "reason": "建立安全执行器包边界；真实安全性由 Agent 不可支配的配置权、卸载权、凭证权和旁路面证明",
+        "naming_basis": "母模型 M7",
+        "layer": "Independent Safety Boundary"
+      },
+      {
+        "path": "safety_executor/service.py",
+        "reason": "确定性校验权限、workspace、预算、幂等键、版本与短时 lease，并生成 ActionReceipt",
+        "naming_basis": "Deterministic Safety Executor",
+        "layer": "Independent Service"
+      },
+      {
+        "path": "safety_executor/server.py",
+        "reason": "默认以独立进程、独立凭证和独立降级通道暴露执行端口，传输方式在实现前确认；进程隔离不是充分安全证明",
+        "naming_basis": "安全根的权限/信任域不得由 Agent 修改、卸载或旁路",
+        "layer": "Process Boundary"
+      },
+      {
+        "path": "watchdog/service.py",
+        "reason": "监控事件水位、控制应用超时、Runtime 组合变化和安全执行器可用性，触发降级或隔离",
+        "naming_basis": "母模型 M12 Control-plane Watchdog",
+        "layer": "Independent Watchdog"
+      },
+      {
+        "path": "experiments/control_plane_scenarios.py",
+        "reason": "定义 A 基线、B 观测、C 闭环与首轮故障注入场景",
+        "naming_basis": "母模型 A/B/C 可证伪验证",
+        "layer": "Experiment Harness"
+      },
+      {
+        "path": "tests/test_control_plane_ledger.py",
+        "reason": "Red 锁定追加、幂等、稳定序号、按水位读取和不可覆盖事实",
+        "naming_basis": "M3 事实账本契约",
+        "layer": "Unit Test"
+      },
+      {
+        "path": "tests/test_control_plane_projection.py",
+        "reason": "Red 锁定同一事件前缀和版本产生相同投影及乱序/重复恢复",
+        "naming_basis": "M4a 确定性投影",
+        "layer": "Property/Unit Test"
+      },
+      {
+        "path": "tests/test_langgraph_runtime_adapter.py",
+        "reason": "Red 锁定 LangGraph 对共享 Runtime Adapter contract fixtures 的实现，不把编排细节泄漏进领域层",
+        "naming_basis": "G2 LangGraph 候选接缝",
+        "layer": "Contract Test"
+      },
+      {
+        "path": "tests/test_runtime_adapter_contract.py",
+        "reason": "Red 定义 LangGraph 外部 Adapter 与 Harness Cordis 插件必须共同满足的事实、生命周期、回执、组合和继续授权输入契约",
+        "naming_basis": "US-CP-000 跨 Runtime 共享契约",
+        "layer": "Cross-runtime Contract Test"
+      },
+      {
+        "path": "tests/test_control_receipt_waterfall.py",
+        "reason": "Red 锁定 intercepted、delegated、short_circuited、admitted、applied、effect_verified 的映射与禁止误报规则",
+        "naming_basis": "ControlApplicationReceipt waterfall semantics",
+        "layer": "State-machine/Contract Test"
+      },
+      {
+        "path": "tests/test_runtime_composition_attestation.py",
+        "reason": "Red 锁定 Profile/Bundle/Patch 来源顺序、插件身份、作用域、Provider 图、监听器顺序、effect owner 与权限快照",
+        "naming_basis": "RuntimeCompositionSnapshot and Attestation",
+        "layer": "Contract/Security Test"
+      },
+      {
+        "path": "tests/test_continuation_lease_derivation.py",
+        "reason": "Red 锁定 Runtime 原生 Goal revision/phase/round/activation 只是输入，Lease 仍必须包含授权主体、预算、有效期与撤销状态",
+        "naming_basis": "Goal facts versus ContinuationLease",
+        "layer": "State-machine Test"
+      },
+      {
+        "path": "tests/test_safety_authority_boundary.py",
+        "reason": "Red 锁定 Agent 无法修改安全配置、卸载 Provider、取得长期写凭证或绕过执行端点，并验证失去证明时单调降级",
+        "naming_basis": "M7/M12 authority and trust-domain boundary",
+        "layer": "Security/Fault Injection Test"
+      },
+      {
+        "path": "tests/test_supervisory_control_loop.py",
+        "reason": "Red 覆盖 unknown、偏差、余量、ContinuationLease、late command、waterfall 短路与 effect_verified receipt",
+        "naming_basis": "M4b-M6 闭环行为",
+        "layer": "Integration Test"
+      },
+      {
+        "path": "tests/test_safety_executor.py",
+        "reason": "Red 锁定高权限安全根、workspace 边界、短时 lease、幂等和单调拒绝；进程边界仅作为部署证据之一",
+        "naming_basis": "M7 硬安全权限边界",
+        "layer": "Contract/Security Test"
+      },
+      {
+        "path": "tests/test_recovery_unknown_effect.py",
+        "reason": "Red 锁定超时可能已生效时禁止盲重试，必须查询、对账或恢复",
+        "naming_basis": "M8 未知效果恢复",
+        "layer": "Fault Injection Test"
+      },
+      {
+        "path": "tests/test_outcome_calibration.py",
+        "reason": "Red 锁定延迟结果推翻暂时完成判断及校准记录不可改写历史",
+        "naming_basis": "M9 结果校准",
+        "layer": "Integration Test"
+      },
+      {
+        "path": "tests/test_control_plane_experiments.py",
+        "reason": "Red 锁定 A/B/C 使用同一任务、模型、工具、故障种子和联合指标",
+        "naming_basis": "MVP 成功判据",
+        "layer": "Acceptance Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "候选一 runtime/langgraph → runtime_adapters/langgraph；候选二 DeepSeek Harness Agent Loop → out-of-tree Cordis plugin/Bundle；两者 ↔ control_plane ports/application/domain；ActionIntent → higher-authority safety_executor → Tool/Environment；事实与结果分别进入 ledger/outcomes；watchdog 从 Agent 不可修改的权限域观察并降级；orchestration 仅作 LangGraph 迁移兼容层",
+    "dependency_rule": "control_plane/domain 只依赖标准库且不 import LangGraph、Cordis、DeepSeek Harness、OpenAI、TUI 或具体存储；control_plane application 只依赖 domain/ports；runtime_adapters、Harness 原生插件和基础设施实现端口；Runtime 内部拥有编排机制但不得拥有 StateEstimate、Deviation 或 SupervisoryPolicy；orchestration 不得新增功能并在兼容调用迁完后删除；Runtime/Agent 不得修改安全配置、卸载安全 Provider、取得长期写凭证或绕过 safety_executor；Harness 包结构和事件类型不得成为领域契约真理源"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/test_control_plane_ledger.py",
+        "command": "python3 -m pytest -q tests/test_control_plane_ledger.py"
+      },
+      {
+        "path": "tests/test_control_plane_projection.py",
+        "command": "python3 -m pytest -q tests/test_control_plane_projection.py"
+      },
+      {
+        "path": "tests/test_langgraph_runtime_adapter.py",
+        "command": "python3 -m pytest -q tests/test_langgraph_runtime_adapter.py"
+      },
+      {
+        "path": "tests/test_runtime_adapter_contract.py",
+        "command": "python3 -m pytest -q tests/test_runtime_adapter_contract.py"
+      },
+      {
+        "path": "tests/test_control_receipt_waterfall.py",
+        "command": "python3 -m pytest -q tests/test_control_receipt_waterfall.py"
+      },
+      {
+        "path": "tests/test_runtime_composition_attestation.py",
+        "command": "python3 -m pytest -q tests/test_runtime_composition_attestation.py"
+      },
+      {
+        "path": "tests/test_continuation_lease_derivation.py",
+        "command": "python3 -m pytest -q tests/test_continuation_lease_derivation.py"
+      },
+      {
+        "path": "tests/test_safety_authority_boundary.py",
+        "command": "python3 -m pytest -q tests/test_safety_authority_boundary.py"
+      },
+      {
+        "path": "tests/test_supervisory_control_loop.py",
+        "command": "python3 -m pytest -q tests/test_supervisory_control_loop.py"
+      },
+      {
+        "path": "tests/test_safety_executor.py",
+        "command": "python3 -m pytest -q tests/test_safety_executor.py"
+      },
+      {
+        "path": "tests/test_recovery_unknown_effect.py",
+        "command": "python3 -m pytest -q tests/test_recovery_unknown_effect.py"
+      },
+      {
+        "path": "tests/test_outcome_calibration.py",
+        "command": "python3 -m pytest -q tests/test_outcome_calibration.py"
+      },
+      {
+        "path": "tests/test_control_plane_experiments.py",
+        "command": "python3 -m pytest -q tests/test_control_plane_experiments.py"
+      }
+    ]
+  },
+  "risks": [
+    "现有 infrastructure/llm.py 与 tests/test_llm.py 有用户未提交修改，改造分支必须原样保护并避免覆盖",
+    "orchestration 到 runtime 的迁移若一次性改名会破坏现有导入和测试，必须先建兼容转发、迁调用方、再删除旧包",
+    "现有 RunEvent 和 TraceStore 只能作为 Runtime 兼容层，若直接扩字段并继续整份覆盖，会把事实、估计和控制决定混账",
+    "若 Agent 能修改安全配置、卸载 Provider、取得长期凭证或绕过执行端点，即使 Safety Executor 独立进程也不构成 M7/M12 安全根",
+    "若把 US-CP-000 Spike 扩成正式迁移，会同时引入 TypeScript/Cordis、上游破坏性变化与控制模型验证变量；必须以 G2 限制为只读证据矩阵和最小 proof",
+    "Cordis effect disposer 只撤销注册效应；若将其误报为文件、数据库或外部业务对象已恢复，会绕过 M8 对账与补偿",
+    "Harness Profile/Bundle/Patch 分层、Provider 图或监听器顺序变化可能静默改变控制覆盖，缺组合证明时必须降级",
+    "采集模型可见输入和工具结果可能包含敏感信息，首个事件契约必须同时定义分级、密封、保留期和删除证明",
+    "当前仓库缺 pyproject.toml、锁文件和 CI，未建立可复现基线前不能把实验结果当稳定对照"
+  ],
+  "blocked_questions": [
+    "控制母模型 v0.1 的四个 P0 判断尚未全部显式确认，架构状态仍为草稿",
+    "正式需求分析和需求排序尚未建立，因此故事点与 Scope 只能作为提议，不能通过 client-dev 门禁",
+    "DeepSeek Harness out-of-tree Spike 的 artifact_root 尚未确认，因此本清单不虚构 TypeScript 文件路径与可执行命令",
+    "G2 前 Runtime 主选型保持 unselected，main.py 的最终装配对象不得提前锁定",
+    "Safety Executor 的配置权、卸载权、凭证权、旁路面以及 Unix Socket、HTTP 或子进程 RPC 传输方式，需要在 US-CP-003 开工前按权限域和部署环境确认"
+  ],
+  "confirmed": false
+}
