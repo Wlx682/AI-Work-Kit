@@ -1,0 +1,1 @@
+{"type": "gate_fail", "stage": "reproduce", "workflow": "bugfix", "project": "过程计费挂起态暂停按钮不生效", "epic": null, "child_plan": null, "reason": "复现与影响范围：子 Plan 未创建（Plans/Bug排查/）", "git_commit": "6d505850176367c014a8807b89ef223665098ee1", "plan_snapshot": null, "created_at": "2026-08-17T18:27:35+08:00"}
