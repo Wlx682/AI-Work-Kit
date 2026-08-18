@@ -1,0 +1,37 @@
+{
+  "story_id": "US-KB-OPEN-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/AI-Work-Kit",
+  "codebase_read": [
+    {"path": "scripts/kanban-server.py", "reason": "确认 localhost 服务、ROOT 边界、POST 路由和 subprocess 惯例"},
+    {"path": "scripts/kanban/index.html", "reason": "确认文件引用字段的渲染位置和 toast 反馈机制"},
+    {"path": "scripts/test-workflow-refactor.py", "reason": "确认看板服务和静态 HTML 的回归测试位置"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "scripts/kanban-server.py", "purpose": "新增工作区文件解析、系统打开与 POST API，并投影 Story 证据文件路径", "layer": "Local HTTP service"},
+      {"path": "scripts/kanban/index.html", "purpose": "将已知真实文件引用渲染为系统打开按钮并展示结果", "layer": "Kanban presentation"},
+      {"path": "scripts/test-workflow-refactor.py", "purpose": "增加路径边界、无 shell 系统调用和前端入口回归", "layer": "Regression tests"}
+    ],
+    "create": [
+      {"path": "Plans/功能开发/2026-08-18-看板引用文件系统打开-US-KB-OPEN-001.tdd.json", "reason": "记录 Red/Green/Refactor/集成冒烟与 AC 证据", "naming_basis": "Story ID 与 client-dev 证据契约", "layer": "Workflow evidence"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "index.html 只声明用户意图 → kanban-server.py 校验工作区边界并调用操作系统 → 默认应用打开文件",
+    "dependency_rule": "前端传入的路径永远不可信；后端必须 resolve 后用 relative_to(ROOT) 验证边界，只允许存在的普通文件，并使用无 shell 参数数组启动系统打开器"
+  },
+  "tests": {
+    "red": [
+      {"path": "scripts/test-workflow-refactor.py", "command": "python3 scripts/test-workflow-refactor.py WorkflowRefactorTests.test_kanban_opens_only_existing_workspace_files WorkflowRefactorTests.test_kanban_file_references_use_system_open_action"}
+    ]
+  },
+  "risks": [
+    "未 resolve 符号链接会允许绕过 ROOT 边界",
+    "使用 shell=True 或字符串命令会引入命令注入",
+    "把任意技术字段自动识别为路径会产生误导入口",
+    "不区分缺失文件和系统打开失败会让用户无法定位原因"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

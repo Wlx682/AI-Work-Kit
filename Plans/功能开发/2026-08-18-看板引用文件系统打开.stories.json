@@ -1,0 +1,22 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户确认转入功能开发并同时补齐前端入口与安全打开接口",
+  "confirmed_at": "2026-08-18",
+  "epic_scope": ["US-KB-OPEN-001"],
+  "current_implementation_scope": ["US-KB-OPEN-001"],
+  "stories": [
+    {
+      "id": "US-KB-OPEN-001",
+      "title": "从看板安全打开被引用的工作区文件",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-18-看板引用文件系统打开-US-KB-OPEN-001.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC-OPEN-001", "AC-OPEN-002", "AC-OPEN-003", "AC-OPEN-004"],
+      "architecture_refs": ["scripts/kanban-server.py", "scripts/kanban/index.html"]
+    }
+  ]
+}

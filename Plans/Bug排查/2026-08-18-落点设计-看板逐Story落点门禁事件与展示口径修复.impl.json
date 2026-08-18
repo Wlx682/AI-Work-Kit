@@ -1,0 +1,79 @@
+{
+  "codebase_available": true,
+  "codebase_root": ".",
+  "codebase_read": [
+    {
+      "path": "scripts/workflow-gate.sh",
+      "reason": "门禁事件 UUID、Story 关联、Scope 快照和追加规则的产生器"
+    },
+    {
+      "path": "scripts/kanban-server.py",
+      "reason": "事件历史回放、当前有效门禁和 Story 阶段统计的服务端投影"
+    },
+    {
+      "path": "scripts/kanban/index.html",
+      "reason": "client-dev 阶段卡片、Story 作业面和门禁时间线的展示入口"
+    },
+    {
+      "path": "scripts/test-workflow-refactor.py",
+      "reason": "真实 workflow-gate 事件流回归 fixture"
+    },
+    {
+      "path": "scripts/test-client-dev-workflow.py",
+      "reason": "client-dev 看板投影与展示契约回归"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "scripts/workflow-gate.sh",
+        "purpose": "为真实阶段判定生成 UUID，以 Scope 快照标识本次判定配置，但不派生未定义的逐 Story 门禁",
+        "layer": "Workflow audit event producer"
+      },
+      {
+        "path": "scripts/kanban-server.py",
+        "purpose": "保留全量事件字段与完整 reason，投影当前 Scope 和 Epic 累计落点数",
+        "layer": "Read model / API projection"
+      },
+      {
+        "path": "scripts/kanban/index.html",
+        "purpose": "分层展示当前 Scope、Epic 全量 Story、逐 Story 事件覆盖和可展开技术详情",
+        "layer": "Presentation"
+      },
+      {
+        "path": "scripts/test-workflow-refactor.py",
+        "purpose": "验证两个滚动 Story 产生两个独立 UUID 事件",
+        "layer": "Workflow regression tests"
+      },
+      {
+        "path": "scripts/test-client-dev-workflow.py",
+        "purpose": "验证 Scope/Epic 口径和界面字段不退化",
+        "layer": "Kanban regression tests"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "workflow blueprint -> workflow-gate stage decision -> append-only JSONL -> kanban read model -> HTML presentation",
+    "dependency_rule": "蓝图决定有哪些门禁；event_id/evaluation_id 只表示事件身份与扫描关联；scope_snapshot 表示判定配置；当前蓝图未定义逐 Story 门禁，因此历史 story_id 仅供审计，前端不得把它投影成现行 Story 门禁"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "scripts/test-workflow-refactor.py",
+        "command": "python3 scripts/test-workflow-refactor.py -k test_workflow_gate_records_scope_evaluations_without_inventing_story_gates"
+      },
+      {
+        "path": "scripts/test-client-dev-workflow.py",
+        "command": "python3 scripts/test-client-dev-workflow.py -k test_kanban_story_stage_does_not_invent_missing_story_gates"
+      }
+    ]
+  },
+  "risks": [
+    "新字段必须对没有 event_id/story_id 的旧 JSONL 事件保持兼容",
+    "同一 Scope 的阶段通过事件不得因重复运行而无限刷屏",
+    "展示人话结论时仍需保留原始 reason、Plan、commit 和 snapshot 供审计"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

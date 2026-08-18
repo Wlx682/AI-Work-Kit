@@ -1,0 +1,57 @@
+{
+  "story_id": "US-KB-OPEN-001",
+  "commit": "working-tree@fcfaa64 (uncommitted; pre-existing user changes preserved)",
+  "red": {
+    "command": "python3 scripts/test-workflow-refactor.py WorkflowRefactorTests.test_kanban_opens_only_existing_workspace_files WorkflowRefactorTests.test_kanban_file_references_use_system_open_action",
+    "exit_code": 1,
+    "at": "2026-08-18T11:55:00+08:00",
+    "reason": "resolve_workspace_file/open_workspace_file、/api/open-file 和前端 fileRef 尚未实现；新增测试分别以 AttributeError 和缺少接口断言失败"
+  },
+  "green": {
+    "command": "python3 scripts/test-workflow-refactor.py WorkflowRefactorTests.test_kanban_opens_only_existing_workspace_files WorkflowRefactorTests.test_kanban_file_references_use_system_open_action",
+    "exit_code": 0,
+    "at": "2026-08-18T12:02:00+08:00"
+  },
+  "refactor": {
+    "command": "python3 -m py_compile scripts/kanban-server.py scripts/test-workflow-refactor.py && node -e '<compile inline kanban script>' && python3 scripts/test-workflow-refactor.py -q",
+    "exit_code": 0,
+    "at": "2026-08-18T12:10:00+08:00"
+  },
+  "integration_smoke": {
+    "command": "python3 scripts/test-client-dev-workflow.py -q && python3 scripts/test-workflow-refactor.py -q && git diff --check -- scripts/kanban-server.py scripts/kanban/index.html scripts/test-workflow-refactor.py",
+    "exit_code": 0,
+    "at": "2026-08-18T12:11:33+08:00"
+  },
+  "manual_e2e": {
+    "surface": "http://127.0.0.1:7777/ Epic 详情页",
+    "at": "2026-08-18T14:14:24+08:00",
+    "result": "pass",
+    "evidence": "应用内浏览器确认 Story Plan、实现落点、TDD 证据和产物模板按钮可见；缺失落点显示文件不存在且不可点击；实际点击 US-B0-001 Story Plan 后显示‘已交给系统打开’，页面无 console error/warn"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-OPEN-001",
+      "pass": true,
+      "evidence": "Epic/Plan、Story Plan、实现落点、TDD 证据、产物模板和门禁事件 child_plan 均使用明确的 fileRef 入口"
+    },
+    {
+      "ac_id": "AC-OPEN-002",
+      "pass": true,
+      "evidence": "POST /api/open-file 在 macOS 上使用无 shell 参数 [open, absolute_path]；真实界面点击 US-B0-001 Story Plan 后收到已交给系统打开的成功反馈"
+    },
+    {
+      "ac_id": "AC-OPEN-003",
+      "pass": true,
+      "evidence": "自动测试验证相对/绝对工作区文件放行，路径穿越、缺失文件、目录和越界符号链接拒绝"
+    },
+    {
+      "ac_id": "AC-OPEN-004",
+      "pass": true,
+      "evidence": "全局点击委托显示已交给系统或具体失败原因；commit、event_id 和 snapshot 仍为纯文本"
+    }
+  ],
+  "limitations": [
+    "自动回归仍 mock 系统 open 进程以避免反复弹出桌面应用；本轮已额外执行一次真实 Story Plan 打开验收",
+    "当前看板服务只监听 127.0.0.1，本功能不提供远程文件打开"
+  ]
+}
