@@ -1,0 +1,106 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/core/file_preview_router/default_file_preview_planner.dart",
+      "reason": "Office 类型目前被强制路由为 systemDocument/platformHandoff"
+    },
+    {
+      "path": "lib/app/integrations/app_file_preview_coordinator.dart",
+      "reason": "负责 artifact lease、presenter 调度与平台预览终态"
+    },
+    {
+      "path": "plugins/nami_document_preview/lib/src/open_filex_nami_document_preview_platform.dart",
+      "reason": "Android 当前通过 OpenFilex 主动交给外部 App"
+    },
+    {
+      "path": "plugins/nami_secure_webview/lib/src/webview_flutter_nami_secure_webview_platform.dart",
+      "reason": "仓库已有受控 WebView 的安全、生命周期与日志模式"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/core/file_preview_router/file_preview_plan_contract.dart",
+        "purpose": "建模应用内 PPTX destination",
+        "layer": "Foundation Pure Dart contract"
+      },
+      {
+        "path": "lib/core/file_preview_router/default_file_preview_planner.dart",
+        "purpose": "按 presenter capability 将 PPTX 路由到应用内 renderer",
+        "layer": "Foundation Pure Dart planner"
+      },
+      {
+        "path": "lib/app/integrations/app_file_preview_coordinator.dart",
+        "purpose": "保持 artifact lease 并调用 typed PPTX presenter",
+        "layer": "App integration coordinator"
+      },
+      {
+        "path": "plugins/nami_document_preview/pubspec.yaml",
+        "purpose": "声明内置 renderer assets 与 WebView 依赖",
+        "layer": "Platform adapter package"
+      }
+    ],
+    "create": [
+      {
+        "path": "plugins/nami_document_preview/lib/src/pptx/pptx_reader_contract.dart",
+        "reason": "隔离 PPTX renderer 的 owner/deadline/cancel/result 契约",
+        "naming_basis": "现有 epub_reader_contract 模式",
+        "layer": "Plugin typed contract"
+      },
+      {
+        "path": "plugins/nami_document_preview/lib/src/pptx/pptx_reader_view.dart",
+        "reason": "承载 Android 应用内离线 PPTX UI",
+        "naming_basis": "现有 epub_reader_view 模式",
+        "layer": "Plugin Flutter view"
+      },
+      {
+        "path": "plugins/nami_document_preview/assets/pptx/index.html",
+        "reason": "本地 WebView 引导页，不使用远程 CDN",
+        "naming_basis": "按 renderer 能力分组的 plugin asset",
+        "layer": "Plugin private asset"
+      },
+      {
+        "path": "plugins/nami_document_preview/assets/pptx/aiden0z-pptx-renderer.browser.es.js",
+        "reason": "用户已授权的 Apache-2.0 离线 PPTX renderer 固定产物",
+        "naming_basis": "上游 1.2.4 standalone browser build 原名",
+        "layer": "Vendored third-party runtime"
+      },
+      {
+        "path": "plugins/nami_document_preview/test/pptx_reader_view_test.dart",
+        "reason": "锁定不外跳、禁网、取消和失败语义",
+        "naming_basis": "对应新 PPTX reader view",
+        "layer": "Plugin widget/contract test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Foundation planner -> App coordinator -> document preview plugin",
+    "dependency_rule": "Core 不 import Plugin/WebView；App 只消费 typed presenter；JS、ZIP 和 DOM renderer 只存在于 nami_document_preview 内部"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/core/file_preview_router/default_file_preview_planner_test.dart",
+        "command": "flutter test test/core/file_preview_router/default_file_preview_planner_test.dart"
+      },
+      {
+        "path": "test/app/integrations/app_file_preview_coordinator_test.dart",
+        "command": "flutter test test/app/integrations/app_file_preview_coordinator_test.dart"
+      },
+      {
+        "path": "plugins/nami_document_preview/test/pptx_reader_view_test.dart",
+        "command": "flutter test test/pptx_reader_view_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "PPTX 是不可信 ZIP，必须在 renderer 前限制 entry、单 entry、总解压和 media 体积",
+    "WebView 必须拒绝 HTTP(S)、外部媒体与页面导航",
+    "renderer 不支持 legacy .ppt，不能把其误报为 PPTX 成功",
+    "Android Phone 修复不能外推为 Pad/Fold 或 iOS 真机已验收"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
