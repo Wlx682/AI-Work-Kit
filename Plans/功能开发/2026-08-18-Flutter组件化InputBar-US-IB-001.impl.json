@@ -1,0 +1,43 @@
+{
+  "story_id": "US-IB-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "lib/features/chat/presentation/chat_page.dart", "reason": "确认现有 _Composer、TextEditingController、busy 状态和生产发送链"},
+    {"path": "test/features/chat/presentation/chat_controller_test.dart", "reason": "确认输入、发送、禁用、草稿恢复的现有回归契约"},
+    {"path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar", "reason": "通过 git show 固定 commit 4d405cf068488b33396aada07febc3cdb5f31f5f，确认 NMInputBar、NMInputState、NMInputComponent、双 delegate 与四位置生产实现"},
+    {"path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-18-Flutter组件化InputBar.md", "reason": "沉淀内部设计文档确认的单一状态源、组件化、观察者、策略与委托约束"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "lib/features/chat/presentation/chat_page.dart", "purpose": "用组件化 InputBar 替换私有 _Composer 并保持生产发送链", "layer": "Chat presentation"}
+    ],
+    "create": [
+      {"path": "lib/features/chat/presentation/input_bar/nami_input_state.dart", "reason": "输入栏单一状态源", "naming_basis": "iOS NMInputState", "layer": "Presentation state"},
+      {"path": "lib/features/chat/presentation/input_bar/nami_input_component.dart", "reason": "四位置组件与组件 delegate 契约", "naming_basis": "iOS NMInputComponent", "layer": "Presentation component contract"},
+      {"path": "lib/features/chat/presentation/input_bar/nami_input_bar.dart", "reason": "组件容器、中心状态、动态组装和业务 delegate", "naming_basis": "iOS NMInputBar", "layer": "Presentation composition"},
+      {"path": "lib/features/chat/presentation/input_bar/components/nami_text_input_component.dart", "reason": "Flutter TextField 文本输入组件", "naming_basis": "iOS NMNewTextInputComponent", "layer": "Presentation component"},
+      {"path": "lib/features/chat/presentation/input_bar/input_bar.dart", "reason": "稳定公开导出面", "naming_basis": "模块 barrel", "layer": "Presentation API"},
+      {"path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart", "reason": "组件位置、状态合并、分发、动态组装和 TextField 回归", "naming_basis": "模块聚焦测试", "layer": "Widget tests"},
+      {"path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-001.tdd.json", "reason": "记录 Red/Green/Refactor 与 AC 证据", "naming_basis": "Story 证据契约", "layer": "Workflow evidence"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "ChatPage/ViewModel -> NamiInputBar -> NamiInputComponent -> Flutter TextField",
+    "dependency_rule": "NamiInputBar 只管理输入区呈现状态和组件协作；会话 owner、发送、恢复与 Gateway 仍由 ChatController/Repository 负责；组件不得直接依赖聊天业务或平台原生代码"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart", "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart"},
+      {"path": "test/features/chat/presentation/chat_controller_test.dart", "command": "flutter test test/features/chat/presentation/chat_controller_test.dart"}
+    ]
+  },
+  "risks": [
+    "把 iOS UIKit 的命令式组件生命周期逐行翻译会违背 Flutter 声明式重建模型，因此只对齐职责、状态流和公开语义",
+    "外部 busy 状态覆盖组件本地文本会造成草稿丢失，外部状态同步必须携带当前 TextEditingValue",
+    "发送后立即清空会破坏现有 durable submission 恢复语义，聊天入口必须关闭 InputBar 的自动 reset",
+    "运行时组件列表变化若以值相等误判可能丢失 GlobalKey/输入焦点"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,25 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户明确裁决放弃桥接，InputBar 完全参考 iOS，TextView 先用 Flutter 实现",
+  "confirmed_at": "2026-08-18",
+  "epic_scope": ["US-IB-001"],
+  "current_implementation_scope": ["US-IB-001"],
+  "stories": [
+    {
+      "id": "US-IB-001",
+      "title": "按 iOS 架构实现 Flutter 组件化 InputBar 并接入聊天页",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC-IB-001", "AC-IB-002", "AC-IB-003", "AC-IB-004", "AC-IB-005"],
+      "architecture_refs": [
+        "ios@4d405cf068488b33396aada07febc3cdb5f31f5f:NAMIWork/Share/UI/InputBar",
+        "https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=2253&docId=294121"
+      ]
+    }
+  ]
+}

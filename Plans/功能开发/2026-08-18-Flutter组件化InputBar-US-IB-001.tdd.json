@@ -1,0 +1,60 @@
+{
+  "story_id": "US-IB-001",
+  "commit": "working-tree@6073ae16 (uncommitted)",
+  "red": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-18T20:54:00+08:00",
+    "reason": "input_bar.dart 及 NamiInputState/NamiInputComponent/NamiInputBar/NamiTextInputComponent 尚不存在，测试只因目标实现缺失而编译失败"
+  },
+  "green": {
+    "command": "dart format lib/features/chat/presentation/input_bar test/features/chat/presentation/input_bar/nami_input_bar_test.dart && flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart test/features/chat/presentation/chat_controller_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-18T21:02:00+08:00",
+    "evidence": "组件契约 3 tests + 聊天发送/恢复 12 tests 通过"
+  },
+  "refactor": {
+    "command": "dart format lib/features/chat/presentation/input_bar lib/features/chat/presentation/chat_page.dart test/features/chat/presentation/input_bar/nami_input_bar_test.dart && flutter analyze lib/features/chat/presentation/input_bar lib/features/chat/presentation/chat_page.dart test/features/chat/presentation/input_bar/nami_input_bar_test.dart && flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart test/features/chat/presentation/chat_controller_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-18T21:11:00+08:00",
+    "evidence": "Config 的最小高度、动画和 separator 生效；scoped analyze 无问题；15 tests 继续通过"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/claw_console/chat_detail_page_test.dart; flutter test <select-impacted-tests 返回的 7 个额外目标>; python3 scripts/validate-task-id-naming.py; git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-18T21:14:00+08:00",
+    "evidence": "chat_detail_page 152 tests 通过；impact selector 额外 71 tests 通过；任务 ID 与 diff 门禁通过。selector 对新增 input_bar 文件报告 unresolved_impacts，已由新增组件测试、chat_controller、chat_detail_page 与全部已选目标人工覆盖。"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-IB-001",
+      "pass": true,
+      "evidence": "公开 API 已包含 NamiInputState、NamiInputComponent、NamiInputComponentDelegate、NamiInputBar、NamiInputBarDelegate、NamiInputBarConfig"
+    },
+    {
+      "ac_id": "AC-IB-002",
+      "pass": true,
+      "evidence": "NamiAttachmentPosition 支持 top/main/bottom/background；NamiInputBarState 和 Controller 支持 addComponent/removeComponent，Widget test 已覆盖"
+    },
+    {
+      "ac_id": "AC-IB-003",
+      "pass": true,
+      "evidence": "组件通过 delegate 上报，Controller 调用 mergeState 更新唯一 ValueNotifier 状态，再对全部组件 applyExternalState；观察者回调测试通过"
+    },
+    {
+      "ac_id": "AC-IB-004",
+      "pass": true,
+      "evidence": "NamiTextInputComponent 使用 Flutter TextField/TextEditingValue，无 PlatformView 或原生依赖；中心禁用和发送状态测试通过"
+    },
+    {
+      "ac_id": "AC-IB-005",
+      "pass": true,
+      "evidence": "ChatPage 已移除 _Composer，接入 NamiInputBar；12 个聚焦 controller 测试和 152 个详情页生产测试通过，发送失败保留草稿、终态清理、owner 换代等语义未回归"
+    }
+  ],
+  "limitations": [
+    "本轮只实现首个 Flutter 文本组件；语音、附件、模型、Skill、媒体预览仍待按相同 contract 组件化",
+    "未执行 Android Phone/Pad/Fold 与 iPhone/iPad 真机矩阵，标记 NOT_RUN",
+    "按用户裁决暂不评估 10 万字性能，未引入任何 PlatformView 或原生 TextView 桥接"
+  ]
+}
