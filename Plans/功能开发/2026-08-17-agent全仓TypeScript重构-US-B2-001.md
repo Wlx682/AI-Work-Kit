@@ -8,7 +8,7 @@ lifecycle_state: story-development
 parent: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
 story_id: US-B2-001
 story_points: 8
-sprint_scope: true
+sprint_scope: false
 tdd_evidence: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.tdd.json
 implementation_design: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.impl.json
 ---
@@ -45,6 +45,6 @@ implementation_design: Plans/功能开发/2026-08-17-agent全仓TypeScript重构
 - 组合指纹：`80f0fc8e5024808d88ddf64bbfffcd42a917e75bcabb72ad3a93c7c13346701e`；仅共享 contracts artifact 与总指纹变化。
 - TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.tdd.json`。
 
-本 Story 已完成；当前 Scope 暂时保留 `US-B2-001` 供机械门禁验收，不自动激活 `US-B2-002`。
+本 Story 已完成并退出当前滚动 Scope；用户回复“继续”后，下一条 `US-B2-002` 已单独激活。
 
 续做：`/resume plan=Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md 进度=next-story-scope`

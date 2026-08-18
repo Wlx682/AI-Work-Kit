@@ -1,0 +1,314 @@
+{
+  "story_id": "US-B3-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/contracts/src/control-ledger.ts",
+      "reason": "复用已冻结的 ControlFact、sourceRefs、稳定 sequence 与版本常量风格；ControlCommand/Receipt 仍需独立 Schema，不能塞进 projection payload 充当隐式契约"
+    },
+    {
+      "path": "plugins/control-ledger/src/index.ts",
+      "reason": "确认现有 Service 已提供 replay/project 与 DSH flush 缓冲，但 supervisor 需要新增窄的立即 durable append 端口，才能逐段落账且在进程中断时保留已到达水位"
+    },
+    {
+      "path": "plugins/control-ledger/src/provider.ts",
+      "reason": "确认 Provider 已支持 canonical appendBatch 与幂等冲突，可直接承载每个 deterministic receipt stage，不需要新增表或绕过 Provider Port"
+    },
+    {
+      "path": "packages/dsh-bridge/src/control-observer.ts",
+      "reason": "沿用 DSH 类型只停留在 bridge 的边界；supervisor 插件不得直接理解 Agent、Session、ToolRuntime payload"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "新 contracts、control-domain、DSH adapter、supervisor plugin、Bundle/Profile 依赖都属于受控生产 artifact，需显式重冻组合身份"
+    },
+    {
+      "path": "bundles/control-base/cordis.patch.yml",
+      "reason": "当前只装 runtime-composition；B3-002 完成控制闭环后应按 Service/inject 顺序加入 ledger 与 supervisor，而不是继续只在测试里手工安装"
+    },
+    {
+      "path": "bundles/control-production/cordis.patch.yml",
+      "reason": "生产数据库路径应由 AGENT_CONTROL_LEDGER_PATH 显式注入并进入最终配置，不写死工作区路径，也不在 contracts/domain 中读取环境变量"
+    },
+    {
+      "path": "profiles/controlled/package.json",
+      "reason": "受控 Profile 目前只链接 runtime-composition；若 Bundle 引用 ledger/supervisor，Profile 与独立 lock 必须显式链接这两个 workspace plugin"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-agent@0.1.0-rc.6_b0514d7a320728b6d8f5a31eb3960e10/node_modules/@deepseek-ai/dsh-agent/lib/types/runtime-types.d.ts",
+      "reason": "核实 rc.6 公开 Agent.cancel、whenIdle、status 及 agent/pre-step waterfall；pause/stop 可通过可撤销 barrier + cancel/idle 核验实现，无需 fork Agent Loop"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-agent-loop@0.1.0-rc.6_db22cad5b0daedec4301b8f186ddd2da/node_modules/@deepseek-ai/dsh-agent-loop/lib/index.js",
+      "reason": "确认 cancel(active) 会 abort 当前活动、keepInbox 控制待处理输入保留，pre-step reject 会形成 blocked turn；据此定义 pause 与 stop 的真实接纳/效果边界"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-tools@0.1.0-rc.6_f8724372086ccc1457fc84e7becee2e0/node_modules/@deepseek-ai/dsh-tools/lib/types/index.d.ts",
+      "reason": "确认 agent-scoped tools.restrict() 返回精确 disposer 且 schemas() 可验证可见面；它是运行时能力过滤，不是 B4 的权限或凭证边界"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+cordis@4.0.1_@deepseek-ai+cordis-plugin-include@1.0.6_@deepseek-ai+cordis-plugin-loader@1.0.2/node_modules/@deepseek-ai/cordis/src/events.ts",
+      "reason": "核实 Cordis waterfall 中不调用 next() 会短路内建行为；设计用闭包 Symbol continuation proof 区分真实到达 inner apply 与伪造/替换返回值"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md",
+      "reason": "落实 GWT-019：唯一 commandId、预期接纳点、intercepted→delegated→admitted→applied→effect_verified，以及短路/未知不得完成"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-006/008/012、版本化 command/receipt、Cordis 同进程 typed waterfall、Ledger append-only 与 B4 Safety 隔离"
+    }
+  ],
+  "verified_upstream_facts": {
+    "pre_step_waterfall": "DSH rc.6 的 agent/pre-step 是公开 waterfall；返回 reject 会阻断拟议 step，调用 next() 才继续链与 Agent Loop 默认 enter 行为",
+    "cancel_semantics": "Agent.cancel({kind:'hook',reason}, {keepInbox}) 仅中止当前活动；pause 需 keepInbox=true 并保留 pre-step barrier，stop 需清空 inbox 并保留 stop barrier；二者都以 whenIdle + barrier ownership 核验效果",
+    "restrict_semantics": "agent.ctx.tools.restrict({allow|deny}) 是 agent-scoped 可撤销能力可见面过滤，返回 exact disposer；它明确不是权限/安全边界，不能替代 Safety Executor",
+    "agent_lookup": "ctx.agents.get(SessionId(runId)) 可解析当前 live Agent；不存在时命令不得进入 admitted/applied",
+    "waterfall_short_circuit": "Cordis waterfall listener 不调用 next() 会阻断后续 listener 和 innermost behavior；只有 innermost 闭包持有的本地 Symbol proof 能证明内建 apply 实际到达",
+    "durable_receipts": "Control Ledger appendBatch 已提供单写者、连续 sequence、canonical 幂等和冲突失败；每个 receipt stage 可作为独立 control.command.receipt fact 立即提交，崩溃时保留部分 waterfall 而不伪造完成"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "把 @agent/control-domain 与 @agent/plugin-control-supervisor 纳入根 typecheck/devDependency；不增加模型 SDK、HTTP 框架或安全执行依赖",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "记录两个新 workspace importer 与精确 rc.6 peers；不升级 DSH/Cordis",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 control-command.v1/control-receipt.v1 类型、版本常量、assertControlCommand 与 closed stage/status unions",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "plugins/control-ledger/src/index.ts",
+        "purpose": "增加 appendFacts(drafts) 窄端口，供 supervisor 立即持久化 receipt stage；不暴露 SQLite Provider，也不改变 session/event→flush 语义",
+        "layer": "Ledger Service Port"
+      },
+      {
+        "path": "packages/dsh-bridge/package.json",
+        "purpose": "声明 control adapter 使用的精确 dsh-tools peer，并保持 rc.6/Cordis 精确版本",
+        "layer": "DSH Adapter Boundary"
+      },
+      {
+        "path": "packages/dsh-bridge/src/index.ts",
+        "purpose": "导出 DshControlCommandAdapter 与本地 adapter result/verification 类型，不向 domain 泄漏上游 Agent/ToolRuntime",
+        "layer": "DSH Adapter Boundary"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "purpose": "将 command/receipt contracts、control-domain、DSH adapter、supervisor、Bundle/Profile 变更纳入 composition artifact 指纹和 provider selections",
+        "layer": "Composition Verification"
+      },
+      {
+        "path": "bundles/control-base/cordis.patch.yml",
+        "purpose": "在 runtime-composition 后插入 control-ledger 与 control-supervisor，依赖仍由 Cordis Service/inject 解析",
+        "layer": "Controlled Bundle"
+      },
+      {
+        "path": "bundles/control-production/cordis.patch.yml",
+        "purpose": "为 ledger 显式注入 AGENT_CONTROL_LEDGER_PATH；缺失时 fail-closed，不回退到仓库内临时文件",
+        "layer": "Production Configuration"
+      },
+      {
+        "path": "profiles/controlled/package.json",
+        "purpose": "链接 control-ledger 与 control-supervisor workspace plugin，确保受控 Profile 能解析 Bundle 中的插件名",
+        "layer": "Controlled Profile"
+      },
+      {
+        "path": "profiles/controlled/pnpm-lock.yaml",
+        "purpose": "冻结 Profile 对 ledger/supervisor 及其 workspace 依赖的解析，不允许浮动上游版本",
+        "layer": "Profile Lock"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/control-command.ts",
+        "reason": "定义 pause/restrict/stop 判别联合、固定接纳点、basisSequence、compositionFingerprint、receipt stage/execution/effect 状态与 fail-closed runtime assertion",
+        "naming_basis": "与 control-ledger.ts 并列的稳定跨版本控制契约",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/control-command.v1.json",
+        "reason": "运行时冻结 commandId/runId/kind/expectedAdmissionPoint/basisSequence 与 restrict filter 条件字段",
+        "naming_basis": "沿用 schemas/<contract>.v1.json",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/control-receipt.v1.json",
+        "reason": "冻结 waterfall stage、executionStatus/effectStatus、错误码、证据引用和 recordedAt；unknown 不能表达为 verified",
+        "naming_basis": "与架构已采纳 control-receipt.v1 一致",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/test/control-command.spec.ts",
+        "reason": "锁定三类 command、固定接纳点、条件字段、JSON 可序列化、非法/未知状态失败关闭",
+        "naming_basis": "与 control-command.ts 同名",
+        "layer": "Contract Test"
+      },
+      {
+        "path": "packages/control-domain/package.json",
+        "reason": "建立零 Cordis/DSH/SQLite 依赖的纯控制领域包，只依赖 @agent/contracts",
+        "naming_basis": "沿用架构批准 packages/control-domain",
+        "layer": "Pure Domain Package"
+      },
+      {
+        "path": "packages/control-domain/tsconfig.json",
+        "reason": "对纯 waterfall reducer 与测试执行独立 strict typecheck",
+        "naming_basis": "遵循现有 packages/* 构建结构",
+        "layer": "Domain Build"
+      },
+      {
+        "path": "packages/control-domain/src/receipt-waterfall.ts",
+        "reason": "纯函数校验 intercepted→delegated→admitted→applied→effect_verified 单调链；short_circuited 只能终止且 unknown/failed 不得完成",
+        "naming_basis": "直接表达 GWT-019 waterfall，不包含框架 dispatch",
+        "layer": "Control Domain"
+      },
+      {
+        "path": "packages/control-domain/src/index.ts",
+        "reason": "导出 receipt reducer、expectedAdmissionPointFor 与 terminal/complete 判定",
+        "naming_basis": "workspace package 公共入口",
+        "layer": "Control Domain"
+      },
+      {
+        "path": "packages/control-domain/test/receipt-waterfall.spec.ts",
+        "reason": "形成完整链、跳 stage、重复、短路、unknown 和接纳点不匹配的纯 Red",
+        "naming_basis": "与 receipt-waterfall.ts 同名",
+        "layer": "Domain Test"
+      },
+      {
+        "path": "packages/dsh-bridge/src/control-command-adapter.ts",
+        "reason": "把 runId 解析为 live Agent；pause/stop 用 agent/pre-step barrier + cancel/whenIdle，restrict 用 agent.ctx.tools.restrict + schemas 核验；所有 effect/disposer 随插件卸载撤销",
+        "naming_basis": "与 control-observer.ts 并列，隔离固定 rc.6 控制 seam",
+        "layer": "DSH Adapter"
+      },
+      {
+        "path": "packages/dsh-bridge/test/control-command-adapter.spec.ts",
+        "reason": "以真实 Cordis waterfall 和 rc.6 shape 验证 pause 保留 inbox、stop 丢弃 inbox、restrict disposer/visible surface、unknown live agent 与 cleanup",
+        "naming_basis": "与 adapter 同名",
+        "layer": "DSH Adapter Test"
+      },
+      {
+        "path": "plugins/control-supervisor/package.json",
+        "reason": "建立 production Cordis supervisor plugin，依赖 contracts/control-domain/dsh-bridge/control-ledger，精确 peer Cordis/DSH",
+        "naming_basis": "采用架构已批准 plugins/control-supervisor",
+        "layer": "Production Plugin"
+      },
+      {
+        "path": "plugins/control-supervisor/tsconfig.json",
+        "reason": "独立 strict typecheck Service、receipt ledger adapter 与测试",
+        "naming_basis": "遵循 plugins/control-ledger",
+        "layer": "Plugin Build"
+      },
+      {
+        "path": "plugins/control-supervisor/src/receipt-ledger.ts",
+        "reason": "将每个 receipt stage 映射为 deterministic control.command.receipt ControlFactDraft，并从 replay 恢复某 command 的完整/部分 waterfall",
+        "naming_basis": "明确 supervisor 与 ledger 之间的窄 adapter，不污染纯 domain",
+        "layer": "Receipt Persistence Adapter"
+      },
+      {
+        "path": "plugins/control-supervisor/src/index.ts",
+        "reason": "提供 ControlSupervisorService.execute/query；校验 basis watermark/幂等后逐段 durable append，通过 typed control/command waterfall 委托 DSH adapter，并用私有 Symbol proof 检测短路",
+        "naming_basis": "Cordis plugin 公共入口与 Service",
+        "layer": "Control Supervisor"
+      },
+      {
+        "path": "plugins/control-supervisor/test/supervisor.spec.ts",
+        "reason": "覆盖三类 happy path、相同 commandId 幂等、同 ID 异内容冲突、stale basis、预期接纳点不匹配、waterfall listener 短路和 verify unknown",
+        "naming_basis": "直接覆盖 GWT-019 主链与 Story 反例",
+        "layer": "Supervisor Acceptance Test"
+      },
+      {
+        "path": "plugins/control-supervisor/test/dsh-integration.spec.ts",
+        "reason": "真实 Cordis + control-ledger SQLite + DSH adapter shape 形成 command→五段 facts→SQLite 重开→相同 receipts 的纵向闭环，并验证 dispose 无 barrier/restriction/listener 残留",
+        "naming_basis": "integration/control-receipt 的纵向 Red",
+        "layer": "Vertical Integration Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "control-command/receipt JSON contracts → pure control-domain waterfall rules → control-supervisor Cordis Service/typed waterfall → dsh-bridge rc.6 adapter → Agent.cancel/pre-step/tools.restrict；每个 receipt stage 通过 control-ledger appendFacts 立即成为不可变 ControlFact",
+    "dependency_rule": "contracts/control-domain 不得 import Cordis、DSH、SQLite、环境变量或 UI。control-supervisor 不直接 import DSH payload，只依赖 dsh-bridge adapter 与 control-ledger Service Port。intercepted/delegated/admitted/applied/effect_verified 必须逐段追加，只有 inner continuation proof、接纳点匹配且 adapter verify=verified 才可写 effect_verified。任一 waterfall 短路、stale basis、live agent 缺失、接纳点不匹配、apply 失败或 verify unknown 只能追加 short_circuited/failed/unknown，不得猜完成。tools.restrict 只是 agent-scoped 可见面，不是权限证明；当前 Story 禁止 ActionIntent、Lease、现实写、凭证、策略执行、Watchdog 或 B4 Safety Executor。"
+  },
+  "command_contract": {
+    "kinds": ["pause", "restrict", "stop"],
+    "admission_points": {
+      "pause": "agent-pre-step",
+      "restrict": "agent-tool-surface",
+      "stop": "agent-pre-step"
+    },
+    "required_common": ["schemaVersion", "commandId", "runId", "kind", "expectedAdmissionPoint", "basisSequence", "compositionFingerprint", "issuedAt", "sourceRefs"],
+    "restrict_only": "restriction 至少包含非空 allow 或 deny；未知、scope-local、reserved tool 由 DSH adapter 拒绝",
+    "idempotency": "同 runId+commandId+canonical command 返回已落账 waterfall，绝不再次 apply；同 ID 异内容冲突。若仅有非终态部分 receipts，重试追加 short_circuited(effectStatus=unknown)，不盲目重放可能已发生的 effect。"
+  },
+  "receipt_rules": {
+    "happy_path": ["intercepted", "delegated", "admitted", "applied", "effect_verified"],
+    "terminal_failure": "short_circuited",
+    "completion_rule": "仅最后 stage=effect_verified、executionStatus=succeeded、effectStatus=verified 且前四段完整有序时 completed=true",
+    "durability": "每段单独通过 SQLite FULL transaction 提交；进程中断后的部分链是可审计事实，不补写虚构阶段",
+    "effect_unknown": "adapter 无法核验时保留 applied，追加 short_circuited(executionStatus=unknown/effectStatus=unknown)，禁止自动重试"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/control-command.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-command.spec.ts"
+      },
+      {
+        "path": "packages/control-domain/test/receipt-waterfall.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/control-domain/test/receipt-waterfall.spec.ts"
+      },
+      {
+        "path": "packages/dsh-bridge/test/control-command-adapter.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/control-command-adapter.spec.ts"
+      },
+      {
+        "path": "plugins/control-supervisor/test/supervisor.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-supervisor/test/supervisor.spec.ts"
+      },
+      {
+        "path": "plugins/control-supervisor/test/dsh-integration.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-supervisor/test/dsh-integration.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-command.spec.ts packages/control-domain/test/*.spec.ts packages/dsh-bridge/test/*.spec.ts plugins/control-ledger/test/*.spec.ts plugins/control-supervisor/test/*.spec.ts tests/plugin-lifecycle/*.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py'",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "AGENT_CONTROL_LEDGER_PATH=<temp>/ledger.sqlite nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help"
+    ]
+  },
+  "risks": [
+    "若 supervisor 在一个最终对象中一次写五个 stage，崩溃时无法区分 delegated、applied 与 verified；必须逐段 durable append",
+    "若仅相信 waterfall 返回值，外层 listener 可在不调用 next() 时伪造成功；必须用 innermost 闭包私有 Symbol proof 证明 built-in apply 被调用",
+    "若 effect_verified 只根据 cancel()/restrict() 没抛错推导，会把技术调用当现实效果；pause/stop 必须 await whenIdle 并检查 barrier ownership，restrict 必须检查实际 visible tool surface",
+    "若重复 commandId 在部分 waterfall 后自动重放，可能重复 cancel/restrict 或掩盖已发生但未核验的 effect；部分链重试必须转 unknown/short_circuited",
+    "若 command.basisSequence 不绑定当前 Ledger 水位，旧监督决定可能作用于新运行状态；stale basis 只能 intercepted 后拒绝接纳",
+    "DSH tools.restrict 是运行时可见面而非安全权限边界；不得把它描述为生产写权限撤销，也不得替代 B4 独立 Safety Executor",
+    "Agent.cancel 在 idle 时是 no-op，且不阻止未来 wake；pause/stop 必须同时安装 pre-step barrier，插件 dispose 时精确撤销",
+    "stop 无公开 AgentHandle.dispose 能从 registry 强制销毁任意 Agent；v1 语义限定为丢弃 inbox、中止活动、永久拒绝后续 pre-step，不能伪称进程或 Agent 已销毁",
+    "将 ledger/supervisor 加入受控 Bundle 后缺失 AGENT_CONTROL_LEDGER_PATH 必须 fail-closed；不能静默把生产账本写到仓库或系统临时目录",
+    "新增 Profile workspace links 和控制 artifacts 会改变 root/profile lock、finalConfig 与 composition fingerprint；必须显式重冻并证明 DSH/Cordis 版本未漂移"
+  ],
+  "stop_conditions": [
+    "无法通过公开 agent/pre-step/Agent.cancel/tools.restrict 完成语义，只能修改、fork 或 vendoring DSH Agent Loop",
+    "必须让 contracts/control-domain import Cordis、DSH、SQLite、环境变量或插件 Service 才能实现",
+    "waterfall 未到达内建 apply、接纳点不匹配或 verify unknown 时仍会写 effect_verified/completed",
+    "同 commandId 异 canonical 内容会覆盖旧命令，或部分 receipt chain 会被自动重放为成功",
+    "receipt stages 只能最终批量补写，无法在每段边界单独 durable commit",
+    "pause/stop 只能调用 cancel 而无法阻止未来 pre-step，或 barrier 在插件 dispose 后残留",
+    "restrict 被当成凭证/IAM/安全执行证明，必须提前实现 ActionIntent、Lease、Safety Executor 或 Watchdog 才能满足 GWT-019",
+    "受控 Profile 必须使用仓库固定路径或隐式临时路径才能启动 ledger，而不能显式注入生产数据库路径",
+    "需要升级 DSH rc.6、Cordis 4.0.1，或新增 HTTP/数据库/模型第三方依赖才能完成"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,84 @@
+{
+  "story_id": "US-B2-004",
+  "story_points": 5,
+  "commit": "4931d3285256388c5cfb0ec73ac087db86a7a851",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/team-runtime.spec.ts ; nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/roles.spec.ts ; nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-18T10:53:51+08:00",
+    "reason": "Team 目标测试因 team-runtime.ts/team-graph.ts 尚不存在而 exit=1，角色回归因 planner.adjustPlan 尚不存在而 exit=1；迁移路径门禁 1/1 已通过。失败仅来自 US-B2-004 尚未实现，不是环境或既有回归故障"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/team-runtime.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/roles.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 tsc --noEmit -p labs/runtimes/langgraph-ts/tsconfig.json",
+    "exit_code": 0,
+    "at": "2026-08-18T10:56:33+08:00",
+    "result": "Team M038—M043 6/6、角色回归 2/2、迁移路径 1/1 与 Learning Lab typecheck 全部通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-18T10:57:16+08:00",
+    "result": "将 steps/results/risks 设为替换 reducer，handoffs/actionEvents/visits 设为追加 reducer；attempt=1 表示首轮且 maxRetries=0 首次 rejection 直接保存 partial outcome；31 files / 100 tests 保持通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-18T10:57:16+08:00",
+    "result": "冻结安装无变更；TypeScript 100/100、Python 60/60、全仓 typecheck、DSH composition verify 和真实 DSH headless --help 通过",
+    "composition_fingerprint": "f699e62362fde18ceecbd0b0f5622c2763a8ac05953ba96a8cba33aa14545b39"
+  },
+  "acceptance": [
+    {
+      "ac_id": "M038-M043",
+      "pass": true,
+      "evidence": "M038—M043 由真实 StateGraph、SqliteSaver、Command resume、TraceStore 与具名 Vitest 覆盖；Team 目标组 6/6、全仓 TypeScript 100/100 通过"
+    },
+    {
+      "ac_id": "M038",
+      "pass": true,
+      "evidence": "Executor 返回 UNKNOWN interruption 后 Team RunResult=status paused，保存完整 proposal，末事件 phase=unknown"
+    },
+    {
+      "ac_id": "M039",
+      "pass": true,
+      "evidence": "Command resume 在同 thread/checkpoint 把原 session/proposal 交给 resolveStep；startAction 仅 1 次、advanceAction 共 2 次，runId 更新并保留 parent/recovered lineage"
+    },
+    {
+      "ac_id": "M040",
+      "pass": true,
+      "evidence": "事件严格经过 predict→adjust_plan 和 review→revise_plan 条件边，第二轮接受后保存 revised steps 与 final result"
+    },
+    {
+      "ac_id": "M041",
+      "pass": true,
+      "evidence": "安全计划产生 Planner→Predictor(plan)、Predictor→Executor(plan_approved)、Executor→Reviewer(result)、Reviewer→Team(accept) 四个逐节点 handoff，checkpoint>1 且 trace 可等值读取"
+    },
+    {
+      "ac_id": "M042",
+      "pass": true,
+      "evidence": "maxRetries=0 时首轮 rejection 保留 partial outcome，事件不含 revise_plan、Planner.revisePlan 未调用，拒绝经验只提炼一次"
+    },
+    {
+      "ac_id": "M043",
+      "pass": true,
+      "evidence": "TraceStore 抛 disk full 时 Team 业务结果仍 completed，仅追加 trace_persist_failed warning"
+    }
+  ],
+  "architecture_evidence": {
+    "native_team_stategraph": true,
+    "native_sqlite_checkpointer": true,
+    "exact_action_session_resume": true,
+    "explicit_risk_edge": true,
+    "explicit_review_retry_edge": true,
+    "handoffs_are_node_events": true,
+    "shared_learning_run_contract_reused": true,
+    "shared_contract_changed": false,
+    "single_agent_runtime_changed": false,
+    "team_cli_added": false,
+    "production_dependencies_found": [],
+    "model_sdk_added": false,
+    "external_packages_added": [],
+    "migration_target_alignment": "M038—M043 targetRed 全部对齐 labs/runtimes/langgraph-ts/test/team-runtime.spec.ts；sourceNodeId、observableSemantics 与 disposition 未改变",
+    "composition_change": "无；production compositionFingerprint 保持 f699e62362fde18ceecbd0b0f5622c2763a8ac05953ba96a8cba33aa14545b39，DSH/Cordis/Profile/Provider/finalConfig 均未改变"
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "story_id": "US-B2-004",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "tests/test_team_graph_runtime.py",
+      "reason": "逐项提取 M038—M043 的 UNKNOWN 暂停、精确 proposal 恢复、显式 risk/review edge、handoff 事件、retry limit 与 trace warning 可观察语义"
+    },
+    {
+      "path": "orchestration/team_graph.py",
+      "reason": "确认旧 Team StateGraph 的 load_memory→plan→predict→adjust/action→review→revise/save 节点、重试计数和 Action 中断重入规则；只作行为基线，不复制 Python Runtime"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+      "reason": "复用 US-B2-003 已验收的 Action session、prepare_action 与 interrupt_for_human 分离模式，识别 Team 图必须独立表达 risk 和 reviewer rejection 边"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+      "reason": "复用原生 SqliteSaver、Command resume、RunResult lineage 和 checkpoint 读取做法，同时避免修改已稳定的单 Agent Runtime"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/roles.ts",
+      "reason": "确认四角色 Definition 已绑定 makePlan/predict/start/advance/review，但 Team Graph 还缺 adjustPlan、revisePlan 与 resolveAction 的角色能力入口"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/action.ts",
+      "reason": "复用 LearningActionSession、ActionProgress、UNKNOWN/approval 中断与 resolveActionInterruption 的运行时契约，不在 Team 层重写工具状态机"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/trace.ts",
+      "reason": "复用 LearningTraceStore 和按 runId 的原子文件持久化；Team trace 失败继续只追加 warning"
+    },
+    {
+      "path": "packages/contracts/src/learning-run.ts",
+      "reason": "确认现有 learning-run-result.v1 的 finalState、events、interrupts、lineage 与 warnings 足以表达 Team 结果，无需新增第二套持久契约"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/test/roles.spec.ts",
+      "reason": "确认扩展四角色能力时必须保留 M024/M025 的独立 Definition 与能力透传回归"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "发现 M038—M043 targetRed 漂移到不存在的 packages/orchestration 多文件，而已采纳需求矩阵统一指定 Learning Lab 的 team-runtime.spec.ts"
+    },
+    {
+      "path": "tests/acceptance/legacy-test-map.spec.ts",
+      "reason": "确认当前精确路径门禁只覆盖 M001—M037，需追加 M038—M043 的单一真源路径断言"
+    },
+    {
+      "path": "docs/runbooks/learning-runtime.md",
+      "reason": "确认现有 runbook 只描述单 Agent CLI；本 Story 只能补充注入式 Team API 和 Learning-only 边界，不提前实现 B2-005 Team CLI"
+    }
+  ],
+  "verified_upstream_facts": {
+    "accepted_red_target": "M038—M043 全部落在 labs/runtimes/langgraph-ts/test/team-runtime.spec.ts",
+    "resume_rule": "LangGraph.js Command resume 会重入 interrupt 所在节点，因此 Action 推进必须在 prepare_action checkpoint 完成，human 节点只消费 resolution",
+    "handoff_evidence": "旧验收从逐节点 event.payload.handoffs 读取 Planner→Predictor→Executor→Reviewer→Team 顺序，只有 finalState 汇总不足以证明路由",
+    "retry_rule": "attempt 从首轮执行时增至 1；review reject 后仅当 attempt <= maxRetries 才进入 revise_plan，maxRetries=0 时保留 partial outcome 且不得调用 revisePlan",
+    "contract_reuse": "learning-run-result.v1 的 RunEvent payload 与 finalState 是开放 Record，可承载 Team handoff/retry 状态而无需修改共享 Schema"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M038—M043 的 targetRed 统一校正为已采纳的 labs/runtimes/langgraph-ts/test/team-runtime.spec.ts；不改变 sourceNodeId、observableSemantics 或 disposition",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "增加 M038—M043 精确目标路径断言，防止迁移证据再次漂到不存在的 packages/orchestration 测试",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "导出 ./team-graph 与 ./team-runtime 学习子路径；依赖集合不新增 DSH、Cordis、生产凭证、模型 SDK 或外部包",
+        "layer": "Learning Runtime Package Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/roles.ts",
+        "purpose": "在现有四角色 Definition 绑定上补充 Planner.adjustPlan/revisePlan 与 Executor.resolveStep；能力仍由外部注入，Team Graph 不直接调用模型或工具实现",
+        "layer": "Learning Role Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/roles.spec.ts",
+        "purpose": "扩展 M024/M025 回归，证明新增 adjust/revise/resolve 仍使用正确角色 Definition 且不会串用 Executor 工具集合",
+        "layer": "Learning Role Regression"
+      },
+      {
+        "path": "docs/runbooks/learning-runtime.md",
+        "purpose": "补充 TeamLearningRuntime 的注入式程序 API、handoff/重试/恢复说明和 Learning-only 限制；明确 Team CLI 属于 US-B2-005，本 Story 不新增命令",
+        "layer": "Runbook"
+      }
+    ],
+    "create": [
+      {
+        "path": "labs/runtimes/langgraph-ts/src/team-graph.ts",
+        "reason": "定义多角色 TeamGraphState、TeamVisit/TeamHandoff 与原生 StateGraph；以显式条件边表达 risk adjustment、review rejection、retry exhaustion 和 human interrupt",
+        "naming_basis": "与现有单 Agent graph.ts 并列，team 前缀表明只属于隔离 Learning Runtime，且直接对应 M038—M042",
+        "layer": "Learning Team Graph"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/team-runtime.ts",
+        "reason": "封装 Team run/resume/checkpoint history、LearningRunResult 组装和 trace warning；resume 使用原 checkpoint 的 session/proposal 与 Command，不重启 Action session",
+        "naming_basis": "与现有 runtime.ts 并列且公开为 ./team-runtime，避免修改或泛化已稳定的单 Agent Runtime",
+        "layer": "Learning Team Runtime"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/team-runtime.spec.ts",
+        "reason": "用真实 StateGraph + SqliteSaver 和注入式离线角色逐项形成 M038—M043 Red，验证事件 phase/handoff、精确 resume、retry limit、checkpoint 与 trace warning",
+        "naming_basis": "采用已采纳需求矩阵的唯一 targetRed 真源，不按实现细节拆成 packages/orchestration 多文件",
+        "layer": "Learning Team Acceptance Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Learning programmatic API → TeamLearningRuntime(run/resume/history) → native LangGraph.js Team StateGraph + SqliteSaver → injected Planner/Predictor/Executor/Reviewer + offline memory ports → existing learning-run-result.v1 trace；production DSH/Control Ledger/CLI 均不参与",
+    "dependency_rule": "team-graph.ts 只编排 createLearningRoles 产生的注入式角色能力与离线 memory ports，不读取生产配置、不直接调用模型 SDK、不执行 DSH/Cordis。prepare_action 负责 advance 并 checkpoint session/proposal，interrupt_for_human 只能 resolve 保存的 proposal；TeamVisit 必须逐节点保存 phase 与 handoff/action payload，Runtime 从本次新增 visit 构造事件。team-runtime.ts 复用现有 LearningRunResult/TraceStore，但不修改单 Agent graph/runtime；US-B2-005 之前不得改 cli.ts 或增加 Team CLI。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "labs/runtimes/langgraph-ts/test/team-runtime.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/team-runtime.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/roles.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/roles.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime.spec.ts labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts labs/runtimes/langgraph-ts/test/persistence.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test"
+    ]
+  },
+  "risks": [
+    "LangGraph resume 会重入 interrupt 节点；若 advanceAction 与 interrupt 放在同一节点，审批或 UNKNOWN 恢复会重复提交工具动作。必须维持 prepare_action 推进、human 节点仅 resolve 的两节点边界",
+    "只把 handoffs 汇总进 finalState 会丢失发生节点和顺序；每次节点 update 必须追加结构化 TeamVisit，Runtime 只投影本次 run 新增的 visits",
+    "steps/results 等 reducer 若错误使用 concat，review revise 会把旧计划或旧结果留在新 attempt；这些字段必须使用替换 reducer，handoffs/actionEvents/visits 才使用追加 reducer",
+    "重试上限存在 off-by-one 风险；attempt=1 代表首轮，maxRetries=0 的第一次 reject 必须直接 save_memory，不能进入 revise_plan",
+    "角色能力返回 unknown，Team Graph 必须在写入 state 前校验 plan、risk、verdict 和 ActionProgress，不能依赖 TypeScript 强转把非法结果当成功",
+    "trace 失败必须返回已完成结果并追加 trace_persist_failed warning；SqliteSaver/checkpoint 失败仍是恢复能力失败，不能降级为 warning",
+    "M038—M043 migration target 与需求矩阵漂移；只修 targetRed，禁止改变 60 条 sourceNodeId、observableSemantics 或 disposition",
+    "Team API 若接入现有 CLI、生产 launcher/Profile 或生产凭证，会越过 US-B2-005 和 ENG-002/011 边界"
+  ],
+  "stop_conditions": [
+    "恢复 approval/UNKNOWN 必须重新 startStep，或无法证明保存的 session/proposal 被原样交给 resolveStep",
+    "risk adjustment、review rejection 或 retry exhaustion 只能用节点内部 if/while 隐式跳转，不能由 StateGraph 条件边在事件序列中证明",
+    "handoff 只能从最终角色列表推断，无法在 plan/predict/prepare_action/review 对应事件 payload 中读取 sender、recipient 和 intent",
+    "maxRetries=0 的首次 rejection 仍调用 revisePlan、清空 partial outcome，或 attempt 计数不能从 checkpoint 恢复",
+    "trace 写入失败会把 completed 结果改成 failed，或 checkpoint 写入失败被错误降级为 warning",
+    "需要修改共享 learning-run-result.v1 Schema、单 Agent runtime.ts/graph.ts、CLI，或引入 DSH/Cordis/生产凭证/模型 SDK 才能完成 M038—M043",
+    "M038—M043 任一语义只能由静态扫描或自行构造最终结果证明，不能通过真实 StateGraph/SqliteSaver/TraceStore 行为形成 Red→Green"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

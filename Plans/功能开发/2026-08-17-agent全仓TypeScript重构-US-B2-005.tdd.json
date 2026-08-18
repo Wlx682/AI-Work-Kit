@@ -1,0 +1,138 @@
+{
+  "story_id": "US-B2-005",
+  "story_points": 8,
+  "commit": "61b2fed7b1f0e848bc44ce2d9b55c381f0bdf591",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts ; nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/tools.spec.ts plugins/domain-tools/test/output-contract.spec.ts labs/runtimes/langgraph-ts/test/cli.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-18T11:51:04+08:00",
+    "reason": "迁移路径门禁 1/1 先通过；tools/cli 目标套件因 src/tools.ts 与 src/tui.ts 尚不存在而 exit=1，domain-tools 套件在补入 Vitest plugin 扫描后因 src/index.ts 尚不存在而 exit=1。失败仅来自 US-B2-005 尚未实现，不是环境或既有回归故障"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/tool-result.spec.ts plugins/domain-tools/test/output-contract.spec.ts labs/runtimes/langgraph-ts/test/tools.spec.ts labs/runtimes/langgraph-ts/test/cli.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-18T11:54:44+08:00",
+    "result": "共享结果契约 2/2、M044 domain-tools 1/1、Learning tools M044—M047 4/4、CLI 全组 15/15（含 M048—M060 13/13 与既有跨进程回归 2/2）通过，共 22/22"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-18T11:57:56+08:00",
+    "result": "将通用 outputSchema 校验下沉纯 contracts、domain-tools 仅保留项目工具包装器、Learning 工具与 TUI 分离为独立 adapter；扩大既有跨进程 CLI 测试超时以抵抗全仓并发资源抖动后，34 files / 120 tests 全部通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py' && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 start:langgraph -- --help && nvm exec 22.19.0 corepack pnpm@11.7.0 start:langgraph -- tool --name get_current_time --args-json '{}' && printf '/quit\\n' | nvm exec 22.19.0 corepack pnpm@11.7.0 start:langgraph -- tui --team && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-18T11:58:54+08:00",
+    "result": "冻结安装无变更；TypeScript 120/120、Python 60/60、全仓 typecheck、composition verify、真实 Learning help/tool/Team TUI 与生产 DSH headless --help 全部通过",
+    "composition_fingerprint": "2467ba28f4896174d48a932dd4efee72571700960f98a4778c69b46be32bbdd3"
+  },
+  "acceptance": [
+    {
+      "ac_id": "M044-M060",
+      "pass": true,
+      "evidence": "M044—M060 由共享 contract、domain-tools wrapper、真实临时文件/子进程、single/Team controller、terminal adapter 和真实跨进程 CLI 具名覆盖；目标语义 18/18、全仓 TypeScript 120/120 通过"
+    },
+    {
+      "ac_id": "M044",
+      "pass": true,
+      "evidence": "Learning registry 与 domain-tools wrapper 均在成功结果进入消费者前校验 outputSchema；缺少 content/title required property 的看似成功结果抛 ToolResultContractError"
+    },
+    {
+      "ac_id": "M045",
+      "pass": true,
+      "evidence": "read_file/write_file/list_directory/run_shell/get_current_time 在真实临时目录与子进程中均返回 text content + schema-valid structuredContent + isError=false"
+    },
+    {
+      "ac_id": "M046",
+      "pass": true,
+      "evidence": "缺失文件返回 text content blocks + isError=true，明确不含 structuredContent，并被同一 registry validator 接受"
+    },
+    {
+      "ac_id": "M047",
+      "pass": true,
+      "evidence": "注入 timedOut shell execution 后抛 ActionExecutionUnknown(command timed out)，不能构造成功结果或自动重试"
+    },
+    {
+      "ac_id": "M048",
+      "pass": true,
+      "evidence": "paused approval 格式同时显示等待审批、tool、args、reason、/approve 与 /reject"
+    },
+    {
+      "ac_id": "M049",
+      "pass": true,
+      "evidence": "completed 格式显示 run/thread/task、phase/status、steps、action status、warnings 与 outcome"
+    },
+    {
+      "ac_id": "M050",
+      "pass": true,
+      "evidence": "approval decision 接受 y/yes//approve 与 n/no//reject；其他输入返回包含 approve/reject 的可操作错误"
+    },
+    {
+      "ac_id": "M051",
+      "pass": true,
+      "evidence": "input interruption 将中文原始文本杭州保留为 {value: 杭州}"
+    },
+    {
+      "ac_id": "M052",
+      "pass": true,
+      "evidence": "UNKNOWN 只接受 JSON object；非 JSON 或数组均以有效 JSON 对象提示失败"
+    },
+    {
+      "ac_id": "M053",
+      "pass": true,
+      "evidence": "parser/help 暴露 --team/--fullscreen；无模型、无凭证的真实 TeamLearningRuntime 完成 pause→同 thread resume→completed"
+    },
+    {
+      "ac_id": "M054",
+      "pass": true,
+      "evidence": "AnsiFullscreenTerminalAdapter.acceptInput 按完整 code point 追加中文宽字符，不发生乱码或截断"
+    },
+    {
+      "ac_id": "M055",
+      "pass": true,
+      "evidence": "fullscreen 提交期间 console.log 被捕获到 TerminalAdapter.log，finally 恢复全局 console sink"
+    },
+    {
+      "ac_id": "M056",
+      "pass": true,
+      "evidence": "fullscreen=true 实际选择 AnsiFullscreenTerminalAdapter(mode=fullscreen)，替代旧 Python curses.wrapper 实现细节"
+    },
+    {
+      "ac_id": "M057",
+      "pass": true,
+      "evidence": "line TerminalAdapter 把查天气原样交给 Runtime，渲染杭州晴且无 mojibake"
+    },
+    {
+      "ac_id": "M058",
+      "pass": true,
+      "evidence": "提交抛 missing DEEPSEEK_API_KEY 时错误留在 TUI 内，并给出 export DEEPSEEK_API_KEY 的可操作指引"
+    },
+    {
+      "ac_id": "M059",
+      "pass": true,
+      "evidence": "Controller 保存 paused RunResult；第二次输入调用 resume(thread-paused, {value:杭州}, parentRunId=run-paused)，不重新 run"
+    },
+    {
+      "ac_id": "M060",
+      "pass": true,
+      "evidence": "清除 DEEPSEEK_API_KEY 后 TUI 仍先创建离线 Runtime 并正常处理 /quit；真实 launcher 的环境 allowlist 与 Team TUI smoke 通过"
+    }
+  ],
+  "architecture_evidence": {
+    "shared_tool_result_contract": true,
+    "domain_tools_contains_common_fs_shell": false,
+    "learning_tools_are_lab_only": true,
+    "shell_timeout_is_unknown": true,
+    "raw_json_cli_compatible": true,
+    "team_cli_is_offline": true,
+    "terminal_adapter_replaces_curses": true,
+    "same_thread_resume": true,
+    "api_key_precheck_added": false,
+    "production_dependencies_found": [],
+    "model_sdk_added": false,
+    "external_packages_added": [],
+    "migration_target_alignment": "M044 对齐 labs/runtimes/langgraph-ts/test/tools.spec.ts + plugins/domain-tools/test/output-contract.spec.ts，M045—M047 对齐 tools.spec.ts，M048—M060 对齐 cli.spec.ts；sourceNodeId、observableSemantics 与 disposition 未改变",
+    "composition_change": "显式重冻为 2467ba28f4896174d48a932dd4efee72571700960f98a4778c69b46be32bbdd3；仅 root lock SHA、contracts artifact SHA 与总指纹变化，DSH rc.6、Cordis 4.0.1、Profile、Provider、bundle patches、production artifacts（除 contracts）与 finalConfig 均未改变"
+  }
+}

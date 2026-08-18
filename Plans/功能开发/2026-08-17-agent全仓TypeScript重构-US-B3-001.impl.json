@@ -1,0 +1,247 @@
+{
+  "story_id": "US-B3-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/contracts/src/index.ts",
+      "reason": "确认跨进程、跨版本且需要重放的稳定类型统一由纯 TS contracts 导出，不能把 SQLite、Cordis 或 DSH 类型泄漏到契约层"
+    },
+    {
+      "path": "packages/contracts/src/learning-run.ts",
+      "reason": "复用现有 version constant、只读接口、稳定 sequence 与 64 位十六进制 stateHash 的契约风格，但不复用 Learning Runtime 的业务结果 Schema"
+    },
+    {
+      "path": "packages/dsh-bridge/src/index.ts",
+      "reason": "确认所有 DSH 原生类型与事件归一化都应封装在 dsh-bridge，control-ledger 插件只消费本地 ControlFact 输入"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认 dsh-bridge 与 contracts 属于 production composition 指纹资产；新增文件和依赖后必须显式重冻并证明 rc.6/Profile/Provider 没有非预期漂移"
+    },
+    {
+      "path": "plugins/runtime-composition/src/index.ts",
+      "reason": "沿用 Cordis Service、typed event、effect cleanup 与只暴露窄服务接口的生产插件结构"
+    },
+    {
+      "path": "tests/plugin-lifecycle/runtime-composition.spec.ts",
+      "reason": "复用真实 Cordis Context 的装卸测试方式，防止 SQLite 句柄、session/event 与 session/flush listener 在卸载后泄漏"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "reason": "确认 plugins/* 已自动进入 workspace，且 Node 22.19.0 可使用内建 node:sqlite；无需新增第三方 SQLite driver 或改变 DSH override"
+    },
+    {
+      "path": "package.json",
+      "reason": "确认新 control-ledger package 必须显式加入根 typecheck，Vitest 已覆盖 plugins/**/*.spec.ts"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-session@0.1.0-rc.6_6fd26f59436a18b115f326d6060415e6/node_modules/@deepseek-ai/dsh-session/lib/types/index.d.ts",
+      "reason": "上游 rc.6 明确 session/event 是 append 后 fire-and-forget，session/flush 才是 awaited durability checkpoint；Ledger 只能在 flush 后宣称 durable"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-session@0.1.0-rc.6_6fd26f59436a18b115f326d6060415e6/node_modules/@deepseek-ai/dsh-session/lib/types/types.d.ts",
+      "reason": "确认 DSH SessionEvent 自带连续 seq、type、time 与 JSON payload，可作为 ControlFact sourceRefs，但不能把 Session Log 原样复制成第二真理源"
+    },
+    {
+      "path": "node_modules/.pnpm/@deepseek-ai+dsh-agent@0.1.0-rc.6_b0514d7a320728b6d8f5a31eb3960e10/node_modules/@deepseek-ai/dsh-agent/lib/types/runtime-types.d.ts",
+      "reason": "确认 agent/created、agent/status、agent/disposed 是动态状态信号；需由 dsh-bridge 归一化后与 durable session facts 分账"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-006/008/012：ControlFact append-only、(runId,sequence) 唯一、Projection 可删除重建、SQLite WAL 单写者与 Provider Port"
+    }
+  ],
+  "verified_upstream_facts": {
+    "dsh_event_boundary": "DSH rc.6 的 session/event 在内存日志 append 后异步通知，不能作为 durable ack；session/flush 会 await 全部持久化 listener，是 Control Ledger 提交边界",
+    "source_sequence": "DSH SessionEvent.seq 在单 Session 内连续稳定；ControlFact 使用独立 (runId, sequence)，同时在 sourceRefs 保存 sessionId/event.seq/event.type，避免把 DSH 原始 Session Log 改写为控制真理源",
+    "runtime_signals": "agent/created、agent/status、agent/disposed 提供动态镜像信号，但必须先经 dsh-bridge 归一化，contracts/control-ledger 不直接 import DSH/Cordis",
+    "sqlite_provider": "Node 22.19.0 内建 node:sqlite 可提供 DatabaseSync、事务和 PRAGMA；采用 WAL + synchronous=FULL + 单写者批量事务，不新增 native 第三方 driver",
+    "projection_rule": "ProjectionSnapshot 是事实前缀的纯函数缓存；stateHash 对 canonical projection（不含 hash 自身）计算 SHA-256，同一版本与前缀必须字节稳定",
+    "corruption_rule": "projection cache 缺失或 hash 不符时从不可变 facts 重建；control_facts 或 SQLite quick_check 损坏时失败关闭进入 recovery，不自动删除、截断或重建事实库"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "把 @agent/plugin-control-ledger 纳入根 typecheck，并提供只读 replay/query 验证命令；不改变默认生产 launcher",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "记录 contracts/dsh-bridge/control-ledger workspace importer 与精确 rc.6 peer；不新增第三方 SQLite driver",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 ControlFact、ControlProjectionSnapshot、Provider Port 输入输出与版本常量，不导出 SQLite/Cordis/DSH 具体类型",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/dsh-bridge/package.json",
+        "purpose": "声明精确 rc.6 dsh-session/dsh-agent 与 Cordis peer，用于编译归一化 adapter；不升级或 fork 上游",
+        "layer": "DSH Adapter Boundary"
+      },
+      {
+        "path": "packages/dsh-bridge/src/index.ts",
+        "purpose": "导出 DSH control observation binder 与归一化类型，保持插件不直接依赖上游事件 payload",
+        "layer": "DSH Adapter Boundary"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "purpose": "把新增 contracts/control-ledger/dsh-control-observer 文件纳入 production artifact 指纹，防未记录的控制面代码进入组合",
+        "layer": "Composition Verification"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/control-ledger.ts",
+        "reason": "定义 control-fact.v1、dsh-runtime-projection.v1、sourceRefs、稳定 sequence、throughSequence 与 stateHash 的纯 TS 契约",
+        "naming_basis": "与 runtime-composition.ts、learning-run.ts 同属稳定跨进程契约，使用领域名 control-ledger",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/control-fact.v1.json",
+        "reason": "对持久化事实 envelope 做运行时可重放 Schema 约束，未知/破坏性字段不能仅靠 TypeScript 静态类型通过",
+        "naming_basis": "沿用现有 schemas/<contract>.v1.json 版本化命名",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/dsh-runtime-projection.v1.json",
+        "reason": "冻结监督者可读取的 DSH 动态镜像字段与 stateHash 形状，明确 projection 不是事实真理源",
+        "naming_basis": "projectionVersion 与文件名一致，和 control-fact Schema 分离升级",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/test/control-ledger.spec.ts",
+        "reason": "锁定 JSON 可序列化、sequence/throughSequence/stateHash 和 unknown 状态不映射为成功的契约边界",
+        "naming_basis": "与 contracts/src/control-ledger.ts 同名",
+        "layer": "Contract Unit Test"
+      },
+      {
+        "path": "packages/dsh-bridge/src/control-observer.ts",
+        "reason": "把 rc.6 session/event、session/flush 与 agent lifecycle/status 归一化为本地 DshControlObservation，并提供可清理 binder；不写 SQLite 或 projection",
+        "naming_basis": "架构模块 control-observer 的 DSH seam，放在 dsh-bridge 防上游类型外泄",
+        "layer": "DSH Adapter Boundary"
+      },
+      {
+        "path": "packages/dsh-bridge/test/control-observer.spec.ts",
+        "reason": "以真实 rc.6 SessionEvent 与 Cordis Context 验证 source sequence/type、flush 边界和 listener cleanup",
+        "naming_basis": "与 control-observer.ts 同名",
+        "layer": "DSH Adapter Test"
+      },
+      {
+        "path": "plugins/control-ledger/package.json",
+        "reason": "建立生产 Control Ledger 插件 workspace，只依赖 contracts/dsh-bridge 与 Node 内建 SQLite，Cordis 保持精确 peer",
+        "naming_basis": "采用架构已批准 plugins/control-ledger 路径",
+        "layer": "Production Plugin Boundary"
+      },
+      {
+        "path": "plugins/control-ledger/tsconfig.json",
+        "reason": "独立 strict typecheck 插件、Provider 与测试代码",
+        "naming_basis": "遵循 plugins/runtime-composition 结构",
+        "layer": "Plugin Build"
+      },
+      {
+        "path": "plugins/control-ledger/src/provider.ts",
+        "reason": "定义 appendBatch/replay/checkIntegrity/close 的 Provider Port 与幂等冲突、损坏错误；业务服务不绑定 SQLite",
+        "naming_basis": "ENG-012 明确要求 Provider Port，文件名直接表达 seam",
+        "layer": "Persistence Port"
+      },
+      {
+        "path": "plugins/control-ledger/src/sqlite-provider.ts",
+        "reason": "用 node:sqlite 实现 WAL、synchronous=FULL、事务内稳定 sequence 与幂等键；冲突/quick_check 损坏失败关闭，绝不 UPDATE/DELETE control_facts",
+        "naming_basis": "首个 Provider 按 ENG-012 命名，未来 PostgreSQL Provider 可并列新增",
+        "layer": "SQLite Provider"
+      },
+      {
+        "path": "plugins/control-ledger/src/projection.ts",
+        "reason": "纯函数按事实前缀折叠 DSH 运行镜像并 canonical hash；缓存缺失或损坏时可重建，未知 factType 保留水位但不猜状态",
+        "naming_basis": "对应架构 ProjectionSnapshot，可独立 property/replay 测试",
+        "layer": "Projection Domain"
+      },
+      {
+        "path": "plugins/control-ledger/src/index.ts",
+        "reason": "提供 Cordis ControlLedgerService：事件先缓冲，session/flush 批量 durable append；公开 replay/project/query，不把未 flush 信号伪装为 durable",
+        "naming_basis": "沿用生产 plugin 的 src/index.ts 公开入口",
+        "layer": "Production Cordis Plugin"
+      },
+      {
+        "path": "plugins/control-ledger/test/sqlite-provider.spec.ts",
+        "reason": "形成 append-only、稳定 sequence、重复相同幂等键不增行、冲突失败、事务重开 durability 与事实损坏失败关闭的 Red",
+        "naming_basis": "直接覆盖 AC-B3-APPEND/IDEMPOTENCY/DURABILITY",
+        "layer": "Persistence Acceptance Test"
+      },
+      {
+        "path": "plugins/control-ledger/test/projection.spec.ts",
+        "reason": "形成乱序拒绝、相同事实前缀相同 stateHash、前缀水位与损坏 projection cache 重建的 Red",
+        "naming_basis": "直接覆盖 AC-B3-REPLAY",
+        "layer": "Projection Acceptance Test"
+      },
+      {
+        "path": "plugins/control-ledger/test/dsh-integration.spec.ts",
+        "reason": "用真实 Cordis 事件与 rc.6 SessionEvent 证明 session/event 仅缓冲、session/flush 后新 Provider 可重放同一 DSH 动态镜像，卸载后句柄与 listener 清理",
+        "naming_basis": "纵向验收必须跨过 DSH adapter→plugin→SQLite→projection，而非只测最终对象",
+        "layer": "Vertical Integration Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "DSH rc.6 typed events → packages/dsh-bridge control observer → plugins/control-ledger buffered service → ControlLedgerProvider → SQLite WAL facts；replay facts → pure projection reducer → dsh-runtime-projection.v1 + stateHash。contracts 只承载版本化数据，不承载框架或数据库实现",
+    "dependency_rule": "packages/contracts 不依赖 DSH/Cordis/SQLite/UI。packages/dsh-bridge 可依赖精确 rc.6 上游类型，只负责归一化与 listener 生命周期，不持久化。plugins/control-ledger 只通过 Provider Port 写 facts；SQLite Provider 禁止 UPDATE/DELETE control_facts，重复 idempotency key 只有 canonical 内容相同才返回原事实。session/event 只能进入 pending buffer，只有 awaited session/flush 的 FULL transaction 成功后才可被 query/replay。projection 缓存可删可重建，control facts 损坏必须 recovery/fail-closed。当前 Story 不实现控制命令、receipt waterfall、Safety Executor 或 B3-002 策略。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "plugins/control-ledger/test/sqlite-provider.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-ledger/test/sqlite-provider.spec.ts"
+      },
+      {
+        "path": "plugins/control-ledger/test/projection.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-ledger/test/projection.spec.ts"
+      },
+      {
+        "path": "plugins/control-ledger/test/dsh-integration.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-ledger/test/dsh-integration.spec.ts"
+      },
+      {
+        "path": "packages/dsh-bridge/test/control-observer.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/control-observer.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-ledger.spec.ts plugins/control-ledger/test/*.spec.ts packages/dsh-bridge/test/*.spec.ts tests/plugin-lifecycle/*.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "python3 -m unittest discover -s tests -p 'test_*.py'",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:freeze && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help"
+    ]
+  },
+  "risks": [
+    "若把 session/event 的 fire-and-forget 回调当作 durable commit，进程崩溃时看板/监督者会看到实际上尚未落盘的事实；必须以 session/flush awaited boundary 为准",
+    "若直接复制整个 DSH Session Log，会制造第二会话真理源并违反 control-ledger 不改写 Session Log 的边界；只保存控制域需要的归一化事实与 sourceRefs",
+    "若 ControlFact sequence 直接等于经过筛选的 DSH event.seq，会产生稀疏/跨源冲突；SQLite 事务应为每个 run 分配连续控制序号，DSH seq 只放 sourceRefs",
+    "若同一 idempotency key 不比较 canonical 内容，调用方可用同一个键静默覆盖不同事实；内容冲突必须显式失败且不消耗 sequence",
+    "Node 内建 SQLite 为同步 API；必须只在 flush 批量事务内使用，禁止在每个 session/event 热路径同步 fsync 阻塞 Agent Loop",
+    "WAL 只保证数据库事务语义，不等于允许多个业务 writer；v0.1 插件必须单实例持有 Provider，跨主机/多实例需求触发新 ADR 而非偷偷共享文件",
+    "projection stateHash 若依赖对象插入顺序、时间或本机路径将不可重放；hash 输入必须 canonicalize 且只含事实决定字段",
+    "projection cache 可自动重建，但 control_facts/SQLite quick_check 损坏不可自动删除或重建；错误必须带 recovery code 并保留原文件供人工恢复",
+    "agent/status 是运行时信号而 session/event 是 durable source；投影必须标出 observed/durable watermark，不能把瞬时 running 当作已提交事实",
+    "新增 contracts/dsh-bridge 文件和 workspace importer 会改变 production composition 指纹；必须显式重冻，并证明 DSH/Cordis/Profile/Provider/finalConfig 没有非预期漂移"
+  ],
+  "stop_conditions": [
+    "无法使用 session/flush 形成 awaited durable boundary，只能在 session/event 热路径把异步写入误报为已提交",
+    "实现要求修改、fork 或 vendoring DSH rc.6 Session/Agent Loop，而不是通过公开 typed events 与 dsh-bridge seam 接入",
+    "需要让 packages/contracts 或 projection domain import Cordis、DSH、node:sqlite 或具体 Provider",
+    "相同 idempotency key 的不同 canonical 内容会被接受、覆盖或返回旧成功，而不是冲突失败",
+    "SQLite Provider 需要 UPDATE/DELETE control_facts、重排历史 sequence 或在损坏时自动清空数据库才能继续",
+    "同一事实前缀与 projectionVersion 无法稳定产生相同 stateHash，或 unknown fact 被猜成成功/完成状态",
+    "纵向测试只能 mock 最终 Projection，无法通过真实 rc.6 SessionEvent、Cordis flush、SQLite 重开与 replay 形成 Red→Green",
+    "实现必须提前加入 control-command、receipt waterfall、Safety Executor、Supervisor 策略或 B3-002 API 才能满足本 Story",
+    "需要升级 Node、DSH rc.6、Cordis 4.0.1，或新增第三方 SQLite native driver 才能完成"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

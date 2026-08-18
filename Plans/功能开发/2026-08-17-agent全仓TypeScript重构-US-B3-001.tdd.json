@@ -1,0 +1,69 @@
+{
+  "story_id": "US-B3-001",
+  "story_points": 8,
+  "commit": "f52d855aa4e6a2ce962bf936c6fc26ffd5ffab46",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-ledger/test/sqlite-provider.spec.ts plugins/control-ledger/test/projection.spec.ts packages/dsh-bridge/test/control-observer.spec.ts plugins/control-ledger/test/dsh-integration.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-18T14:42:40+08:00",
+    "reason": "四个新增套件均只因 @agent/plugin-control-ledger、control-observer 和直接 DSH Session peer 尚未实现而失败；没有业务断言失败或既有回归故障"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/control-ledger/test/sqlite-provider.spec.ts plugins/control-ledger/test/projection.spec.ts packages/dsh-bridge/test/control-observer.spec.ts plugins/control-ledger/test/dsh-integration.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-18T14:45:42+08:00",
+    "result": "SQLite Provider、确定性 Projection、真实 rc.6 Session observer 与 Cordis→flush→SQLite→restart 纵向闭环共 4 files / 6 tests 通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-ledger.spec.ts packages/dsh-bridge/test/control-observer.spec.ts plugins/control-ledger/test/*.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+    "exit_code": 0,
+    "at": "2026-08-18T14:49:11+08:00",
+    "result": "补齐契约 Schema、agent lifecycle/status、畸形 projection cache 重建与事实 canonical 完整性失败关闭；目标 10/10、全仓 TS 130/130、typecheck 和 composition verify 通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py' && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-18T14:49:55+08:00",
+    "result": "提交 f52d855 上冻结安装无变化；TypeScript 130/130、Python 60/60、全仓 typecheck、组合身份验证和真实生产 DSH headless --help 全部通过",
+    "composition_fingerprint": "c6fc9778847046bdec236342030b9d68c62aa4dd408819ed262a9f806e3eea20"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-B3-APPEND",
+      "pass": true,
+      "evidence": "node:sqlite Provider 使用 WAL + synchronous=FULL + BEGIN IMMEDIATE 批量事务，为每个 run 分配从 1 开始的连续 sequence；重开后追加保持 1/2/3，control_facts 不提供 UPDATE/DELETE 路径"
+    },
+    {
+      "ac_id": "AC-B3-REPLAY",
+      "pass": true,
+      "evidence": "事实按 sequence 严格重放；乱序/缺口拒绝，同一事实前缀 canonical SHA-256 投影一致；畸形或 hash 不符的 projection cache 从不可变 facts 自动重建"
+    },
+    {
+      "ac_id": "AC-B3-IDEMPOTENCY",
+      "pass": true,
+      "evidence": "相同 (runId,idempotencyKey) 与相同 canonical 内容返回原事实且不消耗 sequence；同 key 不同 payload 抛 ControlLedgerConflictError，历史保持不变"
+    },
+    {
+      "ac_id": "AC-B3-DURABILITY",
+      "pass": true,
+      "evidence": "真实 rc.6 session/event 只进入 pending，replay 仍为空；awaited session/flush 成功后 facts 才可见，插件卸载并重新打开 SQLite 后得到同一事实与 stateHash；库文件损坏或事实 canonical 不匹配均失败关闭"
+    }
+  ],
+  "architecture_evidence": {
+    "contracts_are_framework_free": true,
+    "dsh_payload_normalized_in_bridge": true,
+    "session_event_is_not_durable_ack": true,
+    "session_flush_is_durable_boundary": true,
+    "provider_port_separates_sqlite": true,
+    "facts_are_append_only": true,
+    "projection_is_rebuildable": true,
+    "unknown_fact_fails_conservatively": true,
+    "external_sqlite_driver_added": false,
+    "dsh_or_cordis_version_changed": false,
+    "composition_fingerprint": "c6fc9778847046bdec236342030b9d68c62aa4dd408819ed262a9f806e3eea20"
+  },
+  "limitations": [
+    "Node 22 的 node:sqlite 当前仍输出 ExperimentalWarning；功能锁定在项目已批准的 Node 22.19.0，并由全仓类型与集成测试约束",
+    "本 Story 只提供事实账本、重放与动态投影，不实现 US-B3-002 的控制命令和分段回执，也不接入 Safety Executor 或控制 UI"
+  ]
+}

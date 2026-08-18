@@ -42,8 +42,8 @@ relations:
 | 需求排序 | prioritization | `Plans/需求排序/2026-08-17-agent全仓TypeScript重构.md` | ✅ 已采纳，B0→B1→B2→B3→B4→B5 |
 | 正式架构设计 | architecture | `Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md` | ✅ 已采纳，ENG-012=SQLite WAL + Provider Port |
 | 功能故事拆分与故事点 | story-split | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md` | ✅ 14 个纵向 Story、点数与 Scope 已确认 |
-| 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ✅ US-B2-001 已确认 |
-| 逐故事 TDD | story-development | 同上及动态故事子 Plan | 🟨 US-B0-001、US-B1-001、US-B1-002、US-B2-001 已完成；等待下一 Story Scope |
+| 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ✅ US-B2-005 落点已确认 |
+| 逐故事 TDD | story-development | 同上及动态故事子 Plan | 🟨 前 8 个 Story 已完成；等待确认下一滚动 Scope |
 | 集成测试计划与审核 | integration-test-plan | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试计划.md` | ⬜ |
 | 全量集成测试 | integration-test | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试.md` | ⬜ |
 
@@ -70,10 +70,10 @@ relations:
 | US-B1-001 | DSH 固定组合与可逆插件 | P0 | 8 | true | US-B0-001 | ✅ 已完成，提交 `738c9cf` |
 | US-B1-002 | LangGraph.js Learning Runtime 与隔离 | P0 | 8 | true | US-B0-001 | ✅ 已完成，提交 `27e5a1c` |
 | US-B2-001 | Action/审批/unknown 语义 | P0 | 8 | true | US-B1-002 | ✅ 已完成，提交 `bded643` |
-| US-B2-002 | Definition/LLM/Planning/Role 语义 | P0 | 8 | true | US-B1-001/002 | 等待前置证据 |
-| US-B2-003 | 单 Agent 暂停/恢复/回放/fork | P0 | 8 | true | US-B2-001/002 | 等待前置证据 |
-| US-B2-004 | Team Learning Graph | P0 | 5 | true | US-B2-003 | 等待前置证据 |
-| US-B2-005 | 结构化工具与 CLI | P0 | 8 | true | US-B2-001/003 | 等待前置证据 |
+| US-B2-002 | Definition/LLM/Planning/Role 语义 | P0 | 8 | true | US-B1-001/002 | ✅ 已完成，提交 `5bcce5a` |
+| US-B2-003 | 单 Agent 暂停/恢复/回放/fork | P0 | 8 | true | US-B2-001/002 | ✅ 已完成，提交 `b359c77` |
+| US-B2-004 | Team Learning Graph | P0 | 5 | true | US-B2-003 | ✅ 已完成，提交 `4931d32` |
+| US-B2-005 | 结构化工具与 CLI | P0 | 8 | true | US-B2-001/003 | ✅ 已完成，提交 `61b2fed` |
 | US-B3-001 | SQLite Ledger 动态镜像 | P0 | 8 | true | US-B1-001/B2-002 | 等待前置证据 |
 | US-B3-002 | 控制命令分段回执 | P0 | 8 | true | US-B3-001 | 等待前置证据 |
 | US-B4-001 | Safety Executor 受控执行 | P0 | 8 | true | US-B3-002 | 等待前置证据 |
@@ -118,6 +118,21 @@ relations:
 | 2026-08-17 | 激活 US-B2-001 为下一 implementation Scope | story-development | 用户回复“继续任务”；US-B1-002 前置门禁已通过；其余未完成 Story 未扩张 | wanglongxiang |
 | 2026-08-17 | 确认 US-B2-001 实现落点 | implementation-design | 用户在共享契约、Learning Action 状态机、M001—M011 Red 与生产边界摘要后回复“继续” | wanglongxiang |
 | 2026-08-17 | 完成 US-B2-001 Red→Green→Refactor | story-development | 代码 `bded643`；M001—M011 定向 15/15、TS 66/66、Python 60/60、typecheck 与组合 `80f0fc8e…701e` 通过 | Codex |
+| 2026-08-17 | 激活 US-B2-002 为下一 implementation Scope | story-split | 用户在 US-B2-001 完成后回复“继续”；US-B1-001/002 前置门禁已通过；其余未完成 Story 未扩张 | wanglongxiang |
+| 2026-08-17 | 完成 US-B2-002 实现落点草案 | implementation-design | 设计共享 agent-definition 与 Learning-only llm-json/planning/roles，逐项覆盖 M012—M025；待人工确认 | Codex |
+| 2026-08-17 | 确认 US-B2-002 实现落点 | implementation-design | 用户在共享 Definition、Learning-only JSON/Planning/Role、M012—M025 Red 与组合保护摘要后回复“继续” | wanglongxiang |
+| 2026-08-17 | 完成 US-B2-002 Red→Green→Refactor | story-development | 代码 `5bcce5a`；M012—M025 定向 17/17、TS 82/82、Python 60/60、typecheck、冻结安装与组合 `d1c52876…3083f` 通过 | Codex |
+| 2026-08-17 | 激活 US-B2-003 为下一 implementation Scope | story-split | 用户在 US-B2-002 完成后回复“继续”；US-B2-001/002 前置门禁已通过；其余未完成 Story 未扩张 | wanglongxiang |
+| 2026-08-17 | 完成 US-B2-003 实现落点草案 | implementation-design | 设计单 Agent 原生 StateGraph、精确 resume、safe fork、版本化 trace 与 M026—M037 Red；待人工确认 | Codex |
+| 2026-08-17 | 确认 US-B2-003 实现落点并进入 Red | story-development | 用户回复“继续”，确认文件边界、依赖方向、Red 与停止条件；Scope 保持仅 US-B2-003 | wanglongxiang |
+| 2026-08-17 | 完成 US-B2-003 Red→Green→Refactor | story-development | 代码 `b359c77`；M026—M037 定向 15/15、TS 94/94、Python 60/60、typecheck、冻结安装与组合 `f699e623…45b39` 通过 | Codex |
+| 2026-08-18 | 激活 US-B2-004 为下一 implementation Scope | story-split | 用户在 US-B2-003 完成后回复“继续”；前置 TDD/提交证据通过；其余 7 条未完成 Story 未扩张 | wanglongxiang |
+| 2026-08-18 | 完成 US-B2-004 实现落点草案 | implementation-design | 设计显式 Team graph edges、逐节点 handoff、精确 Action resume、retry limit 与 M038—M043 单一 Red 真源；待人工确认 | Codex |
+| 2026-08-18 | 确认 US-B2-004 实现落点并进入 Red | story-development | 用户回复“继续”，确认文件边界、依赖方向、Red 与停止条件；Scope 保持仅 US-B2-004 | wanglongxiang |
+| 2026-08-18 | 完成 US-B2-004 Red→Green→Refactor | story-development | 代码 `4931d32`；M038—M043 Team 6/6、TS 100/100、Python 60/60、typecheck、冻结安装和生产组合 `f699e623…45b39` 通过 | Codex |
+| 2026-08-18 | 激活 US-B2-005 为下一 implementation Scope | story-split | 用户在 US-B2-004 完成后回复“继续”；前置 TDD/提交证据通过；其余 6 条未完成 Story 未扩张 | wanglongxiang |
+| 2026-08-18 | 完成并确认 US-B2-005 实现落点 | implementation-design | 设计共享 MCP 结果契约、Learning-only 工具、single/team CLI、TS terminal adapter 与 M044—M060 Red；用户回复“继续”确认 | wanglongxiang |
+| 2026-08-18 | 完成 US-B2-005 Red→Green→Refactor | story-development | 代码 `61b2fed`；M044—M060 目标 18/18、TS 120/120、Python 60/60、typecheck、冻结安装与生产组合 `2467ba28…bbdd3` 通过 | Codex |
 
 ## 续做
 
@@ -270,4 +285,105 @@ skill_run:
   outcome: "Epic 已完成前三个 Story，保持逐 Story 推进并等待激活 US-B2-001"
   utility: high
   reason: "Epic 看板与真实代码、测试、供应链审计和用户门禁一致，没有误报全量系统完成"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.tdd.json
+      utility: high
+      reason: "证明第 6 条 Story 已真实完成，可恢复到依赖就绪的 US-B2-004"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认当前唯一 Scope 已切换为 US-B2-004，仍有 8 条 Story 未完成"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "Epic 从 US-B2-003 完成态恢复到 US-B2-004 落点设计，未进入集成测试"
+  utility: high
+  reason: "让 Epic 声称阶段与真实 Story/TDD 证据保持一致"
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "同步唯一当前 Scope=US-B2-004，并让已完成 US-B2-003 退出 sprint_scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.md
+      utility: high
+      reason: "同步 Team Learning Graph 的 5 点边界和 M038—M043 验收范围"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "Epic 继续处于逐 Story 开发，仅 US-B2-004 进入 implementation-design"
+  utility: high
+  reason: "单 Story Scope 切换不会被误判为全量集成条件成立"
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.md
+      utility: high
+      reason: "同步当前 Team Story 的边界、状态和未确认门禁"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.impl.json
+      utility: high
+      reason: "将显式路由、handoff、精确恢复、retry 与 Red 作为机器可校验开发前契约"
+  contexts_missing:
+    - "用户对 US-B2-004 实现落点四项门禁的确认"
+  contexts_stale: []
+  outcome: "Epic 保持 implementation-design；前 6 条 Story 完成，US-B2-004 未经确认不进入 Red"
+  utility: high
+  reason: "忠实呈现等待人工确认而非业务报错，也没有提前推进集成阶段"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.md
+      utility: high
+      reason: "同步 Team Learning Graph Story 的完成状态、提交和逐 AC 验收"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.tdd.json
+      utility: high
+      reason: "证明 Red、Green、Refactor、集成 smoke、生产组合不变与代码提交均已闭环"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "Epic 已完成前 7 个 Story，保持逐 Story 推进并等待激活下一条滚动 Scope"
+  utility: high
+  reason: "看板与真实代码、测试和用户门禁一致，没有把 Team Story 完成误报为全量系统完成"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.md
+      utility: high
+      reason: "同步结构化工具与 CLI Story 的完成状态、提交和逐 AC 验收"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.tdd.json
+      utility: high
+      reason: "证明 Red、Green、Refactor、双 Runtime smoke、组合重冻与代码提交均已闭环"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "Epic 已完成前 8 个 Story，保持逐 Story 推进并等待激活 US-B3-001"
+  utility: high
+  reason: "看板与真实代码、测试和人工门禁一致，没有把 B2 完成误报为全量系统完成"
 ```

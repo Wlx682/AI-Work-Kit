@@ -1,0 +1,59 @@
+{
+  "story_id": "US-B2-003",
+  "story_points": 8,
+  "commit": "b359c774b6dacddf050463a06634332362986dcc",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/learning-run.spec.ts labs/runtimes/langgraph-ts/test/runtime.spec.ts labs/runtimes/langgraph-ts/test/recovery.spec.ts labs/runtimes/langgraph-ts/test/persistence.spec.ts labs/runtimes/langgraph-ts/test/cli.spec.ts tests/acceptance/legacy-test-map.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-17T22:18:31+08:00",
+    "reason": "RunResult/Trace 模块尚不存在，Runtime 尚无 checkpointHistory/recover，持久化结果没有 interrupts，CLI 不识别 checkpoints/recover，M026—M037 迁移索引仍指向旧路径；6 组目标命令均只因本 Story 尚未实现而非环境或既有回归失败"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/learning-run.spec.ts labs/runtimes/langgraph-ts/test/runtime.spec.ts labs/runtimes/langgraph-ts/test/recovery.spec.ts labs/runtimes/langgraph-ts/test/persistence.spec.ts labs/runtimes/langgraph-ts/test/cli.spec.ts tests/acceptance/legacy-test-map.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-17T22:26:23+08:00",
+    "result": "6 files / 15 tests passed；M026—M037、版本化契约、真实 CLI 与迁移索引全部转绿"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-17T22:26:39+08:00",
+    "result": "提取 native historical checkpoint 的 branch-head replay 规则、稳定 state hash 与 steps-only recovery policy，并补强 replay/fork 真实 outcome 断言；30 files / 94 tests 保持通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-17T22:26:39+08:00",
+    "result": "冻结安装无变更；TypeScript 94/94、Python 60/60、全仓 typecheck、DSH composition verify 和真实 DSH headless --help 通过",
+    "composition_fingerprint": "f699e62362fde18ceecbd0b0f5622c2763a8ac05953ba96a8cba33aa14545b39"
+  },
+  "acceptance": [
+    { "ac_id": "M026-M037", "pass": true, "evidence": "M026—M037 由真实 StateGraph、SqliteSaver、TraceStore、CLI 与具名 Vitest 覆盖；目标组 15/15、全仓 94/94 通过" },
+    { "ac_id": "M026", "pass": true, "evidence": "Planning port 抛出 LLM unavailable 后返回 status=failed、末事件 failed，并按 runId 持久化结构化结果" },
+    { "ac_id": "M027", "pass": true, "evidence": "input 中断保存完整 Action session；Command resume 在同 thread/checkpoint 消费杭州输入并完成" },
+    { "ac_id": "M028", "pass": true, "evidence": "UNKNOWN 保留 actionId/toolCallId/proposal，人工 succeeded 结果通过 validateManualResult 后继续" },
+    { "ac_id": "M029", "pass": true, "evidence": "正常完成产生连续 sequence、plan/predict/prepare_action/complete 事件，并由 FileLearningTraceStore 原子写入且可等值读取" },
+    { "ac_id": "M030", "pass": true, "evidence": "replan 显式进入 reflect 节点并把计划修订为 first/second revised；原生 checkpoint history 数量大于 2" },
+    { "ac_id": "M031", "pass": true, "evidence": "recovery patch 唯一允许非空 steps；pendingInterruption 等保护字段和任一 human-interrupt checkpoint fork 均被拒绝" },
+    { "ac_id": "M032", "pass": true, "evidence": "approval resume 在 interrupt_for_human 内转成 UNKNOWN 再暂停，advanceAction 仅调用一次，已提交 Action 未重放" },
+    { "ac_id": "M033", "pass": true, "evidence": "从选定 safe checkpoint 原生建立 branch head；replay 和 steps-only fork 均真实执行并保留 parent/recovered/mode/stateHash" },
+    { "ac_id": "M034", "pass": true, "evidence": "关闭旧实例后，新 LearningRuntime 从同一 SQLite 精确恢复 approval session、proposal、thread 与 checkpoint" },
+    { "ac_id": "M035", "pass": true, "evidence": "恢复结果保留原 actionId/toolCallId/read_file 提案，runId 更新但 thread/session 不重启" },
+    { "ac_id": "M036", "pass": true, "evidence": "工具 success payload 缺 content 时由运行时契约校验转为结构化 failed，不能映射成功" },
+    { "ac_id": "M037", "pass": true, "evidence": "TraceStore 抛 disk full 时业务结果仍 completed，仅追加 trace_persist_failed warning" }
+  ],
+  "architecture_evidence": {
+    "shared_learning_run_contract": true,
+    "native_langgraph_stategraph": true,
+    "native_sqlite_checkpointer": true,
+    "recovery_patch_keys": ["steps"],
+    "human_interrupt_fork_allowed": false,
+    "learning_trace_is_production_ledger": false,
+    "production_dependencies_found": [],
+    "model_sdk_added": false,
+    "production_agent_loop_created": false,
+    "external_packages_added": [],
+    "migration_target_alignment": "M026—M037 targetRed 已对齐 runtime/recovery/persistence 真源路径；sourceNodeId、observableSemantics 与 disposition 未改变",
+    "composition_change": "仅 contracts artifact SHA 与总 compositionFingerprint 更新；DSH 0.1.0-rc.6、Cordis 4.0.1、root/profile lock、dsh-bridge/runtime plugin/control artifacts、Profile、Provider、patch 与 finalConfig 不变"
+  }
+}

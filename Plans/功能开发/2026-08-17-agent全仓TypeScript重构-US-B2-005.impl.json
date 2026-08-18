@@ -1,0 +1,267 @@
+{
+  "story_id": "US-B2-005",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "tests/test_tool_results.py",
+      "reason": "逐项提取 M044—M047 的 MCP text content、成功 structuredContent/outputSchema、显式错误无伪造 structuredContent 与 shell timeout 不可判定语义"
+    },
+    {
+      "path": "tests/test_tui.py",
+      "reason": "逐项提取 M048—M060 的结果格式、审批/输入/UNKNOWN decision、Team/fullscreen 选项、Unicode、日志捕获、可操作错误与同 thread 恢复语义"
+    },
+    {
+      "path": "tools/registry.py",
+      "reason": "确认旧注册表在执行后、结果进入 Agent 上下文前校验成功 structuredContent，并允许显式 isError 结果省略 structuredContent"
+    },
+    {
+      "path": "tools/file_ops.py",
+      "reason": "确认 read/write/list 的字段、截断、排序、UTF-8 与错误形状；只作 Learning Lab 行为基线，不迁入生产 domain-tools"
+    },
+    {
+      "path": "tools/shell.py",
+      "reason": "确认 shell/time 的结构化字段、输出上限和 timeout 表达为 ToolResponseUnavailable，而不是成功或可自动重试错误"
+    },
+    {
+      "path": "tui.py",
+      "reason": "确认旧 controller 只在 paused 时解释输入并用原 threadId/parentRunId resume；旧 curses 机制由 TS terminal adapter 边界替代，不逐行翻译"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/action.ts",
+      "reason": "发现现有 ActionToolResult 只保留 content/isError，尚未保存 structuredContent 或校验 MCP text blocks；M044 必须在工具结果进入 session 前失败关闭"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/cli.ts",
+      "reason": "确认当前 CLI 只有 run/resume/checkpoints/recover 的 raw JSON 命令，没有结构化 tool 命令、结果格式化、interrupt-aware decision、Team 或交互控制器"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/main.ts",
+      "reason": "确认当前入口无条件 JSON.stringify；交互 TUI 必须独立处理渲染与错误，现有机器可读命令输出保持兼容"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/launcher.ts",
+      "reason": "确认 Learning 子进程环境采用 allowlist 且不传 API key；M060 应锁定这一事实并禁止新增启动前密钥检查"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+      "reason": "确认单 Agent run/resume 已提供 threadId、parentRunId、interrupts、events、warnings 与 outcome，TUI controller 可通过窄 RuntimePort 复用而不修改 Runtime 状态机"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/team-runtime.ts",
+      "reason": "确认 Team runtime 与单 Agent 具有兼容 run/resume/close 表面，但构造时需要注入 TeamGraphPorts；Team CLI 需新增离线默认 ports factory，不能接生产模型或凭证"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "reason": "确认共享 contracts 是无 DSH/Cordis 依赖的稳定边界，适合承载纯 MCP 风格结果/outputSchema 校验；Lab 不应反向依赖 plugins/domain-tools"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "发现 M044—M060 targetRed 仍漂移到不存在的 packages/tool-runtime 与 apps/tui，和已采纳需求矩阵不一致"
+    },
+    {
+      "path": "tests/acceptance/legacy-test-map.spec.ts",
+      "reason": "确认当前精确路径门禁只覆盖 M001—M043，需追加 M044—M060 的真源路径断言"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "确认 ENG-010 要求通用 fs/shell 由生产 DSH Provider 提供，ENG-011 要求 TS CLI/工具语义仅留在隔离 Learning Lab"
+    }
+  ],
+  "verified_upstream_facts": {
+    "accepted_red_targets": "M044 为 labs/runtimes/langgraph-ts/test/tools.spec.ts + plugins/domain-tools/test/output-contract.spec.ts，M045—M047 为 tools.spec.ts，M048—M060 全部为 cli.spec.ts",
+    "tool_boundary": "通用 read_file/write_file/list_directory/run_shell/get_current_time 只能作为 Learning Lab 离线适配器迁写；production domain-tools 不复制 DSH 原生 fs/shell Provider",
+    "result_rule": "MCP 风格显式错误必须是 text content blocks + isError=true 且不得伪造 structuredContent；成功必须具有 structuredContent 并满足该工具 outputSchema",
+    "resume_rule": "TUI controller 只在 pending result 为 paused 时按 interrupt kind 解析下一次输入，并携带相同 threadId 与 paused runId 作为 parentRunId 恢复",
+    "terminal_rule": "旧 curses.wrapper 是 Python 实现细节；M056 已明确由可注入 TS terminal adapter 选型测试替代，Unicode 以完整 JS code point/string 传递",
+    "credential_rule": "Learning launcher 只透传语言、终端和临时目录环境；CLI/TUI 启动不得提前读取或要求 DEEPSEEK_API_KEY"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M044—M060 的 targetRed 校正为已采纳 tools.spec.ts、domain-tools/output-contract.spec.ts 与 cli.spec.ts；不改变 sourceNodeId、observableSemantics 或 disposition",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "增加 M044—M060 精确目标路径断言，防止证据再次漂移到不存在的 packages/tool-runtime 或 apps/tui",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "package.json",
+        "purpose": "把 plugins/domain-tools 加入根 typecheck；现有 test/start 命令保持兼容，不新增生产启动入口",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "vitest.config.ts",
+        "purpose": "把 plugins/**/*.spec.ts 纳入根测试发现范围，确保已采纳的 domain-tools Red 不会被静默跳过",
+        "layer": "Workspace Test Discovery"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "记录新的零外部依赖 @agent/domain-tools workspace importer；实现后显式复核和重冻 production composition",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出纯 TS MCP text content、structured result、outputSchema 子集与失败关闭 validator；不 import DSH/Cordis/文件系统/UI",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "导出 ./tools、./tui、./cli 与 ./team-defaults 学习子路径；不新增模型 SDK、生产 Provider 或终端框架依赖",
+        "layer": "Learning Runtime Package Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/action.ts",
+        "purpose": "将 ActionToolResult 对齐共享 MCP 结果契约，保留 structuredContent；所有成功结果在进入不可信 tool message 前必须由所属 registry/outputSchema 验证，显式错误仍可进入上下文",
+        "layer": "Learning Action Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+        "purpose": "让离线默认 Action ports 复用共享 MCP 结果形状，并公开最小 offline action-port factory 给 Team 默认 ports；不改变已验收的 graph/resume 边",
+        "layer": "Learning Graph Defaults"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/cli.ts",
+        "purpose": "保留既有 raw JSON run/resume/checkpoints/recover，新增 tool 命令解析与 tui/team/fullscreen 参数模型；交互控制器和渲染委托 tui.ts",
+        "layer": "Learning CLI Command Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/main.ts",
+        "purpose": "区分机器可读一次性命令和交互 TUI：前者仍单行 JSON，后者交给 terminal adapter；错误在交互界面内渲染为可操作信息",
+        "layer": "Learning CLI Entrypoint"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "purpose": "在现有真实跨进程 run/resume 回归上形成 M048—M060 Red，覆盖格式、decision、Team/fullscreen、Unicode、日志、错误、同 thread 恢复和无 key 预检",
+        "layer": "Learning CLI Acceptance Test"
+      },
+      {
+        "path": "docs/runbooks/learning-runtime.md",
+        "purpose": "记录 raw CLI、tool、tui、--team、--fullscreen、interrupt decision 和 Learning-only/无生产凭证边界",
+        "layer": "Runbook"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/tool-result.ts",
+        "reason": "定义无运行时框架依赖的 MCP text content/result/outputSchema 子集与失败关闭校验，供 Learning Lab 与未来项目领域工具共同消费，避免 Lab 反向依赖 plugin",
+        "naming_basis": "与 action.ts、learning-run.ts 同属跨模块稳定契约；tool-result 直接描述被验证的边界对象",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/contracts/test/tool-result.spec.ts",
+        "reason": "锁定成功/错误形状、required/type/enum/const/additionalProperties 与未知 schema keyword 失败关闭，不把 validator 正确性只寄托在消费者测试",
+        "naming_basis": "与 contracts/src/tool-result.ts 同名",
+        "layer": "Contract Unit Test"
+      },
+      {
+        "path": "plugins/domain-tools/package.json",
+        "reason": "建立未来项目特有工具的 workspace 边界，仅依赖 @agent/contracts；本 Story 不注册任何通用 fs/shell/time 工具",
+        "naming_basis": "采用架构已批准 plugins/domain-tools 路径",
+        "layer": "Domain Tool Plugin Boundary"
+      },
+      {
+        "path": "plugins/domain-tools/tsconfig.json",
+        "reason": "让 domain-tools 进入独立严格 typecheck，避免只靠根 Vitest 转译掩盖类型问题",
+        "naming_basis": "遵循现有 plugins/runtime-composition workspace 结构",
+        "layer": "Domain Tool Plugin Build"
+      },
+      {
+        "path": "plugins/domain-tools/src/index.ts",
+        "reason": "提供项目领域工具定义包装器：执行后统一调用共享 outputSchema validator；不实现、不代理通用文件或 shell 工具，也不接 Safety Executor",
+        "naming_basis": "插件公开入口使用 src/index.ts，与现有 plugin 一致",
+        "layer": "Domain Tool Plugin"
+      },
+      {
+        "path": "plugins/domain-tools/test/output-contract.spec.ts",
+        "reason": "形成 M044 的生产边界侧 Red，证明看似成功但缺少 required 字段的 structuredContent 会被拒绝",
+        "naming_basis": "使用已采纳需求矩阵的精确 targetRed",
+        "layer": "Domain Tool Contract Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/tools.ts",
+        "reason": "在隔离 Learning Lab 内实现五个旧本地工具的离线 registry、outputSchema、UTF-8/截断/排序与 shell timeout unknown 语义；所有成功结果执行后立即验证",
+        "naming_basis": "与 graph/action/cli 并列且明确属于 langgraph-ts Learning package，不占用 production plugins/domain-tools",
+        "layer": "Learning Offline Tool Adapter"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/tools.spec.ts",
+        "reason": "逐项形成 M044—M047 Red：非法成功拒绝、五工具成功 schema、显式错误 MCP 形状、timeout 非成功",
+        "naming_basis": "使用已采纳需求矩阵的精确 targetRed",
+        "layer": "Learning Tool Acceptance Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/team-defaults.ts",
+        "reason": "异步加载四角色 Definition 并组装无模型、无凭证、内存型 memory 的 TeamGraphPorts，供 --team CLI 实际启动；继续复用 Action 状态机而非创建第二执行器",
+        "naming_basis": "TeamLearningRuntime 保持注入式构造，默认学习装配单列 team-defaults，避免污染已验收 team-runtime.ts",
+        "layer": "Learning Team Offline Composition"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/tui.ts",
+        "reason": "实现结果 formatter、interrupt-aware decision parser、pending controller、line/ANSI-fullscreen TerminalAdapter 与提交期日志捕获；controller 只依赖兼容 run/resume/close 的窄 RuntimePort",
+        "naming_basis": "沿用批准的目标工程落点 labs/runtimes/langgraph-ts/src/tui.ts，但以 TS adapter 替代 Python curses",
+        "layer": "Learning Terminal Application"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Learning CLI/TUI → narrow RuntimePort(single|team) → existing LearningRuntime/TeamLearningRuntime → native LangGraph checkpoint；Learning tool command → LearningToolRegistry → shared pure tool-result contract；future project domain tool → domain-tools wrapper → same contract。production DSH native Provider/Safety Executor/Profile 不参与",
+    "dependency_rule": "packages/contracts 只定义纯数据与 outputSchema 子集校验，不依赖 plugin/Lab/DSH/Cordis/UI。plugins/domain-tools 只依赖 contracts，且本 Story 禁止实现 read/write/list/shell/time。Learning Lab 可依赖 contracts 与自身 offline fixtures，但不得被 production package/Profile/Bundle import。TUI controller 不持有 graph state，只保存最后一个 paused LearningRunResult；下一次输入按 interrupt.kind 转换后用原 threadId 和 runId 恢复。raw JSON CLI 输出保持向后兼容，交互渲染不混入 stdout JSON 协议。fullscreen 只通过可注入 ANSI TerminalAdapter 操作终端，提交日志捕获必须 try/finally 恢复 console sink。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "labs/runtimes/langgraph-ts/test/tools.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/tools.spec.ts"
+      },
+      {
+        "path": "plugins/domain-tools/test/output-contract.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/domain-tools/test/output-contract.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/cli.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/tool-result.spec.ts labs/runtimes/langgraph-ts/test/act.spec.ts labs/runtimes/langgraph-ts/test/runtime.spec.ts labs/runtimes/langgraph-ts/test/team-runtime.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:freeze && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify"
+    ]
+  },
+  "risks": [
+    "若把五个通用本地工具放进 plugins/domain-tools，会复制生产 DSH 原生 Provider 并违反 ENG-010；它们只能存在于 Learning Lab，domain-tools 本 Story 只验证未来项目特有工具的结果边界",
+    "若 Lab 直接 import plugins/domain-tools，会形成 Learning Runtime 对 production plugin 的反向依赖；共享结果契约必须下沉 packages/contracts，两侧只依赖 contract",
+    "outputSchema validator 若静默忽略未知 keyword 会把不支持的 schema 当成成功；支持子集外的 keyword 必须明确失败关闭，不能伪装成完整 Draft 2020-12",
+    "MCP 显式错误不应强制 structuredContent；否则原本可观察的 file-not-found 会被二次包装为 contract failure。只有 isError=false 才要求并校验 structuredContent",
+    "shell timeout 发生时无法可靠判断子进程副作用，必须映射为 ActionExecutionUnknown/不可用，禁止返回 isError=false 或自动重试",
+    "Node console 是进程全局对象；fullscreen 日志捕获若没有单提交串行化和 try/finally 恢复，会污染后续测试或 raw JSON stdout",
+    "Unicode 处理若按 UTF-16 code unit 截断会拆开代理对；输入缓冲与显示宽度必须按完整 code point/string 处理，不能用字节数切中文",
+    "Controller 若自行生成新 thread 或只保存 decision 不保存 paused result，会破坏 parentRunId/checkpoint lineage；pending result 必须是唯一恢复真源",
+    "Team CLI 若为了可运行而接入真实模型/API key，会违反 M060 与 ENG-011；默认 Team ports 必须完全离线且能力可注入",
+    "新增 workspace package 与 contracts artifact 会改变 root lock/composition 指纹；必须显式重冻并证明 DSH rc.6、Cordis、Profile、Provider、finalConfig 与 production artifacts 除 contracts/lock 外不漂移"
+  ],
+  "stop_conditions": [
+    "M044—M060 的 targetRed 无法和已采纳需求矩阵逐项一致，或必须修改 sourceNodeId、observableSemantics/disposition 才能通过",
+    "实现通用 read/write/list/shell/time 必须进入 production plugins/domain-tools、DSH Profile、Bundle 或 Safety Executor 才能完成测试",
+    "Learning Lab 必须反向依赖 plugins/domain-tools，或 production package/Profile/Bundle 必须 import labs/runtimes/langgraph-ts 才能提供 CLI",
+    "成功结果可以在未校验 structuredContent/outputSchema 时进入 Action session，或显式 isError 结果被强制伪造 structuredContent",
+    "shell timeout 被包装成成功、普通确定性错误或自动重试，而不是不可判定/unknown",
+    "TUI 恢复需要新建 thread、重新 run task、丢失 parentRunId，或无法证明使用 paused result 的原 interrupt kind 解释用户输入",
+    "--team 或 --fullscreen 只能出现在 help 文本，实际启动仍走单 Agent/line adapter，或启动前要求 API key",
+    "fullscreen 日志捕获不能保证异常后恢复全局 console/stdout，可能污染 raw JSON CLI 协议",
+    "需要新增终端框架、模型 SDK、DSH/Cordis 版本、生产凭证或 live production edge 才能满足 M044—M060",
+    "任一目标只能由静态扫描或 mock 最终对象证明，不能通过真实 tool registry、controller/adapter 或跨进程 CLI 形成 Red→Green"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

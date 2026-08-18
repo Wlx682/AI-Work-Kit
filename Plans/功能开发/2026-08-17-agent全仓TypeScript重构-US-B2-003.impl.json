@@ -1,0 +1,241 @@
+{
+  "story_id": "US-B2-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "tests/test_runtime.py",
+      "reason": "逐项提取 M026—M037 的规划失败结构化结果、input/approval/unknown 中断、trace/checkpoint、SQLite 新实例恢复、精确 proposal、工具输出契约、replay/fork 与 warning 语义"
+    },
+    {
+      "path": "orchestration/langgraph.py",
+      "reason": "确认旧单 Agent 图的 plan→predict→action→human interrupt→reflect→memory 节点与 checkpoint/recover 行为；只作可观察基线，不复制 Python Adapter"
+    },
+    {
+      "path": "core/models.py",
+      "reason": "确认旧 RunResult/RunEvent/CheckpointInfo 字段和 recovery patch 只允许 steps 的安全边界"
+    },
+    {
+      "path": "infrastructure/traces.py",
+      "reason": "确认 normalized trace 以 runId 原子持久化、可读取，写入失败只追加 warning"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+      "reason": "确认当前仅有 normalize→固定 input interrupt→complete 的演示图，尚未消费 Planning/Action 或表达审批、unknown、replan 和失败边"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+      "reason": "确认已有官方 SqliteSaver、run/resume、跨实例 checkpoint 与 transcript 基础，但无结构化失败、事件序列、history、recover/fork 或 trace store"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/action.ts",
+      "reason": "复用已验收的 Learning Action session、审批/input/unknown 恢复和不重放语义，并识别真实工具响应仍需运行时输出契约校验"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/planning.ts",
+      "reason": "复用已验收的注入 JsonChatPort、步骤 Schema 与执行能力不扩张边界，不在 Runtime 重写规划"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/transcript.ts",
+      "reason": "确认现有 JSONL 只记录 paused/completed 摘要，不能替代可按 runId 读取的版本化完整 RunResult trace"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+      "reason": "保留 B1 已证明的新实例 SQLite 同 thread 恢复与离线 transcript 回归，扩展时不得退化"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+      "reason": "确认现有两个真实进程 run/resume smoke，可扩展 checkpoints/recover 命令形成可演示纵向能力"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "发现 M027—M030、M032—M033、M035—M037 仍指向 resume/checkpoints/tool-contract/telemetry 等旧路径，与已采纳需求矩阵的 runtime/recovery/persistence 落点漂移"
+    },
+    {
+      "path": "packages/contracts/src/index.ts",
+      "reason": "确认共享 contracts 已承载 Learning Action 持久契约，新的跨进程 RunResult/trace 契约应继续版本化且不含 Runtime 执行逻辑"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认修改 contracts 公共入口会改变 production composition 的 contracts artifact 哈希，必须显式审核并重冻"
+    }
+  ],
+  "verified_upstream_facts": {
+    "langgraph_version": "1.4.10",
+    "checkpoint_history_api": "compiled graph exposes async getStateHistory(config) returning StateSnapshot values/next/tasks/config",
+    "state_fork_api": "compiled graph exposes async updateState(config, values, asNode) returning a checkpoint config",
+    "resume_api": "Command({ resume, update }) resumes the same interrupted node under the same thread_id",
+    "sqlite_checkpointer": "existing SqliteSaver 1.0.3 persists graph checkpoints and supports fresh-process state retrieval"
+  },
+  "target_files": {
+    "modify": [
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M026—M037 targetRed 精确对齐已采纳矩阵：runtime.spec.ts、recovery.spec.ts、persistence.spec.ts；不改变 sourceNodeId、observableSemantics 或 disposition",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "增加 M026—M037 目标路径断言，防止迁移证据再次漂回旧 resume/checkpoints/tool-contract/telemetry 文件名",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 LearningRunResult、RunEvent、CheckpointInfo、RecoveryMode 与 schema version 类型；只描述可序列化结果，不导出 graph/checkpointer/trace 实现",
+        "layer": "Shared Contracts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "增加 ./trace 与 ./recovery 子路径导出；依赖集合不新增 DSH、Cordis、模型 SDK、生产凭证或外部包",
+        "layer": "Learning Runtime Package Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/action.ts",
+        "purpose": "对注入 execute/validateManualResult 返回值执行运行时 ToolResult contract 校验；非法成功响应抛出具名契约错误，由 Runtime 收敛为结构化失败，不映射为成功",
+        "layer": "Learning Action Boundary"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/graph.ts",
+        "purpose": "将一次性演示图扩为注入 ports 的单 Agent StateGraph：plan、predict/adjust、prepare_action、interrupt_for_human、reflect/replan、complete/fail 显式节点与边；session/interruption 在节点间可检查点化",
+        "layer": "Learning Runtime Graph"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/runtime.ts",
+        "purpose": "封装 run/resume/checkpointHistory/recover，流式归一化有序事件，捕获节点异常为 LearningRunResult，持久 trace，返回 parent/recovered/mode/stateHash；resume 使用 Command 且不得再次 advance 已提交 Action",
+        "layer": "Learning Runtime Orchestration"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/cli.ts",
+        "purpose": "保留 run/resume，并增加 checkpoints 与 recover(replay/fork --steps-json) 命令；所有命令继续只进入隔离 LearningRuntime",
+        "layer": "Learning CLI"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/transcript.ts",
+        "purpose": "扩展离线摘要事件以区分 failed/recovered，同时保持它与完整 trace、DSH Session Log、生产 Ledger 明确分离",
+        "layer": "Learning Evidence"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts",
+        "purpose": "从演示 interrupt 测试升级为 M026—M030、M032、M035—M037 的具名 Red：结构化失败、有序 trace/checkpoints、input/unknown/approval 精确恢复、不重放、输出契约和 trace warning",
+        "layer": "Learning Runtime Acceptance Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime-resume.spec.ts",
+        "purpose": "适配完整单 Agent graph API，并保留 B1 的 fresh runtime SQLite resume、同 thread/不同 run、checkpoint lineage 和 transcript 回归",
+        "layer": "Learning Persistence Regression"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "purpose": "扩展真实进程 smoke 覆盖 run→resume 与 run→checkpoints→recover，证明 CLI 用户能力不是仅同进程单测",
+        "layer": "Learning CLI Integration Test"
+      },
+      {
+        "path": "docs/runbooks/learning-runtime.md",
+        "purpose": "记录单 Agent run/resume/checkpoints/replay/fork 命令、只允许 steps patch、审批态禁止 fork、trace/checkpoint 位置与 Learning-only 限制",
+        "layer": "Runbook"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "新增 Learning Run contracts 后，显式审核 contracts artifact/root lock/DSH/Cordis/Profile/Provider/finalConfig 差异并重冻；不得由 verify 静默改写",
+        "layer": "Production Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/learning-run.ts",
+        "reason": "定义版本化、可序列化 LearningRunResult、RunEvent、CheckpointInfo、warning/interrupt/recovery lineage 与 stateHash 契约",
+        "naming_basis": "M026—M037 跨进程 trace/recovery 需要稳定共享类型，且用 learning 前缀隔离生产 DSH Run/Control 事实",
+        "layer": "Shared Contracts"
+      },
+      {
+        "path": "packages/contracts/schemas/learning-run-result.v1.json",
+        "reason": "约束 paused/completed/failed 判别、事件序号、thread/run lineage、recoveryMode 与 warnings，防止未知/失败状态映射成功",
+        "naming_basis": "遵循 ENG-008 的持久化/跨版本 JSON Schema 要求",
+        "layer": "Persistent Contract"
+      },
+      {
+        "path": "packages/contracts/test/learning-run.spec.ts",
+        "reason": "验证 Schema 必填、状态闭集、paused 必有 interrupts、failed 必有 error、recovery lineage 与事件序号约束",
+        "naming_basis": "为 Runtime trace 提供独立契约 Red，避免 runtime test 自证序列化格式",
+        "layer": "Contract Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/trace.ts",
+        "reason": "以注入式 LearningTraceStore port 和本地 JSON 实现按 runId 原子保存/读取完整版本化 RunResult；写失败由 Runtime 转为 warning",
+        "naming_basis": "区别现有 transcript 摘要与 DSH Session Log，直接承载 M029/M037",
+        "layer": "Learning Evidence Store"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/recovery.ts",
+        "reason": "集中校验 checkpoint 选择与 fork patch：唯一允许 steps 非空字符串列表；禁止 pendingInterruption/executionSession/results/actionEvents 等保护字段，且任一 human interrupt checkpoint 禁止 fork",
+        "naming_basis": "直接承载 M031/M033，避免安全规则散落在 CLI/Runtime",
+        "layer": "Learning Recovery Policy"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/recovery.spec.ts",
+        "reason": "以具名 Red 覆盖 M031/M033：危险 patch/中断态 fork 被拒绝；选定安全 checkpoint 可 replay 或 steps-only fork，并保留 lineage/stateHash",
+        "naming_basis": "采用已采纳需求矩阵 recovery.spec.ts 真源路径",
+        "layer": "Learning Recovery Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/persistence.spec.ts",
+        "reason": "以两个真实 LearningRuntime 实例和同一 SQLite 文件覆盖 M034，证明关闭旧实例后仍恢复精确 session/proposal/thread/checkpoint",
+        "naming_basis": "采用已采纳需求矩阵 persistence.spec.ts 真源路径",
+        "layer": "Learning Persistence Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Learning CLI → LearningRuntime(run/resume/history/recover) → native LangGraph.js StateGraph + SqliteSaver → injected Planning/Prediction/Action/Review ports → versioned RunResult trace + offline transcript；shared contracts 只承载序列化结果，production DSH/Control Ledger 完全不参与",
+    "dependency_rule": "graph.ts 只编排已注入 ports，不读取生产配置或直接调用模型 SDK；runtime.ts 只管理 Learning graph/checkpointer/trace，不 import dsh-bridge、Cordis、Profile/Bundle、生产凭证或 Safety Executor。resume 只能用 Command 恢复保存的 pending session/interruption，不能重新创建 Action；fork 只允许安全 checkpoint 的 steps patch，任一审批/input/unknown 中断态禁止 fork。trace/transcript 是 Learning 证据，不得伪造 DSH Session Log、ControlFact 或现实效果成功。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/learning-run.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/learning-run.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/runtime.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/runtime.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/recovery.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/recovery.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/persistence.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/persistence.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/cli.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/cli.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "LangGraph resume 会从 interrupt 所在节点重入；若现实工具执行与 interrupt 放在同一节点，节点重放可能重复 Action。设计必须让 advance Action 在前置节点完成并 checkpoint，interrupt 节点只消费人工 resolution",
+    "仅限制 patch key 仍不足以防绕审批：在含 pendingInterruption 的 checkpoint 上把 steps 作为 asNode=plan 更新也会改变后继边；中断态 checkpoint 必须整体禁止 fork",
+    "replay 可能重新执行所选 checkpoint 之后的 Learning Action；只能用于无生产凭证的隔离 Lab，并在 CLI/runbook 明示，不得宣称具备生产现实效果幂等",
+    "RunResult trace 与 transcript 若写入失败不应覆盖业务完成；Runtime 必须返回 warning，但 SQLite checkpoint 失败属于业务恢复能力失败，不能降级为 warning",
+    "工具 port 的 TypeScript 类型不能替代运行时校验；非法 success payload 必须在进入 graph state 前变成结构化 contract failure",
+    "stateHash 必须基于稳定 canonical JSON，排除 runId/时间等非确定字段；否则同一 checkpoint replay 会产生伪漂移",
+    "M026—M037 旧 migration target 与需求矩阵漂移；只修正 targetRed，禁止改变 60 条 sourceNodeId、observableSemantics 或 disposition",
+    "新增 learning-run contract 修改 contracts 公共入口和 production composition artifact；必须确认 DSH/Cordis/Profile/Provider/finalConfig 差异后显式重冻"
+  ],
+  "stop_conditions": [
+    "恢复审批/input/unknown 必须重新调用 execute/advance 才能继续，无法证明 Action 不重放",
+    "无法阻止对 pendingInterruption、executionSession、results、actionEvents、failure 或 outcome 的 recovery patch",
+    "SQLite 新实例只能读取摘要 transcript，不能恢复框架 checkpoint 中的精确 session/proposal",
+    "trace 写失败会让已完成业务结果变成 failed，或 checkpoint 写失败被错误降级为 warning",
+    "需要引入 DSH/Cordis/生产凭证/模型 SDK或 B4 Safety Executor 才能完成 M026—M037",
+    "必须提前实现 B2-004 Team Graph、完整 Memory/self-improve 迁移或生产 Control Ledger 才能让本 Story验收",
+    "M026—M037 任一语义只能由静态扫描或自行构造最终结果证明，不能通过真实 StateGraph/SqliteSaver/trace 行为形成 Red→Green"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

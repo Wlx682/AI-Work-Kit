@@ -1,0 +1,322 @@
+{
+  "story_id": "US-B2-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "core/definition.py",
+      "reason": "提取 M012—M016 的严格字段、语义版本、Prompt 上下文、未知工具失败关闭与默认资产加载语义；只作行为基线，不逐行翻译"
+    },
+    {
+      "path": "infrastructure/llm.py",
+      "reason": "提取 M017—M020 的外层 JSON fence 解包、内部 fence 保留、恰好一次修复和明确失败语义"
+    },
+    {
+      "path": "capabilities/planning.py",
+      "reason": "提取 M021—M023 的真实执行能力上下文、计划步骤运行时校验与风险调整不得扩权语义"
+    },
+    {
+      "path": "roles/base.py",
+      "reason": "确认角色实例各自持有独立 AgentDefinition，默认构造按 role id 加载资产"
+    },
+    {
+      "path": "roles/planner.py",
+      "reason": "确认 Planner 把自身 definition 与 Executor 工具边界传入共享 planning capability"
+    },
+    {
+      "path": "roles/predictor.py",
+      "reason": "确认 Predictor 把自身 definition 传入共享风险预测 capability"
+    },
+    {
+      "path": "roles/executor.py",
+      "reason": "确认 Executor 把自身 definition 传入共享 Action capability，而不在角色包装层复制执行逻辑"
+    },
+    {
+      "path": "roles/reviewer.py",
+      "reason": "确认 Reviewer 只向共享评审 capability 传入自身验收边界"
+    },
+    {
+      "path": "tests/test_agent_definition.py",
+      "reason": "逐项核对 M012—M016 的可观察输入、错误与默认资产断言"
+    },
+    {
+      "path": "tests/test_llm.py",
+      "reason": "逐项核对 M017—M020 的 fence 和一次修复断言"
+    },
+    {
+      "path": "tests/test_planning.py",
+      "reason": "逐项核对 M021—M023 的 capability prompt、非字符串步骤拒绝和风险调整边界"
+    },
+    {
+      "path": "tests/test_role_definitions.py",
+      "reason": "逐项核对 M024—M025 的默认角色资产隔离和 definition 透传断言"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "发现 M012—M025 仍含 packages/llm-adapter、packages/planning 与旧测试文件名，和已采纳需求矩阵的 Learning Lab 落点漂移"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/package.json",
+      "reason": "确认 Learning Lab 目前只依赖 contracts/LangGraph/checkpointer，可依赖纯 TS agent-definition，但不得引入 DSH、Cordis、模型 SDK或生产凭证"
+    },
+    {
+      "path": "tests/integration/learning-runtime-isolation.spec.ts",
+      "reason": "确认生产包不得反向依赖 Lab，且 Lab 不得依赖 DSH/Cordis/Profile；共享 agent-definition 必须保持 Runtime 中立"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认新增 workspace 包与 Lab 依赖会改变根 pnpm lock 哈希，必须显式审核并重冻 production composition lock"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "把 @agent/agent-definition 纳入根 typecheck；不改变 start:dsh 与 start:langgraph 的生产/学习入口边界",
+        "layer": "Build Governance"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "登记新增 workspace package 与 Learning Lab 的 workspace 依赖，不引入模型 SDK、DSH/Cordis 新版本或未审核安装脚本",
+        "layer": "Dependency Evidence"
+      },
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M012—M025 的 targetRed 对齐已采纳需求矩阵：Definition/Role 资产在 packages/agent-definition，JSON/Planning/Role 运行行为在 LangGraph Learning Lab；不改 sourceNodeId、observableSemantics 或 disposition",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "增加 M012—M025 精确目标路径断言，防止迁移证据再次漂回 packages/llm-adapter、packages/planning 或第二生产 Runtime",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/package.json",
+        "purpose": "只增加 @agent/agent-definition workspace 依赖和 ./llm-json、./planning、./roles 子路径导出；不加入模型 SDK、DSH、Cordis 或生产包",
+        "layer": "Learning Runtime Package Boundary"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "新增 workspace 包与 Lab 依赖改变根 lock 哈希后，显式审核 DSH rc.6、Cordis 4.0.1、Profile、Bundle、Provider 与本地生产 artifact 均未漂移，再重冻组合总指纹",
+        "layer": "Production Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/agent-definition/package.json",
+        "reason": "建立两个 Runtime 可共享、无框架依赖的 Definition/Prompt 资产包并公开 definition、allowlist 与 role loader API",
+        "naming_basis": "对应目标架构 packages/agent-definition 和 M012—M016/M024",
+        "layer": "Shared Domain Package"
+      },
+      {
+        "path": "packages/agent-definition/tsconfig.json",
+        "reason": "以根严格 TS 配置独立检查共享 Definition 包源码和测试",
+        "naming_basis": "沿用现有 packages/* 的 workspace 结构",
+        "layer": "Build"
+      },
+      {
+        "path": "packages/agent-definition/src/definition.ts",
+        "reason": "定义严格 AgentDefinition 类型、MAJOR.MINOR.PATCH 校验、简单文件名保护、JSON/Prompt 资产加载与 promptContext 渲染；未知/缺失字段失败关闭",
+        "naming_basis": "直接承载 M012、M014、M015 的共享领域语义",
+        "layer": "Shared Domain"
+      },
+      {
+        "path": "packages/agent-definition/src/tool-allowlist.ts",
+        "reason": "校验 Definition 外部工具均属于注入的已注册集合，并在运行时工具视图中始终追加虚拟 request_user_input；不自行注册或执行工具",
+        "naming_basis": "直接承载 M013、M016，并保持 ENG-010 Provider 边界",
+        "layer": "Shared Domain"
+      },
+      {
+        "path": "packages/agent-definition/src/roles.ts",
+        "reason": "声明 general-assistant/planner/predictor/executor/reviewer 的固定 role id，并按 id 加载独立默认定义",
+        "naming_basis": "直接承载 M024 的共享默认角色资产语义",
+        "layer": "Shared Domain"
+      },
+      {
+        "path": "packages/agent-definition/src/index.ts",
+        "reason": "集中导出纯 TS Definition、Prompt、allowlist 与 role loader API，不导出 Runtime、LLM 或工具执行器",
+        "naming_basis": "沿用 workspace package 公共入口约定",
+        "layer": "Shared Domain API"
+      },
+      {
+        "path": "packages/agent-definition/schemas/agent-definition.v1.json",
+        "reason": "固化共享 JSON 资产的严格字段、字符串列表和 semver 格式；测试证明运行时校验与 Schema 关键约束一致",
+        "naming_basis": "Definition 是跨 Runtime、跨版本的持久资产，遵循 ENG-008 版本化 Schema",
+        "layer": "Persistent Contract"
+      },
+      {
+        "path": "packages/agent-definition/assets/definitions/general-assistant.json",
+        "reason": "迁写默认通用助手策略资产并保留 policy version、工具 allowlist 与 acceptance",
+        "naming_basis": "对应旧 definitions/general-assistant.json 和 M012/M014",
+        "layer": "Shared Policy Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/definitions/planner.json",
+        "reason": "迁写 Planner 独立默认策略资产",
+        "naming_basis": "对应 M024 planner role",
+        "layer": "Shared Policy Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/definitions/predictor.json",
+        "reason": "迁写 Predictor 独立默认策略资产",
+        "naming_basis": "对应 M024 predictor role",
+        "layer": "Shared Policy Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/definitions/executor.json",
+        "reason": "迁写 Executor 独立默认策略及执行工具 allowlist 资产",
+        "naming_basis": "对应 M013/M024 executor role",
+        "layer": "Shared Policy Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/definitions/reviewer.json",
+        "reason": "迁写 Reviewer 独立默认策略及 acceptance 资产",
+        "naming_basis": "对应 M024 reviewer role",
+        "layer": "Shared Policy Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/prompts/general-assistant.md",
+        "reason": "迁写通用助手经评审的 Prompt 文本，供 promptContext 可重放加载",
+        "naming_basis": "对应默认 definition 的 prompt 引用",
+        "layer": "Shared Prompt Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/prompts/planner.md",
+        "reason": "迁写 Planner 独立 Prompt 文本",
+        "naming_basis": "对应 planner definition",
+        "layer": "Shared Prompt Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/prompts/predictor.md",
+        "reason": "迁写 Predictor 独立 Prompt 文本",
+        "naming_basis": "对应 predictor definition",
+        "layer": "Shared Prompt Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/prompts/executor.md",
+        "reason": "迁写 Executor 独立 Prompt 文本及不扩权约束",
+        "naming_basis": "对应 executor definition",
+        "layer": "Shared Prompt Asset"
+      },
+      {
+        "path": "packages/agent-definition/assets/prompts/reviewer.md",
+        "reason": "迁写 Reviewer 独立 Prompt 文本",
+        "naming_basis": "对应 reviewer definition",
+        "layer": "Shared Prompt Asset"
+      },
+      {
+        "path": "packages/agent-definition/test/definition.spec.ts",
+        "reason": "以具名 Red 覆盖 M012、M014、M015，并验证严格字段、Schema 关键约束和 Prompt 资产加载",
+        "naming_basis": "采用已采纳需求矩阵的 definition.spec.ts 真源路径",
+        "layer": "Shared Domain Test"
+      },
+      {
+        "path": "packages/agent-definition/test/tool-allowlist.spec.ts",
+        "reason": "以具名 Red 覆盖 M013、M016，验证未知外部工具失败关闭且 request_user_input 始终可用但无现实 action 权限",
+        "naming_basis": "采用已采纳需求矩阵的 tool-allowlist.spec.ts 真源路径",
+        "layer": "Shared Domain Test"
+      },
+      {
+        "path": "packages/agent-definition/test/roles.spec.ts",
+        "reason": "以具名 Red 覆盖 M024，验证四个默认角色 id、Prompt、acceptance 与对象实例互不复用",
+        "naming_basis": "采用已采纳需求矩阵的 roles.spec.ts 真源路径",
+        "layer": "Shared Domain Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/llm-json.ts",
+        "reason": "实现注入 ChatPort 的纯结构化输出边界：仅剥离包裹整个响应的 JSON fence、保留字符串内部 fence、首次解析失败后恰好修复一次并返回明确错误",
+        "naming_basis": "M017—M020 只属于 Learning Runtime 行为迁写，不引入模型 SDK或 packages/llm-adapter",
+        "layer": "Learning Runtime Adapter"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/planning.ts",
+        "reason": "用注入 JsonChatPort 生成/调整计划，显式携带不可扩张的执行工具集合，并在写入 graph state 前拒绝非字符串、空白或超量步骤",
+        "naming_basis": "M021—M023 的运行语义属于 Learning Runtime",
+        "layer": "Learning Runtime Capability"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/src/roles.ts",
+        "reason": "实现 Planner/Predictor/Executor/Reviewer 的薄角色包装与可注入共享 capability ports；每次调用显式透传该角色自身 definition，不复制 planning/action/review 逻辑",
+        "naming_basis": "对应 M025，并为后续 Team Learning Graph Story 提供无路由职责的角色边界",
+        "layer": "Learning Runtime Roles"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/llm-json.spec.ts",
+        "reason": "以 4 个具名 Red 逐项覆盖 M017—M020，并用调用计数证明修复最多一次",
+        "naming_basis": "采用已采纳需求矩阵的 llm-json.spec.ts 真源路径",
+        "layer": "Learning Runtime Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/planning.spec.ts",
+        "reason": "以 3 个具名 Red 覆盖 M021—M023，并证明同一 capability boundary 被初始规划和风险调整共同使用",
+        "naming_basis": "采用已采纳需求矩阵的 planning.spec.ts 真源路径",
+        "layer": "Learning Runtime Test"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/roles.spec.ts",
+        "reason": "以具名 Red 覆盖 M025，并用四组 capability spies 证明角色透传自身 definition、Executor allowlist 与 Reviewer acceptance",
+        "naming_basis": "采用已采纳需求矩阵的 roles.spec.ts 真源路径",
+        "layer": "Learning Runtime Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "versioned Definition JSON + Prompt assets → pure @agent/agent-definition loader/allowlist → injected Learning llm-json/planning/role capability ports → future LangGraph graph consumers；生产 DSH 只能在后续插件装配中消费同一共享包，不由本 Story 新建 Agent Loop",
+    "dependency_rule": "@agent/agent-definition 只依赖 Node 标准库和自身资产，不依赖 DSH、Cordis、LangGraph、模型 SDK、数据库、UI 或工具执行器。LangGraph Learning Lab 可以依赖 agent-definition 和 contracts，但不得依赖 dsh-bridge/Profile/Bundle/生产凭证。llm-json 必须使用注入 ChatPort；planning 必须将注册执行工具视为穷尽且不可扩张集合；roles 只持 definition 并委托注入 capability，不承担路由、重试或 Team Graph 编排。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/agent-definition/test/definition.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/agent-definition/test/definition.spec.ts"
+      },
+      {
+        "path": "packages/agent-definition/test/tool-allowlist.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/agent-definition/test/tool-allowlist.spec.ts"
+      },
+      {
+        "path": "packages/agent-definition/test/roles.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/agent-definition/test/roles.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/llm-json.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/llm-json.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/planning.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/planning.spec.ts"
+      },
+      {
+        "path": "labs/runtimes/langgraph-ts/test/roles.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/runtimes/langgraph-ts/test/roles.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "把 llm-json、planning 或 roles 建成生产 packages 并接入 launcher，会模糊 DSH 唯一生产 Agent Loop 与 Learning 行为迁写边界，必须停止",
+    "共享 Definition 若直接 import DSH/Cordis 工具注册表会违反 ENG-006；可用工具集合必须由 Runtime 适配层注入",
+    "request_user_input 是虚拟交互能力，只能始终出现在模型工具视图，不能获得现实 actionId 或绕过后续 Safety 边界",
+    "仅按响应中任意 Markdown fence 截断会破坏 JSON 字符串；只能剥离完整包裹响应的外层空/json fence",
+    "JSON 修复超过一次会造成隐藏重试与语义漂移；测试必须以 port 调用计数证明初次失败后最多再调用一次",
+    "风险调整若重新从模型输出推断工具集合会扩权；初始规划和调整必须显式复用同一只读 executionTools",
+    "角色包装若复制 planning/action/review 实现会形成分叉；它只持 definition 并透传给共享 capability port",
+    "现有 migration map 的 packages/llm-adapter、packages/planning 与旧 definition 测试路径已漂移；只修正 targetRed，禁止改变 60 条源测试、语义或 disposition",
+    "新增 workspace package 与 Lab workspace 依赖会改变 root pnpm-lock 哈希；必须确认 DSH/Cordis/Profile/Bundle/Provider 不变后显式重冻 production composition"
+  ],
+  "stop_conditions": [
+    "需要引入模型 SDK、联网调用或生产凭证才能验证 M017—M023",
+    "需要让 @agent/agent-definition import DSH、Cordis、LangGraph 或某个 Runtime 工具注册表才能加载/校验资产",
+    "无法用真实 Red 证明未知工具失败关闭、非 semver 失败、非字符串步骤不入 graph state、修复最多一次或风险调整不扩权",
+    "为了验证角色语义必须提前实现 B2-004 Team Graph 路由、B2-003 完整会话或 B4 Safety Executor",
+    "新增 workspace 依赖导致 DSH rc.6/Cordis 4.0.1 漂移、出现未审核 install script，或组合重冻后真实 DSH smoke 失败",
+    "M012—M025 任一迁移只能靠注释、静态路径或 mock 自己验证自己，不能形成可观察行为断言"
+  ],
+  "blocked_questions": [],
+  "confirmed": true,
+  "confirmed_by": "用户：在 US-B2-002 四项落点门禁摘要后回复‘继续’",
+  "confirmed_at": "2026-08-17"
+}

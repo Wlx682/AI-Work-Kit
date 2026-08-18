@@ -67,17 +67,23 @@ JSON 真理源：`story_index`。所有故事均为纵向能力；共享底座�
 
 Scope 与故事点已由用户确认；`story-scope` 机械门禁通过后进入首个 Story 的 implementation-design，仍不得跳过 Red 测试直接开发。
 
-**Scope 语义**：14 个 Story 全部属于已确认的 Epic Scope。`US-B0-001`、`US-B1-001` 与 `US-B1-002` 已完成并退出当前 implementation Scope；用户在 US-B1-002 完成后回复“继续任务”，因此当前只激活依赖已满足的 `US-B2-001`。其余 10 个未完成 Story 保持 `sprint_scope=false`，不因机械门禁误判为最终集成阶段而一次性扩张。
+**Scope 语义**：14 个 Story 全部属于已确认的 Epic Scope。前 10 个 Story（截至 `US-B3-002`）已完成；当前滚动 Scope 仍只记录刚完成的 `US-B3-002`，等待用户再次确认后才切换下一 Story。其余 4 个未完成 Story 保持 `sprint_scope=false`，不因机械门禁误判为最终集成阶段而一次性扩张。
 
 ## 五、实现落点设计
 
-当前 implementation Scope 为 `US-B2-001`：迁写 Action、审批、拒绝、unknown 与人工恢复语义，覆盖 `M001—M011`；`US-B1-002` 已完成并满足前置条件。具体文件落点、依赖方向与 Red 测试位置由本 Story 的 implementation-design 确认。
+当前唯一滚动 Scope `US-B3-002` 已完成并提交；下一 Story 尚未激活，不进入最终集成测试。
 
 | Story | 实现落点 | 关键边界 | 状态 |
 |---|---|---|---|
 | US-B1-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B1-001.impl.json` | 不 fork DSH；`dsh-bridge + Cordis plugin + Bundles + controlled Profile`；指纹绑定真实 artifact/lock/source/dump | ✅ 已完成，提交 `738c9cf` |
 | US-B1-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B1-002.impl.json` | 官方 SQLite checkpoint；跨进程 resume；Learning 环境 allowlist；production manifest 前置拒绝；无部署/反向依赖 | ✅ 已完成，提交 `27e5a1c` |
 | US-B2-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.impl.json` | Lab 内 Action 纯状态机 + 共享序列化契约；M001—M011；不创建第二生产 Agent Loop，不提前实现 B4 Safety Executor | ✅ 已完成，提交 `bded643` |
+| US-B2-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.impl.json` | 共享 agent-definition；Lab 内注入式 JSON/Planning/Role；M012—M025；不引入模型 SDK或第二生产 Runtime | ✅ 已完成，提交 `5bcce5a` |
+| US-B2-003 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.impl.json` | 原生 StateGraph/SQLite resume/replay/fork；steps-only safe fork；版本化 RunResult trace；M026—M037 | ✅ 已完成，提交 `b359c77` |
+| US-B2-004 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.impl.json` | 显式 Team graph edges；逐节点 handoff 事件；精确 Action resume；retry limit；复用 RunResult/Trace；M038—M043 | ✅ 已完成，提交 `4931d32` |
+| US-B2-005 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.impl.json` | 共享 MCP 结果契约；Learning-only 本地工具；raw CLI + single/team TUI；同 thread resume；TS terminal adapter；M044—M060 | ✅ 已完成，提交 `61b2fed` |
+| US-B3-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.impl.json` | control-fact/projection 契约；rc.6 observer；flush durability；SQLite WAL/FULL Provider；确定性重放与损坏恢复 | ✅ 已完成，提交 `f52d855` |
+| US-B3-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.impl.json` | command/receipt 契约；纯 waterfall；rc.6 pause/restrict/stop adapter；逐段 durable receipt；短路/unknown 失败关闭 | ✅ 已完成，提交 `27d1021` |
 
 探针已证明只锁根 `@deepseek-ai/dsh@0.1.0-rc.6` 会被上游 caret 依赖拉向尚不完整的 rc.7 并报 `ETARGET`。实现以根 `pnpm-workspace.yaml` wildcard override 固定完整 rc.6 闭包，保留最小 `allowBuilds`，没有 fork 或重写 DSH Agent Loop。
 
@@ -100,7 +106,7 @@ Scope 与故事点已由用户确认；`story-scope` 机械门禁通过后进入
 - 全量回归：TypeScript 52/52、Python 基线 60/60、typecheck、双 frozen install 与双 Runtime smoke 通过。
 - TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B1-002.tdd.json`。
 
-US-B1-002 已完成；当前 Scope 已按用户“继续任务”切换为唯一 `US-B2-001`，其余未完成 Story 未激活。
+US-B1-002 完成后，Scope 曾按用户“继续任务”切换为唯一 `US-B2-001`；后续状态以当前 Scope 段和故事索引为准。
 
 ### 5.3 US-B2-001 实现证据
 
@@ -110,7 +116,323 @@ US-B1-002 已完成；当前 Scope 已按用户“继续任务”切换为唯一
 - DSH 组合显式重冻为 `80f0fc8e…701e`，仅 contracts artifact 与总指纹变化，composition verify 通过。
 - TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.tdd.json`。
 
-US-B2-001 已完成；当前 Scope 暂时保留它供机械门禁验收，不自动激活 US-B2-002。
+US-B2-001 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B2-002。
+
+### 5.4 US-B2-002 实现落点草案
+
+- 新增纯 TS `packages/agent-definition`，共享版本化 Definition/Prompt、严格 loader、工具 allowlist 与默认角色资产；不依赖任何 Runtime 或工具执行器。
+- `llm-json`、`planning`、`roles` 运行语义只迁入隔离的 LangGraph Learning Lab，通过注入 ports 离线验证，不新增 `packages/llm-adapter`、`packages/planning` 或生产 Agent Loop。
+- `M012—M025` 的 migration target 对齐已采纳需求矩阵，并增加精确路径门禁；源测试、可观察语义和 migrate disposition 不变。
+- 新 workspace package 会使根 lock 漂移；实现阶段须显式重冻并验证 production DSH 组合，其余生产 artifact 与 Provider 不得变化。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.impl.json`，用户回复“继续”后 `confirmed=true`。
+
+### 5.5 US-B2-002 实现证据
+
+- 代码提交：`5bcce5a76c30aa3304405c02cbb40558b60157bb`。
+- 共享 `@agent/agent-definition` 提供版本化 Definition JSON/Prompt、严格字段与 semver 校验、工具 allowlist 和四个独立默认角色；零 DSH/Cordis/LangGraph/模型 SDK依赖。
+- Learning Lab 通过注入 ports 实现外层 fence 解包、一次 JSON 修复、计划步骤入图前校验、能力不扩张与角色 definition 透传，不进入生产 launcher/Profile/Bundle。
+- M012—M025 的 targetRed 已对齐已采纳矩阵；源测试、语义与 disposition 不变。定向 17/17、全量 TypeScript 82/82、Python 60/60、typecheck 和冻结安装通过。
+- DSH 组合显式重冻为 `d1c52876…3083f`；仅 root lock SHA 与总指纹变化，DSH/Cordis/Profile/Provider/production artifacts/finalConfig 不变；真实 headless `--help` 通过。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.tdd.json`。
+
+US-B2-002 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B2-003。
+
+### 5.6 US-B2-003 实现落点草案
+
+- 现有 `graph.ts` 从 normalize/input 演示图升级为注入 ports 的真实单 Agent StateGraph；复用已完成的 Planning/Action/Definition，Runtime 不直接调用模型 SDK。
+- `resume` 只在保存的 human interrupt 节点消费原始 session/proposal，不重新 advance Action；`recover` 只允许安全 checkpoint 的 `steps` patch，中断态禁止 fork。
+- 新增版本化 `learning-run-result.v1` 契约、原子 trace store、checkpoint history/stateHash 和 CLI checkpoints/recover；trace 失败为 warning，checkpoint 失败不降级。
+- `M026—M037` migration target 对齐已采纳的 runtime/recovery/persistence 三类测试，并增加精确路径门禁；源测试、语义和 disposition 不变。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.impl.json`，用户回复“继续”后已更新为 `confirmed=true`，开始创建 Red。
+
+### 5.7 US-B2-003 实现证据
+
+- 代码提交：`b359c774b6dacddf050463a06634332362986dcc`。
+- 共享 `learning-run-result.v1` 契约承载 paused/completed/failed、事件序列、checkpoint、warning 与 recovery lineage；Learning Trace 按 runId 原子持久化，不冒充生产 Ledger。
+- 单 Agent Graph 使用真实 StateGraph + SqliteSaver；input/approval/UNKNOWN 从原 checkpoint session/proposal 恢复，human node 重入不会再次 advance 已提交 Action。
+- replay 从选定历史 checkpoint 建立 native branch head；fork 只允许非空 `steps`，任何 human-interrupt checkpoint 和保护字段 patch 均失败关闭。
+- M026—M037 targetRed 对齐 runtime/recovery/persistence 真源；定向 `15/15`、全仓 TypeScript `94/94`、Python `60/60`、typecheck、冻结安装和真实双 Runtime smoke 通过。
+- DSH 组合显式重冻为 `f699e623…45b39`；仅 contracts artifact 与总指纹变化，DSH rc.6、Cordis 4.0.1、Profile/Provider/finalConfig 不变。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.tdd.json`。
+
+US-B2-003 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B2-004。
+
+### 5.8 US-B2-004 实现落点草案
+
+- 新增与单 Agent 并列的 Team StateGraph，risk adjustment、review rejection、retry exhaustion 和 human interrupt 均由显式条件边表达。
+- 复用四角色 Definition 与 Learning Action session；`prepare_action` 负责推进并 checkpoint，`interrupt_for_human` 只恢复精确 proposal，防止 Action 重放。
+- 每个节点追加结构化 TeamVisit，RunEvent 必须保留发生节点对应的 handoff/action payload；继续复用 `learning-run-result.v1` 与 LearningTraceStore，不新增共享持久契约。
+- `M038—M043` 统一落在已采纳的 `labs/runtimes/langgraph-ts/test/team-runtime.spec.ts`；同步修正 migration map 漂移。Team CLI 属于 US-B2-005，本 Story 不修改 `cli.ts`。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.impl.json`；用户回复“继续”后已更新为 `confirmed=true`，进入 Red。
+
+### 5.9 US-B2-004 实现证据
+
+- 代码提交：`4931d3285256388c5cfb0ec73ac087db86a7a851`。
+- Team Runtime 使用真实 StateGraph + SqliteSaver；UNKNOWN/approval 从原 checkpoint session/proposal 恢复，`startAction` 不重启。
+- risk adjustment、review rejection、retry exhaustion 与 human interrupt 均有显式 graph edge；TeamVisit 把逐节点 handoff/action payload 投影到 RunEvent。
+- `maxRetries=0` 首次 rejection 直接保留 partial outcome，不进入 `revise_plan`；trace 写失败只追加 warning。
+- `M038—M043` targetRed 已统一到 `team-runtime.spec.ts`；定向 Team `6/6`、全仓 TypeScript `100/100`、Python `60/60`、typecheck、冻结安装与真实 DSH smoke 通过。
+- 生产组合指纹保持 `f699e623…45b39`；未修改共享 RunResult Schema、单 Agent Runtime 或 CLI，也未引入生产依赖。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.tdd.json`。
+
+US-B2-004 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B2-005。
+
+### 5.10 US-B2-005 实现落点草案
+
+- 共享 `packages/contracts` 承载纯 TS MCP text content、structuredContent 与 outputSchema 子集校验；`plugins/domain-tools` 只约束未来项目特有工具，不复制生产 DSH 原生 `fs/shell` Provider。
+- 旧 `read_file/write_file/list_directory/run_shell/get_current_time` 只迁入隔离 Learning Lab 的 `tools.ts`；成功结果执行后立即校验，显式错误不伪造 structuredContent，shell timeout 表达为 unknown/不可判定。
+- 保留现有 raw JSON `run/resume/checkpoints/recover` 协议，新增 `tool` 与交互 `tui`；controller 仅保存 paused RunResult，并用原 `threadId + parentRunId` 恢复 single/team Runtime。
+- 旧 curses 机制改为可注入 line/ANSI-fullscreen TS TerminalAdapter；Unicode 不按 code unit 截断，提交日志捕获异常后必须恢复 console/stdout，避免污染机器可读输出。
+- `--team` 使用无模型、无凭证的离线 Team ports 实际启动；CLI/TUI 不做 API key 预检，不接 production Profile、Bundle、Provider 或 Safety Executor。
+- `M044—M047` 精确落在已采纳的 `tools.spec.ts` 与 `plugins/domain-tools/test/output-contract.spec.ts`；`M048—M060` 全部落在 `cli.spec.ts`，同步修正 migration map 漂移。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.impl.json`；用户回复“继续”后已更新为 `confirmed=true`，进入 Red。
+
+### 5.11 US-B2-005 实现证据
+
+- 代码提交：`61b2fed7b1f0e848bc44ce2d9b55c381f0bdf591`。
+- 纯 contracts 提供 MCP text content、successful/error result 与失败关闭的 outputSchema 子集 validator；domain-tools 只依赖 contracts，未实现通用 `fs/shell/time`。
+- 五个通用工具只存在于 Learning Lab；成功结果带 schema-valid structuredContent，显式错误不伪造 structuredContent，shell timeout 抛 ActionExecutionUnknown。
+- raw JSON CLI 保持兼容；新增 `tool`、single/team `tui`、line/ANSI-fullscreen adapter、interrupt-aware decision 与同 `threadId + parentRunId` 恢复。
+- `M044—M060` targetRed 对齐已采纳矩阵；目标语义 `18/18`、全仓 TypeScript `120/120`、Python `60/60`、typecheck、冻结安装和真实双 Runtime smoke 通过。
+- 生产组合显式重冻为 `2467ba28…bbdd3`；仅 root lock、contracts artifact 与总指纹变化，DSH/Cordis/Profile/Provider/finalConfig 不变。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.tdd.json`。
+
+US-B2-005 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B3-001。
+
+### 5.12 US-B3-001 实现落点草案
+
+- 纯 contracts 新增 `control-fact.v1` 与 `dsh-runtime-projection.v1`；DSH rc.6 原生事件只由 `dsh-bridge` 归一化，control-ledger 不复制 Session Log。
+- `session/event` 只进入 pending buffer，`session/flush` 才通过 SQLite WAL/FULL 批量事务形成 durable boundary；Provider Port 隔离具体 SQLite 实现。
+- `(runId, sequence)` 由事务稳定分配；相同幂等键只有 canonical 内容相同才重放成功，冲突不覆盖、不消耗序号。
+- Projection 是事实前缀纯函数并用 canonical SHA-256 生成 stateHash；缓存可重建，事实库损坏失败关闭。
+- Red 覆盖 SQLite、projection、DSH observer 和 Cordis→flush→重开→replay 的纵向闭环；当前不提前实现 B3-002/Safety Executor。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.impl.json`；用户已确认，`confirmed=true`。
+
+### 5.13 US-B3-001 实现证据
+
+- 代码提交：`f52d855aa4e6a2ce962bf936c6fc26ffd5ffab46`。
+- 纯 contracts 定义 `control-fact.v1` 与 `dsh-runtime-projection.v1`；`dsh-bridge` 归一化真实 rc.6 session/agent typed events。
+- `session/event` 只缓冲，awaited `session/flush` 才提交 WAL/FULL 事务；重开 SQLite 后事实序号与投影 hash 稳定。
+- canonical 幂等内容相同返回旧事实，不同内容冲突；投影缓存可重建，事实 canonical 或数据库损坏失败关闭。
+- 目标 `10/10`、全仓 TypeScript `130/130`、Python `60/60`、typecheck、冻结安装、composition verify 与生产 DSH smoke 通过。
+- 组合指纹：`c6fc9778847046bdec236342030b9d68c62aa4dd408819ed262a9f806e3eea20`。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.tdd.json`。
+
+### 5.14 US-B3-002 实现落点草案
+
+- `packages/contracts` 冻结 command/receipt v1；`packages/control-domain` 只实现五段单调 waterfall 与完成判定，均不得依赖 Cordis、DSH、SQLite 或环境变量。
+- `packages/dsh-bridge` 封装 rc.6 的 `agent/pre-step`、`Agent.cancel()/whenIdle()` 和 agent-scoped `tools.restrict()`；pause/stop 使用可撤销 barrier，restrict 不冒充安全权限边界。
+- 新增 `plugins/control-supervisor`，将每段 receipt 通过现有 Control Ledger 的窄 `appendFacts` 端口单独 durable commit；使用私有 continuation proof 识别 waterfall 短路。
+- 相同 canonical command 幂等返回旧链；同 ID 异内容冲突；部分链、stale basis、live agent 缺失、接纳点不匹配或 verify unknown 均不得补写 `effect_verified`。
+- ledger + supervisor 显式进入 controlled Bundle/Profile；`AGENT_CONTROL_LEDGER_PATH` 缺失时失败关闭，不写仓库或隐式临时目录。
+- Red 覆盖契约、纯领域、真实 DSH adapter shape、Supervisor 反例及 Cordis→SQLite 重开纵向闭环；当前不实现 B4 Safety Executor、Watchdog、HTTP 或现实写。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.impl.json`；用户已回复“继续”确认，当前 `confirmed=true`，进入 Red。
+
+### 5.15 US-B3-002 实现证据
+
+- 代码提交：`27d1021cd6fac88358e5e50c72f49d7cdb40d113`。
+- 版本化 command/receipt 契约和纯 waterfall 领域包不依赖框架；重放 receipt 再次做运行时闭集校验，未知状态不能混成成功。
+- pause/stop 使用 rc.6 pre-step barrier + cancel/whenIdle；restrict 只核验 agent-scoped 工具可见面，未引入 Safety Executor、Watchdog、HTTP、凭证或现实写。
+- Supervisor 逐段 durable append，并用私有 continuation proof 检测真实 Cordis waterfall 短路；幂等冲突、stale basis、部分链和 effect unknown 均失败关闭。
+- ledger + supervisor 已进入 controlled Bundle/Profile，数据库路径显式注入；组合指纹重冻为 `a3a376cb…e4a6e18`。
+- 目标 `33/33`、全仓 TypeScript `152/152`、Python `60/60`、typecheck、双 frozen install、官方 registry audit、composition verify 与受控 DSH smoke 全部通过。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.tdd.json`。
+
+## 反馈（skill_run）
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放 client-dev 门禁，确认仍处于逐 Story 开发而非集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认下一条依赖满足的 Story 为 US-B3-001，并将其设为唯一滚动 Scope"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "约束续做任务的反馈字段与写入位置"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.tdd.json
+      utility: high
+      reason: "汇总 SQLite 控制账本的真实 Red、Green、Refactor、integration smoke 与四项 AC"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/sqlite-provider.ts
+      utility: high
+      reason: "实现 append-only、连续序号、canonical 幂等、WAL/FULL durability 与损坏失败关闭"
+    - path: /Users/wanglongxiang/git/agent/packages/dsh-bridge/src/control-observer.ts
+      utility: high
+      reason: "使用 rc.6 typed session/agent 信号，并以 awaited session/flush 作为唯一 durable ack"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/projection.ts
+      utility: high
+      reason: "从不可变事实前缀确定性重放 DSH 动态镜像与 stateHash"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B3-001 已完成并提交 f52d855；未自动激活 US-B3-002，也未提前进入最终集成测试"
+  utility: high
+  reason: "控制事实账本已通过真实 DSH/Cordis/SQLite 纵向 TDD 和全仓回归"
+  outcome_status: pass
+  friction: "组合身份锁因新增受控 artifact 正常失配；已显式重冻至 c6fc9778…eea20 并验证"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放 Epic 阶段，确认仍在逐 Story TDD 而非最终集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.md
+      utility: high
+      reason: "确认前一 Story 已完成并有真实提交/TDD 证据，可以退出滚动 Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "恢复到依赖已满足的下一条 P0 Story，并停在 implementation-design"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "从已完成 US-B3-001 恢复到 US-B3-002 implementation-design，没有跳转集成测试"
+  utility: high
+  reason: "恢复点由前置完成证据、依赖顺序和用户继续指令共同确定"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.md
+      utility: high
+      reason: "已完成 Story 退出当前 implementation Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "保持 GWT-019 的 8 点纵向边界并设为唯一滚动 Scope"
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持已确认的 B3 控制回执验收边界，不扩张 B4/B5"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B3-002；其余 4 个未完成 Story 保持未激活"
+  utility: high
+  reason: "US-B3-002 前置已完成且能独立设计，不触发最终集成阶段"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实 GWT-019 的接纳点、五段回执和 unknown 不得完成"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束纯领域、DSH bridge、Supervisor、Ledger Provider 与 B4 Safety 的依赖方向"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "固化当前唯一 Story 的文件落点、Red、风险与停止条件"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按有 Plan 任务协议记录待确认的实现门禁"
+  contexts_missing:
+    - "用户对 US-B3-002 文件落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B3-002 落点草案完成并停在 confirmed=false；未创建 Red、业务代码或 B4 Safety Executor"
+  utility: high
+  reason: "把 pause/restrict/stop 的真实框架 seam、逐段 durability 和失败关闭反例落到可验证文件"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.tdd.json
+      utility: high
+      reason: "汇总 SQLite 控制账本的真实 Red、Green、Refactor、integration smoke 与四项 AC"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/sqlite-provider.ts
+      utility: high
+      reason: "实现 append-only、连续序号、canonical 幂等、WAL/FULL durability 与损坏失败关闭"
+    - path: /Users/wanglongxiang/git/agent/packages/dsh-bridge/src/control-observer.ts
+      utility: high
+      reason: "使用 rc.6 typed session/agent 信号，并以 awaited session/flush 作为唯一 durable ack"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/projection.ts
+      utility: high
+      reason: "从不可变事实前缀确定性重放 DSH 动态镜像与 stateHash"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束 ENG-006/008/012、Provider Port 与 facts/projection 真理边界"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B3-001 已完成并提交 f52d855；未自动激活 US-B3-002，也未提前进入最终集成测试"
+  utility: high
+  reason: "控制事实账本已通过真实 DSH/Cordis/SQLite 纵向 TDD 和全仓回归"
+  outcome_status: pass
+  friction: "组合身份锁因新增受控 artifact 正常失配；已显式重冻至 c6fc9778…eea20 并验证"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.tdd.json
+      utility: high
+      reason: "汇总 SQLite 控制账本的真实 Red、Green、Refactor、integration smoke 与四项 AC"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/sqlite-provider.ts
+      utility: high
+      reason: "实现 append-only、连续序号、canonical 幂等、WAL/FULL durability 与损坏失败关闭"
+    - path: /Users/wanglongxiang/git/agent/packages/dsh-bridge/src/control-observer.ts
+      utility: high
+      reason: "使用 rc.6 typed session/agent 信号，并以 awaited session/flush 作为唯一 durable ack"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/projection.ts
+      utility: high
+      reason: "从不可变事实前缀确定性重放 DSH 动态镜像与 stateHash"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束 ENG-006/008/012、Provider Port 与 facts/projection 真理边界"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B3-001 已完成并提交 f52d855；未自动激活 US-B3-002，也未提前进入最终集成测试"
+  utility: high
+  reason: "控制事实账本已通过真实 DSH/Cordis/SQLite 纵向 TDD 和全仓回归"
+  outcome_status: pass
+  friction: "组合身份锁因新增受控 artifact 正常失配；已显式重冻至 c6fc9778…eea20 并验证"
+  revisit_needed: false
+```
 
 ## 续做
 
@@ -594,4 +916,634 @@ skill_run:
   outcome: "US-B2-001 已完成并提交 bded643；主计划保持逐 Story 开发，等待确认下一 Scope"
   utility: high
   reason: "M001—M011 有真实 Red→Green→Refactor 与全量回归，且未创建第二生产 Runtime"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "确认前 4 个 Story 已完成，Epic 仍处于逐 Story 开发而非集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "识别已完成 US-B2-001 仍占滚动 Scope，并确定下一条依赖已满足 Story 为 US-B2-002"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.tdd.json
+      utility: high
+      reason: "确认 US-B2-001 已有完整 TDD 与提交证据，可以安全退出当前 Scope"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "从 next-story-scope 断点恢复，确认继续推进 US-B2-002 而非提前进入集成测试"
+  utility: high
+  reason: "恢复点与 Epic 4/14 的真实完成度一致，并纠正门禁推导与滚动 Scope 元数据不一致"
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "将唯一当前 implementation Scope 从已完成 US-B2-001 切换为 US-B2-002"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.md
+      utility: high
+      reason: "保持 Definition、LLM JSON、Planning、Role 与 M012—M025 的 8 点纵向边界"
+    - path: Plans/需求排序/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持已确认的 B0→B1→B2→B3→B4→B5 顺序和依赖"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "用户回复‘继续’后只激活 US-B2-002；US-B2-001 退出滚动 Scope，其余未完成 Story 未扩张"
+  utility: high
+  reason: "US-B1-001/002 前置均已完成，单 Story Scope 可独立设计与验收"
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.impl.json
+      utility: high
+      reason: "固化共享 agent-definition、Learning-only llm-json/planning/roles、M012—M025 Red 与停止条件"
+    - path: /Users/wanglongxiang/git/agent/core/definition.py
+      utility: high
+      reason: "提取严格 Definition、Prompt context、semver 与工具 allowlist 的旧行为基线"
+    - path: /Users/wanglongxiang/git/agent/capabilities/planning.py
+      utility: high
+      reason: "提取执行能力显式传入、计划步骤校验与风险调整不扩权语义"
+    - path: /Users/wanglongxiang/git/agent/migration/legacy-test-map.json
+      utility: high
+      reason: "发现 M012—M025 的旧 packages/llm-adapter、packages/planning 与已采纳 Learning Lab 矩阵漂移"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束共享 Domain 纯 TS、DSH 唯一生产循环和 LangGraph.js Learning Runtime 隔离"
+  contexts_missing:
+    - "用户对 US-B2-002 实现落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B2-002 落点草案完成并停在 confirmed=false；未创建业务代码或 Red 测试"
+  utility: high
+  reason: "让两个 Runtime 共享策略资产，同时把 JSON/Planning/Role 行为迁移限定在隔离 Learning Lab"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.impl.json
+      utility: high
+      reason: "读取用户刚确认的文件落点、依赖边界、Red 与停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.md
+      utility: high
+      reason: "确认当前唯一 Scope、8 点 Story 与 M012—M025 验收边界"
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持 Epic 处于逐 Story TDD 且不提前进入集成测试"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "用户回复‘继续’后确认 US-B2-002 落点门禁，并从 implementation-design 恢复到 Red"
+  utility: high
+  reason: "开发严格继承已确认 Scope 与双 Runtime 边界，没有扩到 B2-003 或生产第二循环"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.tdd.json
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、integration smoke、逐 M012—M025 与提交证据"
+    - path: /Users/wanglongxiang/git/agent/packages/agent-definition/src/definition.ts
+      utility: high
+      reason: "实现共享严格 Definition/Prompt 资产加载、semver 与失败关闭语义"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/planning.ts
+      utility: high
+      reason: "实现 Learning-only 计划步骤校验与执行能力不扩张边界"
+    - path: /Users/wanglongxiang/git/agent/profiles/controlled/composition.lock.json
+      utility: high
+      reason: "证明新增 workspace 包后生产组合仅 root lock SHA 与总指纹按预期重冻"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B2-002 已完成并提交 5bcce5a；主计划保持逐 Story 开发，等待确认下一 Scope"
+  utility: high
+  reason: "M012—M025 有真实 Red→Green→Refactor 与全量回归，且共享资产和 Learning 行为没有形成第二生产 Runtime"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "确认 Epic 仍处于逐 Story TDD，前 5/14 Story 完成且不得提前进入集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认 US-B2-002 已完成、下一依赖就绪 Story 为 US-B2-003"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-001.tdd.json
+      utility: high
+      reason: "确认 US-B2-003 的 Runtime 前置已有完整 TDD 证据"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-002.tdd.json
+      utility: high
+      reason: "确认 US-B2-003 的 Definition、Planning 与 Role 前置已有完整 TDD 证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "从 US-B2-002 完成态恢复到下一 Story US-B2-003 的实现落点设计，没有跳转集成测试"
+  utility: high
+  reason: "恢复点由 Story 依赖和 TDD 证据共同决定，避免阶段推进与实际故事完成度脱节"
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "把滚动实现 Scope 从已完成 US-B2-002 单独切换到 US-B2-003"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.md
+      utility: high
+      reason: "保持单 Agent 会话运行、暂停、恢复、回放和 fork 的 8 点纵向边界"
+    - path: Plans/需求排序/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持已确认的 B0→B1→B2→B3→B4→B5 顺序和依赖"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B2-003；US-B2-002 退出滚动 Scope，其余未完成 Story 未扩张"
+  utility: high
+  reason: "US-B2-001/002 前置均已完成，US-B2-003 可独立设计并在确认后进入 TDD"
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.impl.json
+      utility: high
+      reason: "固化共享 RunResult 契约、Learning Runtime、恢复/fork、Trace 与 M026—M037 Red 落点"
+    - path: /Users/wanglongxiang/git/agent/tests/test_runtime.py
+      utility: high
+      reason: "提取旧 Runtime 的会话、暂停恢复、Trace、错误返回和 fork 行为基线"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/runtime.ts
+      utility: high
+      reason: "识别当前 Learning Runtime 仅有 run/resume/transcript，尚缺历史、恢复、fork 和结构化失败"
+    - path: /Users/wanglongxiang/git/agent/migration/legacy-test-map.json
+      utility: high
+      reason: "发现 M026—M037 的采纳测试路径与现有迁移映射存在漂移并纳入 Red 校正"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束共享契约纯 TS、LangGraph.js 仅作 Learning Runtime 且不得形成第二生产循环"
+  contexts_missing:
+    - "用户对 US-B2-003 实现落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B2-003 落点草案完成并停在 confirmed=false；未创建业务代码或 Red 测试"
+  utility: high
+  reason: "把单 Agent 运行、恢复、回放、fork 与 Trace 语义落实到可验证文件和测试边界"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.impl.json
+      utility: high
+      reason: "读取并确认用户已批准的文件落点、依赖边界、M026—M037 Red 与停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.md
+      utility: high
+      reason: "确认当前唯一 Scope 为 US-B2-003，前置已满足且仍保持 8 点纵向边界"
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持 Epic 处于逐 Story TDD，不提前进入集成测试或激活后续 Story"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "用户回复‘继续’后确认 US-B2-003 落点门禁，并从 implementation-design 恢复到 Red"
+  utility: high
+  reason: "开发将严格继承已确认的单 Agent Learning Runtime、安全恢复和 Trace 边界"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-17
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.tdd.json
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、integration smoke、逐 M026—M037 与提交证据"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/runtime.ts
+      utility: high
+      reason: "实现结构化 run/resume/history/recover、原生 SQLite checkpoint、事件归一化和 warning 语义"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/recovery.ts
+      utility: high
+      reason: "集中实现 steps-only patch、中断态 fork 禁止和稳定 stateHash"
+    - path: /Users/wanglongxiang/git/agent/packages/contracts/src/learning-run.ts
+      utility: high
+      reason: "提供版本化 Learning RunResult、RunEvent、Checkpoint 与 recovery lineage 共享契约"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束 LangGraph.js 只作隔离 Learning Runtime，生产仍唯一委托 DSH/Cordis"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B2-003 已完成并提交 b359c77；主计划保持逐 Story 开发，等待确认下一滚动 Scope"
+  utility: high
+  reason: "M026—M037 有真实 Red→Green→Refactor、SQLite 跨实例恢复、安全 fork 与全量回归证据"
+  outcome_status: pass
+  friction: "LangGraph.js 1.4.10 回放历史 checkpoint 需先以 updateState 建立分支头，再移除 checkpoint_id 从最新分支继续执行"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "确认 Epic 仍处于逐 Story TDD，前 6/14 Story 完成且不得提前进入集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认 US-B2-003 已完成且依赖就绪的下一条 Story 为 US-B2-004"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-003.tdd.json
+      utility: high
+      reason: "确认 Team Graph 的单 Agent Runtime、Action resume 与 Trace 前置已有完整 TDD/提交证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "从 US-B2-003 完成态恢复到 US-B2-004 implementation-design，没有跳转集成测试"
+  utility: high
+  reason: "恢复点由 Story 依赖、TDD 证据和用户继续指令共同决定，避免阶段与实际完成度脱节"
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "把唯一滚动 implementation Scope 从已完成 US-B2-003 切换到 US-B2-004"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.md
+      utility: high
+      reason: "保持 Team Learning Graph 的 5 点纵向边界和 M038—M043 验收范围"
+    - path: Plans/需求排序/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持已确认的 B0→B1→B2→B3→B4→B5 顺序和依赖"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B2-004；US-B2-003 退出滚动 Scope，其余 7 条未完成 Story 未扩张"
+  utility: high
+  reason: "US-B2-003 前置已完成，US-B2-004 可独立设计且不触发最终集成阶段"
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.impl.json
+      utility: high
+      reason: "固化 Team Graph 节点/边、角色能力、事件 handoff、精确 resume、retry 与 M038—M043 Red 落点"
+    - path: /Users/wanglongxiang/git/agent/tests/test_team_graph_runtime.py
+      utility: high
+      reason: "提取旧 Team Runtime 六项可观察语义、phase 顺序和 handoff 证据"
+    - path: /Users/wanglongxiang/git/agent/orchestration/team_graph.py
+      utility: high
+      reason: "确认 risk/review 条件边、attempt 上限、Action checkpoint 与 human resolve 的旧行为基线"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/roles.ts
+      utility: high
+      reason: "识别现有四角色 Definition 可复用以及 adjust/revise/resolve 的最小能力缺口"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束 DSH 唯一生产 Runtime、LangGraph.js Team 只留在隔离 Learning Lab"
+  contexts_missing:
+    - "用户对 US-B2-004 文件落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B2-004 落点草案完成并停在 confirmed=false；未创建 Red、业务代码或 Team CLI"
+  utility: high
+  reason: "把多角色路由、handoff、精确恢复和重试语义落实到可验证文件与测试边界"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.impl.json
+      utility: high
+      reason: "读取并确认用户已批准的 Team Graph 文件落点、依赖边界、M038—M043 Red 与停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.md
+      utility: high
+      reason: "确认当前唯一 Scope 为 US-B2-004，前置已满足且仍保持 5 点纵向边界"
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持 Epic 处于逐 Story TDD，不提前进入集成测试或激活 US-B2-005"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "用户回复‘继续’后确认 US-B2-004 落点门禁，并从 implementation-design 恢复到 Red"
+  utility: high
+  reason: "开发将严格继承已确认的 Team 路由、handoff、恢复和 Learning-only 边界"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.tdd.json
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、integration smoke、逐 M038—M043 与提交证据"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/team-graph.ts
+      utility: high
+      reason: "实现显式 Team 路由、attempt/retry reducer、逐节点 handoff 和精确 human resume"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/team-runtime.ts
+      utility: high
+      reason: "实现 Team run/resume/history、原生 SQLite checkpoint、RunResult 事件与 trace warning"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/test/team-runtime.spec.ts
+      utility: high
+      reason: "逐项证明 UNKNOWN、精确 proposal、risk/review edges、handoff、retry limit 与 trace warning"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束 LangGraph.js Team 只作隔离 Learning Runtime，生产仍唯一委托 DSH/Cordis"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B2-004 已完成并提交 4931d32；主计划保持逐 Story 开发，等待确认下一滚动 Scope"
+  utility: high
+  reason: "M038—M043 有真实 Red→Green→Refactor、精确 Action 恢复、显式图边、持久 handoff 与全量回归证据"
+  outcome_status: pass
+  friction: "Team 事件不能只从最终 handoffs 数组重建；通过 checkpointed TeamVisit 保留每个节点的 phase 与 payload 关联"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-004.tdd.json
+      utility: high
+      reason: "确认 US-B2-004 已完成真实 TDD 并提交 4931d32，不再把已完成 Story 留作当前工作项"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认依赖已满足的下一条未完成 Story 是 US-B2-005，后续六条仍不得展开"
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "确认 Epic 仍处于逐 Story TDD，不应进入最终集成测试"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "从 US-B2-004 完成态恢复到 US-B2-005 implementation-design，没有跳转集成测试"
+  utility: high
+  reason: "恢复点由完成证据、依赖和用户继续指令共同确定"
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "把唯一滚动 implementation Scope 从已完成 US-B2-004 切换到 US-B2-005"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.md
+      utility: high
+      reason: "保持结构化工具与 CLI 的 8 点纵向边界和 M044—M060 验收范围"
+    - path: Plans/需求排序/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持已确认的 B0→B1→B2→B3→B4→B5 顺序和依赖"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B2-005；US-B2-004 退出滚动 Scope，其余 6 条未完成 Story 未扩张"
+  utility: high
+  reason: "US-B2-005 前置已完成且可独立设计，不触发最终集成阶段"
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.impl.json
+      utility: high
+      reason: "固化共享 MCP 结果契约、Learning-only 工具、single/team CLI、terminal adapter 与 M044—M060 Red 落点"
+    - path: /Users/wanglongxiang/git/agent/tests/test_tool_results.py
+      utility: high
+      reason: "提取成功/错误 structuredContent、outputSchema 与 shell timeout 四项旧行为基线"
+    - path: /Users/wanglongxiang/git/agent/tests/test_tui.py
+      utility: high
+      reason: "提取格式、decision、Team/fullscreen、Unicode、日志、错误和同 thread 恢复十三项旧行为基线"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/cli.ts
+      utility: high
+      reason: "识别现有 raw JSON 命令的兼容边界和交互 CLI/TUI 缺口"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束通用 fs/shell 留给生产 DSH Provider，迁移实现只进入隔离 Learning Lab"
+  contexts_missing:
+    - "用户对 US-B2-005 文件落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B2-005 落点草案完成并停在 confirmed=false；未创建 Red、业务代码或生产工具 Provider"
+  utility: high
+  reason: "把工具结果、终端交互和恢复语义落实到可验证文件，同时守住 ENG-010/011 边界"
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.impl.json
+      utility: high
+      reason: "读取并确认用户已批准的工具契约、Learning-only 工具、CLI/TUI 文件落点、Red 与停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.md
+      utility: high
+      reason: "确认当前唯一 Scope 为 US-B2-005，前置已满足且仍保持 8 点纵向边界"
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持 Epic 处于逐 Story TDD，不提前进入集成测试或激活 US-B3-001"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "用户回复‘继续’后确认 US-B2-005 落点门禁，并从 implementation-design 恢复到 Red"
+  utility: high
+  reason: "开发将严格继承 ENG-010/011、同 thread 恢复和 M044—M060 精确测试边界"
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.tdd.json
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、integration smoke、逐 M044—M060 与提交证据"
+    - path: /Users/wanglongxiang/git/agent/packages/contracts/src/tool-result.ts
+      utility: high
+      reason: "实现共享 MCP text/structured result 与失败关闭的 outputSchema 子集校验"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/tools.ts
+      utility: high
+      reason: "实现只属于 Learning Lab 的五个结构化本地工具和 shell timeout unknown 语义"
+    - path: /Users/wanglongxiang/git/agent/labs/runtimes/langgraph-ts/src/tui.ts
+      utility: high
+      reason: "实现 single/team controller、同 thread resume、结果渲染和 line/fullscreen terminal adapter"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束生产通用工具使用 DSH Provider，Learning CLI 不进入 Profile/Bundle 或持有凭证"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B2-005 已完成并提交 61b2fed；主计划保持逐 Story 开发，等待确认下一滚动 Scope"
+  utility: high
+  reason: "M044—M060 有真实工具/终端/跨进程证据，且生产 Runtime 边界与组合身份可复核"
+  outcome_status: pass
+  friction: "根 Vitest 原先漏扫 plugins/**/*.spec.ts；已纳入测试发现，防止 domain-tools Red 静默跳过"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放 client-dev 门禁，确认仍处于逐 Story 开发而非集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "确认下一条依赖满足的 Story 为 US-B3-001，并将其设为唯一滚动 Scope"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "约束续做任务的反馈字段与写入位置"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.tdd.json
+      utility: high
+      reason: "汇总 SQLite 控制账本的真实 Red、Green、Refactor、integration smoke 与四项 AC"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/sqlite-provider.ts
+      utility: high
+      reason: "实现 append-only、连续序号、canonical 幂等、WAL/FULL durability 与损坏失败关闭"
+    - path: /Users/wanglongxiang/git/agent/packages/dsh-bridge/src/control-observer.ts
+      utility: high
+      reason: "使用 rc.6 typed session/agent 信号，并以 awaited session/flush 作为唯一 durable ack"
+    - path: /Users/wanglongxiang/git/agent/plugins/control-ledger/src/projection.ts
+      utility: high
+      reason: "从不可变事实前缀确定性重放 DSH 动态镜像与 stateHash"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B3-001 已完成并提交 f52d855；未自动激活 US-B3-002，也未提前进入最终集成测试"
+  utility: high
+  reason: "控制事实账本已通过真实 DSH/Cordis/SQLite 纵向 TDD 和全仓回归"
+  outcome_status: pass
+  friction: "组合身份锁因新增受控 artifact 正常失配；已显式重冻至 c6fc9778…eea20 并验证"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实 GWT-019 的接纳点、五段回执和 unknown 不得完成"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束纯领域、DSH bridge、Supervisor、Ledger Provider 与 B4 Safety 的依赖方向"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "固化当前唯一 Story 的文件落点、Red、风险与停止条件"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按有 Plan 任务协议记录待确认的实现门禁"
+  contexts_missing:
+    - "用户对 US-B3-002 文件落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B3-002 落点草案完成并停在 confirmed=false；未创建 Red、业务代码或 B4 Safety Executor"
+  utility: high
+  reason: "把 pause/restrict/stop 的真实框架 seam、逐段 durability 和失败关闭反例落到可验证文件"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-18
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "逐项验收 GWT-019 的唯一命令、预期接纳点、五段回执和效果核验"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束 ENG-006/008/012、typed Cordis event、Provider Port 与 B4 Safety 隔离"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.md
+      utility: high
+      reason: "复用已完成的 append-only Control Ledger、WAL/FULL durability 与重放边界"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、纵向 smoke、提交和完成证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B3-002 已完成并提交 27d1021；未自动激活 B4，也未进入最终集成测试"
+  utility: high
+  reason: "三类控制命令的五段 durable receipt、短路证明与 unknown 失败关闭均有可执行证据"
+  outcome_status: pass
+  friction: "默认 npmmirror registry 不提供 audit endpoint；改用官方 npm registry 后确认无已知漏洞"
+  revisit_needed: false
 ```

@@ -1,0 +1,57 @@
+{
+  "story_id": "US-B3-002",
+  "story_points": 8,
+  "commit": "27d1021cd6fac88358e5e50c72f49d7cdb40d113",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-command.spec.ts packages/control-domain/test/receipt-waterfall.spec.ts packages/dsh-bridge/test/control-command-adapter.spec.ts plugins/control-supervisor/test/supervisor.spec.ts plugins/control-supervisor/test/dsh-integration.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-18T15:09:35+08:00",
+    "reason": "五个新增套件均只因 control-command/receipt 契约、纯 receipt waterfall、DSH control adapter 与 control-supervisor 模块尚未实现而失败；每条命令真实返回非零，未混入既有回归故障"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-command.spec.ts packages/control-domain/test/receipt-waterfall.spec.ts packages/dsh-bridge/test/control-command-adapter.spec.ts plugins/control-supervisor/test/supervisor.spec.ts plugins/control-supervisor/test/dsh-integration.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-18T15:13:45+08:00",
+    "result": "command/receipt v1、纯 waterfall、pause/stop barrier、restrict tool surface、Supervisor 幂等/短路/unknown 与 SQLite 重开纵向闭环共 5 files / 19 tests 首次通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/control-command.spec.ts packages/control-domain/test/*.spec.ts packages/dsh-bridge/test/*.spec.ts plugins/control-ledger/test/*.spec.ts plugins/control-supervisor/test/*.spec.ts tests/plugin-lifecycle/*.spec.ts && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+    "exit_code": 0,
+    "at": "2026-08-18T15:18:20+08:00",
+    "result": "补齐真实 Cordis waterfall continuation proof、三类命令五段 happy path、receipt 重放闭集校验和插件卸载；目标 33/33、全包 typecheck 与组合身份校验通过"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py' && nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 install --dir profiles/controlled --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && AGENT_CONTROL_LEDGER_PATH=<temp>/ledger.sqlite nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+    "exit_code": 0,
+    "at": "2026-08-18T15:18:20+08:00",
+    "result": "提交 27d1021 上 TypeScript 152/152、Python 60/60、双 frozen install、组合校验与显式 ledger path 的受控 DSH headless smoke 全部通过；官方 npm registry audit 无已知漏洞",
+    "composition_fingerprint": "a3a376cbcfbce0a61b09dc34332e0d61291cdf928fcffa54f3da7bf64e4a6e18"
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-019",
+      "pass": true,
+      "evidence": "pause/restrict/stop 均以唯一 commandId、basisSequence、compositionFingerprint 和预期接纳点进入 Supervisor；每段 receipt 独立调用 Control Ledger appendFacts，SQLite 重开后仍按 intercepted→delegated→admitted→applied→effect_verified 重放。相同 canonical command 幂等且不重复 apply，同 ID 异内容冲突；stale basis、接纳点不匹配、真实 Cordis listener 短路、live agent 缺失和 effect unknown 只会形成 short_circuited，completed=false。"
+    }
+  ],
+  "architecture_evidence": {
+    "contracts_and_domain_are_framework_free": true,
+    "dsh_types_are_isolated_in_bridge": true,
+    "cordis_typed_waterfall_used": true,
+    "waterfall_short_circuit_proof_is_private": true,
+    "receipt_stages_are_individually_durable": true,
+    "partial_command_is_not_blindly_replayed": true,
+    "unknown_effect_never_completes": true,
+    "pause_and_stop_hold_disposable_pre_step_barriers": true,
+    "restrict_is_agent_scoped_not_security_authority": true,
+    "controlled_bundle_uses_explicit_ledger_path": true,
+    "safety_executor_or_watchdog_added": false,
+    "dsh_or_cordis_version_changed": false,
+    "composition_fingerprint": "a3a376cbcfbce0a61b09dc34332e0d61291cdf928fcffa54f3da7bf64e4a6e18"
+  },
+  "limitations": [
+    "DSH tools.restrict() 只证明指定 Agent 的运行时工具可见面，不是 IAM、凭证撤销或 B4 Safety Executor 的安全证明",
+    "stop v1 的可核验语义是丢弃 inbox、中止活动并以 pre-step barrier 阻止后续 step；DSH rc.6 不公开任意 Agent 的强制进程销毁句柄，因此不宣称进程已销毁",
+    "本 Story 不增加跨进程 HTTP、ActionIntent/Lease、现实写、Watchdog 或控制 UI；这些仍属于后续 Story"
+  ]
+}
