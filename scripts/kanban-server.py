@@ -52,6 +52,30 @@ def _event_file_for(epic_rel: str) -> Path | None:
     return direct if direct.is_file() else None
 
 
+_PENDING_EVENT_REASON_MARKERS = (
+    "skillRunStage:",
+    "implementationDesignReady:",
+    "storyTddComplete:",
+    "storyScopeReady:",
+    "testPlanApproved:",
+    "integrationReportPass:",
+    "子 Plan 未创建",
+    "子 Plan 不存在",
+)
+
+
+def _gate_event_result(event: dict[str, Any]) -> str:
+    explicit = str(event.get("display_state") or "").strip()
+    if explicit in {"pass", "pending", "fail"}:
+        return explicit
+    if event.get("type") == "gate_pass":
+        return "pass"
+    reason = str(event.get("reason") or "")
+    if any(marker in reason for marker in _PENDING_EVENT_REASON_MARKERS):
+        return "pending"
+    return "fail"
+
+
 def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
     """回放该 Epic 的门禁事件流，供看板卡片展示时间账本摘要。
     返回 {last_gate: {result, stage, at, reason}, consecutive_fails}；无事件流返回 None。"""
@@ -74,38 +98,65 @@ def gate_history_for(epic_rel: str) -> dict[str, Any] | None:
     last_stage = last.get("stage")
     consecutive_fails = 0
     for ev in reversed(gate_events):
-        if ev.get("stage") != last_stage or ev.get("type") != "gate_fail":
+        if ev.get("stage") != last_stage or _gate_event_result(ev) != "fail":
             break
         consecutive_fails += 1
-    # recent：最近若干条完整事件（时间倒序），供前端渲染门禁时间线。
+    # recent：详情页使用的完整事件流（时间倒序）。
+    # 纵览页由前端自行 slice；这里不截断审计记录、不截断 reason。
     recent = [
         {
-            "result": "pass" if e.get("type") == "gate_pass" else "fail",
+            "result": _gate_event_result(e),
+            "event_id": e.get("event_id"),
+            "evaluation_id": e.get("evaluation_id"),
+            "event_version": e.get("event_version"),
             "stage": e.get("stage"),
+            "workflow": e.get("workflow"),
+            "project": e.get("project"),
+            "epic": e.get("epic"),
             "at": (e.get("created_at") or "")[:19].replace("T", " "),
-            "reason": (e.get("reason") or "").split(";")[0].strip(),
+            "reason": str(e.get("reason") or "").strip(),
             "git_commit": (e.get("git_commit") or "")[:7],
             "inferred": bool(e.get("inferred")),
             "passed_stages": e.get("passed_stages") or [],
             "child_plan": e.get("child_plan"),
+            "child_plan_exists": _workspace_file_exists(e.get("child_plan")),
             "plan_snapshot": e.get("plan_snapshot"),
+            "story_id": e.get("story_id"),
+            "scope_story_ids": e.get("scope_story_ids") or [],
+            "scope_snapshot": e.get("scope_snapshot"),
+            "legacy": not bool(e.get("event_id")),
         }
         for e in reversed(gate_events)
-    ][:12]
-    passes = sum(1 for e in gate_events if e.get("type") == "gate_pass")
+    ]
+    passes = sum(1 for e in gate_events if _gate_event_result(e) == "pass")
+    failures = sum(1 for e in gate_events if _gate_event_result(e) == "fail")
+    pending = sum(1 for e in gate_events if _gate_event_result(e) == "pending")
     return {
         "last_gate": {
-            "result": "pass" if last.get("type") == "gate_pass" else "fail",
+            "result": _gate_event_result(last),
+            "event_id": last.get("event_id"),
+            "evaluation_id": last.get("evaluation_id"),
             "stage": last_stage,
+            "workflow": last.get("workflow"),
+            "project": last.get("project"),
+            "epic": last.get("epic"),
             "at": (last.get("created_at") or "")[:10],
-            "reason": (last.get("reason") or "").split(";")[0].strip(),
+            "reason": str(last.get("reason") or "").strip(),
             "child_plan": last.get("child_plan"),
+            "child_plan_exists": _workspace_file_exists(last.get("child_plan")),
             "plan_snapshot": last.get("plan_snapshot"),
+            "story_id": last.get("story_id"),
+            "scope_story_ids": last.get("scope_story_ids") or [],
+            "scope_snapshot": last.get("scope_snapshot"),
+            "legacy": not bool(last.get("event_id")),
         },
         "consecutive_fails": consecutive_fails,
         "recent": recent,
         "total": len(gate_events),
+        "decisions": passes + failures,
         "passes": passes,
+        "failures": failures,
+        "pending": pending,
     }
 
 
@@ -137,11 +188,11 @@ _EXPECTED_PROGRESS_MARKERS = {
     "requirement": ("status 须为",),
     "prioritization": ("status 须为", "backlogPrioritized:"),
     "architecture": ("status 须为",),
-    "story-split": ("status 须为", "storyScopeReady:"),
-    "implementation-design": ("implementationDesignReady:",),
-    "story-development": ("storyTddComplete:",),
-    "integration-test-plan": ("testPlanApproved:",),
-    "integration-test": ("integrationReportPass:",),
+    "story-split": ("status 须为", "storyScopeReady:", "skillRunStage:"),
+    "implementation-design": ("implementationDesignReady:", "skillRunStage:"),
+    "story-development": ("storyTddComplete:", "skillRunStage:"),
+    "integration-test-plan": ("testPlanApproved:", "skillRunStage:"),
+    "integration-test": ("integrationReportPass:", "skillRunStage:"),
 }
 
 
@@ -341,6 +392,58 @@ def resolve_plan(rel: str) -> Path:
     return target
 
 
+def resolve_workspace_file(raw: str) -> Path:
+    """Resolve an untrusted board file reference inside this workspace.
+
+    ``Path.resolve`` closes symlink escapes; ``relative_to`` enforces a path
+    boundary rather than the unsafe string-prefix check used by legacy Plan
+    mutations.  Opening directories is intentionally unsupported.
+    """
+    value = str(raw or "").strip()
+    if not value or "\x00" in value:
+        raise ValueError("file path is empty or invalid")
+    path = Path(value)
+    target = path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+    try:
+        target.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("file path is outside workspace") from exc
+    if not target.exists():
+        raise ValueError("file does not exist")
+    if not target.is_file():
+        raise ValueError("path is not a file")
+    return target
+
+
+def _workspace_file_exists(raw: Any) -> bool:
+    try:
+        resolve_workspace_file(str(raw or ""))
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def open_workspace_file(raw: str) -> dict[str, Any]:
+    """Ask the operating system to open a validated workspace file."""
+    target = resolve_workspace_file(raw)
+    if sys.platform == "darwin":
+        command = ["open", str(target)]
+    elif sys.platform.startswith("win"):
+        command = ["cmd", "/c", "start", "", str(target)]
+    else:
+        command = ["xdg-open", str(target)]
+    try:
+        subprocess.Popen(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        raise ValueError(f"system opener failed: {exc}") from exc
+    return {"ok": True, "file": str(target.relative_to(ROOT.resolve()))}
+
+
 def read_frontmatter(path: Path) -> tuple[dict[str, str], str, str]:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
@@ -432,12 +535,15 @@ def parse_plans_block(path: Path) -> list[dict[str, Any]]:
             try:
                 sp = resolve_plan(rel)
                 if sp.is_file():
+                    sub["exists"] = True
                     fm, _, _ = read_frontmatter(sp)
                     sub["status"] = fm.get("status")
                     sub["lifecycle_state"] = fm.get("lifecycle_state", stage_key)
                 else:
+                    sub["exists"] = False
                     sub["status"] = None
             except ValueError:
+                sub["exists"] = False
                 sub["status"] = None
             plans.append(sub)
     return plans
@@ -614,20 +720,30 @@ def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[s
         child_status = ""
         tdd_complete = False
         implementation_design_ready = False
+        path_exists = False
+        implementation_design_path = ""
+        implementation_design_exists = False
+        tdd_evidence_path = ""
+        tdd_evidence_exists = False
         if path_raw:
             try:
                 child = resolve_plan(path_raw)
                 if child.is_file():
+                    path_exists = True
                     child_fm, _, _ = read_frontmatter(child)
                     child_status = _clean_scalar(child_fm.get("status"))
                     impl_raw = _clean_scalar(child_fm.get("implementation_design"))
+                    implementation_design_path = impl_raw
                     if impl_raw:
                         impl_path = resolve_plan(impl_raw)
+                        implementation_design_exists = impl_path.is_file()
                         impl = json.loads(impl_path.read_text(encoding="utf-8"))
                         implementation_design_ready = impl.get("confirmed") is True and not impl.get("blocked_questions")
                     evidence_raw = _clean_scalar(child_fm.get("tdd_evidence"))
+                    tdd_evidence_path = evidence_raw
                     if evidence_raw:
                         evidence_path = resolve_plan(evidence_raw)
+                        tdd_evidence_exists = evidence_path.is_file()
                         evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
                         phases = ["green", "refactor", "integration_smoke"]
                         tdd_complete = (
@@ -653,8 +769,13 @@ def _load_story_cards(dev_rel: str | None) -> tuple[list[dict[str, Any]], dict[s
                 "sprint_scope": raw.get("sprint_scope") is True,
                 "dependencies": raw.get("dependencies") if isinstance(raw.get("dependencies"), list) else [],
                 "path": path_raw,
+                "path_exists": path_exists,
                 "status": child_status,
+                "implementation_design_path": implementation_design_path,
+                "implementation_design_exists": implementation_design_exists,
                 "implementation_design_ready": implementation_design_ready,
+                "tdd_evidence_path": tdd_evidence_path,
+                "tdd_evidence_exists": tdd_evidence_exists,
                 "tdd_complete": tdd_complete,
                 "state": state,
             }
@@ -864,6 +985,7 @@ def _build_workflow_map(
     scoped = [story for story in stories if story.get("sprint_scope")]
     delivery_stories = _delivery_story_cards(stories, story_meta)
     implementation_ready = [story for story in scoped if story.get("implementation_design_ready")]
+    epic_implementation_ready = [story for story in delivery_stories if story.get("implementation_design_ready")]
     scoped_tdd_done = [story for story in scoped if story.get("tdd_complete")]
     tdd_done = [story for story in delivery_stories if story.get("tdd_complete")]
     points_total = sum(int(story.get("story_points") or 0) for story in scoped)
@@ -885,6 +1007,10 @@ def _build_workflow_map(
                 plan_exists = False
         raw_gate = latest_gate_by_stage.get(key)
         gate = raw_gate if _gate_matches_current_plan(raw_gate, str(plan_path or "")) else None
+        if gate and key in {"implementation-design", "story-development"} and gate.get("story_id"):
+            current_story_ids = {str(story.get("id") or "") for story in scoped}
+            if str(gate.get("story_id")) not in current_story_ids:
+                gate = None
         if gate and gate.get("result") == "fail" and _gate_failure_is_expected_progress(
             key,
             str(plan.get("status") or ""),
@@ -909,7 +1035,10 @@ def _build_workflow_map(
             scope_label = "Scope 已确认" if story_meta.get("scope_confirmed") else "Scope 未确认"
             summary = f"{len(scoped)} Story · {points_total} 点 · {scope_label}"
         elif key == "implementation-design":
-            summary = f"落点设计 {len(implementation_ready)}/{len(scoped)} Story"
+            summary = (
+                f"当前 Scope {len(implementation_ready)}/{len(scoped)} · "
+                f"Epic 累计 {len(epic_implementation_ready)}/{len(delivery_stories)} Story"
+            )
         elif key == "story-development":
             summary = f"TDD {len(tdd_done)}/{len(delivery_stories)} Story · {points_done}/{delivery_points_total} 点"
         elif key == "integration-test-plan":
@@ -954,6 +1083,7 @@ def _build_workflow_map(
                 "progress_note": progress_note,
                 "skills": stage.get("skills") or [],
                 "template": stage.get("template") or "",
+                "template_exists": _workspace_file_exists(stage.get("template")),
                 "required_outputs": stage.get("requiredSections") or [],
                 "exit_criteria": [name for name, required in (stage.get("exitCriteria") or {}).items() if required],
                 "plan": {
@@ -1361,11 +1491,15 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
     """全局 KPI —— 全部真实数据驱动，数据不足处带 sample 计数供前端标注。
     语义映射：任务管道指标 → Epic 工作流指标（详见交互设计对齐表）。"""
     total_events = 0
+    pending_events = 0
+    audit_events = 0
     passes = 0
     stage_fail = Counter()
     for e in epics:
         gh = e.get("gate_history") or {}
-        total_events += gh.get("total", 0)
+        total_events += gh.get("decisions", gh.get("total", 0))
+        pending_events += gh.get("pending", 0)
+        audit_events += gh.get("total", 0)
         passes += gh.get("passes", 0)
         for ev in gh.get("recent", []):
             if ev.get("result") == "fail" and ev.get("stage"):
@@ -1403,6 +1537,8 @@ def aggregate_kpi(epics: list[dict[str, Any]]) -> dict[str, Any]:
         "running": running,
         "pass_rate": pass_rate,
         "gate_events": total_events,
+        "gate_audit_events": audit_events,
+        "gate_pending_events": pending_events,
         "top_blockers": top_blockers,
         "overall_light": overall,
         "sample_low": total_events < 10,
@@ -2223,6 +2359,10 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             body = self._read_json()
+            if path == "/api/open-file":
+                result = open_workspace_file(str(body.get("file") or ""))
+                self._json(200, result)
+                return
             if path == "/api/status":
                 rel = body.get("file", "")
                 status = body.get("status", "")

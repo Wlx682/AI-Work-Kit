@@ -146,6 +146,7 @@
     .gate-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
     .gate-badge.fail { background: rgba(255,84,112,0.16); color: var(--red); border: 1px solid rgba(255,84,112,0.35); }
     .gate-badge.pass { background: rgba(53,224,138,0.16); color: var(--green); border: 1px solid rgba(53,224,138,0.35); }
+    .gate-badge.pending { background: rgba(77,156,255,0.16); color: var(--blue); border: 1px solid rgba(77,156,255,0.35); }
     .progress { margin-top: 0.9rem; }
     .progress .bar { height: 8px; border-radius: 999px; background: rgba(0,0,0,0.35); overflow: hidden; }
     .progress .bar i { display: block; height: 100%; border-radius: 999px; background: var(--grad); width: 0; transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
@@ -205,6 +206,22 @@
     .timeline .tl-stage code { color: var(--neon-c); }
     .timeline .tl-reason { color: var(--muted); margin-top: 2px; }
     .timeline .tl-commit { color: var(--faint); font-family: ui-monospace, monospace; font-size: 0.7rem; }
+    .timeline .tl-top { flex-wrap: wrap; }
+    .event-badge { border: 1px solid var(--stroke); border-radius: 999px; padding: 0.08rem 0.38rem; color: var(--faint); font-size: 0.62rem; }
+    .event-badge.current { color: var(--green); border-color: rgba(53,224,138,0.35); }
+    .event-badge.legacy { color: var(--amber); border-color: rgba(255,184,77,0.35); }
+    .event-tech { margin-top: 0.3rem; color: var(--faint); font-size: 0.68rem; }
+    .event-tech summary { cursor: pointer; color: var(--faint); }
+    .event-tech div { margin-top: 0.25rem; overflow-wrap: anywhere; line-height: 1.5; }
+    .audit-current { border: 1px solid var(--stroke); border-radius: 10px; padding: 0.65rem; margin: 0.8rem 0 1rem; background: rgba(77,156,255,0.06); }
+    .audit-current b { display: block; margin-top: 0.18rem; font-size: 0.76rem; }
+    .scope-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(145px,1fr)); gap: 0.55rem; margin: 0.85rem 0; }
+    .scope-metric { border: 1px solid var(--stroke); border-radius: 10px; padding: 0.6rem; background: rgba(0,0,0,0.14); }
+    .scope-metric span { display: block; color: var(--faint); font-size: 0.64rem; }
+    .scope-metric b { display: block; margin-top: 0.2rem; font-size: 0.86rem; }
+    .story-card .story-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.35rem 0; }
+    .story-card .story-badges span { border: 1px solid var(--stroke); border-radius: 999px; padding: 0.08rem 0.35rem; color: var(--faint); font-size: 0.62rem; }
+    .story-card .story-badges .scope-current { color: var(--blue); border-color: rgba(77,156,255,0.35); }
 
     /* ---- detail (level 2) ---- */
     .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: clamp(10px, 1.4vw, 16px); }
@@ -301,6 +318,18 @@
     .story-card h4 { margin: 0 0 0.35rem; font-size: 0.78rem; }
     .story-card p { margin: 0; color: var(--muted); font-size: 0.68rem; }
     .story-card button { margin-top: 0.55rem; padding: 0.28rem 0.55rem; font-size: 0.66rem; }
+    .story-files { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.55rem; }
+    button.file-ref {
+      display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%; margin: 0;
+      padding: 0.28rem 0.5rem; color: var(--neon-c); background: rgba(53,224,214,0.07);
+      border-color: rgba(53,224,214,0.28); text-align: left; vertical-align: middle;
+    }
+    button.file-ref:hover { background: rgba(53,224,214,0.13); border-color: rgba(53,224,214,0.48); }
+    button.file-ref code { color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    button.file-ref.busy { opacity: 0.55; cursor: wait; }
+    .file-ref-missing { display: inline-flex; flex-direction: column; gap: 0.1rem; color: var(--faint); }
+    .file-ref-missing code { color: var(--faint); text-decoration: line-through; word-break: break-all; }
+    .file-ref-missing small { color: var(--red); font-size: 0.6rem; }
     .flow-audit .timeline { margin-top: 1rem; }
     @media (max-width: 900px) {
       .flow-summary, .flow-details { grid-template-columns: 1fr; }
@@ -365,6 +394,11 @@
 
     const $ = id => document.getElementById(id);
     function esc(t) { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+    function fileRef(path, label = path, exists = true) {
+      if (!path) return '<span class="file-ref-missing"><code>—</code></span>';
+      if (!exists) return `<span class="file-ref-missing"><code>${esc(path)}</code><small>文件不存在</small></span>`;
+      return `<button type="button" class="file-ref" data-open-file="${esc(path)}" title="使用系统默认应用打开：${esc(path)}">↗ <code>${esc(label || path)}</code></button>`;
+    }
     let toastT;
     function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 
@@ -378,6 +412,77 @@
       storyScopeReady: 'Story Scope 已确认', implementationDesignReady: '落点设计完整',
       storyTddComplete: 'Story TDD 完整', testPlanApproved: '测试审核通过', approvedTestPlan: '已审核计划未漂移', integrationReportPass: '集成报告通过'
     };
+    const NEXT_STAGE_ZH = {
+      requirement: '需求排序', prioritization: '正式架构', architecture: 'Story 拆分',
+      'story-split': '实现落点设计', 'implementation-design': '逐 Story TDD',
+      'story-development': '集成测试计划', 'integration-test-plan': '全量集成测试', 'integration-test': '完成',
+      reproduce: '根因定位', diagnose: '修复落点设计', fix: '回归复核', regression: '完成'
+    };
+    const LEGACY_PENDING_MARKERS = [
+      'skillRunStage:', 'implementationDesignReady:', 'storyTddComplete:', 'storyScopeReady:',
+      'testPlanApproved:', 'integrationReportPass:', '子 Plan 未创建', '子 Plan 不存在'
+    ];
+
+    function gateEventResult(event) {
+      if (event.result !== 'fail') return event.result;
+      const reason = String(event.reason || '');
+      return LEGACY_PENDING_MARKERS.some(marker => reason.includes(marker)) ? 'pending' : 'fail';
+    }
+
+    function gateEventSubject(event) {
+      if (event.story_id) return event.story_id;
+      if (event.scope_story_ids?.length) return `Scope：${event.scope_story_ids.join('、')}`;
+      return event.legacy ? '阶段级旧记录' : zhStage(event.stage);
+    }
+
+    function gateEventReason(event) {
+      const result = gateEventResult(event);
+      const reason = String(event.reason || '');
+      if (result === 'pass') {
+        if (event.stage === 'done') return '全部流程门禁已通过';
+        if (event.stage === 'implementation-design') {
+          return event.workflow === 'bugfix' ? '修复落点已确认，可进入修复实现' : '实现落点已确认，可进入逐 Story TDD';
+        }
+        if (event.stage === 'story-development') return 'Story TDD 已完成，可进入后续阶段';
+        return `${zhStage(event.stage)}已满足，可进入${NEXT_STAGE_ZH[event.stage] || '下一阶段'}`;
+      }
+      if (reason.includes('skillRunStage:')) return '阶段反馈尚未补齐，当前仍在进行中';
+      if (reason.includes('confirmed 必须为 true')) return '实现落点尚未确认，当前仍在进行中';
+      if (reason.includes('blocked_questions 非空')) return '实现落点仍有待确认问题';
+      if (reason.includes('子 Plan 未创建') || reason.includes('子 Plan 不存在')) return '阶段产物尚未创建，当前仍在准备中';
+      if (result === 'pending') return '退出条件尚未完成，当前仍在进行中';
+      return reason || '门禁未通过';
+    }
+
+    function gateEventIsCurrent(event, currentGate) {
+      if (!currentGate) return false;
+      if (event.event_id && currentGate.event_id) return event.event_id === currentGate.event_id;
+      return Boolean(event.plan_snapshot && event.plan_snapshot === currentGate.plan_snapshot
+        && event.stage === currentGate.stage && (event.story_id || '') === (currentGate.story_id || ''));
+    }
+
+    function renderGateEvent(event, currentGate = null, footer = '') {
+      const result = gateEventResult(event);
+      const isCurrent = gateEventIsCurrent(event, currentGate);
+      const validity = isCurrent ? '<span class="event-badge current">当前有效</span>'
+        : (event.legacy ? '<span class="event-badge legacy">阶段级旧记录</span>' : '<span class="event-badge">历史记录</span>');
+      const icon = result === 'pass' ? '✅' : (result === 'pending' ? '▶' : '⚠');
+      const tech = [
+        `原始结论：${esc(event.reason || '—')}`,
+        `event_id：${esc(event.event_id || '旧事件未记录')}`,
+        `evaluation_id：${esc(event.evaluation_id || '旧事件未记录')}`,
+        `Plan：${event.child_plan ? fileRef(event.child_plan, event.child_plan, event.child_plan_exists) : '—'}`,
+        `commit：${esc(event.git_commit || '—')}`,
+        `plan snapshot：${esc(event.plan_snapshot || '—')}`,
+        `scope snapshot：${esc(event.scope_snapshot || '—')}`,
+      ].join('<br>');
+      return `<li class="${result}">
+        <div class="tl-top"><span class="tl-at">${esc(event.at)}</span><span class="tl-stage"><code>${esc(gateEventSubject(event))}</code></span>${validity} ${icon}</div>
+        <div class="tl-reason">${esc(gateEventReason(event))}${event.passed_stages?.length ? ` · 已过 ${esc(event.passed_stages.map(zhStage).join(' / '))}` : ''}</div>
+        ${footer ? `<div class="tl-commit">${esc(footer)}</div>` : ''}
+        <details class="event-tech"><summary>技术详情</summary><div>${tech}</div></details>
+      </li>`;
+    }
 
     function boardContentSignature(data) {
       const { revision, updated_at, ...content } = data || {};
@@ -441,7 +546,7 @@
           <div class="kpi fade-in">
             <div class="k-label">✅ 门禁通过率 ${low}</div>
             <div class="k-num" data-count="${passRate === '—' ? 0 : passRate}" data-suffix="%">0</div>
-            <div class="k-sub">${k.gate_events || 0} 次判定累积</div>
+            <div class="k-sub">${k.gate_events || 0} 次有效判定 · ${k.gate_pending_events || 0} 次进行中</div>
           </div>
           <div class="kpi axiom fade-in">
             <div class="k-label">🧭 核心法则</div>
@@ -461,7 +566,7 @@
         const badge = e.health === 'archived'
           ? '<span class="arch-tag">✓ 已归档</span>'
           : (gate
-            ? `<span class="gate-badge ${gate.result}">${gate.result === 'pass' ? '✅ 通过' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : '')}</span>`
+            ? `<span class="gate-badge ${gate.result}">${gate.result === 'pass' ? '✅ 通过' : (gate.result === 'pending' ? '▶ 进行中' : '⚠ 未过' + (consec >= 2 ? ' ×' + consec : ''))}</span>`
             : '');
         const hint = e.blocker_hint && e.current_stage !== 'done'
           ? `<div class="blocker-hint">🚧 卡点 <b>${esc(e.blocker_hint)}</b></div>` : '';
@@ -522,12 +627,7 @@
       const allEvents = [];
       envelope.epics.forEach(e => (e.gate_history?.recent || []).forEach(ev => allEvents.push({ ...ev, epic: e.name })));
       allEvents.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
-      const tl = allEvents.slice(0, 10).map(ev => `
-        <li class="${ev.result}">
-          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span>${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : (ev.result === 'pending' ? `进行中 · ${esc(ev.reason || '退出条件待完成')}` : esc(ev.reason || '未过'))}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
-          <div class="tl-commit">${esc(ev.epic)} · ${esc(ev.git_commit || '')}</div>
-        </li>`).join('') || '<li>暂无门禁事件</li>';
+      const tl = allEvents.slice(0, 10).map(ev => renderGateEvent(ev, null, ev.epic || '')).join('') || '<li>暂无门禁事件</li>';
 
       const topfail = (k.top_blockers || []).map(b => `
         <li><code>${zhStage(b.stage)}</code><span class="cnt">×${b.count}</span></li>`).join('') || '<li>暂无失败记录</li>';
@@ -678,7 +778,7 @@
               <span class="flow-state">${FLOW_STATE_ZH[selected.state] || selected.state || '—'}</span>
             </div>
             <div class="stage-facts">
-              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>` : '<b style="color:var(--red)">未创建</b>'}</div>
+              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? fileRef(selectedPlan.path, selectedPlan.path, selectedPlan.exists !== false) : '<b style="color:var(--red)">未创建</b>'}</div>
               <div class="stage-fact"><div class="label">Plan 状态</div><b>${esc(selectedPlan.status || '—')}</b></div>
               <div class="stage-fact"><div class="label">门禁结果</div><b style="color:${selectedPlan.gate_result === 'pass' ? 'var(--green)' : (selectedPlan.gate_result === 'fail' ? 'var(--red)' : 'var(--muted)')}">${esc(selectedPlan.gate_result === 'pass' ? '通过' : (selectedPlan.gate_result === 'fail' ? '未过' : '暂无判定'))}</b></div>
               <div class="stage-fact"><div class="label">执行 Skill</div><code>${esc(selected.skill || '—')}</code></div>
@@ -736,7 +836,8 @@
         const plan = stage.plan || {};
         const planView = planPresentation(stage);
         const gate = stage.gate;
-        const gateLabel = gate ? (gate.result === 'pass' ? '门禁通过' : '门禁未过') : '暂无门禁判定';
+        const gateLabel = gate ? (gate.result === 'pass' ? '当前门禁已通过' : (gate.result === 'pending' ? '当前门禁进行中' : '当前门禁未过'))
+          : (stage.state === 'active' ? '当前阶段进行中' : (stage.state === 'completed' ? '阶段已完成 · 无当前快照' : '尚未到门禁'));
         return `
           <button class="flow-stage ${esc(stage.state)} ${stage.key === selected.key ? 'selected' : ''}" data-flow-stage="${esc(stage.key)}">
             <div class="flow-stage-head">
@@ -758,24 +859,36 @@
       const selectedPlanStyle = selectedPlanView.className === 'pending' ? 'color:var(--muted)' : 'color:var(--red)';
       const criteria = (selected.exit_criteria || []).map(key => `<span>${esc(CRITERIA_ZH[key] || key)}</span>`).join('');
       const selectedEvents = ((e.gate_history || {}).recent || []).filter(event => event.stage === selected.key);
-      const timeline = selectedEvents.map(event => `
-        <li class="${event.result}">
-          <div class="tl-top"><span class="tl-at">${esc(event.at)}</span> <span class="tl-stage"><code>${zhStage(event.stage)}</code></span> ${event.result === 'pass' ? '✅' : (event.result === 'pending' ? '▶' : '⚠')}</div>
-          <div class="tl-reason">${event.result === 'pass' ? '门禁通过' : (event.result === 'pending' ? `进行中 · ${esc(event.reason || '退出条件待完成')}` : esc(event.reason || '未过'))}</div>
-          ${event.git_commit ? `<div class="tl-commit">commit ${esc(event.git_commit)}</div>` : ''}
-        </li>`).join('') || '<li>该阶段暂无门禁事件</li>';
+      const timeline = selectedEvents.map(event => renderGateEvent(event, selected.gate)).join('') || '<li>该阶段暂无门禁事件</li>';
 
       let workspace = '';
       if (storyMode && ['story-split', 'implementation-design', 'story-development'].includes(selected.key)) {
-        workspace = `<div class="story-grid">${(e.stories || []).map(story => {
+        const allStories = e.stories || [];
+        const currentScopeStories = allStories.filter(story => story.sprint_scope);
+        const stageDone = story => selected.key === 'story-split' ? story.sprint_scope
+          : (selected.key === 'implementation-design' ? story.implementation_design_ready : story.tdd_complete);
+        const currentDone = currentScopeStories.filter(stageDone).length;
+        const epicDone = allStories.filter(stageDone).length;
+        const scopeSummary = selected.key === 'story-split' ? '' : `<div class="scope-summary">
+          <div class="scope-metric"><span>当前滚动 Scope</span><b>${currentDone}/${currentScopeStories.length} Story</b></div>
+          <div class="scope-metric"><span>Epic 累计</span><b>${epicDone}/${allStories.length} Story</b></div>
+        </div>`;
+        workspace = `${scopeSummary}<div class="story-grid">${allStories.map(story => {
           const done = selected.key === 'story-split' ? story.sprint_scope
             : (selected.key === 'implementation-design' ? story.implementation_design_ready : story.tdd_complete);
-          const stateLabel = selected.key === 'story-split' ? (story.sprint_scope ? 'Scope 内' : 'Scope 外')
+          const stateLabel = selected.key === 'story-split' ? (story.sprint_scope ? '当前滚动 Scope' : '未在当前 Scope')
             : (selected.key === 'implementation-design' ? (story.implementation_design_ready ? '落点完整' : '缺落点') : (story.tdd_complete ? 'TDD 完整' : 'TDD 待完成'));
+          const scopeLabel = story.sprint_scope ? '当前滚动 Scope'
+            : (story.tdd_complete ? '已完成 Story' : (story.implementation_design_ready ? '已退出当前 Scope' : '待激活'));
           return `<div class="story-card ${done ? 'done' : ''}">
             <h4>${esc(story.id)} · ${esc(story.title)}</h4>
-            <p>${esc(story.priority)} · ${esc(story.story_points)} 点 · ${esc(stateLabel)}${story.dependencies?.length ? ` · 依赖 ${esc(story.dependencies.join(', '))}` : ''}</p>
-            <button data-story="${esc(story.id)}">查看证据</button>
+            <div class="story-badges"><span class="${story.sprint_scope ? 'scope-current' : ''}">${esc(scopeLabel)}</span></div>
+            <p>${esc(story.priority)} · ${esc(story.story_points)} 点 · ${esc(stateLabel)}${story.status ? ` · Plan ${esc(story.status)}` : ''}${story.dependencies?.length ? ` · 依赖 ${esc(story.dependencies.join(', '))}` : ''}</p>
+            <div class="story-files">
+              ${fileRef(story.path, 'Story Plan', story.path_exists)}
+              ${story.implementation_design_path ? fileRef(story.implementation_design_path, '实现落点', story.implementation_design_exists) : ''}
+              ${story.tdd_evidence_path ? fileRef(story.tdd_evidence_path, 'TDD 证据', story.tdd_evidence_exists) : ''}
+            </div>
           </div>`;
         }).join('') || '<div class="empty">暂无 Story</div>'}</div>`;
       } else if (storyMode && selected.key === 'integration-test-plan') {
@@ -811,6 +924,7 @@
           </div>
           <div class="actions">
             <button class="primary" id="triggerBtn">复制续做命令</button>
+            ${fileRef(e.file, '打开 Epic 文件')}
             ${e.health === 'archived' ? '<button class="ghost" id="reactivateBtn">↻ 重新激活</button>' : '<button class="ghost" id="archiveBtn">✓ 结束归档</button>'}
             <button class="danger" id="deleteBtn">🗑 删除 Epic</button>
           </div>
@@ -832,9 +946,9 @@
               <span class="flow-state">${FLOW_STATE_ZH[selected.state] || selected.state || '—'}</span>
             </div>
             <div class="stage-facts">
-              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? `<code>${esc(selectedPlan.path)}</code>${selectedPlan.exists ? '' : '<div style="color:var(--red);margin-top:0.25rem">文件不存在</div>'}` : `<b style="${selectedPlanStyle}">${esc(selectedPlanView.label)}</b>`}</div>
+              <div class="stage-fact"><div class="label">子 Plan</div>${selectedPlan.path ? fileRef(selectedPlan.path, selectedPlan.path, selectedPlan.exists) : `<b style="${selectedPlanStyle}">${esc(selectedPlanView.label)}</b>`}</div>
               <div class="stage-fact"><div class="label">Plan 状态</div>${selectedPlan.exists ? `<select class="statusSel" data-plan="${esc(selectedPlan.path)}">${['草稿','进行中','评审中','已采纳','搁置'].map(option => `<option ${option === selectedPlan.status ? 'selected' : ''}>${option}</option>`).join('')}</select>` : `<b style="${selectedPlanStyle}">${esc(selectedPlanView.statusLabel)}</b>`}</div>
-              <div class="stage-fact"><div class="label">产物模板</div><code>${esc(selected.template || '—')}</code></div>
+              <div class="stage-fact"><div class="label">产物模板</div>${selected.template ? fileRef(selected.template, selected.template, selected.template_exists) : '<code>—</code>'}</div>
               <div class="stage-fact"><div class="label">执行 Skill</div><code>${esc((selected.skills || []).join(' → ') || '—')}</code></div>
             </div>
             ${criteria ? `<div class="criteria-list">${criteria}</div>` : ''}
@@ -842,7 +956,10 @@
             ${!selected.blocker && selected.progress_note ? `<div class="flow-progress-note">▶ ${esc(selected.progress_note)}</div>` : ''}
             ${workspace}
           </section>
-          <aside class="flow-audit fade-in"><h3>${zhStage(selected.key)} · 门禁记录</h3><ul class="timeline">${timeline}</ul></aside>
+          <aside class="flow-audit fade-in"><h3>${zhStage(selected.key)} · 当前门禁与历史事件</h3>
+            <div class="audit-current"><span>当前状态</span><b>${esc(selected.blocker || selected.progress_note || selected.summary || FLOW_STATE_ZH[selected.state] || '—')}</b></div>
+            <ul class="timeline">${timeline}</ul>
+          </aside>
         </div>`;
 
       $('backBtn').onclick = () => { view = 'overview'; currentFile = null; selectedFlowStage = null; window.scrollTo(0, 0); draw(); };
@@ -857,10 +974,6 @@
       document.querySelectorAll('[data-detail]').forEach(button => button.onclick = () => {
         const slice = e.slices.find(item => item.n === +button.dataset.detail);
         toast(`WBS ${slice.n} · 验收：${slice.acceptance || '—'} · skill：${slice.skill || '—'}`);
-      });
-      document.querySelectorAll('[data-story]').forEach(button => button.onclick = () => {
-        const story = e.stories.find(item => item.id === button.dataset.story);
-        toast(`${story.id} · ${story.story_points} 点 · ${story.tdd_complete ? 'TDD 证据完整' : 'TDD 证据未完整'} · ${story.path || '未建子 Plan'}`);
       });
       document.querySelectorAll('.statusSel').forEach(select => select.onchange = () => setStatus(select.dataset.plan, select.value, e.file));
       const archiveBtn = $('archiveBtn'), reactivateBtn = $('reactivateBtn'), deleteBtn = $('deleteBtn');
@@ -892,7 +1005,9 @@
                 ? `<p class="sub">${esc(s.priority)} · ${esc(s.story_points)} 点 · ${s.sprint_scope ? 'Scope 内' : 'Scope 外'}${s.dependencies?.length ? ` · 依赖 ${esc(s.dependencies.join(', '))}` : ''}</p>`
                 : (s.summary ? `<p class="sub">${esc(s.summary)}</p>` : '')}
               <div class="row-actions">
-                ${storyMode ? `<button data-story="${esc(s.id)}">证据</button>` : `<button data-detail="${s.n}">细节</button>`}
+                ${storyMode ? fileRef(s.path, 'Story Plan', s.path_exists) : `<button data-detail="${s.n}">细节</button>`}
+                ${storyMode && s.implementation_design_path ? fileRef(s.implementation_design_path, '实现落点', s.implementation_design_exists) : ''}
+                ${storyMode && s.tdd_evidence_path ? fileRef(s.tdd_evidence_path, 'TDD 证据', s.tdd_evidence_exists) : ''}
                 ${storyMode ? '' : (s.done
                   ? `<button data-slice="${s.n}" data-state="open">${s.skipped ? '恢复' : '重开'}</button>`
                   : `<button data-slice="${s.n}" data-state="done">完成</button>`)}
@@ -904,7 +1019,7 @@
       const plansRows = (e.plans || []).map(p => `
         <tr>
           <td>${esc(p.stage)}</td>
-          <td>${p.path ? `<code>${esc(p.path)}</code>` : '—'}</td>
+          <td>${p.path ? fileRef(p.path, p.path, p.exists !== false) : '—'}</td>
           <td>
             <select class="statusSel" data-plan="${esc(p.path || '')}">
               ${['草稿', '进行中', '评审中', '已采纳', '搁置'].map(o => `<option ${o === p.status ? 'selected' : ''}>${o}</option>`).join('')}
@@ -912,12 +1027,7 @@
           </td>
         </tr>`).join('');
       const gh = e.gate_history || {};
-      const tl = (gh.recent || []).map(ev => `
-        <li class="${ev.result}">
-          <div class="tl-top"><span class="tl-at">${esc(ev.at)}</span> <span class="tl-stage"><code>${zhStage(ev.stage)}</code></span> ${ev.result === 'pass' ? '✅' : (ev.result === 'pending' ? '▶' : '⚠')}${ev.inferred ? ' <span class="badge-low">推断</span>' : ''}</div>
-          <div class="tl-reason">${ev.result === 'pass' ? '门禁通过' : (ev.result === 'pending' ? `进行中 · ${esc(ev.reason || '退出条件待完成')}` : esc(ev.reason || '未过'))}${ev.passed_stages?.length ? ` · 已过 ${ev.passed_stages.map(zhStage).join(' / ')}` : ''}</div>
-          ${ev.git_commit ? `<div class="tl-commit">commit ${esc(ev.git_commit)}</div>` : ''}
-        </li>`).join('') || '<li>暂无门禁事件</li>';
+      const tl = (gh.recent || []).map(ev => renderGateEvent(ev, e.current_gate)).join('') || '<li>暂无门禁事件</li>';
       const ph = e.progress_history || {};
       const ptl = (ph.recent || []).map(ev => `
         <li class="progress-event">
@@ -936,6 +1046,7 @@
           </div>
           <div class="actions">
             <button class="primary" id="triggerBtn">复制续做命令</button>
+            ${fileRef(e.file, '打开 Epic 文件')}
             ${e.health === 'archived'
               ? '<button class="ghost" id="reactivateBtn">↻ 重新激活</button>'
               : '<button class="ghost" id="archiveBtn">✓ 结束归档</button>'}
@@ -978,10 +1089,6 @@
       document.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => {
         const s = e.slices.find(x => x.n === +b.dataset.detail);
         toast(`WBS ${s.n} · 验收：${s.acceptance || '—'} · skill：${s.skill || '—'}`);
-      });
-      document.querySelectorAll('[data-story]').forEach(b => b.onclick = () => {
-        const s = e.stories.find(x => x.id === b.dataset.story);
-        toast(`${s.id} · ${s.story_points} 点 · ${s.tdd_complete ? 'TDD 证据完整' : 'TDD 证据未完整'} · ${s.path || '未建子 Plan'}`);
       });
       document.querySelectorAll('.statusSel').forEach(sel => sel.onchange = () => setStatus(sel.dataset.plan, sel.value, e.file));
       const archiveBtn = $('archiveBtn'), reactivateBtn = $('reactivateBtn'), deleteBtn = $('deleteBtn');
@@ -1030,6 +1137,32 @@
     }
 
     /* ============ actions ============ */
+    document.addEventListener('click', async event => {
+      const button = event.target.closest('[data-open-file]');
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (button.classList.contains('busy')) return;
+      const file = button.dataset.openFile;
+      button.classList.add('busy');
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/open-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        toast(`已交给系统打开：${result.file}`);
+      } catch (error) {
+        toast(`打开失败：${error.message || '未知错误'}`);
+      } finally {
+        button.classList.remove('busy');
+        button.disabled = false;
+      }
+    });
+
     async function setSliceState(file, n, state) {
       const r = await fetch('/api/slice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file, slice: n, state, operator: 'web' }) });
       const d = await r.json();

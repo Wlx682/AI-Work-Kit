@@ -12,6 +12,7 @@ import textwrap
 import unittest
 import uuid
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -307,6 +308,59 @@ class WorkflowRefactorTests(unittest.TestCase):
         self.assertIn('class="flow-map"', html)
         self.assertIn('data-flow-stage=', html)
         self.assertIn("当前阶段作业面", html)
+
+    def test_kanban_opens_only_existing_workspace_files(self) -> None:
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as outside_td:
+            tmp = Path(td)
+            outside = Path(outside_td)
+            document = tmp / "Plans/功能开发/fixture.md"
+            write_file(document, "# fixture")
+            directory = tmp / "Plans/功能开发/folder"
+            directory.mkdir(parents=True)
+            external = outside / "secret.md"
+            write_file(external, "# outside")
+            symlink = tmp / "Plans/功能开发/outside-link.md"
+            symlink.symlink_to(external)
+
+            spec = importlib.util.spec_from_file_location("kanban_server", ROOT / "scripts/kanban-server.py")
+            self.assertIsNotNone(spec)
+            mod = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None
+            spec.loader.exec_module(mod)
+            mod.ROOT = tmp
+
+            self.assertEqual(mod.resolve_workspace_file("Plans/功能开发/fixture.md"), document.resolve())
+            self.assertEqual(mod.resolve_workspace_file(str(document)), document.resolve())
+            for raw in [
+                "../outside.md",
+                "Plans/功能开发/missing.md",
+                "Plans/功能开发/folder",
+                "Plans/功能开发/outside-link.md",
+            ]:
+                with self.subTest(raw=raw), self.assertRaises(ValueError):
+                    mod.resolve_workspace_file(raw)
+
+            with mock.patch.object(mod.sys, "platform", "darwin"), mock.patch.object(mod.subprocess, "Popen") as popen:
+                result = mod.open_workspace_file("Plans/功能开发/fixture.md")
+            self.assertEqual(result, {"ok": True, "file": "Plans/功能开发/fixture.md"})
+            popen.assert_called_once()
+            args, kwargs = popen.call_args
+            self.assertEqual(args[0], ["open", str(document.resolve())])
+            self.assertNotIn("shell", kwargs)
+
+    def test_kanban_file_references_use_system_open_action(self) -> None:
+        server = (ROOT / "scripts/kanban-server.py").read_text(encoding="utf-8")
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+
+        self.assertIn('if path == "/api/open-file":', server)
+        self.assertIn("function fileRef(path, label", html)
+        self.assertIn('data-open-file=', html)
+        self.assertIn("story.implementation_design_path", html)
+        self.assertIn("story.tdd_evidence_path", html)
+        self.assertIn("event.child_plan", html)
+        self.assertIn("selected.template", html)
+        self.assertIn("document.addEventListener('click', async event =>", html)
+        self.assertIn("fetch('/api/open-file'", html)
 
     def test_kanban_future_stage_plan_is_not_rendered_as_missing(self) -> None:
         html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")

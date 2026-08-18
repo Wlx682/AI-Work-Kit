@@ -854,6 +854,71 @@ skill_run:
         self.assertIn("selected.progress_note", html)
         self.assertIn("flow-progress-note", html)
 
+    def test_kanban_story_stage_does_not_invent_missing_story_gates(self) -> None:
+        spec = importlib.util.spec_from_file_location("kanban_server_story_labels", ROOT / "scripts/kanban-server.py")
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mod.BLUEPRINT_DIR = ROOT / ".workflows/blueprints"
+
+        stories = [
+            {
+                "id": "US-1", "title": "已完成落点", "story_points": 5, "sprint_scope": False,
+                "implementation_design_ready": True, "tdd_complete": True,
+            },
+            {
+                "id": "US-2", "title": "当前落点", "story_points": 3, "sprint_scope": True,
+                "implementation_design_ready": True, "tdd_complete": False,
+            },
+            {
+                "id": "US-3", "title": "待激活", "story_points": 3, "sprint_scope": False,
+                "implementation_design_ready": False, "tdd_complete": False,
+            },
+        ]
+        flow = mod._build_workflow_map(
+            "client-dev", "story-development", [], stories,
+            {"scope_confirmed": True, "epic_scope": ["US-1", "US-2", "US-3"]}, {}, None,
+        )
+        implementation = next(stage for stage in flow["stages"] if stage["key"] == "implementation-design")
+
+        self.assertEqual(implementation["summary"], "当前 Scope 1/1 · Epic 累计 2/3 Story")
+
+        html = (ROOT / "scripts/kanban/index.html").read_text(encoding="utf-8")
+        for label in ["当前滚动 Scope", "Epic 累计", "阶段级旧记录", "技术详情"]:
+            self.assertIn(label, html)
+        for invented_label in ["逐 Story 门禁事件", "逐 Story 门禁未记录", "逐 Story 门禁待通过", "等待当前 Story 门禁", "Story 门禁通过", "Story 门禁未过", "Story 门禁进行中"]:
+            self.assertNotIn(invented_label, html)
+
+    def test_kanban_gate_history_keeps_full_detail_without_guessing_legacy_story(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="client-dev-gate-history-") as raw:
+            root = Path(raw)
+            event_dir = root / ".workflows/events"
+            event_dir.mkdir(parents=True)
+            epic_rel = "Plans/Epic/demo.md"
+            lines = [
+                json.dumps({
+                    "type": "gate_fail", "stage": "implementation-design",
+                    "reason": f"第 {index} 条；后半段不能丢", "created_at": f"2026-08-17T10:{index:02d}:00+08:00",
+                }, ensure_ascii=False)
+                for index in range(14)
+            ]
+            self.write(event_dir / "demo.events.jsonl", "\n".join(lines))
+
+            spec = importlib.util.spec_from_file_location("kanban_server_full_history", ROOT / "scripts/kanban-server.py")
+            assert spec and spec.loader
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.ROOT = root
+            mod.RUN_DIR = root / ".workflows/runs"
+            mod.EVENT_DIR = event_dir
+
+            history = mod.gate_history_for(epic_rel)
+
+        self.assertEqual(len(history["recent"]), 14)
+        self.assertEqual(history["recent"][0]["reason"], "第 13 条；后半段不能丢")
+        self.assertTrue(history["recent"][0]["legacy"])
+        self.assertIsNone(history["recent"][0]["story_id"])
+
     def test_kanban_future_gate_failures_do_not_mark_current_work_red(self) -> None:
         with tempfile.TemporaryDirectory(prefix="client-dev-kanban-health-") as raw:
             root = Path(raw)
