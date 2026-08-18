@@ -484,12 +484,16 @@ emit_gate_event() {
 
     # 时间戳来自执行现场（date），不伪造。JSONL 由 python 安全序列化。
     python3 - "$event_file" "$result" "$current_state" "$reason" "$git_commit" "$plan_snapshot" "$WORKFLOW" "${epic_rel:-}" "$cur_child" "$passed_json" "$ROOT" "$PROJECT" <<'PY' 2>/dev/null || true
-import datetime, hashlib, json, pathlib, sys
+import datetime, hashlib, json, pathlib, subprocess, sys, uuid
+
+sys.path.insert(0, str(pathlib.Path(sys.argv[11]) / "scripts"))
+import gate_parse
 
 event_file, etype, stage, reason, git_commit, plan_snapshot, workflow, epic, child, passed_json, root, project = sys.argv[1:13]
 root_path = pathlib.Path(root)
 event_path = pathlib.Path(event_file)
 created_at = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+evaluation_id = str(uuid.uuid4())
 
 events = []
 if event_path.exists():
@@ -516,37 +520,132 @@ def snapshot(rel):
         return None
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
-to_write = []
-for item in json.loads(passed_json):
-    passed_stage, _, passed_child = item.partition(":")
-    if not passed_stage or latest_by_stage.get(passed_stage) == "gate_pass":
-        continue
-    to_write.append({
-        "type": "gate_pass",
-        "stage": passed_stage,
+def resolve(rel):
+    if not rel:
+        return None
+    path = pathlib.Path(rel)
+    if not path.is_absolute():
+        path = root_path / path
+    return path.resolve()
+
+def stage_context(stage_key, plan_rel):
+    context = {"scope_story_ids": [], "all_story_ids": [], "scope_snapshot": None}
+    if workflow != "client-dev" or stage_key not in {"implementation-design", "story-development"}:
+        return context
+    plan_path = resolve(plan_rel)
+    if not plan_path or not plan_path.is_file():
+        return context
+    try:
+        frontmatter = gate_parse.read_frontmatter(plan_path)
+        index_path = resolve(frontmatter.get("story_index"))
+        if not index_path or not index_path.is_file():
+            return context
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+        context["all_story_ids"] = [
+            str(item.get("id") or "").strip()
+            for item in payload.get("stories", [])
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        ]
+        context["scope_story_ids"] = [
+            str(item.get("id") or "").strip()
+            for item in payload.get("stories", [])
+            if isinstance(item, dict) and item.get("sprint_scope") is True and str(item.get("id") or "").strip()
+        ]
+        context["scope_snapshot"] = hashlib.sha256(index_path.read_bytes()).hexdigest()
+    except (OSError, ValueError, json.JSONDecodeError):
+        pass
+    return context
+
+def display_state(event_type, stage_key, event_reason, plan_rel):
+    if event_type == "gate_pass":
+        return "pass"
+    text = str(event_reason or "")
+    if "子 Plan 未创建" in text or "子 Plan 不存在" in text:
+        return "pending"
+    active_statuses = {"草稿", "进行中", "评审中", "待开发", "待确认", "draft", "in_progress", "review"}
+    pending_markers = {
+        "requirement": ("status 须为",),
+        "prioritization": ("status 须为", "backlogPrioritized:"),
+        "architecture": ("status 须为",),
+        "story-split": ("status 须为", "storyScopeReady:", "skillRunStage:"),
+        "implementation-design": ("implementationDesignReady:", "skillRunStage:"),
+        "story-development": ("storyTddComplete:", "skillRunStage:"),
+        "integration-test-plan": ("testPlanApproved:", "skillRunStage:"),
+        "integration-test": ("integrationReportPass:", "skillRunStage:"),
+    }
+    plan_path = resolve(plan_rel)
+    status = ""
+    try:
+        if plan_path and plan_path.is_file():
+            status = str(gate_parse.read_frontmatter(plan_path).get("status") or "").strip()
+    except OSError:
+        pass
+    if status in active_statuses and any(marker in text for marker in pending_markers.get(stage_key, ())):
+        return "pending"
+    return "fail"
+
+def new_event(event_type, stage_key, event_reason, plan_rel, context, *, story_id=None):
+    return {
+        "event_id": str(uuid.uuid4()),
+        "evaluation_id": evaluation_id,
+        "event_version": 2,
+        "type": event_type,
+        "stage": stage_key,
         "workflow": workflow,
         "project": project or None,
         "epic": epic or None,
-        "child_plan": passed_child or None,
-        "reason": "阶段门禁已通过；历史阻塞已解除" if latest_by_stage.get(passed_stage) == "gate_fail" else "阶段门禁已通过",
+        "child_plan": plan_rel or None,
+        "story_id": story_id,
+        "scope_story_ids": context.get("scope_story_ids") or [],
+        "scope_snapshot": context.get("scope_snapshot"),
+        "reason": event_reason,
+        "display_state": display_state(event_type, stage_key, event_reason, plan_rel),
         "git_commit": git_commit or None,
-        "plan_snapshot": snapshot(passed_child),
+        "plan_snapshot": snapshot(plan_rel),
         "created_at": created_at,
-    })
+    }
+
+def latest_stage_scope_event(stage_key, scope_snapshot):
+    for event in reversed(events):
+        if event.get("stage") != stage_key:
+            continue
+        # 这里只比较蓝图定义的阶段判定；历史逐 Story 事件不能冒充阶段出口。
+        if event.get("story_id") is not None:
+            continue
+        if event.get("scope_snapshot") != scope_snapshot:
+            continue
+        return event
+    return None
+
+to_write = []
+for item in json.loads(passed_json):
+    passed_stage, _, passed_child = item.partition(":")
+    if not passed_stage:
+        continue
+    context = stage_context(passed_stage, passed_child)
+    if context.get("scope_snapshot"):
+        previous = latest_stage_scope_event(passed_stage, context.get("scope_snapshot"))
+        if previous and previous.get("type") == "gate_pass":
+            continue
+        reason_text = "阶段门禁已通过；历史阻塞已解除" if previous and previous.get("type") == "gate_fail" else "阶段门禁已通过"
+        to_write.append(new_event("gate_pass", passed_stage, reason_text, passed_child, context))
+    else:
+        if latest_by_stage.get(passed_stage) == "gate_pass":
+            continue
+        reason_text = "阶段门禁已通过；历史阻塞已解除" if latest_by_stage.get(passed_stage) == "gate_fail" else "阶段门禁已通过"
+        to_write.append(new_event("gate_pass", passed_stage, reason_text, passed_child, context))
     latest_by_stage[passed_stage] = "gate_pass"
 
-to_write.append({
-    "type": etype,
-    "stage": stage,
-    "workflow": workflow,
-    "project": project or None,
-    "epic": epic or None,
-    "child_plan": child or None,
-    "reason": reason,
-    "git_commit": git_commit or None,
-    "plan_snapshot": plan_snapshot or None,
-    "created_at": created_at,
-})
+current_context = stage_context(stage, child)
+to_write.append(new_event(
+    etype,
+    stage,
+    reason,
+    child,
+    current_context,
+    # 蓝图只定义阶段出口；Scope 是本次判定配置，不派生为逐 Story 门禁。
+    story_id=None,
+))
 with event_path.open("a", encoding="utf-8") as fh:
     for ev in to_write:
         fh.write(json.dumps(ev, ensure_ascii=False) + "\n")

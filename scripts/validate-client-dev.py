@@ -181,7 +181,13 @@ def validate_story_evidence(root: Path, story: dict[str, Any]) -> None:
     require(not missing, f"{sid} 缺少通过的 AC: {', '.join(missing)}")
 
 
-def validate_story_development(root: Path, plan: Path, story_id: str | None = None) -> None:
+def validate_story_development(
+    root: Path,
+    plan: Path,
+    story_id: str | None = None,
+    *,
+    require_current_scope: bool = True,
+) -> None:
     _, payload = story_index(root, plan)
     stories = validate_story_metadata(payload)
     scoped = delivery_scope(payload, stories)
@@ -189,7 +195,8 @@ def validate_story_development(root: Path, plan: Path, story_id: str | None = No
     if story_id:
         story = next((item for item in scoped if str(item.get("id")) == story_id), None)
         require(story is not None, f"story_id 不属于 Epic Scope: {story_id}")
-        require(story.get("sprint_scope") is True, f"story_id 不是当前滚动 Scope: {story_id}")
+        if require_current_scope:
+            require(story.get("sprint_scope") is True, f"story_id 不是当前滚动 Scope: {story_id}")
         validate_story_evidence(root, story)
         return
     for story in scoped:
@@ -324,7 +331,7 @@ def main() -> int:
     parser.add_argument("command", choices=sorted(COMMANDS))
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument("--plan", required=True)
-    parser.add_argument("--story-id", help="仅验收当前滚动 Scope 的单个 Story；不影响无参数的全 Epic 退出门禁")
+    parser.add_argument("--story-id", help="验收当前滚动 Scope 的单个 Story；这是文件事实校验，不自动定义逐 Story 门禁事件")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -334,7 +341,11 @@ def main() -> int:
     try:
         if args.story_id:
             require(args.command == "story-development", "--story-id 仅适用于 story-development")
-            validate_story_development(root, plan.resolve(), args.story_id)
+            validate_story_development(
+                root,
+                plan.resolve(),
+                args.story_id,
+            )
         else:
             COMMANDS[args.command](root, plan.resolve())
     except (ValidationError, OSError) as exc:

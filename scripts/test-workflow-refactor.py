@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import textwrap
 import unittest
+import uuid
 from pathlib import Path
 
 
@@ -1669,6 +1670,183 @@ class WorkflowRefactorTests(unittest.TestCase):
             if event.get("stage") == "requirement" and event.get("type") == "gate_pass"
         )
         self.assertIn("历史阻塞已解除", requirement_pass["reason"])
+
+    def test_workflow_gate_records_scope_evaluations_without_inventing_story_gates(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+
+            # 同一 Scope 重复执行是重放，不应再产生一条相同 Story 的“通过转换”事件。
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+
+            story_index = tmp / "Plans/功能开发/fixture.stories.json"
+            payload = json.loads(story_index.read_text(encoding="utf-8"))
+            payload["stories"][0]["sprint_scope"] = False
+            payload["stories"].append({
+                "id": "US-2", "title": "用户完成第二个流程", "path": "Plans/功能开发/us-2.md",
+                "story_points": 3, "estimate_confirmed": True, "priority": "P0",
+                "sprint_scope": True, "dependencies": ["US-1"], "acceptance_criteria": ["AC2"],
+                "architecture_refs": ["ADR-1"], "vertical_slice": True,
+            })
+            write_file(story_index, json.dumps(payload, ensure_ascii=False, indent=2))
+            write_file(tmp / "Plans/功能开发/us-2.md", """
+            ---
+            story_id: US-2
+            status: 已完成
+            implementation_design: Plans/功能开发/us-2.impl.json
+            tdd_evidence: Plans/功能开发/us-2.tdd.json
+            ---
+            # US-2
+            """)
+            write_file(tmp / "Plans/功能开发/us-2.impl.json", json.dumps({
+                "story_id": "US-2", "codebase_available": True,
+                "codebase_read": [{"path": "src/features/flow/view.ts", "reason": "复用现有流程分层"}],
+                "target_files": {
+                    "modify": [{"path": "src/features/flow/view.ts", "purpose": "接入第二个流程", "layer": "Presentation"}],
+                    "create": [],
+                },
+                "module_boundary": {"layer": "Presentation", "dependency_rule": "Presentation 只依赖 Domain"},
+                "tests": {"red": [{"path": "tests/flow-2.test.ts", "command": "pytest tests/flow-2.test.ts"}]},
+                "risks": [], "blocked_questions": [], "confirmed": True,
+            }, ensure_ascii=False, indent=2))
+            write_file(tmp / "Plans/功能开发/us-2.tdd.json", json.dumps({
+                "story_id": "US-2", "commit": "def456",
+                "red": {"command": "pytest story2", "exit_code": 1, "reason": "功能尚未实现", "at": "t1"},
+                "green": {"command": "pytest story2", "exit_code": 0, "at": "t2"},
+                "refactor": {"command": "pytest story2", "exit_code": 0, "at": "t3"},
+                "integration_smoke": {"command": "pytest smoke2", "exit_code": 0, "at": "t4"},
+                "acceptance": [{"ac_id": "AC2", "pass": True}],
+            }, ensure_ascii=False, indent=2))
+
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+
+            events = [
+                json.loads(line)
+                for line in (tmp / ".workflows/events/fixture.events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            implementation_passes = [
+                event for event in events
+                if event.get("stage") == "implementation-design" and event.get("type") == "gate_pass"
+            ]
+
+            # 多 Story Scope 先通过、后发生一次 Scope 级失败时，修复后必须记录恢复通过。
+            payload["stories"][0]["sprint_scope"] = True
+            write_file(story_index, json.dumps(payload, ensure_ascii=False, indent=2))
+            multi_scope_snapshot = hashlib.sha256(story_index.read_bytes()).hexdigest()
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+
+            impl2 = tmp / "Plans/功能开发/us-2.impl.json"
+            impl2_payload = json.loads(impl2.read_text(encoding="utf-8"))
+            impl2_payload["confirmed"] = False
+            write_file(impl2, json.dumps(impl2_payload, ensure_ascii=False, indent=2))
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+
+            impl2_payload["confirmed"] = True
+            write_file(impl2, json.dumps(impl2_payload, ensure_ascii=False, indent=2))
+            self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+            restored_events = [
+                json.loads(line)
+                for line in (tmp / ".workflows/events/fixture.events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            multi_scope_passes = [
+                event for event in restored_events
+                if event.get("stage") == "implementation-design"
+                and event.get("type") == "gate_pass"
+                and event.get("scope_snapshot") == multi_scope_snapshot
+            ]
+
+        self.assertEqual([event.get("story_id") for event in implementation_passes], [None, None])
+        self.assertTrue(all(event.get("scope_snapshot") for event in implementation_passes))
+        self.assertEqual(len({event["scope_snapshot"] for event in implementation_passes}), 2)
+        self.assertEqual(len({uuid.UUID(event["event_id"]) for event in implementation_passes}), 2)
+        self.assertEqual(len({uuid.UUID(event["evaluation_id"]) for event in implementation_passes}), 2)
+        self.assertEqual([event["story_id"] for event in multi_scope_passes], [None, None])
+
+    def test_story_development_does_not_invent_per_story_gate_events(self) -> None:
+        with self.fixture_repo() as tmp:
+            self.create_complete_client_dev_fixture(tmp)
+            story_index = tmp / "Plans/功能开发/fixture.stories.json"
+            payload = json.loads(story_index.read_text(encoding="utf-8"))
+            payload["epic_scope"] = ["US-1", "US-2", "US-3"]
+            payload["stories"][0]["sprint_scope"] = False
+            payload["stories"].append({
+                "id": "US-2", "title": "已完成的历史 Story", "path": "Plans/功能开发/us-2.md",
+                "story_points": 3, "estimate_confirmed": True, "priority": "P0",
+                "sprint_scope": False, "dependencies": ["US-1"], "acceptance_criteria": ["AC2"],
+                "architecture_refs": ["ADR-1"], "vertical_slice": True,
+            })
+            payload["stories"].append({
+                "id": "US-3", "title": "尚未激活的后续 Story", "path": "Plans/功能开发/us-3.md",
+                "story_points": 3, "estimate_confirmed": True, "priority": "P0",
+                "sprint_scope": True, "dependencies": ["US-2"], "acceptance_criteria": ["AC3"],
+                "architecture_refs": ["ADR-1"], "vertical_slice": True,
+            })
+            write_file(story_index, json.dumps(payload, ensure_ascii=False, indent=2))
+            for story_id in ("US-2",):
+                write_file(tmp / f"Plans/功能开发/{story_id.lower()}.md", f"""
+                ---
+                story_id: {story_id}
+                status: 已完成
+                implementation_design: Plans/功能开发/{story_id.lower()}.impl.json
+                tdd_evidence: Plans/功能开发/{story_id.lower()}.tdd.json
+                ---
+                # {story_id}
+                """)
+                write_file(tmp / f"Plans/功能开发/{story_id.lower()}.impl.json", json.dumps({
+                    "story_id": story_id, "codebase_available": True,
+                    "codebase_read": [{"path": "src/features/flow/view.ts", "reason": "复用现有流程"}],
+                    "target_files": {"modify": [{"path": "src/features/flow/view.ts", "purpose": "接入历史流程", "layer": "Presentation"}], "create": []},
+                    "module_boundary": {"layer": "Presentation", "dependency_rule": "Presentation 只依赖 Domain"},
+                    "tests": {"red": [{"path": "tests/flow-2.test.ts", "command": "pytest tests/flow-2.test.ts"}]},
+                    "risks": [], "blocked_questions": [], "confirmed": True,
+                }, ensure_ascii=False, indent=2))
+                write_file(tmp / f"Plans/功能开发/{story_id.lower()}.tdd.json", json.dumps({
+                    "story_id": story_id, "commit": "def456",
+                    "red": {"command": "pytest story2", "exit_code": 1, "reason": "功能尚未实现", "at": "t1"},
+                    "green": {"command": "pytest story2", "exit_code": 0, "at": "t2"},
+                    "refactor": {"command": "pytest story2", "exit_code": 0, "at": "t3"},
+                    "integration_smoke": {"command": "pytest smoke2", "exit_code": 0, "at": "t4"},
+                    "acceptance": [{"ac_id": "AC2", "pass": True}],
+                }, ensure_ascii=False, indent=2))
+            write_file(tmp / "Plans/功能开发/us-3.md", """
+            ---
+            story_id: US-3
+            status: 待开发
+            implementation_design: Plans/功能开发/us-3.impl.json
+            ---
+            # US-3
+            """)
+            write_file(tmp / "Plans/功能开发/us-3.impl.json", json.dumps({
+                "story_id": "US-3", "codebase_available": True,
+                "codebase_read": [{"path": "src/features/flow/view.ts", "reason": "复用现有流程"}],
+                "target_files": {"modify": [{"path": "src/features/flow/view.ts", "purpose": "接入后续流程", "layer": "Presentation"}], "create": []},
+                "module_boundary": {"layer": "Presentation", "dependency_rule": "Presentation 只依赖 Domain"},
+                "tests": {"red": [{"path": "tests/flow-3.test.ts", "command": "pytest tests/flow-3.test.ts"}]},
+                "risks": [], "blocked_questions": [], "confirmed": True,
+            }, ensure_ascii=False, indent=2))
+
+            gate = self.run_gate(tmp, "--workflow", "client-dev", "--epic", "Plans/Epic/fixture.md", "--json")
+            self.assertEqual(gate["current_state"], "story-development", gate)
+            events = [
+                json.loads(line)
+                for line in (tmp / ".workflows/events/fixture.events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        story_passes = [
+            event for event in events
+            if event.get("stage") == "story-development" and event.get("type") == "gate_pass"
+            and event.get("story_id") is not None
+        ]
+        self.assertEqual(story_passes, [], events)
+        current_failure = events[-1]
+        self.assertEqual(current_failure["stage"], "story-development")
+        self.assertEqual(current_failure["type"], "gate_fail")
+        self.assertIsNone(current_failure["story_id"])
+        self.assertIn("US-3 status 未完成", current_failure["reason"])
 
 
     def test_plan_gate_requires_skill_run_for_all_plan_categories(self) -> None:
