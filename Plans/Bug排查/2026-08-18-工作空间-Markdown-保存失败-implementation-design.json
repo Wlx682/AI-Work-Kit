@@ -1,0 +1,52 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/features/workspace/document_editor/data/network_workspace_document_ports.dart",
+      "reason": "确认工作空间 Markdown 发布端口当前的上传凭证请求、上传地址与回包校验。"
+    },
+    {
+      "path": "test/features/workspace/document_editor/workspace_document_gateway_adapter_test.dart",
+      "reason": "确认现有端口测试只覆盖固定上传域名的理想成功路径。"
+    },
+    {
+      "path": "docs/oracles/business/bus-058-workspace-document-editor.md",
+      "reason": "确认工作空间文档保存必须先发布可读 HTTPS URL，再调用 filesystem.edit。"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/workspace/document_editor/data/network_workspace_document_ports.dart",
+        "purpose": "对齐冻结 iOS 的七牛凭证与上传域名协议，使用服务端 up_domain 并携带 cdn_type=1。",
+        "layer": "Service/Platform Contract adapter"
+      },
+      {
+        "path": "test/features/workspace/document_editor/workspace_document_gateway_adapter_test.dart",
+        "purpose": "增加上传凭证请求和服务端上传域名选择的回归测试。",
+        "layer": "Unit test"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "workspace document editor data adapter",
+    "dependency_rule": "Repository 仍只依赖 WorkspaceDocumentPublisher；七牛 HTTP 协议细节留在 data adapter，不进入 View、ViewModel 或 Composition Root。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/workspace/document_editor/workspace_document_gateway_adapter_test.dart",
+        "command": "flutter test test/features/workspace/document_editor/workspace_document_gateway_adapter_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "up_domain 可能不含 scheme，需要按 iOS 行为安全归一化为 HTTPS。",
+    "不能放松 filesystem.edit 的双层信封成功判定，否则会把空回包误报为保存成功。",
+    "当前工作树存在其他文件预览改动，本修复只能编辑声明的两个文件。"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
