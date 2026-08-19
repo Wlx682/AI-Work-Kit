@@ -1,0 +1,103 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/NNamiWork",
+  "codebase_read": [
+    {
+      "path": "NAMIWork/Features/ClawChat/Network/SubHandlers/NMChatHistoryMapper.swift",
+      "reason": "chat.history 原始消息到 NMChatMessage 的唯一映射入口，当前在此丢弃空 abort assistant"
+    },
+    {
+      "path": "NAMIWork/Features/ClawChat/Network/SubHandlers/NMChatHistoryCompletionAnalyzer.swift",
+      "reason": "确认协议层已能按最后一个 user 之后的 openclawAbort 判定当前轮已中止"
+    },
+    {
+      "path": "NAMIWork/Features/ClawChat/Model/NMChatMessage.swift",
+      "reason": "历史消息模型及 runTiming/terminalReason 承载位置"
+    },
+    {
+      "path": "NAMIWork/Features/ClawChat/Network/Cache/NMChatStoredMessage.swift",
+      "reason": "历史缓存快照需要保留 Gateway abort 展示语义，避免缓存预上屏退化"
+    },
+    {
+      "path": "NAMIWork/Features/ClawChat/ViewModel/NMChatViewModel.swift",
+      "reason": "历史正文 Cell 与轮次汇总头的投影入口，需避免 gateway-injected abort 被当作系统提示"
+    },
+    {
+      "path": "NAMIWork/Features/ClawChat/ViewModel/CellViewModels/NMChatRoundSummaryHeaderCellVM.swift",
+      "reason": "历史轮次耗时文案生成位置，需要按 user_aborted 输出 Android 同口径停止文案"
+    },
+    {
+      "path": "NAMIWorkTests/ClawChat/NMChatHistoryContractTests.swift",
+      "reason": "现有 chat.history Mapper、缓存与 ViewModel 合约测试落点"
+    },
+    {
+      "path": ".ai-delivery/test-fence-registry.yaml",
+      "reason": "项目测试围栏注册表，需要登记新增行为、影响锚点和回归测试"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "NAMIWork/Features/ClawChat/Network/SubHandlers/NMChatHistoryMapper.swift",
+        "purpose": "识别 assistant.openclawAbort.aborted，并按 Android 规则为空正文补“已停止”、为部分正文幂等追加停止后缀",
+        "layer": "History mapping"
+      },
+      {
+        "path": "NAMIWork/Features/ClawChat/Model/NMChatMessage.swift",
+        "purpose": "以布尔字段保留 Gateway abort marker 的展示语义，供历史投影区分普通 gateway-injected 系统提示",
+        "layer": "Chat domain model"
+      },
+      {
+        "path": "NAMIWork/Features/ClawChat/Network/Cache/NMChatStoredMessage.swift",
+        "purpose": "向后兼容地持久化/恢复 abort marker 展示语义",
+        "layer": "History cache DTO"
+      },
+      {
+        "path": "NAMIWork/Features/ClawChat/ViewModel/NMChatViewModel.swift",
+        "purpose": "让 gateway abort 正文走普通 assistant BODY，并把 user_aborted 终态传给历史轮次汇总头",
+        "layer": "Chat presentation projection"
+      },
+      {
+        "path": "NAMIWork/Features/ClawChat/ViewModel/CellViewModels/NMChatRoundSummaryHeaderCellVM.swift",
+        "purpose": "为用户手动停止轮次生成“任务在 %@ 后已停止”，其他历史轮次维持原耗时文案",
+        "layer": "Chat cell view model"
+      },
+      {
+        "path": "NAMIWork/Resources/Localizable.xcstrings",
+        "purpose": "登记新增用户可见停止耗时文案",
+        "layer": "Localization resource"
+      },
+      {
+        "path": "NAMIWorkTests/ClawChat/NMChatHistoryContractTests.swift",
+        "purpose": "增加空正文、部分正文、幂等、非 abort、缓存恢复和历史 ViewModel 可见文案回归",
+        "layer": "Unit/contract tests"
+      },
+      {
+        "path": ".ai-delivery/test-fence-registry.yaml",
+        "purpose": "注册手动停止历史投影功能、代码锚点和 mandatory smoke",
+        "layer": "Delivery test fence"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Gateway chat.history payload -> NMChatHistoryMapper -> NMChatMessage/NMChatStoredMessage -> NMChatViewModel -> existing text and round-summary cells",
+    "dependency_rule": "协议识别与文本实体现于历史映射层；领域模型只携带事实标记；ViewModel 只决定已有 Cell 的投影和文案形态；不让 UI 反向解析原始字典，不改 abort RPC 或 Gateway 协议"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "NAMIWorkTests/ClawChat/NMChatHistoryContractTests.swift",
+        "command": "xcodebuild test -workspace NAMIWork.xcworkspace -scheme NAMIWork -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:NAMIWorkTests/NMChatHistoryContractTests/testHistoryMapperMaterializesStoppedBodyForGatewayAbort -only-testing:NAMIWorkTests/NMChatHistoryContractTests/testAbortedHistoryRendersStoppedBodyAndElapsedStatus"
+      }
+    ]
+  },
+  "risks": [
+    "Localizable.xcstrings 与 NMChatHistoryContractTests.swift 已有用户未提交改动，必须只追加本缺陷内容",
+    "旧缓存不存在新增字段，StoredMessage 解码必须以 Optional/默认 false 保持兼容",
+    "普通 gateway-injected 欢迎语和系统提示不得被误判为停止正文",
+    "Xcode/Simulator 测试需用户显式授权；未授权前只能保存 Red 用例并做静态验证，不能宣称 XCTest 通过"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
