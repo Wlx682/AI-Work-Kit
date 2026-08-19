@@ -1,0 +1,75 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "CFR-001",
+      "title": "锁定依赖边界与行为不变量",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "先让错误依赖、owner fencing、生命周期和预览行为回退可被测试捕获",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-002",
+      "title": "建立单向 App composition 装配链",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CFR-001"],
+      "priority": "P0",
+      "reason": "先切断子装配模块对聚合根的反向依赖，避免后续拆分复制依赖环",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-003",
+      "title": "分离 App 内部运行时与 Feature 能力投影",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CFR-001", "CFR-002"],
+      "priority": "P0",
+      "reason": "建立阻止网络、鉴权、签名和平台实现泄漏给 Feature 的核心边界",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-004",
+      "title": "由 App host 向 Files 注入窄依赖",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CFR-003"],
+      "priority": "P0",
+      "reason": "完成 Files Feature 去 App import 并闭合真实页面生产入口",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-005",
+      "title": "通过窄预览端口保持 App 侧平台实现",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CFR-003", "CFR-004"],
+      "priority": "P0",
+      "reason": "在不泄漏 App runtime 的前提下保持下载、缓存和系统预览行为",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-006",
+      "title": "迁移剩余生产消费者并闭合生命周期",
+      "business_value": "high",
+      "urgency": "medium",
+      "dependencies": ["CFR-003", "CFR-004", "CFR-005"],
+      "priority": "P0",
+      "reason": "Main、Projects 等消费者与资源释放未迁移完成时生产链仍为 PARTIAL",
+      "confirmed": true
+    },
+    {
+      "id": "CFR-007",
+      "title": "固化 Provider 装配规则与回归门禁",
+      "business_value": "medium",
+      "urgency": "medium",
+      "dependencies": ["CFR-001", "CFR-002", "CFR-003", "CFR-004", "CFR-005", "CFR-006"],
+      "priority": "P1",
+      "reason": "澄清 composition module 与 root file 的职责，防止后续重新聚集",
+      "confirmed": true
+    }
+  ]
+}
