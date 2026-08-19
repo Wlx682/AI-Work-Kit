@@ -1,24 +1,76 @@
 {
   "scope_confirmed": true,
-  "confirmed_by": "用户明确裁决放弃桥接，InputBar 完全参考 iOS，TextView 先用 Flutter 实现",
-  "confirmed_at": "2026-08-18",
-  "epic_scope": ["US-IB-001"],
-  "current_implementation_scope": ["US-IB-001"],
+  "confirmed_by": "用户最终明确实现 Slate Text、附件、媒体预览/上传、Model、Skill，并移除 TextAndVoice、Voice、AIGC",
+  "confirmed_at": "2026-08-19",
+  "epic_scope": ["US-IB-001", "US-IB-002", "US-IB-003", "US-IB-004"],
+  "current_implementation_scope": ["US-IB-004"],
   "stories": [
     {
       "id": "US-IB-001",
-      "title": "按 iOS 架构实现 Flutter 组件化 InputBar 并接入聊天页",
+      "title": "Flutter Slate 文本与 @专家生产发送",
       "vertical_slice": true,
       "path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-001.md",
       "story_points": 8,
       "estimate_confirmed": true,
       "priority": "P0",
-      "sprint_scope": true,
+      "sprint_scope": false,
       "dependencies": [],
-      "acceptance_criteria": ["AC-IB-001", "AC-IB-002", "AC-IB-003", "AC-IB-004", "AC-IB-005"],
+      "acceptance_criteria": ["AC-IB-002", "AC-IB-003", "AC-IB-003-反", "AC-IB-004", "AC-IB-014", "AC-IB-015", "AC-IB-016", "AC-IB-017"],
+      "requirement_ids": ["REQ-IB-001", "REQ-IB-002"],
       "architecture_refs": [
-        "ios@4d405cf068488b33396aada07febc3cdb5f31f5f:NAMIWork/Share/UI/InputBar",
-        "https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=2253&docId=294121"
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-001",
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-007"
+      ]
+    },
+    {
+      "id": "US-IB-002",
+      "title": "附件选择、上传与媒体预览闭环",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-002.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-IB-001"],
+      "acceptance_criteria": ["AC-IB-005", "AC-IB-005-反", "AC-IB-006", "AC-IB-007", "AC-IB-008", "AC-IB-009"],
+      "requirement_ids": ["REQ-IB-003", "REQ-IB-004"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-004",
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-005"
+      ]
+    },
+    {
+      "id": "US-IB-003",
+      "title": "Slate 与成功附件的 durable 发送和草稿结算",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-003.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-IB-001", "US-IB-002"],
+      "acceptance_criteria": ["AC-IB-010", "AC-IB-012", "AC-IB-013"],
+      "requirement_ids": ["REQ-IB-006"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-006",
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-008"
+      ]
+    },
+    {
+      "id": "US-IB-004",
+      "title": "外部契约稳定后的 Model、Skill 与完整五组件生产组合",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-004.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P1",
+      "sprint_scope": true,
+      "dependencies": ["US-IB-001", "US-IB-002", "US-IB-003"],
+      "acceptance_criteria": ["AC-IB-001", "AC-IB-011"],
+      "requirement_ids": ["REQ-IB-001", "REQ-IB-005"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-002",
+        "Plans/技术方案/2026-08-18-Flutter组件化InputBar.md#ADR-IB-008"
       ]
     }
   ]

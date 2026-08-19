@@ -1,0 +1,66 @@
+{
+  "confirmed": true,
+  "confirmed_by": "用户 2026-08-19 对 Slate/@、生产组件、文件/照片选择和上传的明确纠偏",
+  "requirements": [
+    {
+      "id": "REQ-IB-001",
+      "title": "InputBar 中心契约与 5 类生产组件组合",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "复用已有中心 State/Component/双 Delegate/四位置底座，但完成定义必须绑定 Slate Text、FileInput、MediaPreview、Model、Skill 五类真实消费者",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-IB-002",
+      "title": "Slate 文档、Flutter 编辑投影与 @专家",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["REQ-IB-001"],
+      "priority": "P0",
+      "reason": "TextEditingValue 无法表达原子 mention；必须先建立可序列化 Slate 真值、编辑投影和 display/prompt 双导出",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-IB-003",
+      "title": "相机、相册、本地文件与云盘选择",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["REQ-IB-001"],
+      "priority": "P0",
+      "reason": "用户明确点名文件和照片选择缺失；需要把系统 Picker、权限、大小/数量与临时文件释放接入 typed source",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-IB-004",
+      "title": "MediaPreview 与 owner-bound 文件上传",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["REQ-IB-001", "REQ-IB-003"],
+      "priority": "P0",
+      "reason": "附件必须有 pending/uploading/success/failed、单调进度、重试、删除、预览和 owner/generation 围栏，不能只展示本地缩略图",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-IB-005",
+      "title": "Model、Skill 组件与选择快照",
+      "business_value": "high",
+      "urgency": "low",
+      "dependencies": ["REQ-IB-001"],
+      "priority": "P1",
+      "reason": "不由 InputBar 抢先定义 Agent/Skill 公共模型；对应模块契约稳定后再做最小投影和生产接线",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-IB-006",
+      "title": "完整输入快照进入 Chat durable 发送",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["REQ-IB-002", "REQ-IB-003", "REQ-IB-004", "REQ-IB-005"],
+      "priority": "P0",
+      "reason": "最终必须冻结 Slate prompt、全部成功附件和本轮 options，沿现有 outbox/idempotency/owner 语义提交并精确结算草稿",
+      "confirmed": true
+    }
+  ]
+}

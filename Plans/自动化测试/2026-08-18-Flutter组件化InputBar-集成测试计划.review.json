@@ -1,0 +1,31 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-19T18:24:00+08:00",
+  "target_commit": "79dfcc0b2dc43251d5fd6f98b623e0819ae1cc4e",
+  "case_index_sha256": "7b9874e8ee0a70a1f112dcb942211aabceef5bbf4b7431c51c52e2aa96b6cbab",
+  "unresolved_comments": 0,
+  "resolved_comments": [
+    {
+      "finding": "旧 Slate 回归只以小 maxCharacterCount 验证 overflow，未直接锁定默认 50000 字边界",
+      "resolution": "在 709c4261 新增默认上限内可输入、50001 字单次 overflow 的 Widget 回归"
+    },
+    {
+      "finding": "五组件生产组合不能只由 InputBar 组件测试取证",
+      "resolution": "IT-IB-401 改为 input-bar-and-product-chat suite，同时要求 ChatPage 五个生产 key 和实例隔离证据"
+    },
+    {
+      "finding": "Android Phone 生产会话未显示附件入口，App 会话代际被错误要求等于 Gateway runtime 代际",
+      "resolution": "beeff8dd 移除跨 owner 域 generation 判等，保留 environment/account/runtime/session 围栏；新增生产组合回归并完成 Android Phone Picker/上传/预览冒烟"
+    },
+    {
+      "finding": "旧计划未覆盖用户新增的 Figma 五态样式、同一 SlateView 约束切换与高度动画连续性",
+      "resolution": "新增 IT-IB-104，冻结当前候选，并要求验证 336×60、聚焦 94、长文本 200、100ms 中间帧及 Slate/TextField 实例稳定性"
+    },
+    {
+      "finding": "当前 dev 的越南语 ARB 重复键与缺失逗号阻断 iOS 候选构建",
+      "resolution": "79dfcc0b 最小修复 JSON 结构并通过 flutter gen-l10n、jq 与 scoped analyze；业务用例与范围不变"
+    }
+  ],
+  "review_summary": "12 条用例覆盖 US-IB-001..004 的全部 AC 与 Figma/iOS 视觉动效校正；11 条自动化用例覆盖 Slate/@、五态动画、附件、durable、Model/Skill 与防回环，1 条 P0 人工用例保留五类真机矩阵。"
+}

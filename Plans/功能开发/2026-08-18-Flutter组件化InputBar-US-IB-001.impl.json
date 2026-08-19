@@ -3,40 +3,109 @@
   "codebase_available": true,
   "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
   "codebase_read": [
-    {"path": "lib/features/chat/presentation/chat_page.dart", "reason": "确认现有 _Composer、TextEditingController、busy 状态和生产发送链"},
-    {"path": "test/features/chat/presentation/chat_controller_test.dart", "reason": "确认输入、发送、禁用、草稿恢复的现有回归契约"},
-    {"path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar", "reason": "通过 git show 固定 commit 4d405cf068488b33396aada07febc3cdb5f31f5f，确认 NMInputBar、NMInputState、NMInputComponent、双 delegate 与四位置生产实现"},
-    {"path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-18-Flutter组件化InputBar.md", "reason": "沉淀内部设计文档确认的单一状态源、组件化、观察者、策略与委托约束"}
+    {
+      "path": "lib/features/chat/presentation/input_bar/domain/nami_slate_document.dart",
+      "reason": "确认当前只支持 paragraph/text/agent mention，缺少 file reference、引用操作、字符串 codec 与文档校验"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/slate/nami_slate_editing_controller.dart",
+      "reason": "确认当前只覆盖文本 delta、mention 原子删除和插入，缺少引用重选、外部插入、选区归一化与完整编辑 API"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/components/nami_text_input_component.dart",
+      "reason": "确认 TextField、mention picker 与 InputBar 组件职责混在同一文件，需要提取唯一 Flutter Slate TextView"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/NMSlateEditor/Editor/NMPortonSlateTextView.swift",
+      "reason": "提取 iOS 生产编辑器公开行为，不迁 Porton renderer 本身"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/NMSlateEditor/DocumentOperations/NMDocumentManager.swift",
+      "reason": "提取文本与引用插入/替换/删除、range 和文档长度语义"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/NMSlateEditor/Providers/NMExpertReferenceProvider.swift",
+      "reason": "提取新增 @、取消恢复与点击已有 mention 带默认值重选语义"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/NMSlateEditor/RenderingAndAdapters/NMSlateAdapter.swift",
+      "reason": "确认 Slate/full/simple JSON 和 agent/file reference 兼容格式"
+    }
   ],
   "target_files": {
     "modify": [
-      {"path": "lib/features/chat/presentation/chat_page.dart", "purpose": "用组件化 InputBar 替换私有 _Composer 并保持生产发送链", "layer": "Chat presentation"}
+      {
+        "path": "lib/features/chat/presentation/input_bar/domain/nami_slate_document.dart",
+        "purpose": "补齐 agent/file reference、字符串 JSON codec、simple export、引用查询与增删改、文档统计校验",
+        "layer": "Slate domain"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/slate/nami_slate_editing_controller.dart",
+        "purpose": "补齐单一编辑内核的 load/set/replaceText/reference 操作、点击重选定位、selection/composing 归一化与重入保护",
+        "layer": "Slate editing core"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_text_input_component.dart",
+        "purpose": "改为组合 NamiSlateTextView，并保留 InputBar 状态合并、发送和 picker UI 职责",
+        "layer": "InputBar component"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/input_bar.dart",
+        "purpose": "导出唯一 Flutter Slate TextView 及最小公开类型",
+        "layer": "InputBar public API"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_slate_document_test.dart",
+        "purpose": "覆盖协议、引用和 UTF-16/跨段编辑行为",
+        "layer": "Slate unit tests"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "purpose": "覆盖唯一 Flutter TextView、@取消/新增/重选、外部回写与多实例",
+        "layer": "Widget tests"
+      }
     ],
     "create": [
-      {"path": "lib/features/chat/presentation/input_bar/nami_input_state.dart", "reason": "输入栏单一状态源", "naming_basis": "iOS NMInputState", "layer": "Presentation state"},
-      {"path": "lib/features/chat/presentation/input_bar/nami_input_component.dart", "reason": "四位置组件与组件 delegate 契约", "naming_basis": "iOS NMInputComponent", "layer": "Presentation component contract"},
-      {"path": "lib/features/chat/presentation/input_bar/nami_input_bar.dart", "reason": "组件容器、中心状态、动态组装和业务 delegate", "naming_basis": "iOS NMInputBar", "layer": "Presentation composition"},
-      {"path": "lib/features/chat/presentation/input_bar/components/nami_text_input_component.dart", "reason": "Flutter TextField 文本输入组件", "naming_basis": "iOS NMNewTextInputComponent", "layer": "Presentation component"},
-      {"path": "lib/features/chat/presentation/input_bar/input_bar.dart", "reason": "稳定公开导出面", "naming_basis": "模块 barrel", "layer": "Presentation API"},
-      {"path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart", "reason": "组件位置、状态合并、分发、动态组装和 TextField 回归", "naming_basis": "模块聚焦测试", "layer": "Widget tests"},
-      {"path": "Plans/功能开发/2026-08-18-Flutter组件化InputBar-US-IB-001.tdd.json", "reason": "记录 Red/Green/Refactor 与 AC 证据", "naming_basis": "Story 证据契约", "layer": "Workflow evidence"}
+      {
+        "path": "lib/features/chat/presentation/input_bar/slate/nami_slate_text_view.dart",
+        "reason": "承载唯一 Flutter TextField renderer、焦点/选区回调、mention 点击和字符上限；不创建 renderer adapter 层",
+        "naming_basis": "iOS NMPortonSlateTextView 的 Flutter 单实现",
+        "layer": "Slate presentation"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+        "reason": "独立验证 Slate TextView 公共编辑行为和 reference picker 交互",
+        "naming_basis": "US-IB-001 complete Slate migration regression",
+        "layer": "Widget tests"
+      }
     ]
   },
   "module_boundary": {
-    "layer": "ChatPage/ViewModel -> NamiInputBar -> NamiInputComponent -> Flutter TextField",
-    "dependency_rule": "NamiInputBar 只管理输入区呈现状态和组件协作；会话 owner、发送、恢复与 Gateway 仍由 ChatController/Repository 负责；组件不得直接依赖聊天业务或平台原生代码"
+    "layer": "NamiInputState -> NamiSlateDocument -> NamiSlateEditingController -> one NamiSlateTextView(TextField); picker callback -> agent reference value",
+    "dependency_rule": "只保留一个 Flutter TextField renderer；不迁 YY/Native/Porton renderer、attachment renderer 或 adapter；Slate 不依赖 AgentSummary、上传、Gateway 或全局 provider，外部能力通过当前实例的最小回调注入"
   },
   "tests": {
     "red": [
-      {"path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart", "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart"},
-      {"path": "test/features/chat/presentation/chat_controller_test.dart", "command": "flutter test test/features/chat/presentation/chat_controller_test.dart"}
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_slate_document_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart"
+      }
     ]
   },
   "risks": [
-    "把 iOS UIKit 的命令式组件生命周期逐行翻译会违背 Flutter 声明式重建模型，因此只对齐职责、状态流和公开语义",
-    "外部 busy 状态覆盖组件本地文本会造成草稿丢失，外部状态同步必须携带当前 TextEditingValue",
-    "发送后立即清空会破坏现有 durable submission 恢复语义，聊天入口必须关闭 InputBar 的自动 reset",
-    "运行时组件列表变化若以值相等误判可能丢失 GlobalKey/输入焦点"
+    "Dart String offset 与 Flutter TextEditingValue 都按 UTF-16 code unit，所有 range 操作必须保持该坐标系",
+    "Flutter 用可见 @name 表示原子引用，选区和 delta 可能落在引用内部，必须在写回文档前扩展到完整引用",
+    "IME composing 期间不得主动弹 picker 或把程序化 projection 误报为用户编辑",
+    "50k 超限只发事件给附件业务，不在 Slate 内直接上传或清空正文",
+    "已有附件 Story 的未提交改动必须保留，不得因重开 Slate 被覆盖"
   ],
   "blocked_questions": [],
   "confirmed": true

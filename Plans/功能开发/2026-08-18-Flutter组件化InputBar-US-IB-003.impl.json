@@ -1,0 +1,95 @@
+{
+  "story_id": "US-IB-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/features/chat/presentation/input_bar/nami_input_state.dart",
+      "reason": "确认当前仅由 submissionPromptText 临时组合 prompt，没有不可变 submission snapshot 或 typed freeze rejection"
+    },
+    {
+      "path": "lib/features/chat/presentation/chat_page.dart",
+      "reason": "确认页面在发送回调中分别读取 prompt/draft/attachments，并在 finalState 与 aborted 两种终态都清理已提交附件"
+    },
+    {
+      "path": "lib/features/chat/presentation/chat_controller.dart",
+      "reason": "确认 send(String) 负责 durable admit、idempotency、retry 与 owner fencing，但尚无 sendInput(snapshot) 边界"
+    },
+    {
+      "path": "lib/features/chat/outgoing_queue/domain/chat_outgoing_queue_contract.dart",
+      "reason": "确认 FrozenChatSubmission 已不可变冻结 command、route identity、deliveryId，重试可比较 recoverable intent"
+    },
+    {
+      "path": "lib/claw/api/models/chat_command.dart",
+      "reason": "确认 Gateway ChatSendAttachment.content 是 base64 契约，远程 URL 必须继续由受控 prompt composer 表达"
+    },
+    {
+      "path": "test/features/chat/presentation/chat_controller_test.dart",
+      "reason": "确认已有成功终态精确附件清理回归，但缺少 userAborted/unknown 保留与 typed snapshot send 回归"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/input_bar.dart",
+        "purpose": "导出 submission snapshot/factory 公开边界",
+        "layer": "InputBar public API"
+      },
+      {
+        "path": "lib/features/chat/presentation/chat_controller.dart",
+        "purpose": "增加 sendInput(snapshot) 并把冻结 prompt 交给既有 durable send，不在 await 后重读 InputBar state",
+        "layer": "Chat presentation/application boundary"
+      },
+      {
+        "path": "lib/features/chat/presentation/chat_page.dart",
+        "purpose": "点击发送先 typed freeze，再记录同一 snapshot；仅精确 completed terminal 清理文档/附件，aborted/error/unknown 保留",
+        "layer": "Chat usage consumer"
+      },
+      {
+        "path": "test/features/chat/presentation/chat_controller_test.dart",
+        "purpose": "覆盖仅附件/文本+附件 durable command、发送后新草稿隔离、userAborted/unknown/owner 换代保留与精确成功清理",
+        "layer": "Product Chat integration tests"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/application/nami_input_snapshot_factory.dart",
+        "reason": "定义 immutable NamiInputSubmissionSnapshot 与 typed frozen/rejected 结果，集中校验空输入、未就绪附件和受控 prompt",
+        "naming_basis": "architecture NamiInputSnapshotFactory contract",
+        "layer": "InputBar application"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+        "reason": "Red 覆盖附件-only、Slate+附件、未就绪拒绝与冻结后原状态变化不影响 snapshot",
+        "naming_basis": "US-IB-003 snapshot regression",
+        "layer": "Unit tests"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "InputBar State -> SnapshotFactory -> immutable snapshot -> ChatController.sendInput -> existing durable SubmissionPort/Outbox",
+    "dependency_rule": "SnapshotFactory 只读取一次当前 InputState 并复制附件列表；ChatController 不持有 InputBar Controller，也不在 await/retry 时重读 UI。远程 URL 只进入受控 prompt，不填充要求 base64 content 的 Gateway attachments。Model/Skill 映射留给 US-IB-004 的稳定外部契约"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/chat_controller_test.dart",
+        "command": "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'user-aborted durable terminal retains the submitted Slate and attachments'"
+      }
+    ]
+  },
+  "risks": [
+    "只比较展示文本会把同名不同 ID 的 Slate reference 误判为未变化；清理必须同时依赖 composer revision 和精确 delivery generation",
+    "userAborted/interrupted/error/unknown 不是成功终态，不得删除附件或清空当前 draft",
+    "retry 必须复用同 deliveryId 和冻结 prompt；禁止重新读取已变化的附件列表",
+    "远程附件 URL、Slate JSON、正文和签名信息不得进入日志或 secret-free outbox metadata",
+    "不得把远程 URL 填入 ChatSendAttachment.content；该字段只接受 base64",
+    "US-IB-004 前不抢定义 AgentSummary/Skill/Model 外部业务模型"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

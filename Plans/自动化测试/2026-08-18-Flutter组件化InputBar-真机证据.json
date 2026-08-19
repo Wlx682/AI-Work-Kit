@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "status": "PARTIAL",
+  "source_commit": "79dfcc0b2dc43251d5fd6f98b623e0819ae1cc4e",
+  "executed_at": "2026-08-19T19:10:16+08:00",
+  "case_id": "IT-IB-501",
+  "platform_runs": [
+    {
+      "platform": "android",
+      "device_form": "phone",
+      "device_fingerprint": "5bfd4695de6ca4e2521bb784ad6a5ee78b82300b48898e1630ba4f47ed963f07",
+      "status": "PARTIAL",
+      "reason": "当前候选已完成生产 InputBar、长文本自动换行、系统 Picker、签名上传、离线失败重试、文本预览、删除恢复和 Phone 旋转草稿保持；真实发送及带上游数据的 mention/Skill 仍未执行",
+      "environment": "production",
+      "fixture": {
+        "kind": "synthetic_text_file",
+        "size_bytes": 83,
+        "contains_user_data": false,
+        "local_fixture_removed": true
+      },
+      "stages": [
+        {"id": "current-candidate-build-install-launch", "status": "PASS"},
+        {"id": "five-component-production-composition", "status": "PASS"},
+        {"id": "default-and-focused-input", "status": "PASS"},
+        {
+          "id": "wrapped-multiline-input",
+          "status": "PASS",
+          "reason": "长草稿自动换行后 EditText 高度由 64px 增长到 192px，三行内容与附件/发送按钮无溢出"
+        },
+        {"id": "camera-system-picker", "status": "PASS"},
+        {"id": "gallery-system-picker", "status": "PASS"},
+        {"id": "local-file-system-picker", "status": "PASS"},
+        {"id": "signed-attachment-upload", "status": "PASS"},
+        {"id": "uploaded-text-preview", "status": "PASS"},
+        {"id": "attachment-delete-and-draft-recovery", "status": "PASS"},
+        {"id": "phone-rotation-draft-recovery", "status": "PASS"},
+        {
+          "id": "mention-and-skill-with-business-data",
+          "status": "NOT_RUN",
+          "reason": "生产组件已接线；当前会话 mentionCandidates/initialSkill 为空，只验证 @ 文档输入和 Skill 空态"
+        },
+        {
+          "id": "permission-denial-and-upload-retry",
+          "status": "PASS",
+          "reason": "READ_EXTERNAL_STORAGE 处于拒绝状态时系统 Picker 仍按单文件授权工作；关闭 Wi-Fi/移动数据后上传失败并禁用发送，恢复网络点击重试后上传成功"
+        },
+        {
+          "id": "business-message-send",
+          "status": "NOT_RUN",
+          "reason": "本次只验证附件链，不向真实会话写入测试消息"
+        }
+      ]
+    },
+    {
+      "platform": "ios",
+      "device_form": "phone",
+      "status": "NOT_RUN",
+      "reason": "当前候选 iOS Debug build、整包深度签名、安装和启动 PASS；尚未执行 InputBar 默认/聚焦/多行、Picker/上传/预览"
+    },
+    {"platform": "android", "device_form": "pad", "status": "NOT_RUN"},
+    {"platform": "android", "device_form": "fold", "status": "NOT_RUN"},
+    {"platform": "ios", "device_form": "pad", "status": "NOT_RUN"}
+  ],
+  "related_registry_evidence": {
+    "suite_id": "claw-real-network-dual-platform-v1",
+    "ios_phone_status": "STALE",
+    "ios_device_fingerprint": "8845c1223ee06ad791fc8bb9298781c909204ec7697433da67cb58fcdefd491c",
+    "suite_sha256": "06fb7a1c780d5038463254210f9db271db5f79094a0c020a6bfce85d63eb8816",
+    "ios_passed_stages": [
+      "native-device-signing-metadata",
+      "signed-directory-http",
+      "gateway-websocket-connect",
+      "gateway-read-only-health"
+    ],
+    "android_phone_status": "STALE",
+    "android_blocker": "registry suite 尚未在当前候选重跑；InputBar 人工矩阵证据单独记录为 PARTIAL",
+    "source_commit": "beeff8dd81f6bfd15000d0e3420203abc430734e",
+    "valid_for_current_candidate": false
+  },
+  "limitations": [
+    "当前候选 Android Phone 已完成附件核心链和旋转恢复，但不能外推到 Pad/Fold 或未执行场景",
+    "当前候选 iPhone 仅完成构建、签名、安装与启动，尚未执行 InputBar 交互矩阵",
+    "Android Phone 未执行显式换行键、分屏和真实消息发送；Pad/Fold/iPad 形态及其权限/失败恢复未执行",
+    "当前生产会话未注入 mention candidates 或 initial Skill，未形成 @候选选择和 Skill chip 真机证据"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "story_id": "US-IB-002",
+  "commit": "45e48c2ce2f596b0837e2ad5ddb10e48010f1a5a",
+  "base_commit": "c26d3adcfbfa9ab2ec8c4447c93d6c387e008dbf",
+  "red": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart test/features/chat/presentation/input_bar/dio_nami_attachment_upload_repository_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-19T14:15:41+08:00",
+    "reason": "新增回归仅因三个生产缺口失败：上传流无终态时永久停在 uploading、自定义 send checker 可绕过未就绪附件硬门禁、请求 deadline 到期后上传流静默结束"
+  },
+  "green": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart test/features/chat/presentation/input_bar/dio_nami_attachment_upload_repository_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-19T14:15:41+08:00",
+    "evidence": "13 条 Controller/Repository 聚焦测试通过；无终态转可恢复失败、超时产生 typed failure、任何 checker 均不能放行 pending/uploading/failed 附件"
+  },
+  "refactor": {
+    "command": "dart format <US-IB-002 changed Dart paths> && flutter analyze lib/app/product_chat_destination.dart lib/app/integrations/app_file_preview_source.dart lib/app/integrations/app_file_preview_launcher.dart lib/features/chat/presentation/input_bar lib/features/chat/presentation/chat_page.dart",
+    "exit_code": 0,
+    "at": "2026-08-19T14:15:41+08:00",
+    "evidence": "InputBar 保持 typed port 和 per-instance Controller；ProductChat 使用点注入上传与预览 adapter；未新增全局 InputBar provider/factory/list，scoped analyze 无问题"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/chat/presentation/input_bar && flutter test <product-chat impact targets> && flutter test test/app/integrations/app_file_preview_coordinator_test.dart test/app/integrations/app_file_preview_source_test.dart test/app/app_file_preview_runtime_provider_test.dart && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-19T14:15:41+08:00",
+    "evidence": "InputBar 目录 45 条、ProductChat 影响集 84 条、文件预览协调器/来源/runtime 32 条全部通过；任务 ID 命名与 diff check 通过"
+  },
+  "review_fix": {
+    "red": {
+      "command": "flutter test test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart test/app/integrations/app_file_preview_source_test.dart",
+      "exit_code": 1,
+      "at": "2026-08-19T14:15:41+08:00",
+      "evidence": "回归稳定复现未就绪附件仍会调用 preview port，且 App 文件预览来源没有 InputBar 已上传附件类型，ProductChat 无法打开远端图片/视频/文档"
+    },
+    "green": {
+      "command": "flutter test test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart test/app/integrations/app_file_preview_source_test.dart",
+      "exit_code": 0,
+      "at": "2026-08-19T14:15:41+08:00",
+      "evidence": "15 条测试通过；仅 success 附件可打开预览，同实例兄弟图片快照被保留，HTTPS 上传附件进入现有 App 图片/媒体/文档预览栈"
+    }
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-IB-005",
+      "pass": true,
+      "evidence": "拍照/相册使用 image_picker，本地文件复用 app-owned document channel，结果统一投影为 InputBar typed source"
+    },
+    {
+      "ac_id": "AC-IB-005-反",
+      "pass": true,
+      "evidence": "Picker 取消、权限拒绝、非法来源、数量/单文件大小超限均有 typed 结果且不污染已有附件；Android 无 owner 的 lost data 被丢弃"
+    },
+    {
+      "ac_id": "AC-IB-006",
+      "pass": true,
+      "evidence": "签名 multipart POST /api/s3/upload；进度单调且封顶 0.99，仅合法 HTTPS data.up_url 进入 success/1.0，超时与无终态显式失败"
+    },
+    {
+      "ac_id": "AC-IB-007",
+      "pass": true,
+      "evidence": "失败可重试或删除；删除、重试、owner 切换均取消旧操作，并用 owner+operationGeneration 拒绝迟到结果"
+    },
+    {
+      "ac_id": "AC-IB-008",
+      "pass": true,
+      "evidence": "MediaPreview 展示上传中、失败、重试、删除；成功附件由 ProductChat 实例 adapter 接入现有图片、视频和文档真实预览栈"
+    },
+    {
+      "ac_id": "AC-IB-009",
+      "pass": true,
+      "evidence": "pending/uploading/failed 均为不可发送硬门禁；发送终态只删除冻结的精确附件快照，不误删同一 InputBar 后续新增附件"
+    }
+  ],
+  "limitations": [
+    "云盘候选业务模型尚未稳定，当前入口保持禁用；未来由云盘模块投影 trusted remote attachment，不在 InputBar 内定义 CloudDrive 模型",
+    "US-IB-003 将把成功附件改为正式 durable delivery envelope；当前生产 Chat 先以受控 Markdown URL 投影发送，避免上传成功附件被静默丢弃",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真机网络/Picker/系统预览矩阵未执行，标记 NOT_RUN",
+    "impact selector 的 TC-CLAW-NET-RG-001 需要双端真机和真实签名环境，本轮未伪造执行结果"
+  ]
+}

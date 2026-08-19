@@ -1,0 +1,62 @@
+{
+  "status": "PARTIAL",
+  "commit": "79dfcc0b2dc43251d5fd6f98b623e0819ae1cc4e",
+  "approved_test_plan": "Plans/自动化测试/2026-08-18-Flutter组件化InputBar-集成测试计划.md",
+  "approved_case_index_sha256": "7b9874e8ee0a70a1f112dcb942211aabceef5bbf4b7431c51c52e2aa96b6cbab",
+  "all_scope_stories_completed": true,
+  "executed_at": "2026-08-19T19:10:16+08:00",
+  "device_evidence": "Plans/自动化测试/2026-08-18-Flutter组件化InputBar-真机证据.json",
+  "suites": [
+    {
+      "name": "input-bar-all",
+      "command": "flutter test test/features/chat/presentation/input_bar",
+      "exit_code": 0,
+      "passed_tests": 55,
+      "result": "PASS"
+    },
+    {
+      "name": "product-chat-durable",
+      "command": "flutter test test/app/integrations/chat_outbox_history_authority_test.dart test/app/integrations/chat_outbox_history_stop_authority_test.dart test/app/integrations/chat_runtime_route_adapter_test.dart test/app/product_chat_destination_test.dart test/app/product_chat_open_coordinator_test.dart test/features/chat/presentation/chat_controller_test.dart test/features/chat/session_context/encrypted_file_chat_open_handoff_repository_test.dart test/navigation/chat_route_test.dart",
+      "exit_code": 0,
+      "passed_tests": 89,
+      "result": "PASS"
+    },
+    {
+      "name": "scoped-analyze",
+      "command": "flutter analyze lib/l10n lib/features/chat/presentation/input_bar lib/features/chat/presentation/chat_page.dart lib/features/chat/presentation/chat_controller.dart lib/app/product_chat_destination.dart",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "repository-gates",
+      "command": "python3 scripts/validate-task-id-naming.py && git diff --check",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "device-matrix",
+      "command": "manual: Android Phone/Pad/Fold + iPhone/iPad Picker/upload/preview/adaptive regression",
+      "exit_code": null,
+      "result": "PARTIAL",
+      "reason": "当前候选 Android Phone 的生产组合、长文本自动换行、拍照/相册/文件 Picker、签名上传、离线失败重试、文本预览、删除恢复和旋转草稿保持 PASS；iPhone 构建/签名/安装/启动 PASS；剩余交互与 Pad/Fold/iPad 未完成"
+    },
+    {
+      "name": "claw-real-network-dual-platform-v1",
+      "command": "dart run tool/run_dual_platform_device_regression.dart",
+      "exit_code": null,
+      "result": "NOT_RUN",
+      "reason": "既有 registry 证据绑定旧候选，不能作为当前 SHA 的通过证据"
+    }
+  ],
+  "case_results": [
+    {"case_ids": ["IT-IB-101", "IT-IB-102", "IT-IB-103", "IT-IB-104", "IT-IB-201", "IT-IB-202", "IT-IB-203", "IT-IB-401"], "result": "PASS", "suite": "input-bar-all/input-bar-and-product-chat"},
+    {"case_ids": ["IT-IB-301", "IT-IB-302", "IT-IB-402"], "result": "PASS", "suite": "product-chat-durable"},
+    {"case_ids": ["IT-IB-501"], "result": "PARTIAL", "suite": "device-matrix"}
+  ],
+  "defects": [],
+  "limitations": [
+    "IT-IB-501 当前候选 Android Phone 仅为 PARTIAL，iPhone 仅完成构建、签名、安装与启动，Epic 不得进入 Done",
+    "registry 双端证据仍绑定旧候选，不能作为当前 SHA 的通过证据",
+    "Android Phone 显式换行键、分屏、真实消息发送及带业务数据的 mention/Skill 未执行；Pad/Fold/iPad 形态与 iPhone 交互未执行"
+  ]
+}

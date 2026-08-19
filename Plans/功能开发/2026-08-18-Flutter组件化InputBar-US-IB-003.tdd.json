@@ -1,0 +1,65 @@
+{
+  "story_id": "US-IB-003",
+  "commit": "6973cc9794c6c1ffce30156d5cd225fb50ab449f",
+  "base_commit": "45e48c2ce2f596b0837e2ad5ddb10e48010f1a5a",
+  "red": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-19T14:25:24+08:00",
+    "reason": "测试仅因 NamiInputSnapshotFactory、immutable snapshot 和 typed frozen/rejected 结果尚不存在而编译失败"
+  },
+  "green": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart && flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'user-aborted durable terminal retains the submitted Slate and attachments'",
+    "exit_code": 0,
+    "at": "2026-08-19T14:25:24+08:00",
+    "evidence": "3 条 SnapshotFactory 与 1 条 userAborted 聚焦回归通过；附件-only/Slate+附件可冻结，空/禁用/未就绪 typed 拒绝，中止不清理草稿"
+  },
+  "refactor": {
+    "command": "dart format <US-IB-003 changed Dart paths> && flutter analyze lib/features/chat/presentation/input_bar/application/nami_input_snapshot_factory.dart lib/features/chat/presentation/input_bar/input_bar.dart lib/features/chat/presentation/chat_controller.dart lib/features/chat/presentation/chat_page.dart test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart test/features/chat/presentation/chat_controller_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-19T14:25:24+08:00",
+    "evidence": "ChatPage 的分散 draft/files 字段收敛为一个 NamiInputSubmissionSnapshot；document 用结构相等与 revision 双条件清理，scoped analyze 无问题"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/chat/presentation/input_bar && flutter test <product-chat durable impact targets> && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-19T14:25:24+08:00",
+    "evidence": "InputBar 目录 48 条、ProductChat durable 影响集 86 条全部通过；task-ID naming 与 diff check 通过"
+  },
+  "review_fix": {
+    "red": {
+      "command": "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'user-aborted durable terminal retains the submitted Slate and attachments'",
+      "exit_code": 1,
+      "at": "2026-08-19T14:25:24+08:00",
+      "evidence": "稳定复现 authoritative userAborted 被当成可清理终态，导致已提交 Slate 和附件被删除"
+    },
+    "green": {
+      "command": "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'user-aborted durable terminal retains the submitted Slate and attachments'",
+      "exit_code": 0,
+      "at": "2026-08-19T14:25:24+08:00",
+      "evidence": "只有精确 finalState/completed 清理；userAborted 不制造重复 re-edit draft，也不删除附件"
+    }
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-IB-010",
+      "pass": true,
+      "evidence": "SnapshotFactory 支持仅成功附件与 Slate+成功附件；mention/remote URL 进入一个冻结 prompt，附件列表不可变；Gateway base64 attachments 保持为空"
+    },
+    {
+      "ac_id": "AC-IB-012",
+      "pass": true,
+      "evidence": "queued/reconcile/owner replacement 继续由既有 durable outbox 围栏；新增回归证明 userAborted 保留 Slate 与精确附件，error/unknown 不满足 clearable terminal"
+    },
+    {
+      "ac_id": "AC-IB-013",
+      "pass": true,
+      "evidence": "ChatPage 保存同一 immutable snapshot、composer revision 和 send generation；只有精确 completed terminal 清理相同 document 与 snapshot 中附件，新附件不受影响"
+    }
+  ],
+  "limitations": [
+    "Model/Skill/turnOptions 已预留在 snapshot，但其稳定外部投影和 ChatSendCommand 映射属于 US-IB-004，本 Story 不抢定义业务模型",
+    "远程附件仍按已采纳 ADR 进入受控 prompt；Gateway ChatSendAttachment.content 只接受 base64，未新增未经确认的 remote attachment schema",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真机 durable/旋转/进程恢复矩阵未执行，标记 NOT_RUN"
+  ]
+}

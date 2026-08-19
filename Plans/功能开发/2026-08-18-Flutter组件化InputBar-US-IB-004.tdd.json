@@ -1,0 +1,77 @@
+{
+  "story_id": "US-IB-004",
+  "commit": "b7d091c710374cbb3eedc608819b7f6da4ed2af0",
+  "base_commit": "9d5467dc6d37a42ebddb77fc59dfe1e11af1b2e5",
+  "red": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_capability_components_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-19T14:35:00+08:00",
+    "reason": "NamiInputModelOption、NamiInputSkillOption、NamiModelComponent 与 NamiSkillComponent 尚不存在，Widget 测试仅因功能未实现而编译失败"
+  },
+  "additional_red_runs": [
+    {
+      "command": "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+      "exit_code": 1,
+      "at": "2026-08-19T14:35:00+08:00",
+      "reason": "SnapshotFactory 尚不支持 typed Model/Skill 与 use_skill 模板"
+    },
+    {
+      "command": "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'sendInput carries the frozen model into the durable command without reusing creator skill fields'",
+      "exit_code": 1,
+      "at": "2026-08-19T14:35:00+08:00",
+      "reason": "ChatPage 仍缺少五组件 key/入参，ChatController 也未映射冻结 selectedModel"
+    }
+  ],
+  "green": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_capability_components_test.dart && flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart && flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'sendInput carries the frozen model into the durable command without reusing creator skill fields'",
+    "commands": [
+      "flutter test test/features/chat/presentation/input_bar/nami_capability_components_test.dart",
+      "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+      "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'sendInput carries the frozen model into the durable command without reusing creator skill fields'"
+    ],
+    "exit_code": 0,
+    "at": "2026-08-19T14:41:00+08:00",
+    "evidence": "Model 选择、Skill 外部回显/移除、双 InputBar 实例隔离、外部状态零回调、use_skill prompt 冻结、selectedModel durable 映射与成功结算均通过"
+  },
+  "refactor": {
+    "command": "dart format <US-IB-004 changed Dart paths> && flutter analyze lib/app/product_chat_destination.dart lib/features/chat/presentation/chat_page.dart lib/features/chat/presentation/chat_controller.dart lib/features/chat/presentation/input_bar test/features/chat/presentation/input_bar test/features/chat/presentation/chat_controller_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-19T14:42:00+08:00",
+    "evidence": "InputBar 不依赖 CloudConfig/Skill/Gateway/Riverpod；ProductChat 使用处按实例投影，scoped analyze 无问题"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/chat/presentation/input_bar && flutter test <ProductChat durable impact targets> && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "commands": [
+      "flutter test test/features/chat/presentation/input_bar",
+      "flutter test test/app/integrations/chat_outbox_history_authority_test.dart test/app/integrations/chat_outbox_history_stop_authority_test.dart test/app/integrations/chat_runtime_route_adapter_test.dart test/app/product_chat_destination_test.dart test/app/product_chat_open_coordinator_test.dart test/features/chat/presentation/chat_controller_test.dart test/features/chat/session_context/encrypted_file_chat_open_handoff_repository_test.dart test/navigation/chat_route_test.dart",
+      "python3 scripts/validate-task-id-naming.py",
+      "git diff --check"
+    ],
+    "exit_code": 0,
+    "at": "2026-08-19T14:46:00+08:00",
+    "evidence": "rebase 后 InputBar 53 条、ProductChat durable 影响集 87 条全通过；task-ID naming、diff check 和冲突范围 analyze 通过"
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-IB-001",
+      "pass": true,
+      "evidence": "生产 ChatPage 同时组装 Model、Skill、MediaPreview、Slate Text、FileInput；聚焦测试通过五个生产 key 取证"
+    },
+    {
+      "ac_id": "AC-IB-011",
+      "pass": true,
+      "evidence": "Model internalModelId 冻结到 ChatSendCommand.selectedModel；普通 Skill 仅通过 iOS use_skill 模板进入 prompt，skillId/skillName 保持 null；精确 completed 后 Skill 清理、Model 保留"
+    }
+  ],
+  "regression_guards": [
+    "applyExternalState 标记外部同步，更新回调基线但不上报用户变更",
+    "Model/Skill 组件只在用户选择或移除时上报一次",
+    "发送后仅清理与旧 snapshot 相等的 Skill，后续新选择不受旧终态影响",
+    "多 InputBar 实例不共享 Model、Skill 或附件状态"
+  ],
+  "limitations": [
+    "Skill 的外部业务数据模型按用户裁决后置；当前 ChatPage 提供实例级 initialSkill 最小投影入口，未修改 AgentSummary/SkillReference",
+    "Cloud drive 选择候选仍等待 CloudFiles 模块稳定契约，不影响本 Story 的 Model/Skill 验收",
+    "integration_test/claw_network_device_regression_test.dart 与 Android Phone/Pad/Fold、iPhone/iPad 真机矩阵未执行，标记 NOT_RUN"
+  ]
+}

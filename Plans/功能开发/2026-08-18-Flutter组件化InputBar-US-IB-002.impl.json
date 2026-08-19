@@ -1,0 +1,178 @@
+{
+  "story_id": "US-IB-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/features/chat/presentation/input_bar/nami_input_state.dart",
+      "reason": "确认附件仍是空 marker，isUploading/outputFiles 尚无真实状态机"
+    },
+    {
+      "path": "lib/app/integrations/app_cloud_file_upload_launcher.dart",
+      "reason": "确认已有 app-owned UIDocumentPicker/ACTION_OPEN_DOCUMENT channel 及临时文件回收边界"
+    },
+    {
+      "path": "lib/app/settings_feedback_services.dart",
+      "reason": "确认 image_picker 与签名 /api/s3/upload 的现有生产路径"
+    },
+    {
+      "path": "lib/core/upload_manager/upload_manager_contract.dart",
+      "reason": "复用 owner/generation/cancellation/progress/failure 的围栏语义，不复用只返回云文件 ID 的业务 adapter"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/Components/NMNewFileInputComponent.swift",
+      "reason": "确认 Camera/Album/File/Cloud 选择入口及数量/大小限制"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/Components/NMMediaPreviewComponent.swift",
+      "reason": "确认附件列表、上传状态、重试、删除与预览的职责分界"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Core/Services/Upload/NMS3FileUploadManager.swift",
+      "reason": "确认 pending/uploading/success/failed、传输进度封顶 0.99 与终态置 1.0"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/application/nami_attachment_controller.dart",
+      "reason": "复核当前工作树已按设计实现 per-instance owner、operation generation、取消、重试、删除和精确已提交附件清理"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/components/nami_file_input_component.dart",
+      "reason": "复核 Camera/Album/File/Cloud 四入口、自动布局和 typed pick intent 已落在独立组件"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/components/nami_media_preview_component.dart",
+      "reason": "复核附件 phase、进度、重试、删除和实例级预览回调的展示边界"
+    },
+    {
+      "path": "lib/app/product_chat_destination.dart",
+      "reason": "确认实际使用处创建独立 Controller，并以当前 runtime/session owner 注入 `/api/s3/upload` session factory"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/nami_input_state.dart",
+        "purpose": "使用强类型附件列表派生 isUploading/sendEnable，失败或未就绪附件禁止发送",
+        "layer": "InputBar state"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/input_bar.dart",
+        "purpose": "导出附件 domain/application/components 公开能力",
+        "layer": "InputBar public API"
+      },
+      {
+        "path": "lib/features/chat/presentation/chat_page.dart",
+        "purpose": "组装 FileInput/MediaPreview，绑定会话 owner，不用自定义 checker 绕过附件门禁",
+        "layer": "Chat presentation consumer"
+      },
+      {
+        "path": "lib/app/product_chat_destination.dart",
+        "purpose": "作为实际使用处，为每个 Chat/InputBar 实例直接创建 Controller，并显式注入 Picker/Upload 端口后传给 ChatPage",
+        "layer": "Product Chat usage composition"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "purpose": "增加 FileInput/MediaPreview 布局、状态、重试/删除/预览、发送门禁与同屏多实例隔离用例",
+        "layer": "Widget tests"
+      },
+      {
+        "path": "test/features/chat/presentation/chat_controller_test.dart",
+        "purpose": "覆盖附件 URL 进入真实发送命令，以及终态只清理已冻结附件快照、不误删新草稿附件",
+        "layer": "Chat production consumer tests"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/domain/nami_input_attachment.dart",
+        "reason": "定义 InputBar 自有 attachment/source/kind/phase/failure/owner 不变值对象",
+        "naming_basis": "iOS NMFileUploadModel minimal projection",
+        "layer": "InputBar domain"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/domain/nami_attachment_ports.dart",
+        "reason": "定义 Picker/Upload/Preview 类型安全端口和结果事件",
+        "naming_basis": "InputBar-owned external IO boundary",
+        "layer": "InputBar domain"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/application/nami_attachment_controller.dart",
+        "reason": "实现 pick→validate→upload、重试、删除、owner+operation 迟到结果围栏",
+        "naming_basis": "iOS NMFileUploadManager behavior",
+        "layer": "InputBar application"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_file_input_component.dart",
+        "reason": "实现 Camera/Album/File/Cloud 四入口和 Flutter 自动布局的展开面板",
+        "naming_basis": "iOS NMNewFileInputComponent",
+        "layer": "InputBar presentation"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_media_preview_component.dart",
+        "reason": "实现图片/视频/文件卡、进度、失败重试、删除和预览",
+        "naming_basis": "iOS NMMediaPreviewComponent",
+        "layer": "InputBar presentation"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/data/platform_nami_attachment_picker.dart",
+        "reason": "用 image_picker 实现拍照/相册，复用 app-owned MethodChannel 实现本地文件",
+        "naming_basis": "Flutter platform picker adapter",
+        "layer": "InputBar data/platform"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/data/dio_nami_attachment_upload_repository.dart",
+        "reason": "使用签名 /api/s3/upload 输出 HTTPS URL、进度、cancel 和 typed failure",
+        "naming_basis": "iOS NMS3FileUploadManager + existing Flutter feedback transport",
+        "layer": "InputBar data"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart",
+        "reason": "Red 覆盖状态机、限制、重试、删除、owner/operation 竞态",
+        "naming_basis": "US-IB-002 application regression",
+        "layer": "Unit tests"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/dio_nami_attachment_upload_repository_test.dart",
+        "reason": "Red 覆盖 multipart、进度、HTTPS 回执验证与失败映射",
+        "naming_basis": "US-IB-002 data regression",
+        "layer": "Unit tests"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/platform_nami_attachment_picker_test.dart",
+        "reason": "Red 覆盖 app-private 文件映射/释放、媒体缓存 ownership 与 Android lost-data 丢弃",
+        "naming_basis": "US-IB-002 platform picker regression",
+        "layer": "Platform adapter tests"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Usage site -> per-InputBar Controller injected with Picker/Upload ports -> FileInput and MediaPreview -> NamiInputState",
+    "dependency_rule": "InputBar 必须支持多实例且只接收独立组件；组合根/共享 ProductChatRuntime 不得持有 InputBar Factory、Controller、attachment list、Picker operation 或 upload cancellation token。具体 App 服务只在使用处注入子组件，不作为隐藏全局依赖。InputBar 不依赖 AgentSummary、Skill、Workspace 或 CloudDrive 业务模型"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_attachment_controller_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/dio_nami_attachment_upload_repository_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/dio_nami_attachment_upload_repository_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "Picker 取消、拒绝和超限不得污染已有草稿；Android lost data 无 owner marker 时只能丢弃",
+    "进度最高只到 0.99，只有合法 HTTPS 终态回执可置 success/1.0",
+    "删除、重试、会话切换后的迟到事件必须被 owner+operationGeneration 双围栏丢弃",
+    "本地路径和远程 URL 不进普通日志；签名头、Cookie 和 token 不进 Feature",
+    "云盘候选数据结构尚未稳定，本 Story 不自定义其业务模型或声称生产云盘选择已接通",
+    "不得使用 App/Riverpod 全局 InputBar runtime/provider 或共享 Factory；同屏多 InputBar 必须拥有独立状态、任务和销毁边界",
+    "组件 applyExternalState 期间的同步回报必须被抑制；程序化 Slate 投影不得重新解释为用户输入，防止状态分发死循环"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

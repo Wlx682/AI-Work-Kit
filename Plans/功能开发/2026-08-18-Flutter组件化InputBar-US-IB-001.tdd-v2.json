@@ -1,0 +1,103 @@
+{
+  "story_id": "US-IB-001",
+  "commit": "c26d3adcfbfa9ab2ec8c4447c93d6c387e008dbf",
+  "base_commit": "a38fa1fce0e28766a838bd26324b038061bb63a2",
+  "red": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-19T11:45:00+08:00",
+    "reason": "NamiSlateTextView、file reference、完整引用操作与 picker 重选 API 尚不存在，测试仅因目标实现缺失而编译失败"
+  },
+  "green": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-19T12:00:00+08:00",
+    "evidence": "21 条 Slate/InputBar 测试通过；唯一 Flutter TextField、agent/file reference、@取消/新增/重选、IME 延迟触发、外部投影防回写和多实例隔离均通过"
+  },
+  "refactor": {
+    "command": "dart format lib/features/chat/presentation/input_bar test/features/chat/presentation/input_bar && flutter analyze lib/features/chat/presentation/input_bar lib/features/chat/presentation/chat_page.dart test/features/chat/presentation/input_bar",
+    "exit_code": 0,
+    "at": "2026-08-19T12:04:00+08:00",
+    "evidence": "TextField 从 InputBar component 提取为唯一 NamiSlateTextView；未引入 PlatformView、YY/Native/Porton renderer、上传依赖或 adapter 层；scoped analyze 无问题"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart test/features/chat/presentation/input_bar/nami_input_bar_test.dart test/features/chat/presentation/chat_controller_test.dart test/app/product_chat_destination_test.dart test/app/integrations/chat_runtime_route_adapter_test.dart && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-19T12:07:00+08:00",
+    "evidence": "51 条聚焦回归通过；InputBar 模块目录全量 34 tests 通过；任务命名与 diff check 通过"
+  },
+  "review_fix": {
+    "red": {
+      "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+      "exit_code": 1,
+      "at": "2026-08-19T13:10:00+08:00",
+      "evidence": "新增回归稳定复现迟到 picker 覆盖外部文档、mention 尾部误触、组合 emoji 计数错误和引用选区缺少原子吸附；随后单独复现 picker 打开期间最新请求被静默丢弃"
+    },
+    "green": {
+      "command": "flutter test test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+      "exit_code": 0,
+      "at": "2026-08-19T13:20:00+08:00",
+      "evidence": "20 条 Slate 聚焦测试通过：controller/document revision、controller identity、最新 picker 排队、reference 选区吸附、精确点击、iOS paragraph 拼接/编辑后 block 保留和 extended grapheme 均有回归"
+    },
+    "refactor": {
+      "command": "dart format <5 Slate paths> && flutter analyze lib/features/chat/presentation/input_bar/domain/nami_slate_document.dart lib/features/chat/presentation/input_bar/slate test/features/chat/presentation/input_bar/nami_slate_document_test.dart test/features/chat/presentation/input_bar/nami_slate_text_view_test.dart",
+      "exit_code": 0,
+      "at": "2026-08-19T13:25:00+08:00",
+      "evidence": "静态检查无问题；未新增依赖、adapter、PlatformView 或共享 provider"
+    },
+    "integration_smoke": {
+      "command": "flutter test test/features/chat/presentation/input_bar && flutter analyze lib/features/chat/presentation/input_bar test/features/chat/presentation/input_bar && python3 scripts/validate-task-id-naming.py && git diff --check",
+      "exit_code": 0,
+      "at": "2026-08-19T13:30:00+08:00",
+      "evidence": "InputBar 目录 42 条测试通过；scoped analyze、任务命名和 diff check 通过。impact selector 对工作树中附件 Story 报 unresolved，已由整个 InputBar 目录测试覆盖；真机矩阵 NOT_RUN"
+    }
+  },
+  "acceptance": [
+    {
+      "ac_id": "AC-IB-002",
+      "pass": true,
+      "evidence": "多段 text/agent/file reference 可在 Slate JSON、display、prompt、simple export 与编辑投影间往返"
+    },
+    {
+      "ac_id": "AC-IB-003",
+      "pass": true,
+      "evidence": "键盘输入 @ 或外部 requestMention 均进入当前实例 picker，选择后形成原子 agent mention"
+    },
+    {
+      "ac_id": "AC-IB-003-反",
+      "pass": true,
+      "evidence": "picker 取消保留字面 @；无 picker 时不制造 reference"
+    },
+    {
+      "ac_id": "AC-IB-004",
+      "pass": true,
+      "evidence": "引用范围内局部删除/替换会扩展为完整 reference，光标进入 reference 时吸附到首尾；公开 range 和 delta 不拆 extended grapheme，UTF-16 selection/composing 保持合法"
+    },
+    {
+      "ac_id": "AC-IB-014",
+      "pass": true,
+      "evidence": "NamiSlateTextView 仅包装一个 Flutter TextField，controller 提供 load/set/clear/plain/full/simple/focus-selection 所需能力"
+    },
+    {
+      "ac_id": "AC-IB-015",
+      "pass": true,
+      "evidence": "agent/file reference 支持解析、插入、替换、删除、提取；已有 agent mention 可携带当前值重选"
+    },
+    {
+      "ac_id": "AC-IB-016",
+      "pass": true,
+      "evidence": "顶层 paragraph 按固定 iOS 直接拼接；ZWJ emoji、IME composing、程序化 projection、迟到 picker、controller replacement 与同步状态分发回归通过且无重复回写"
+    },
+    {
+      "ac_id": "AC-IB-017",
+      "pass": true,
+      "evidence": "默认 50000 字上限只发一次 overflow callback，Slate 不依赖上传服务且不自行清空正文"
+    }
+  ],
+  "limitations": [
+    "AgentSummary/Skill 等外部业务模型仍按用户裁决后置，通过当前实例的 NamiSlateMentionPicker 最小回调接入",
+    "未迁 iOS YY/Native/Porton 多 renderer、attachment renderer 与异步 synchronizer 队列，Flutter 只保留一个 TextField 编辑实现；系统剪贴板与固定 iOS 一样按纯文本互操作，不承诺跨 App 保留 reference 结构",
+    "未执行 Android Phone/Pad/Fold 与 iPhone/iPad 真机矩阵，标记 NOT_RUN",
+    "按用户既有裁决不做 10 万字性能结论；编辑器对齐 iOS 当前 50000 字业务阈值"
+  ]
+}

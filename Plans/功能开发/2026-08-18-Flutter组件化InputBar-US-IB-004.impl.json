@@ -1,0 +1,134 @@
+{
+  "story_id": "US-IB-004",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/features/chat/presentation/input_bar/nami_input_state.dart",
+      "reason": "确认 Model/Skill 仍是 marker interface，已有中心状态与分发防重入围栏可复用"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/application/nami_input_snapshot_factory.dart",
+      "reason": "确认点击发送已冻结 model/skill，但 prompt 尚未应用 iOS use_skill 模板"
+    },
+    {
+      "path": "lib/features/chat/presentation/chat_page.dart",
+      "reason": "确认生产 Chat 当前只组装 Slate、MediaPreview、FileInput，且页面可持有每个 InputBar 实例自己的选择状态"
+    },
+    {
+      "path": "lib/features/chat/presentation/chat_controller.dart",
+      "reason": "确认 sendInput 尚未把冻结 model 映射到 ChatSendCommand，durable 与 direct command 需要共用同一冻结选项"
+    },
+    {
+      "path": "lib/features/cloud_config/domain/cloud_model_catalog.dart",
+      "reason": "确认 CloudModelOption.internalModelId 是逐轮 selectedModel 的稳定业务值"
+    },
+    {
+      "path": "lib/features/skills/domain/skill_models.dart",
+      "reason": "确认 packageName、skillKey、catalogId 不可互换；InputBar 只接收最小 prompt/display 投影"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/Components/NMModelComponent.swift",
+      "reason": "固定 iOS 证据：Model 位于 top、用户选择后上报，外部回显不反向触发用户事件"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/NNamiWork/NAMIWork/Share/UI/InputBar/Components/NMSikillComponent.swift",
+      "reason": "固定 iOS 证据：Skill 位于 main，只显示当前外部选择并支持移除，发送重置时清除"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/openclaw360/src/gateway/server-methods/chat.ts",
+      "reason": "服务端证据：chat.send.skillId/skillName 仅透传技能创建/调试草稿，普通 InputBar Skill 不得复用"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/nami_input_state.dart",
+        "purpose": "以 immutable 最小 Model/Skill 值替换 marker，保持 model 跨发送、skill 成功后精确清理",
+        "layer": "InputBar domain"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/application/nami_input_snapshot_factory.dart",
+        "purpose": "按 iOS 顺序冻结 use_skill 前缀、附件与 Slate prompt，并复制 Model/Skill 选择",
+        "layer": "InputBar application"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/input_bar.dart",
+        "purpose": "导出 Model/Skill 最小投影与两个生产组件",
+        "layer": "InputBar public API"
+      },
+      {
+        "path": "lib/features/chat/presentation/chat_page.dart",
+        "purpose": "实例级保存选择、组装完整五组件、成功后只清除精确 Skill，发送后改选不受旧终态影响",
+        "layer": "Product Chat usage consumer"
+      },
+      {
+        "path": "lib/features/chat/presentation/chat_controller.dart",
+        "purpose": "sendInput 把冻结 model.internalModelId 同时带入 durable/direct ChatSendCommand；普通 Skill 只留在 prompt",
+        "layer": "Chat presentation/application boundary"
+      },
+      {
+        "path": "lib/app/product_chat_destination.dart",
+        "purpose": "从当前 CloudConfig 投影只读 Model 候选和 use_skill 模板并按实例传给 ChatPage，不创建 InputBar 全局 provider/runtime",
+        "layer": "Product Chat usage composition"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/domain/nami_input_capability_selection.dart",
+        "reason": "定义不依赖 CloudModelOption/SkillReference 的 immutable Model/Skill 最小投影",
+        "naming_basis": "ADR-IB-010 minimal projection",
+        "layer": "InputBar domain"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_model_component.dart",
+        "reason": "迁移 iOS top 模型胶囊和选择弹层，仅通过组件 Delegate 合并实例状态",
+        "naming_basis": "iOS NMModelComponent",
+        "layer": "InputBar presentation"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_skill_component.dart",
+        "reason": "迁移 iOS main Skill 标签与移除行为，外部选择通过中心状态注入",
+        "naming_basis": "iOS NMSikillComponent",
+        "layer": "InputBar presentation"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_capability_components_test.dart",
+        "reason": "Red 覆盖五组件顺序、Model 选择、Skill 外部回显/移除和 applyExternalState 防循环",
+        "naming_basis": "US-IB-004 AC-IB-001",
+        "layer": "Widget tests"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "Product usage source -> minimal InputBar projections -> per-instance NamiInputState -> immutable snapshot -> ChatController -> durable ChatSendCommand",
+    "dependency_rule": "InputBar 不 import CloudModelOption、SkillReference、Gateway、Riverpod 或 App Composition Root；ProductChat 使用处把云控模型映射为最小值。Model 逐轮映射 selectedModel；普通 Skill 对齐 iOS 只通过 use_skill 模板进入 prompt，禁止填充技能创建/调试专用 skillId/skillName。组件 applyExternalState 只差量刷新且不回报 Delegate，用户动作才上报一次。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_capability_components_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_capability_components_test.dart"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_input_snapshot_factory_test.dart --plain-name 'freezes model and iOS skill prompt while later selection changes only affect the next send'"
+      },
+      {
+        "path": "test/features/chat/presentation/chat_controller_test.dart",
+        "command": "flutter test test/features/chat/presentation/chat_controller_test.dart --plain-name 'sendInput carries the frozen model into the durable command without reusing creator skill fields'"
+      }
+    ]
+  },
+  "risks": [
+    "NamiInputBar 的 inputState 是外部投影；ChatPage 必须保存每实例选择，重建不能回退默认值或污染另一实例",
+    "applyExternalState 期间组件不得调用 Delegate；相等选择不得 notify，避免 State→Component→State 死循环",
+    "发送成功只清除与旧 snapshot 精确相等的 Skill；发送后改选必须保留给下一条；Model 按 iOS 策略持久保留",
+    "selectedModel 必须使用 CloudModelOption.internalModelId 并由 Gateway client 放入 extraParams，不得放顶层",
+    "普通 Skill 只使用 packageName/promptName 替换 use_skill 模板；skillKey/catalogId 不得猜作 chat.send.skillId",
+    "云控模型或 use_skill 模板不可用时不得伪造业务值；Skill 已选但模板无效时 typed reject",
+    "Voice、TextAndVoice、AIGC、Mode、Workspace、Agent 胶囊不在本 Story 范围"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

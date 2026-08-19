@@ -1,0 +1,192 @@
+{
+  "target_commit": "79dfcc0b2dc43251d5fd6f98b623e0819ae1cc4e",
+  "cases": [
+    {
+      "id": "IT-IB-101",
+      "title": "Slate 文档、单 TextField 与 agent/file reference 完整往返",
+      "priority": "P0",
+      "type": "contract-widget",
+      "preconditions": ["InputBar 只使用 NamiSlateTextView/NamiSlateEditingController 作为编辑内核"],
+      "test_data": ["多 paragraph Slate JSON", "agent/file reference", "plain/full/simple 投影"],
+      "steps": ["导入带多段和 reference 的 Slate", "执行显示、prompt、full/simple JSON 导出", "插入、替换、删除并提取 reference", "核对 Widget 树只有一个 Flutter TextField"],
+      "expected_results": ["多段与 reference 结构无损往返", "prompt 使用稳定 reference 协议", "reference 操作不产生半个节点", "无 PlatformView/多 renderer"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-002"},
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-014"},
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-015"}
+      ]
+    },
+    {
+      "id": "IT-IB-102",
+      "title": "@ 选择/取消、原子编辑与迟到状态防回环",
+      "priority": "P0",
+      "type": "interaction-recovery",
+      "preconditions": ["可注入 mention picker", "可外部回写 Slate document"],
+      "test_data": ["@ 触发后取消", "emoji/UTF-16/IME composing", "迟到 picker 结果", "连续外部状态"],
+      "steps": ["分别取消、选择和重选 mention", "从 mention 中部退格或用选区删除", "在 IME composing 中输入 @", "替换文档后返回旧 picker 结果", "连续分发外部状态"],
+      "expected_results": ["取消恢复字面 @，选择形成原子 mention", "selection/composing 不切开 reference 或 grapheme", "IME 提交前不弹 picker", "迟到结果被丢弃且最新请求可继续", "外部投影不反向上报"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-003"},
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-003-反"},
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-004"},
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-016"}
+      ]
+    },
+    {
+      "id": "IT-IB-103",
+      "title": "50000 字上限与 grapheme overflow 边界",
+      "priority": "P1",
+      "type": "boundary",
+      "preconditions": ["NamiSlateTextView 使用默认 50000 字上限或等价小边界参数"],
+      "test_data": ["刚好达到上限的文本", "超限一字符", "extended grapheme family emoji"],
+      "steps": ["输入边界内容", "再输入一个字符", "以复合 emoji 重复边界"],
+      "expected_results": ["边界内不报 overflow", "超限只上报一次并保持 Slate/上传解耦", "复合 emoji 按一个 grapheme 计数"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [{"story_id": "US-IB-001", "ac_id": "AC-IB-017"}]
+    },
+    {
+      "id": "IT-IB-104",
+      "title": "Figma 五态布局与 iOS 连续高度动画",
+      "priority": "P0",
+      "type": "visual-interaction",
+      "preconditions": ["360 logical px 画板", "ChatPage 常驻同一个 NamiTextInputComponent 与 Flutter TextField"],
+      "test_data": ["Figma 默认/聚焦空态/多行/长文本/失焦节点", "60/94/200 高度边界", "100ms 动画中间帧"],
+      "steps": ["渲染默认态并核对主容器几何与装饰", "聚焦输入框并在 0/50/100ms 采样高度", "输入多行和长文本并触发展开入口", "失焦收起后复核 Slate 文档与 TextField 实例"],
+      "expected_results": ["360 画板下主容器宽 336、高 60、圆角 20 且双阴影不裁切", "聚焦空态目标高 94 且 50ms 中间帧严格位于起止高度之间", "长文本最高 200 并显示展开入口", "状态变化只切约束，不替换 Slate/TextField、不丢焦点文档或产生状态回环"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-016"},
+        {"story_id": "US-IB-004", "ac_id": "AC-IB-001"}
+      ]
+    },
+    {
+      "id": "IT-IB-201",
+      "title": "系统 Picker typed source 与取消/拒绝/超限不污染草稿",
+      "priority": "P0",
+      "type": "adapter-negative",
+      "preconditions": ["InputBar 实例注入 PlatformNamiAttachmentPicker 或 typed fake"],
+      "test_data": ["拍照、相册、本地文件", "cancelled/denied/over-limit", "已有草稿附件"],
+      "steps": ["对三类 Picker 执行成功选择", "分别模拟取消、拒绝和超限", "检查本地 source 释放与附件列表"],
+      "expected_results": ["成功结果映射为 typed source", "取消/拒绝/超限不新增也不删除草稿", "App 私有临时文件可按 ownership 释放"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-005"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-005-反"}
+      ]
+    },
+    {
+      "id": "IT-IB-202",
+      "title": "上传单调进度、失败恢复与 owner/operation 迟到围栏",
+      "priority": "P0",
+      "type": "state-machine-recovery",
+      "preconditions": ["附件 Controller 已 bind owner", "可编排上传 event 和迟到结果"],
+      "test_data": ["递增/回退进度", "无终态 stream", "HTTPS/非 HTTPS 终态", "owner A/B", "retry/delete"],
+      "steps": ["上传并注入进度事件", "模拟失败后重试和删除", "切换 owner 或 operation generation", "返回旧操作的迟到成功"],
+      "expected_results": ["可见进度单调且终态 HTTPS 可用", "失败可重试/删除且空 stream 成为可恢复失败", "owner/operation 切换清理或屏蔽旧结果", "迟到成功不覆盖新附件"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-006"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-007"}
+      ]
+    },
+    {
+      "id": "IT-IB-203",
+      "title": "MediaPreview 各 phase、预览与发送硬门禁",
+      "priority": "P0",
+      "type": "widget-gate",
+      "preconditions": ["FileInput/MediaPreview 共享当前实例 Controller"],
+      "test_data": ["pending/uploading/failed/success 图片、视频、文件"],
+      "steps": ["依次渲染四类 phase", "对 failed 重试/删除", "对 success 打开预览", "在每种 phase 检查发送按钮"],
+      "expected_results": ["上传、失败、进度和文件名状态正确", "只有 success 进入真实预览端口", "存在任意未成功附件时不可发送", "两个 InputBar 的附件状态隔离"],
+      "automation": "automated",
+      "suite": "input-bar-all",
+      "ac_refs": [
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-008"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-009"}
+      ]
+    },
+    {
+      "id": "IT-IB-301",
+      "title": "Slate 与成功附件冻结为同一 durable delivery",
+      "priority": "P0",
+      "type": "cross-story-durable",
+      "preconditions": ["ProductChat 使用 durable outbox", "SnapshotFactory 一次读取 InputState"],
+      "test_data": ["仅附件", "Slate+mention+附件", "带 Markdown 特殊字符的文件名"],
+      "steps": ["分别冻结仅附件和文本+附件", "提交 durable sendInput", "在 await/retry 期间修改当前 UI 草稿"],
+      "expected_results": ["附件 remote URL 以受控 prompt 引用冻结", "delivery 保持原 document/附件快照", "retry 不重读 UI 也不误填 Gateway base64 attachment 字段"],
+      "automation": "automated",
+      "suite": "product-chat-durable",
+      "ac_refs": [{"story_id": "US-IB-003", "ac_id": "AC-IB-010"}]
+    },
+    {
+      "id": "IT-IB-302",
+      "title": "durable 失败/未知/owner 换代保留草稿且精确 completed 才结算",
+      "priority": "P0",
+      "type": "durable-recovery",
+      "preconditions": ["可注入 queued/reconcile/userAborted/completed 与 owner 换代"],
+      "test_data": ["原草稿 revision", "提交后新附件/新草稿", "owner A/B", "迟到 Delivered"],
+      "steps": ["提交快照后模拟失败、未知和 userAborted", "切换 owner 并注入旧结果", "在等待期间新增草稿附件", "最后以精确 generation/run completed 结算"],
+      "expected_results": ["非 completed 终态保留提交 Slate/附件", "旧 owner 结果不覆盖新 owner", "completed 只清理快照中相同 document revision 和附件", "提交后新内容保留且不产生第二 delivery key"],
+      "automation": "automated",
+      "suite": "product-chat-durable",
+      "ac_refs": [
+        {"story_id": "US-IB-003", "ac_id": "AC-IB-012"},
+        {"story_id": "US-IB-003", "ac_id": "AC-IB-013"}
+      ]
+    },
+    {
+      "id": "IT-IB-401",
+      "title": "生产 Chat 组装五组件并保持多实例/外部状态隔离",
+      "priority": "P0",
+      "type": "production-composition",
+      "preconditions": ["ChatPage 注入模型、Skill 和附件 Controller"],
+      "test_data": ["Model A/B", "外部 Skill", "两个 InputBar 实例"],
+      "steps": ["按生产 key 定位 Model、Skill、MediaPreview、Slate Text、FileInput", "向一个实例分发外部状态", "在另一个实例选择 Model/移除 Skill"],
+      "expected_results": ["五类组件同时由 ChatPage 生产消费", "外部 apply 零用户回调且无 State→Component→State 循环", "用户操作只上报一次", "两实例不共享任何选择或附件状态"],
+      "automation": "automated",
+      "suite": "input-bar-and-product-chat",
+      "ac_refs": [{"story_id": "US-IB-004", "ac_id": "AC-IB-001"}]
+    },
+    {
+      "id": "IT-IB-402",
+      "title": "Model/Skill 冻结映射与终态后持久策略",
+      "priority": "P0",
+      "type": "cross-story-command",
+      "preconditions": ["CloudConfig 模型投影和 use_skill 模板可用", "ProductChat durable sendInput 已绑定"],
+      "test_data": ["Model A/B internalModelId", "research-skill", "use_skill={skill_name}", "缺失/非法模板"],
+      "steps": ["选择 Model B 并带 Skill 发送", "检查冻结 ChatSendCommand", "发送后改选当前 UI", "推进旧 delivery 到 completed", "以缺失模板重复冻结"],
+      "expected_results": ["selectedModel 为 model-b internalModelId", "Skill 仅替换 use_skill prompt，skillId/skillName 为 null", "旧 delivery 不重读后选值", "completed 清理相同 Skill 但保留 Model，后选 Skill 不受影响", "无效模板 typed reject 而不伪造 prompt"],
+      "automation": "automated",
+      "suite": "product-chat-durable",
+      "ac_refs": [{"story_id": "US-IB-004", "ac_id": "AC-IB-011"}]
+    },
+    {
+      "id": "IT-IB-501",
+      "title": "Android Phone/Pad/Fold 与 iPhone/iPad 真机 Picker、上传、预览和自适应矩阵",
+      "priority": "P0",
+      "type": "device-matrix",
+      "preconditions": ["五类真机或对应的实体设备形态可用", "有效登录/Gateway/签名上传环境", "相机、相册、文件权限可分别允许和拒绝"],
+      "test_data": ["图片、视频、PDF", "上传失败/恢复", "分屏、旋转、折叠/展开", "Model/Skill/mention 组合草稿"],
+      "steps": ["在五类设备执行拍照/相册/文件选择", "观察真实签名上传进度、重试、删除和预览", "输入 Slate/mention 并选择 Model/Skill 发送", "发送/上传期间旋转、分屏或折叠切换", "测试权限拒绝和返回系统后的恢复"],
+      "expected_results": ["系统 Picker 、签名上传和真实媒体/文档预览可用", "权限拒绝/取消/失败不污染草稿", "形态变化不重发、不丢草稿、不重置会话或选择", "五组件自动布局无溢出且可访问"],
+      "automation": "manual",
+      "suite": "device-matrix",
+      "ac_refs": [
+        {"story_id": "US-IB-001", "ac_id": "AC-IB-016"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-005"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-006"},
+        {"story_id": "US-IB-002", "ac_id": "AC-IB-008"},
+        {"story_id": "US-IB-003", "ac_id": "AC-IB-013"},
+        {"story_id": "US-IB-004", "ac_id": "AC-IB-001"}
+      ]
+    }
+  ]
+}
