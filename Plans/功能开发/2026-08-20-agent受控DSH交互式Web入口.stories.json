@@ -1,0 +1,41 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户于 2026-08-20 要求直接完善；按已采纳双入口方案实施两个纵向 Story（P0×2，共 13 点）",
+  "confirmed_at": "2026-08-20",
+  "epic_scope": ["US-CW-001", "US-CW-002"],
+  "current_implementation_scope": ["US-CW-001"],
+  "stories": [
+    {
+      "id": "US-CW-001",
+      "title": "一条命令打开控制插件完整的受控 DSH Web",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-20-agent受控DSH交互式Web入口-US-CW-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC-01", "AC-02", "AC-04", "AC-06", "AC-07", "AC-08"],
+      "requirement_ids": ["CW1", "CW2"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-20-agent受控DSH交互式Web入口.md#九ADR"
+      ]
+    },
+    {
+      "id": "US-CW-002",
+      "title": "验证受控 Web 失败关闭且 headless 不回退",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-20-agent受控DSH交互式Web入口-US-CW-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-CW-001"],
+      "acceptance_criteria": ["AC-03", "AC-05", "AC-09", "AC-10", "AC-13", "AC-14"],
+      "requirement_ids": ["CW3", "CW4"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-20-agent受控DSH交互式Web入口.md#九ADR"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-20T21:40:00+08:00",
+  "target_commit": "74b945b22fffa14db2af0c50b9befbae123962bf",
+  "case_index_sha256": "2974e119bd754f6f761b7651ec088e99ffad5f38fda09bed6b8d7bb9e6965289",
+  "unresolved_comments": 0,
+  "resolved_comments": [
+    "将真实 HTTP 首页与信号释放端口纳入同一纵向 Runtime 用例",
+    "明确 AC-11/12 需要用户凭证，不能伪装为自动化 P0 通过",
+    "补充 controlled-web profile frozen install 与 release gate"
+  ],
+  "review_summary": "4 条 P0 自动化用例精确覆盖两个 Scope Story 的 12 条 AC；主路径、逃逸反例、漂移、端口/信号、headless 回归与发布边界均可复现。"
+}

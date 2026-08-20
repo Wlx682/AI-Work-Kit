@@ -1,0 +1,55 @@
+{
+  "story_id": "US-CW-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {"path": "packages/contracts/src/runtime-composition.ts", "reason": "现有 profile.name 仅允许 controlled，需要扩成两个受控闭集值"},
+    {"path": "packages/dsh-bridge/src/composition.ts", "reason": "现有 collector 把 profile、bundle、lock 和 manifest identity 全部写死为 headless"},
+    {"path": "packages/dsh-bridge/src/launcher.ts", "reason": "复用组合校验和 secret 隔离，但 Web 需要独立前台生命周期"},
+    {"path": "profiles/controlled/package.json", "reason": "沿用本地控制插件依赖和 profile 文件布局，只替换 Surface bundle"},
+    {"path": "tests/integration/dsh-controlled-profile.spec.ts", "reason": "沿用真实 DSH dump/help 与 Corepack 启动集成测试方式"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "package.json", "purpose": "增加 composition:web:freeze、composition:web:verify 和 start:dsh:web，不改变 start/start:dsh", "layer": "Workspace Entrypoint"},
+      {"path": "packages/contracts/src/runtime-composition.ts", "purpose": "将 profile identity 收紧为 controlled 或 controlled-web", "layer": "Contract"},
+      {"path": "packages/contracts/schemas/runtime-composition.v1.json", "purpose": "JSON Schema 与 TypeScript profile 闭集保持一致", "layer": "Contract Schema"},
+      {"path": "packages/dsh-bridge/src/composition.ts", "purpose": "用枚举 ProfileSpec 共享采集、lock 路径、bundles、manifest 与 artifact 计算", "layer": "Composition Domain Adapter"},
+      {"path": "packages/dsh-bridge/src/launcher.ts", "purpose": "新增受控 Web 启动与前台 runner 接口，校验通过后才启动", "layer": "Verified Launcher"},
+      {"path": "packages/dsh-bridge/src/index.ts", "purpose": "导出 Web profile spec、launcher 和 foreground runner 类型", "layer": "Package API"},
+      {"path": "scripts/runtime/freeze-composition.ts", "purpose": "显式接受 web surface 并写入对应 profile lock", "layer": "Composition Tooling"},
+      {"path": "scripts/runtime/verify-composition.ts", "purpose": "显式验证对应 surface 的独立 lock", "layer": "Composition Tooling"},
+      {"path": "bundles/control-production/cordis.patch.yml", "purpose": "manifestId 与 fingerprint 一样由已验证 launcher 注入，避免 Web 冒用 headless 身份", "layer": "Production Bundle"}
+    ],
+    "create": [
+      {"path": "profiles/controlled-web/package.json", "reason": "定义 dsh-base + dsh-web-app + 两个控制 bundle 的独立受控 Web profile", "naming_basis": "与 profiles/controlled 并列且名称表达 Surface", "layer": "DSH Profile"},
+      {"path": "profiles/controlled-web/cordis.patch.yml", "reason": "保留显式 profile patch 文件并纳入指纹", "naming_basis": "遵循 DSH profile 文件结构", "layer": "DSH Profile"},
+      {"path": "profiles/controlled-web/cordis.yml", "reason": "提供 DSH profile 根配置", "naming_basis": "遵循 profiles/controlled", "layer": "DSH Profile"},
+      {"path": "profiles/controlled-web/pnpm-workspace.yaml", "reason": "冻结独立 profile workspace 解析边界", "naming_basis": "遵循 profiles/controlled", "layer": "Profile Workspace"},
+      {"path": "profiles/controlled-web/pnpm-lock.yaml", "reason": "冻结本地控制插件依赖解析", "naming_basis": "每个受控 profile 独立 lock", "layer": "Profile Lock"},
+      {"path": "profiles/controlled-web/composition.lock.json", "reason": "冻结 Web Surface 独立组合身份", "naming_basis": "ADR-CW-003", "layer": "Composition Evidence"},
+      {"path": "scripts/runtime/launch-controlled-web.ts", "reason": "把 start:dsh:web 参数交给受控 Web launcher 并保持长驻进程 stdio", "naming_basis": "与 launch-controlled.ts 对称", "layer": "CLI Entrypoint"},
+      {"path": "packages/dsh-bridge/test/controlled-web-launcher.spec.ts", "reason": "先红锁定 spec、参数闭集、环境身份和前台启动时序", "naming_basis": "被测受控 Web launcher 同名", "layer": "Unit Test"},
+      {"path": "tests/integration/dsh-controlled-web.spec.ts", "reason": "先红证明真实 dump 同时含 Web 与控制插件且 loopback HTTP 首页可访问", "naming_basis": "现有 dsh-controlled-profile 集成测试的 Web 对应物", "layer": "Integration Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "runtime-composition closed contract → enumerated ControlledProfileSpec → shared composition collector/verifier → headless buffered runner OR web foreground runner → official DSH Surface",
+    "dependency_rule": "调用者不能提供任意 profile 或 patch；只有代码内两个 ProfileSpec 可选。两个 Surface 使用独立 manifestId、profile lock 和 finalConfig 指纹。任何 DSH 子进程只能在组合校验、生产 runtime 断言和 Executor secret 扫描全部通过后创建。Web 复用官方 dsh-web-app，不新增 UI 或模型运行时。"
+  },
+  "tests": {
+    "red": [
+      {"path": "packages/dsh-bridge/test/controlled-web-launcher.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/controlled-web-launcher.spec.ts"},
+      {"path": "tests/integration/dsh-controlled-web.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-controlled-web.spec.ts"}
+    ],
+    "refactor_regression": ["corepack pnpm@11.7.0 typecheck", "corepack pnpm@11.7.0 composition:verify", "corepack pnpm@11.7.0 composition:web:verify"]
+  },
+  "risks": [
+    "若接受任意 profile 字符串，受控 launcher 会退化为通用 DSH 旁路",
+    "若 Web 继续使用 buffered runner，URL 直到退出才出现且长驻日志持续占内存",
+    "若复用 headless lock 或写死 manifestId，Web 会冒充已冻结的 headless 组合",
+    "真实 Web 进程测试必须在 finally 中停止，避免遗留端口"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

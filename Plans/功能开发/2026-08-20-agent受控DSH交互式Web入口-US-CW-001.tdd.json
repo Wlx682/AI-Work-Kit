@@ -1,0 +1,39 @@
+{
+  "story_id": "US-CW-001",
+  "story_points": 8,
+  "commit": "d9d596bb0d151939435e13403502aac66f824bfe",
+  "red": {
+    "command": "在 fd2b485 上运行 nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/controlled-web-launcher.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-20T21:37:40+08:00",
+    "reason": "测试只因 CONTROLLED_WEB_PROFILE、launchControlledWebProfile 与 launchVerifiedForegroundComposition 尚未实现而失败"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/controlled-web-launcher.spec.ts tests/integration/dsh-controlled-web.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-20T21:31:33+08:00",
+    "result": "2 files / 7 tests 通过；真实 Web 首页返回 200，SIGTERM 退出为 0 并释放端口"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:web:verify",
+    "exit_code": 0,
+    "at": "2026-08-20T21:34:44+08:00",
+    "result": "ProfileSpec 共享 collector 后类型检查通过；headless/Web 独立指纹均与 lock 一致"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:web:verify",
+    "exit_code": 0,
+    "at": "2026-08-20T21:38:37+08:00",
+    "result": "全仓 73 files / 226 tests、typecheck 与双组合验证通过",
+    "composition_fingerprints": {"headless": "5449a8d3605cf05237792297286d0aff10883221e81a7ad7adb00cee5f3e261c", "web": "27d3c6d31932b197ad2b2a7e815dc00213d81c021c1386d2007e20140ea80c9a"}
+  },
+  "acceptance": [
+    {"ac_id": "AC-01", "pass": true, "evidence": "真实子进程输出 loopback URL，GET / 返回 200 HTML 与 window.__DSH_BOOT__"},
+    {"ac_id": "AC-02", "pass": true, "evidence": "controlled-web dump 包含 dsh-web-app 与 runtimeComposition/controlLedger/controlSupervisor/authorityGate/safetyIntentClient"},
+    {"ac_id": "AC-04", "pass": true, "evidence": "headless/Web 分别冻结为 5449a8d... 与 27d3c6d...，manifestId 和 profile lock 独立"},
+    {"ac_id": "AC-06", "pass": true, "evidence": "--profile 与 --profile= 在 collector/foreground runner 调用前拒绝"},
+    {"ac_id": "AC-07", "pass": true, "evidence": "--patch 与 --patch= 在 collector/foreground runner 调用前拒绝"},
+    {"ac_id": "AC-08", "pass": true, "evidence": "Web 与 headless 共用 assertNoExecutorSecrets，校验通过前不创建子进程"}
+  ],
+  "limitations": ["未读取用户 DEEPSEEK_API_KEY；AC-11/12 真实模型多轮对话与会话恢复保留为 P1 人工冒烟"]
+}

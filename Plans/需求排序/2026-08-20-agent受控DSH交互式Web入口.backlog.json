@@ -1,0 +1,45 @@
+{
+  "confirmed": true,
+  "requirements": [
+    {
+      "id": "CW1",
+      "title": "冻结受控 Web Profile 与独立组合身份",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "先证明官方 Web Surface 与五个控制插件能组成独立、可冻结的生产树；否则启动入口会把未受控 Web 误当生产",
+      "confirmed": true
+    },
+    {
+      "id": "CW2",
+      "title": "提供 Verified Controlled Web 启动与本地交互",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CW1"],
+      "priority": "P0",
+      "reason": "在组合身份成立后增加 start:dsh:web，使用户获得 loopback URL、官方会话 UI 与持续进程",
+      "confirmed": true
+    },
+    {
+      "id": "CW3",
+      "title": "失败关闭、生命周期与双入口回归",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["CW1", "CW2"],
+      "priority": "P0",
+      "reason": "漂移、覆盖、secret、端口与外网绑定必须在发布前形成反例，同时证明 headless/recovery 不回退",
+      "confirmed": true
+    },
+    {
+      "id": "CW4",
+      "title": "使用文档与真实模型人工 Smoke",
+      "business_value": "medium",
+      "urgency": "medium",
+      "dependencies": ["CW2", "CW3"],
+      "priority": "P1",
+      "reason": "明确区分受控入口与裸 dsh web；真实多轮对话依赖用户 Key，只作为不记录凭证的人工验收",
+      "confirmed": true
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "story_id": "US-CW-002",
+  "story_points": 5,
+  "commit": "74b945b22fffa14db2af0c50b9befbae123962bf",
+  "red": {
+    "command": "在 d9d596b 上运行 nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/controlled-web-release-gate.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-20T21:36:47+08:00",
+    "reason": "测试只因受控 Web 使用文档、composition:web:verify、start:dsh:web release gate 与 controlled-web frozen install 尚未纳入发布边界而失败"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/controlled-web-launcher.spec.ts tests/integration/dsh-controlled-web.spec.ts tests/integration/dsh-controlled-web-lifecycle.spec.ts tests/integration/dsh-controlled-profile.spec.ts tests/acceptance/controlled-web-release-gate.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-20T21:37:55+08:00",
+    "result": "公网/漂移/端口/信号/headless/release 五层聚焦回归全部通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:web:verify",
+    "exit_code": 0,
+    "at": "2026-08-20T21:38:37+08:00",
+    "result": "安全规则集中在 launcher；双锁、类型与 release 文档引用保持一致"
+  },
+  "integration_smoke": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:web:verify",
+    "exit_code": 0,
+    "at": "2026-08-20T21:38:37+08:00",
+    "result": "全仓 73 files / 226 tests、typecheck 与双组合验证通过"
+  },
+  "acceptance": [
+    {"ac_id": "AC-03", "pass": true, "evidence": "start -- --help 仍输出 Answer one task；controlled dump 不含 dsh-web-app"},
+    {"ac_id": "AC-05", "pass": true, "evidence": "finalConfig 漂移抛 COMPOSITION_MISMATCH，foreground runner 零调用"},
+    {"ac_id": "AC-09", "pass": true, "evidence": "占用目标端口后 Web 非零退出且 fixture listener 仍为 listening"},
+    {"ac_id": "AC-10", "pass": true, "evidence": "--host 0.0.0.0 在 composition collection 与 spawn 前拒绝"},
+    {"ac_id": "AC-13", "pass": true, "evidence": "真实 Web 收到 SIGTERM 正常退出并能立即重新绑定原端口"},
+    {"ac_id": "AC-14", "pass": true, "evidence": "README 明确裸 dsh web 非受控；release gate 验证 Web lock/help/frozen install"}
+  ],
+  "limitations": []
+}

@@ -1,0 +1,46 @@
+{
+  "commit": "74b945b22fffa14db2af0c50b9befbae123962bf",
+  "tree": "d40a9ddace6f57d8741f15c5bf6b0e7f6ceb089a",
+  "executed_at": "2026-08-20T21:38:37+08:00",
+  "all_scope_stories_completed": true,
+  "approved_test_plan": "Plans/自动化测试/2026-08-20-agent受控DSH交互式Web入口-集成测试计划.md",
+  "approved_case_index_sha256": "2974e119bd754f6f761b7651ec088e99ffad5f38fda09bed6b8d7bb9e6965289",
+  "test_cases": [
+    {"id": "IT-CW-001", "status": "passed"},
+    {"id": "IT-CW-002", "status": "passed"},
+    {"id": "IT-CW-003", "status": "passed"},
+    {"id": "IT-CW-004", "status": "passed"}
+  ],
+  "suites": [
+    {
+      "name": "controlled-web-runtime",
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/dsh-bridge/test/controlled-web-launcher.spec.ts tests/integration/dsh-controlled-web.spec.ts tests/integration/dsh-controlled-web-lifecycle.spec.ts tests/integration/dsh-controlled-profile.spec.ts tests/acceptance/controlled-web-release-gate.spec.ts",
+      "exit_code": 0,
+      "summary": "受控 profile、HTTP 首页、逃逸/漂移/端口/host/信号、headless 与 release gate 全部通过"
+    },
+    {
+      "name": "all-typescript",
+      "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "exit_code": 0,
+      "summary": "73 test files / 226 tests passed；全部 TypeScript project checks passed"
+    },
+    {
+      "name": "composition-and-supply-chain",
+      "command": "composition:verify + composition:web:verify + root/controlled-web frozen install + start/start:dsh:web --help",
+      "exit_code": 0,
+      "summary": "headless 5449a8d3... 与 Web 27d3c6d3... 独立指纹一致；安装与两个入口 help 正常"
+    }
+  ],
+  "evidence": {
+    "headless_composition_sha256": "5449a8d3605cf05237792297286d0aff10883221e81a7ad7adb00cee5f3e261c",
+    "web_composition_sha256": "27d3c6d31932b197ad2b2a7e815dc00213d81c021c1386d2007e20140ea80c9a",
+    "web_http_status": 200,
+    "web_signal_exit_code": 0
+  },
+  "defects": [],
+  "limitations": [
+    "未读取用户 API Key；真实模型多轮对话与会话恢复为 P1 人工冒烟",
+    "未执行公网部署；launcher 明确拒绝非 loopback host"
+  ],
+  "conclusion": "两个 Story、12 条 P0 AC 与 4 条审核用例全部通过，可进入 Done。"
+}

@@ -1,0 +1,43 @@
+{
+  "story_id": "US-CW-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {"path": "tests/fault-injection/composition-drift.spec.ts", "reason": "现有 fake runner 证明漂移时不启动 DSH，可扩到 Web spec"},
+    {"path": "tests/integration/dsh-controlled-profile.spec.ts", "reason": "现有真实 headless help 和无全局 pnpm 回归必须保持"},
+    {"path": "scripts/release/rehearse.ts", "reason": "release rehearsal 是受控组合发布门禁落点"},
+    {"path": "README.md", "reason": "需要明确 headless 与 Web 两条受控入口及非法裸入口"},
+    {"path": "packages/dsh-bridge/src/launcher.ts", "reason": "参数覆盖、secret 和组合漂移必须在创建 Web 子进程前统一阻断"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "tests/fault-injection/composition-drift.spec.ts", "purpose": "覆盖 Web lock/profile/dist 漂移时 foreground runner 零调用", "layer": "Fault Injection"},
+      {"path": "tests/integration/dsh-controlled-profile.spec.ts", "purpose": "证明 start/start:dsh 仍为 headless 且 Web 脚本不依赖全局 pnpm", "layer": "Regression Test"},
+      {"path": "scripts/release/rehearse.ts", "purpose": "发布排练同时验证 headless 与 Web 独立组合", "layer": "Release Gate"},
+      {"path": "README.md", "purpose": "记录 start:dsh:web 用法、loopback 默认值、停止方式和裸 dsh web 非受控", "layer": "Operator Documentation"}
+    ],
+    "create": [
+      {"path": "tests/integration/dsh-controlled-web-lifecycle.spec.ts", "reason": "真实进程覆盖占用端口、公网绑定、SIGTERM/SIGINT 和端口释放", "naming_basis": "按 Web lifecycle 能力命名", "layer": "Process Integration Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "launcher fail-closed policy → real child process lifecycle → loopback socket/HTTP evidence → release rehearsal and operator docs",
+    "dependency_rule": "漂移、--profile、--patch、Executor-only secret 和非 loopback host 必须在 foreground runner spawn 前失败；端口冲突由官方 Web 返回非零且不得终止原监听者；信号由 launcher 透传给官方 Web 并等待退出。headless 入口和 lock 不得加载或依赖 Web Surface。"
+  },
+  "tests": {
+    "red": [
+      {"path": "tests/fault-injection/composition-drift.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/fault-injection/composition-drift.spec.ts"},
+      {"path": "tests/integration/dsh-controlled-web-lifecycle.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-controlled-web-lifecycle.spec.ts"},
+      {"path": "tests/integration/dsh-controlled-profile.spec.ts", "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-controlled-profile.spec.ts"}
+    ],
+    "refactor_regression": ["corepack pnpm@11.7.0 test", "corepack pnpm@11.7.0 typecheck", "corepack pnpm@11.7.0 release:rehearse -- --help"]
+  },
+  "risks": [
+    "异步测试失败若未清理子进程会污染本机端口和后续用例",
+    "只测试 --help 不能证明 Web 真实监听，必须至少完成 HTTP 首页请求",
+    "把裸 dsh web 写成推荐入口会绕过组合校验",
+    "headless lock 会因共享 artifact 变更重冻，必须证明行为仍为一次性任务"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
