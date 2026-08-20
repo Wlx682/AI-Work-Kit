@@ -1,0 +1,115 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "plugins/domain-tools/package.json",
+      "reason": "确认该包只依赖纯 contracts，不依赖 Cordis，也不提供 Cordis 插件生命周期"
+    },
+    {
+      "path": "plugins/domain-tools/src/index.ts",
+      "reason": "确认实现只是框架无关的领域工具结果契约包装器"
+    },
+    {
+      "path": "plugins/domain-tools/test/output-contract.spec.ts",
+      "reason": "保留原有工具输出契约回归测试"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "reason": "确认 packages/* 与 plugins/* 均已纳入 workspace，迁移不需要扩大 workspace 配置"
+    },
+    {
+      "path": "profiles/controlled/cordis.patch.yml",
+      "reason": "确认生产 Profile 未加载 domain-tools，它不是运行时插件"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "把 domain-tools 类型检查路径改为 packages/domain-tools",
+        "layer": "Build"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "将 workspace importer 从 plugins/domain-tools 移到 packages/domain-tools",
+        "layer": "Build"
+      },
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "更新 M044 的领域工具测试证据路径",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "更新并验证 M044 的新测试路径",
+        "layer": "Acceptance Test"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "重冻结根 pnpm-lock 哈希，保持受控 CLI 组合可验证",
+        "layer": "Composition Evidence"
+      },
+      {
+        "path": "profiles/controlled-web/composition.lock.json",
+        "purpose": "重冻结根 pnpm-lock 哈希，保持受控 Web 组合可验证",
+        "layer": "Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/domain-tools/package.json",
+        "reason": "把框架无关工具定义放回可复用包层",
+        "naming_basis": "与 packages/contracts、packages/*-domain 的纯 TypeScript 包命名一致",
+        "layer": "Shared Domain Package"
+      },
+      {
+        "path": "packages/domain-tools/tsconfig.json",
+        "reason": "保留独立包类型检查入口",
+        "naming_basis": "沿用 workspace package 的 tsconfig 约定",
+        "layer": "Build"
+      },
+      {
+        "path": "packages/domain-tools/src/index.ts",
+        "reason": "迁移现有纯领域工具契约实现，不改行为",
+        "naming_basis": "沿用 @agent/domain-tools 公开入口",
+        "layer": "Shared Domain Package"
+      },
+      {
+        "path": "packages/domain-tools/test/output-contract.spec.ts",
+        "reason": "随包迁移既有输出契约测试",
+        "naming_basis": "测试与所属 workspace package 共置",
+        "layer": "Package Test"
+      },
+      {
+        "path": "tests/acceptance/workspace-boundaries.spec.ts",
+        "reason": "防止未来再次把不含 Cordis 生命周期的纯包放入 plugins",
+        "naming_basis": "跨目录架构不变量属于 acceptance 测试",
+        "layer": "Architecture Acceptance Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "packages = 框架无关的 contracts/domain/adapters；plugins = 由 Cordis Profile/Bundle 装配的进程内生命周期组件",
+    "dependency_rule": "plugins/* 必须声明 @deepseek-ai/cordis peerDependency；不依赖 Cordis 且只提供纯函数或领域契约的模块必须位于 packages/*"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/acceptance/workspace-boundaries.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run tests/acceptance/workspace-boundaries.spec.ts"
+      },
+      {
+        "path": "packages/domain-tools/test/output-contract.spec.ts",
+        "command": "corepack pnpm@11.7.0 vitest run packages/domain-tools/test/output-contract.spec.ts tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "pnpm importer 路径变化会改变根 lockfile 哈希，必须同步重冻结 controlled 与 controlled-web 组合清单",
+    "迁移映射仍引用旧路径会导致历史测试证据失真，必须同时更新 M044 和验收断言",
+    "目录移动不应顺带改变 @agent/domain-tools 包名或运行行为"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
