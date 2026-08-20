@@ -1,0 +1,119 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/agent-definition/src/definition.ts",
+      "reason": "确认定义加载器框架无关，但当前实际消费者仅为 LangGraph 学习运行时"
+    },
+    {
+      "path": "labs/runtimes/langgraph-ts/src/team-defaults.ts",
+      "reason": "确认生产代码之外的唯一运行时消费者位于 labs"
+    },
+    {
+      "path": "bundles/control-base/cordis.patch.yml",
+      "reason": "确认 DSH 生产组合没有装配 agent-definition"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "reason": "确认需要增加 labs/shared/* workspace glob"
+    },
+    {
+      "path": "scripts/baseline/freeze.ts",
+      "reason": "确认顶层 definitions/prompts 只属于冻结旧提交的历史资产，当前工作树无需保留副本"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "pnpm-workspace.yaml",
+        "purpose": "纳入 labs/shared/* 学习共享包",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "package.json",
+        "purpose": "将 agent-definition 类型检查路径改为 labs/shared",
+        "layer": "Build"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "更新 workspace importer 与 LangGraph 依赖链接",
+        "layer": "Build"
+      },
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M012-M016、M024 证据指向 Lab 新路径",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "同步历史测试路径断言",
+        "layer": "Acceptance Test"
+      },
+      {
+        "path": "tests/acceptance/workspace-boundaries.spec.ts",
+        "purpose": "阻止学习定义再次出现在生产 packages 或顶层重复目录",
+        "layer": "Architecture Acceptance Test"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "重冻结 workspace 路径变化后的 CLI 组合指纹",
+        "layer": "Composition Evidence"
+      },
+      {
+        "path": "profiles/controlled-web/composition.lock.json",
+        "purpose": "重冻结 workspace 路径变化后的 Web 组合指纹",
+        "layer": "Composition Evidence"
+      }
+    ],
+    "create": [
+      {
+        "path": "labs/shared/agent-definition/package.json",
+        "reason": "将学习专用定义契约归入 labs，同时保持独立测试和包边界",
+        "naming_basis": "labs/shared 表达仅供学习运行时复用，不进入生产 packages",
+        "layer": "Learning Shared Package"
+      },
+      {
+        "path": "labs/shared/agent-definition/src/definition.ts",
+        "reason": "无行为变化迁移现有定义加载器",
+        "naming_basis": "保持 @agent/agent-definition 公开 API，减少学习 Runtime 改动",
+        "layer": "Learning Shared Package"
+      },
+      {
+        "path": "labs/shared/agent-definition/assets/definitions/general-assistant.json",
+        "reason": "把学习定义资产和加载器共置",
+        "naming_basis": "沿用现有 assets/definitions 结构",
+        "layer": "Learning Asset"
+      },
+      {
+        "path": "labs/shared/agent-definition/test/definition.spec.ts",
+        "reason": "迁移定义语义回归测试",
+        "naming_basis": "测试与所属学习包共置",
+        "layer": "Learning Test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "labs/shared/agent-definition 仅服务 LangGraph.js Learning Runtime；生产 DSH 以后使用独立 Agent Preset/Cordis 插件，不依赖学习定义",
+    "dependency_rule": "packages、plugins、services、bundles、profiles 和生产 scripts 不得依赖 @agent/agent-definition；只有 labs/** 可以依赖它；顶层不保留 definitions/prompts 副本"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/acceptance/workspace-boundaries.spec.ts",
+        "command": "CI=true nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/workspace-boundaries.spec.ts"
+      },
+      {
+        "path": "labs/shared/agent-definition/test/definition.spec.ts",
+        "command": "CI=true nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run labs/shared/agent-definition/test/*.spec.ts tests/acceptance/legacy-test-map.spec.ts"
+      }
+    ]
+  },
+  "risks": [
+    "workspace glob 与 lock importer 必须同步，否则 pnpm 会把学习包漏出工作区",
+    "顶层 definitions/prompts 是旧 Python 基线资产；删除当前副本不能修改冻结 evidence manifest、旧 tag 或 evaluation fixtures",
+    "根 package.json 与 pnpm-lock 变化会改变两份 DSH 组合指纹，但不得把 agent-definition 加入生产组合"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
