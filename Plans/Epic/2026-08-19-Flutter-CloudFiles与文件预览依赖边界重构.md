@@ -6,7 +6,7 @@ status: 进行中
 date: 2026-08-19
 epic_id: flutter-cloud-files-preview-boundary-refactor
 workflow: client-dev
-lifecycle_state: story-split
+lifecycle_state: implementation-design
 platform: 客户端
 repo: namiwork-flutter
 branch: dev
@@ -63,8 +63,8 @@ relations:
 | 需求分析 | requirement | `Plans/需求分析/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md` | ✅ 已采纳 |
 | 需求排序 | prioritization | `Plans/需求排序/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md` | ✅ 已采纳 |
 | 正式架构设计 | architecture | `Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md` | ✅ 已采纳 |
-| 功能故事拆分与故事点 | story-split | `Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md` | ⏸ 未开始，等待授权 |
-| 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ⬜ |
+| 功能故事拆分与故事点 | story-split | `Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md` | ✅ 已拆分（7 故事 / 39 点，story-scope 通过） |
+| 实现落点设计 | implementation-design | 同上及动态故事子 Plan | 🔄 进行中（从 US-CFR-001 起） |
 | 逐故事 TDD | story-development | 同上及动态故事子 Plan | ⬜ |
 | 集成测试计划与审核 | integration-test-plan | `Plans/自动化测试/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-集成测试计划.md` | ⬜ |
 | 全量集成测试 | integration-test | `Plans/自动化测试/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-集成测试.md` | ⬜ |
@@ -88,11 +88,40 @@ relations:
 
 | Story | 用户能力 | 优先级 | 点数 | Scope | 依赖 | 状态 |
 |-------|----------|--------|------|-------|------|------|
-| — | 待 requirement / architecture 门禁通过后按纵向可验收价值拆分 | — | — | — | — | 待拆分 |
+| US-CFR-001 | 边界与行为不变量回归网（先红后绿基线） | P0 | 5 | ✅ | — | 🔄 实现落点设计中（待 `.impl.json`） |
+| US-CFR-002 | 单向 App composition 装配链（Files 模块不反向 import root） | P0 | 5 | ✅ | US-CFR-001 | 待落点设计 |
+| US-CFR-003 | 分离 CloudFilesAppRuntime 与 CloudFilesFeatureRuntime | P0 | 8 | ✅ | US-CFR-001,002 | 待落点设计 |
+| US-CFR-004 | Files 页面消费 Host 注入的窄依赖并去 app import | P0 | 8 | ✅ | US-CFR-003 | 待落点设计 |
+| US-CFR-005 | 预览/传输 typed host actions（不泄漏 Runtime） | P0 | 5 | ✅ | US-CFR-003,004 | 待落点设计 |
+| US-CFR-006 | 迁移 Main/Projects/Download 消费者并闭合生命周期 | P0 | 5 | ✅ | US-CFR-003,004,005 | 待落点设计 |
+| US-CFR-007 | 固化 Provider 装配规则与边界回归门禁 | P1 | 3 | ✅ | US-CFR-001..006 | 待落点设计 |
 
 > 故事卡片由看板从 `.stories.json` 与子 Plan 派生；禁止把 UI、Domain、Data/API 分别作为交付故事。故事点不换算工时或个人绩效。
 
-## 五、初始风险
+## 五、当前进度快照（2026-08-20）
+
+### 已完成基线（本 Epic 创建前）
+
+- CloudFiles 与文件预览主体不是从零开始：`e96f3f9b`、`142a924c`、`22fca349` 已接通个人云预览生产链及 iOS/Android 宿主预览。
+- `4c1ee55d` 已拆出 Preview Planner、Coordinator、Launcher、Source、App composition provider 与多格式预览页面。
+- `9c156421` 已统一 Files 三类文件预览与 CloudFiles 模块；`1c2be2f8` 已接通上传/分享；`6073ae16` 已补齐 PPTX、HTML、图片缓存与媒体兼容。
+- `f1224fb6`、`beeff8dd` 完成 InputBar 附件上传/预览生产链，可为 typed host action 提供复用基础，但属于本 Epic 明确排除范围，不计入 Story 完成。
+
+### 本 Epic 专属进度
+
+| 项目 | 当前事实 |
+|------|----------|
+| 已完成阶段 | requirement、prioritization、architecture、story-split |
+| 当前阶段 | `implementation-design` |
+| 当前滚动 Story | US-CFR-001 |
+| 实现落点 | 0/7 完成；US-CFR-001 的 `.impl.json` 待创建 |
+| 逐故事 TDD | 0/7 完成 |
+| 集成测试计划/执行 | 尚未开始 |
+| 仍存核心债务 | Feature → App import、composition → root import、聚合 `CloudFilesRuntime` 暴露面 |
+
+> 进度口径：已有 CloudFiles/Preview 功能与第一轮架构成果作为重构基线保留；本 Epic 只在依赖边界目标及对应 Red/Green/TDD 证据闭合后计 Story 完成。
+
+## 六、初始风险
 
 | 风险 | 应对方向 |
 |------|----------|
@@ -101,13 +130,15 @@ relations:
 | 拆 Provider 导致网络 Client 重复创建 | 应用内部 Runtime 继续统一持有 transport，Feature 仅消费 Repository/Port |
 | 现有并行 InputBar 改动 | 独立 Epic 和文件范围，冲突时停止并转交用户 |
 
-## 六、变更记录
+## 七、变更记录
 
 | 日期 | 变更 | 影响阶段 | 证据 | 确认人 |
 |------|------|----------|------|--------|
 | 2026-08-19 | 创建 CloudFiles 与文件预览依赖边界重构 Epic | requirement | 用户明确要求重构并创建计划 Epic | 用户 |
 | 2026-08-19 | 需求与排序门禁通过，完成架构方案并停在 ADR 评审 | architecture | requirement/backlog/architecture plan-gate 通过 | 待用户确认 |
 | 2026-08-19 | 用户确认 Preview 装配与三项架构裁决合理，架构正式采纳 | architecture | architecture_open=0，新增架构采纳 skill_run | 用户 |
+| 2026-08-20 | 授权并完成 Story 拆分：7 故事 / 39 点，story-scope 与 skill_run 门禁通过，进入 implementation-design | story-split | validate-client-dev story-scope=OK；workflow-gate 推进至 implementation-design | 用户 |
+| 2026-08-20 | 根据代码提交与生产依赖复核更新真实进度：补记已完成基线，当前滚动至 US-CFR-001 落点设计 | implementation-design | `Contexts/决策/2026-08-20-开发流程审计报告.md`；workflow-status / workflow-gate | 用户 |
 
 ## 反馈（skill_run）
 
@@ -134,5 +165,5 @@ skill_run:
 ## 续做
 
 ```text
-/resume plan=Plans/Epic/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=架构已采纳；等待明确授权 Story 拆分，禁止开始开发
+/resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=实现落点设计（US-CFR-001）
 ```

@@ -202,6 +202,57 @@ classDiagram
 - `WorkspaceBrowserRepository` contract 留 Files；`GatewayWorkspaceBrowserRepository` 由 App 创建并注入。
 - Gateway lease 只含稳定 id、owner 维度和 generation，不含 Claw runtime、Provider 或连接实现。
 
+### 4.6 词汇与命名规范（后缀词典）
+
+本节把 §4.4/§七 隐含的命名固化为规则，作为 CloudFiles 与文件预览模块**新增或重命名**类型的唯一口径，并收敛 §十五(2) 遗留的「`Runtime` vs `Scope` 后缀选择」。规则只覆盖本模块；不推广到 Chat/Claw 等其他 Feature。
+
+**(1) 后缀词典（一个概念一个后缀）**
+
+| 后缀 | 含义 | 构造/依赖方 | 示例 |
+|---|---|---|---|
+| `*Runtime` | 组合根装配、绑定当前 owner/generation 的活动能力对象 | 仅 App/composition 构造，Feature 不 new | `CloudFilesAppRuntime` / `CloudFilesFeatureRuntime` |
+| `*SessionSnapshot` / `*Snapshot` | 某时刻不可变读快照 | App 私有 | `CloudFilesSessionSnapshot` |
+| `*RuntimeIdentity` / `*Identity` | owner 不可变身份 + generation，用于 fencing 复核 | Feature 可见（只读） | `CloudFilesRuntimeIdentity` |
+| `*Owner` | 持「身份 + 代际租约」的领域归属 | Feature domain | `CloudFileOwner` / `CloudMoveOwner` |
+| `*Port` | 进程内 Feature↔App 能力边界（Feature 依赖、App 实现） | 契约在 Feature，实现在 App | `FilePreviewPort` / `FilesHostActions`（命令型 Port） |
+| `*Contract` | Dart↔Native/pigeon 或注册表结构化契约 | 平台 / 注册层 | `AppFilePreviewPresenterRegistryContract` |
+| `*Repository` | 领域数据单一事实源 | Feature domain（契约）/ App 或 data（实现） | `CloudFileBrowserRepository` |
+| `*Source` | 数据来源解析 | 就近层 | `CloudFileDownloadSource` / `AppFilePreviewSource` |
+| `*Destination` | **仅**路由入口 widget | App / navigation | `FilesDestination` |
+| `*Target` | 预览渲染目标（取代 core 中与路由 Destination 语义冲突的命名） | core preview | `FilePreviewTarget`（现 `FilePreviewDestination`） |
+| `*PreviewPage` | 无持久状态的只读预览页 | App integration | `AppFileImagePreviewPage` |
+| `*ReaderPage` | 带持久进度/交互的阅读页 | App integration | `AppFileEpubReaderPage` |
+| `*Coordinator` / `*Launcher` / `*Dispatcher` | 编排 / 入口转发 / 动作分发 | App integration | `AppFilePreviewCoordinator` |
+
+**(2) 前缀与单复数规则**
+
+- `CloudFiles*`（复数，集合语义）= 模块级 Runtime/Session/装配，如 `CloudFilesAppRuntime`。
+- `CloudFile*`（单数，单体语义）= 单个云文件实体的来源/预览/下载/适配，如 `CloudFileDownloadSource`、`CloudFilePreviewAdapter`。
+- 判据：命名对象是「整个模块/装配」→ 复数；是「一个文件的一次操作」→ 单数。现有名均符合，无需改名。
+
+**(3) 边界接口：Port vs Contract（用户 2026-08-20 裁决）**
+
+- Feature↔App 进程内边界一律 `*Port`；`FilesHostActions` 视为命令型 Port。
+- `*Contract` 仅限 Dart↔Native/pigeon 与注册表（如 `AppFilePreviewPresenterRegistryContract`），不用于 Feature↔App 边界。
+- `docs/versions/2.0.0/plan/28-file-preview-architecture.md` 中「Materializer Port / Presenter Port」措辞据此归一：presenter 注册为 Contract，预览能力边界为 Port。
+
+**(4) 错误码规则**
+
+- 内部错误码用 snake_case、`cloud_file_*` 前缀（§7.4）；owner 失效统一 `cloud_file_owner_stale`，不再新增 `file_preview_owner_stale` 等同义码。
+
+**(5) 现存漂移处置表**
+
+| # | 项 | 判定 | 动作 | 波及 / 归属 |
+|---|---|---|---|---|
+| 1 | `CloudFiles*` vs `CloudFile*` 单复数 | 潜规则（模块=复数、单体=单数） | 按 (2) 文档化，**0 改名** | — |
+| 2 | `AppFileDownloadRuntime` vs `AppCloudFileDownloadRuntime` | 命名遮蔽：前者实为 Gateway 身份（`ActiveGatewayRuntimeIdentity`）fencing、后者为 `CloudFileOwner` fencing，非冗余 | 改名 `AppFileDownloadRuntime`→`AppGatewayFileDownloadRuntime`，与 Cloud 变体对称 | Files/App download，随 US-CFR-005/006 落地 |
+| 3 | Port / Contract / Registry 三种叫法 | 规则消解 | 按 (3) 归位，**0 强制改名** | 新 Port 随 US-CFR-005 落地 |
+| 4 | `Destination` 一词两义：`FilesDestination`(widget) vs `FilePreviewDestination`(core 枚举) | 真冲突 | core 枚举 `FilePreviewDestination`→`FilePreviewTarget` | **已于 2026-08-20 直接完成**（`lib/core/file_preview_router/`、app coordinator、workspace 消费者、相关测试与 28 号文档，仅类型名，`destination` 字段保留） |
+| 5 | `*PreviewPage` 被 `AppFileEpubReaderPage` 打破 | 有意为之（EPUB 有持久阅读进度 `AppFileEpubProgress*`） | 按 (1) 文档化 `*ReaderPage` 规则，**0 改名** | — |
+| 6 | `Runtime` 概念含混（装配对象 vs App/Feature 拆分） | 定义澄清 | 由 (1) 定义 + §4.4 classDiagram 固定 | 本方案 |
+
+真正需改名的仅 **#2**（局部，随现有 Story）与 **#4**（core，已于 2026-08-20 直接执行）；其余为文档化规则。
+
 ## 五、数据模型
 
 本方案不新增数据库或迁移；下图是运行期依赖实体。
@@ -353,8 +404,9 @@ sequenceDiagram
 | ADR-CFR-004 | Preview/Download/Upload 由 Host typed actions 读取并验证当前 AppRuntime | 把 Runtime 传入 callback 会让边界失效 | FilesDestination/launchers | 已采纳 |
 | ADR-CFR-005 | 提取 composition primitives 的最小依赖闭包，root 可临时兼容 export | 一次拆完整 root 风险过大；保留反向 import 则仍有环 | App composition/root | 已采纳 |
 | ADR-CFR-006 | 无数据迁移、无 feature flag；按可回滚结构提交推进 | 双架构长期共存增加分支与生命周期复杂度 | 发布/回滚 | 已采纳 |
+| ADR-CFR-007 | CloudFiles/预览模块统一后缀词典 + 前缀单复数规则 + Port(边界)/Contract(平台通道·注册表)裁决（§4.6）；漂移按处置表收敛，新代码遵循，存量仅改真违规 #2/#4 | 放任各处自造后缀会持续漂移；一次性全改名波及 core 且风险大 | 全模块命名 / core preview 枚举 / US-CFR-005·006·007 | 已采纳 |
 
-评审只需确认前三项；后 3 项是前三项的直接实现约束。
+评审只需确认前三项；后 4 项是前三项的直接实现约束。
 
 ## 十一、需求影响矩阵
 
@@ -416,6 +468,7 @@ sequenceDiagram
 - [ ] 协议、签名、namespace、持久化格式、UI/文案无变化。
 - [ ] Main/Projects/Download 等生产消费者完成迁移，不以 Fake/Contract 代替完成。
 - [ ] 文档写明“App composition module 装配、root 汇聚”，自动测试防止回退。
+- [ ] CloudFiles/预览模块命名符合 §4.6 后缀词典、前缀单复数与 Port/Contract 规则；由 US-CFR-007 命名门禁固化词典一致性。
 
 ## 十五、架构评审结论
 
@@ -426,6 +479,10 @@ sequenceDiagram
 3. 允许 `composition_root.dart` 在本 Epic 内为非 Files 消费者保留兼容 export，完整 root 清理不进入本 Scope。
 
 架构开放项为 0，技术方案状态更新为“已采纳”。本次确认不授权 Story 拆分、源码修改、提交或推送。
+
+### 15.1 命名规范补充（2026-08-20）
+
+用户授权对 CloudFiles 与文件预览模块做词汇与架构形态规范，并裁决：(a) 范围含新引入词汇 + 修正现存漂移；(b) 边界接口以 `*Port` 为主、`*Contract` 限定平台通道与注册表。据此新增 §4.6 与 ADR-CFR-007，收敛 §十五(2) 遗留的 `Runtime`/`Scope` 后缀选择。落点约束：#2（`AppFileDownloadRuntime`→`AppGatewayFileDownloadRuntime`）随 US-CFR-005/006；#4（`FilePreviewDestination`→`FilePreviewTarget`，属 core）已于 2026-08-20 按用户指示直接完成（仅类型名，含 `lib/core/file_preview_router`、app coordinator、workspace 消费者、相关测试与 28 号文档）；US-CFR-007 命名门禁负责固化词典一致性。架构开放项仍为 0。
 
 ## 续做
 

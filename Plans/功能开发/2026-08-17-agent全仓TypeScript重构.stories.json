@@ -1,9 +1,9 @@
 {
   "scope_confirmed": true,
-  "confirmed_by": "用户：在 US-B3-001 完成后回复‘继续’，确认只激活下一条依赖已满足的 US-B3-002",
-  "confirmed_at": "2026-08-18",
+  "confirmed_by": "用户：在 US-B5-001 完成后回复‘继续’，确认只激活最后一条 US-B5-002；不等同于批准破坏性 cutover",
+  "confirmed_at": "2026-08-20",
   "epic_scope": ["US-B0-001", "US-B1-001", "US-B1-002", "US-B2-001", "US-B2-002", "US-B2-003", "US-B2-004", "US-B2-005", "US-B3-001", "US-B3-002", "US-B4-001", "US-B4-002", "US-B5-001", "US-B5-002"],
-  "current_implementation_scope": ["US-B3-002"],
+  "current_implementation_scope": ["US-B5-002"],
   "stories": [
     {
       "id": "US-B0-001",
@@ -130,7 +130,7 @@
       "story_points": 8,
       "estimate_confirmed": true,
       "priority": "P0",
-      "sprint_scope": true,
+      "sprint_scope": false,
       "dependencies": ["US-B3-001"],
       "acceptance_criteria": ["GWT-019"],
       "architecture_refs": ["ENG-006", "ENG-008", "ENG-012"]
@@ -182,10 +182,10 @@
       "story_points": 5,
       "estimate_confirmed": true,
       "priority": "P0",
-      "sprint_scope": false,
+      "sprint_scope": true,
       "dependencies": ["US-B5-001"],
       "acceptance_criteria": ["GWT-021-CUTOVER", "GWT-022"],
-      "architecture_refs": ["ENG-001", "ENG-002", "ENG-005", "ENG-009", "ENG-011"]
+      "architecture_refs": ["ENG-001", "ENG-002", "ENG-005", "ENG-009", "ENG-011", "ENG-012"]
     }
   ]
 }

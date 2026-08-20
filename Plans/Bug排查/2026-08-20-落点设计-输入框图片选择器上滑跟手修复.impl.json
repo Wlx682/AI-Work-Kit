@@ -1,0 +1,61 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/features/chat/presentation/input_bar/components/nami_file_input_component.dart",
+      "reason": "最近图片手势入口、覆盖层创建和选择结果接线"
+    },
+    {
+      "path": "lib/features/chat/presentation/input_bar/components/nami_photo_picker_page.dart",
+      "reason": "交互转场状态、页面动画和关闭结果回传"
+    },
+    {
+      "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+      "reason": "现有输入框图片选择器 widget 回归"
+    },
+    {
+      "path": "/Users/wanglongxiang/development/flutter/packages/flutter/lib/src/widgets/navigator.dart",
+      "reason": "Navigator.push 后取消活动指针的框架根因证据"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_photo_picker_page.dart",
+        "purpose": "交互模式改由 OverlayEntry 承载，并以 Completer 回传结果；普通点击模式继续使用 Navigator",
+        "layer": "Presentation overlay"
+      },
+      {
+        "path": "lib/features/chat/presentation/input_bar/components/nami_file_input_component.dart",
+        "purpose": "活动拖动期间创建非导航覆盖层并保持连续手势更新",
+        "layer": "Input component presentation"
+      },
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "purpose": "新增首次展示覆盖层后第二段连续 move 仍能逐帧跟手的回归",
+        "layer": "Widget regression tests"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "Input component gesture -> presentation controller -> root OverlayEntry -> photo picker page -> attachment controller",
+    "dependency_rule": "手势期间不得调用 Navigator；交互覆盖层只负责展示和结果回传，附件 owner、上传和选择策略仍由既有 controller/library 负责"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/chat/presentation/input_bar/nami_input_bar_test.dart",
+        "command": "flutter test test/features/chat/presentation/input_bar/nami_input_bar_test.dart --plain-name 'recent photos stay attached to one continuous upward pointer'"
+      }
+    ]
+  },
+  "risks": [
+    "OverlayEntry 必须在选择、取消、宿主 dispose 三条路径中只移除一次",
+    "覆盖层关闭后不得持有已销毁 BuildContext 或 presentation controller",
+    "普通点击打开图片选择器仍需保留系统返回手势和 Navigator.pop 语义"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,257 @@
+{
+  "story_id": "US-B5-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "package.json",
+      "reason": "现有根脚本已提供全仓 test/typecheck、baseline、composition、controlled/recovery 启动与 G-EQ 入口；rehearsal 应编排这些既有真源而不是复制测试实现"
+    },
+    {
+      "path": "evidence/baselines/3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4/baseline-manifest.v1.json",
+      "reason": "冻结 baselineSha、60 个 Python nodeId、60/60 运行结果和 rollbackRef，是 rehearsal 的回滚与 parity 基准"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "60 条迁移映射是 parity 真理源；当前 M005/M008/M009 仍引用早期不存在目标，rehearsal 必须先把映射收敛到已落地测试并验证每个 target 文件存在"
+    },
+    {
+      "path": "tests/acceptance/legacy-test-map.spec.ts",
+      "reason": "现有验收只核对 ID、nodeId 和固定 target 字符串，尚未把 target 路径存在性、60 条完成证据纳入最终 rehearsal"
+    },
+    {
+      "path": "evaluation/cases/legacy-agent-definition-v1/src/run.ts",
+      "reason": "现有 collectLegacyCaseEvidence 已产生参考解 PASS、负对照 FAIL、坏环境 INVALID、bundle hash 和人工签署资格，可直接作为 G-EQ gate provider"
+    },
+    {
+      "path": "packages/evaluation-domain/src/qualify-case.ts",
+      "reason": "G-EQ 已有纯资格判定与 HUMAN_REVIEW_INCOMPLETE/BUNDLE_MISMATCH 原因码；rehearsal 只消费其结构化结果，不重写评估规则"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "受控 composition lock/fingerprint 已有独立采集与严格比对，rehearsal 必须调用 composition:verify 并记录当前 fingerprint"
+    },
+    {
+      "path": "scripts/runtime/launch-controlled.ts",
+      "reason": "正式 DSH 入口已拒绝 profile/patch 和特权配置旁路；rehearsal 只做非破坏性 --help/组合 smoke，不修改生产入口"
+    },
+    {
+      "path": "scripts/runtime/launch-recovery.ts",
+      "reason": "固定 recovery 入口是回滚/只读恢复证据之一；rehearsal 必须验证其可启动且不加载写 Provider"
+    },
+    {
+      "path": "tests/plugin-lifecycle/partial-failure.spec.ts",
+      "reason": "插件初始化失败回滚是 lifecycle gate 的现有可执行证据，应由固定 gate command 收集 exit code 与输出 hash"
+    },
+    {
+      "path": "tests/fault-injection/watchdog.spec.ts",
+      "reason": "Watchdog 失联后零新增现实写是 fault/safety gate 的关键跨进程证据，不能以同进程 mock 或口头状态替代"
+    },
+    {
+      "path": "tests/integration/learning-runtime-isolation.spec.ts",
+      "reason": "生产 DSH 与 LangGraph.js Learning Lab 的依赖/入口隔离已有自动化真源，rehearsal 应复用并汇总"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md",
+      "reason": "落实 GWT-021 rehearsal 前提与 GWT-022：G-EQ、60 parity、lifecycle、fault、safety、隔离、回滚和人工状态任一不完整都保持 blocked"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-005/009/011：rehearsal 与一次破坏性 cutover 分离，Python 删除和生产入口切换留给 US-B5-002"
+    }
+  ],
+  "verified_architecture_facts": [
+    "US-B5-001 只生成并运行不可变 rehearsal 报告；不得删除 Python、修改生产入口、写 baseline tag 或把候选标记为 cutover 完成",
+    "rehearsal 必须消费现有 G-EQ、60 migration map、全仓测试、插件生命周期、fault/safety、Learning 隔离、composition、recovery 和 rollbackRef 真源，而不是手填 PASS",
+    "本地 UDS/fixture 不能代替生产 OS 用户、IAM、网络和证书边界签署；缺少 deployment boundary evidence 时报告必须明确 blocked",
+    "人工 cutover review 与 Case v1 的 G-EQ 签署是不同门禁；B5-001 最多进入 ready_for_human_review，cutoverAllowed 始终为 false",
+    "任一命令非零、输出不可解析、证据引用为空、candidate SHA/工作树不一致或 reviewer 未签署都按 GWT-022 保持 blocked",
+    "US-B5-002 才能消费已冻结 rehearsal 报告与独立人工批准执行一次性删除/入口切换；本 Story 不创建删除实现"
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "加入 @agent/release-domain、release:rehearse 脚本和 release-domain typecheck；复用现有 test/composition/evaluate/start 命令，不新增运行时框架依赖",
+        "layer": "Workspace Release Tooling"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "冻结新增纯 workspace release-domain importer，不升级 DSH/Cordis 或其他第三方依赖",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 CutoverRehearsalReport、GateResult、DeploymentBoundaryEvidence、状态/原因码及严格 assertion",
+        "layer": "Shared Release Contract"
+      },
+      {
+        "path": "migration/legacy-test-map.json",
+        "purpose": "把 M005/M008/M009 的早期占位 targetRed 收敛到实际已存在的 effect-unknown/act 测试文件，语义、ID 和 migrate disposition 不变",
+        "layer": "Migration Evidence"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "purpose": "除 60 ID/nodeId/disposition 外逐一解析 targetRed 并要求文件存在，防止 rehearsal 用不存在的测试路径伪造 parity",
+        "layer": "Parity Gate Regression"
+      },
+      {
+        "path": "scripts/tsconfig.json",
+        "purpose": "把 release/**/*.ts 纳入 strict typecheck，与 baseline/runtime 脚本使用同一 Node 工具链",
+        "layer": "Release Tool Build"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/cutover-rehearsal.ts",
+        "reason": "定义 cutover-rehearsal.v1、固定 gate ID、pass/fail/blocked、ready_for_human_review/blocked、命令摘要、baseline/composition/rollback/human/deployment 状态，并强制 cutoverAllowed=false、destructiveActions=[]",
+        "naming_basis": "精确表达本 Story 的 rehearsal 报告而非最终 CutoverDecision，避免 B5-001 越权",
+        "layer": "Versioned Release Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/cutover-rehearsal.v1.json",
+        "reason": "冻结跨进程/CI 可读取的候选 SHA、gate receipts、reasonCodes、evidenceRefs、报告 hash 输入与非破坏性不变量",
+        "naming_basis": "对应 Cutover Gate Dashboard 的机器真理源",
+        "layer": "Release JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/deployment-boundary-evidence.v1.json",
+        "reason": "冻结生产 OS identity、IAM、network、certificate、composition fingerprint、签署者和 sourceRefs；缺失或指纹漂移只能 blocked",
+        "naming_basis": "承接 B4 明确留给 B5 的真实部署边界证据，不让本地 fixture 冒充生产签署",
+        "layer": "Deployment Evidence Schema"
+      },
+      {
+        "path": "packages/contracts/test/cutover-rehearsal.spec.ts",
+        "reason": "覆盖严格字段、gate 闭集、证据必填、时间/SHA/fingerprint、报告状态，以及任何输入都不能令 B5-001 report 的 cutoverAllowed=true",
+        "naming_basis": "与 cutover-rehearsal.ts 同名的契约 Red",
+        "layer": "Contract Red"
+      },
+      {
+        "path": "packages/release-domain/package.json",
+        "reason": "建立只依赖 contracts 的纯 release-domain，不依赖 shell、Git、Vitest、DSH、Cordis、文件系统或环境变量",
+        "naming_basis": "把 gate 聚合规则与 rehearsal 命令编排隔离",
+        "layer": "Pure Release Domain"
+      },
+      {
+        "path": "packages/release-domain/tsconfig.json",
+        "reason": "独立 strict typecheck 纯领域与单测",
+        "naming_basis": "遵循 packages/* workspace 结构",
+        "layer": "Domain Build"
+      },
+      {
+        "path": "packages/release-domain/src/index.ts",
+        "reason": "导出 rehearsal gate 聚合与状态判定 API",
+        "naming_basis": "保持 package 单入口",
+        "layer": "Pure Release Domain"
+      },
+      {
+        "path": "packages/release-domain/src/evaluate-rehearsal.ts",
+        "reason": "纯函数要求全部固定自动 gate PASS 且 deployment evidence 有效才进入 ready_for_human_review；任何 fail/blocked/缺证都输出稳定原因并保持 blocked/cutoverAllowed=false",
+        "naming_basis": "GWT-021-REHEARSAL 与 GWT-022 的核心领域判定",
+        "layer": "Pure Gate Aggregation"
+      },
+      {
+        "path": "packages/release-domain/test/evaluate-rehearsal.spec.ts",
+        "reason": "覆盖全自动门禁全绿、单门禁红、缺证、deployment 指纹漂移、human pending/rejected，以及 gate 顺序稳定和不允许 cutover",
+        "naming_basis": "领域 Red 不执行外部命令",
+        "layer": "Domain Red"
+      },
+      {
+        "path": "scripts/release/rehearse.ts",
+        "reason": "以固定 allowlist argv 和可注入 Command/File/Git Ports 收集 G-EQ、parity、lifecycle、fault、安全、隔离、composition、recovery、rollback 与 deployment 证据；记录 exit code/output SHA，原子输出报告且拒绝覆盖",
+        "naming_basis": "唯一非破坏性 release rehearsal application service",
+        "layer": "Release Application Orchestrator"
+      },
+      {
+        "path": "scripts/release/main.ts",
+        "reason": "解析显式 candidateSha/output/deployment-evidence 参数，要求 candidate=HEAD 且工作树干净；不接受删除路径、入口替换或任意 shell 命令参数",
+        "naming_basis": "CLI 与可测试 rehearsal 编排分离",
+        "layer": "Release CLI Entrypoint"
+      },
+      {
+        "path": "tests/acceptance/cutover-rehearsal.spec.ts",
+        "reason": "使用 fake ports 验证固定 gate 全绿时只生成 ready_for_human_review 报告，包含 baseline/rollback/composition/evidence hash，且 Python 与生产入口保持不变",
+        "naming_basis": "GWT-021-REHEARSAL 主链路，不在 Vitest 内递归运行全仓 test",
+        "layer": "Vertical Acceptance Red"
+      },
+      {
+        "path": "tests/fault-injection/cutover-rehearsal-blocked.spec.ts",
+        "reason": "注入 composition drift、命令非零、缺 deployment evidence、缺 G-EQ/60 mapping 或 reviewer pending，证明报告 blocked、无删除、无入口修改且 baseline rollbackRef 仍可解析",
+        "naming_basis": "GWT-022 非破坏性失败关闭反例",
+        "layer": "Release Fault Injection Red"
+      },
+      {
+        "path": "docs/runbooks/cutover-rehearsal.md",
+        "reason": "记录输入、固定 gate、报告字段、真实 deployment evidence 要求、blocked 解读和 US-B5-002 人工交接；明确本命令永不删除 Python或切入口",
+        "naming_basis": "发布负责人可复跑的 rehearsal runbook",
+        "layer": "Release Operations"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "versioned cutover rehearsal/deployment evidence contracts → pure release-domain gate aggregation → scripts/release fixed-command collectors → immutable Cutover Gate Dashboard report；现有 evaluation/composition/test/safety/watchdog/recovery 仅作为只读证据提供者",
+    "dependency_rule": "contracts/release-domain 不得 import Node shell、Git、文件系统、Vitest、Cordis、DSH、SQLite、环境变量或任何 Runtime。scripts/release 只能以固定 argv 调用已登记 gate，不得接受任意 command，不得删除/移动 Python、修改 package 入口、写 tag 或执行 cutover。报告必须绑定 candidate SHA、baseline SHA、composition fingerprint、每个命令输出 hash 与 evidence refs；未提供真实 deployment boundary evidence、人工 cutover review 未完成或任一 gate 非 PASS 时均 blocked。US-B5-002 只能消费已冻结报告，不能由 B5-001 直接授权。"
+  },
+  "execution_contract": {
+    "automated_ready": "candidateSha=clean HEAD，baseline/rollback 可解析，G-EQ qualified，M001—M060 target 文件存在且 Python 60/60 与全仓 TS tests 通过，lifecycle/fault/safety/isolation/composition/recovery/audit gates 全绿，并有匹配 fingerprint 的真实 deployment evidence；报告状态为 ready_for_human_review，但 cutoverAllowed=false",
+    "blocked": "任一 gate 非零、输出不可解析、证据为空、映射目标不存在、baseline/composition 漂移、deployment evidence 缺失/签名不完整或 human 状态非 approved 时，报告列出稳定 reasonCodes 并保持 blocked；不因多数门禁通过而折算成功",
+    "non_destructive": "无论 ready 或 blocked，Python 文件列表与 hash、生产入口文件 hash、baseline rollbackRef 均保持不变；报告 destructiveActions=[]、productionEntrypointChanged=false、pythonWorktreePreserved=true",
+    "evidence": "每个 gate receipt 固定 id/command/exitCode/startedAt/finishedAt/outputSha256/evidenceRefs；最终 canonical report 可计算 SHA-256 并由 Story TDD 证据引用",
+    "human_boundary": "Case v1 reviewer 只证明 G-EQ；最终 cutover reviewer 是独立门禁。B5-001 展示其 pending/rejected/approved 状态但永不把 cutoverAllowed 设为 true，实际一次切换只属于 US-B5-002"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/cutover-rehearsal.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts"
+      },
+      {
+        "path": "packages/release-domain/test/evaluate-rehearsal.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/release-domain/test/evaluate-rehearsal.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/legacy-test-map.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/legacy-test-map.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/cutover-rehearsal.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/cutover-rehearsal.spec.ts"
+      },
+      {
+        "path": "tests/fault-injection/cutover-rehearsal-blocked.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/fault-injection/cutover-rehearsal-blocked.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts packages/release-domain/test/*.spec.ts tests/acceptance/legacy-test-map.spec.ts tests/acceptance/cutover-rehearsal.spec.ts tests/fault-injection/cutover-rehearsal-blocked.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py'",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/controlled install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/recovery install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 audit --audit-level=high --registry=https://registry.npmjs.org",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 release:rehearse -- --candidate-sha <committed-head> --output <temp>/cutover-rehearsal.v1.json"
+    ]
+  },
+  "risks": [
+    "若 rehearsal 只检查命令 exit 0 而不校验结构化输出、输出 hash 和 evidence refs，空跑/假 PASS 会被误当成可切换；每个 gate 必须有闭集解析与可追溯摘要",
+    "若把 G-EQ Case reviewer 签署当成最终 cutover 批准，会越过独立人工门禁；报告必须分别展示 case qualification 与 cutover review",
+    "若 legacy-test-map 只计数 60 而不检查 target 文件存在，早期占位路径会制造虚假 parity；M005/M008/M009 漂移必须先收敛并加存在性测试",
+    "若 full test 在 Vitest acceptance 内再次调用 release:rehearse 会递归；单测使用 fake CommandPort，真实全量 rehearsal 只在 Story smoke/CI 单独执行",
+    "若 runner 接受用户任意 shell 字符串，会形成命令注入和不可审计门禁；只允许代码内固定 argv，外部参数限 SHA、输出路径和证据文件",
+    "若 report 可覆盖旧文件或不绑定 candidate SHA/composition fingerprint，会丢失审计链；输出必须原子、拒绝覆盖并记录 canonical hash",
+    "若本地 UDS/fixture 被写成 production IAM/network PASS，会重复 B4 的证据边界错误；缺真实 deployment evidence 时必须展示红灯而不是猜测",
+    "若 B5-001 为了满足目标直接删除 Python、改 main 入口或创建 cutover 脚本，即越权进入 US-B5-002；必须以文件 hash/列表反例证明零破坏"
+  ],
+  "stop_conditions": [
+    "需要删除、移动或改写任何 .py 文件，修改生产入口，创建/移动 baseline tag，或执行真实 cutover",
+    "需要 AI 代填 deployment boundary 签署或最终 cutover reviewer 决定，或把本地 fixture 冒充生产 OS/IAM/network 证据",
+    "无法从现有 G-EQ、migration map、composition、test、fault/safety/isolation/recovery 真源生成结构化 evidence，只能人工硬编码 PASS",
+    "需要 fork/vendoring DSH、升级 rc.6/Cordis 4.0.1 或引入新的命令执行/发布框架依赖",
+    "无法保证 runner 固定命令 allowlist、输出原子且拒绝覆盖，或无法证明 blocked rehearsal 对 Python/入口零修改"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

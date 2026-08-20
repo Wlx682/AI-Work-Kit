@@ -1,0 +1,410 @@
+{
+  "story_id": "US-B4-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/contracts/src/action-intent.ts",
+      "reason": "沿用版本常量、闭集字段和运行时断言；AuthorityAttestation/Receipt 必须是独立跨进程契约，unknown 或 degraded 不得表达为可写"
+    },
+    {
+      "path": "packages/contracts/src/runtime-composition.ts",
+      "reason": "Watchdog 必须把受控 manifestId/compositionFingerprint 作为权威证明输入，而不是信任 Runtime 自报的任意字符串"
+    },
+    {
+      "path": "packages/safety-domain/src/index.ts",
+      "reason": "现有策略与 Lease 已按 composition 失败关闭；本 Story 在同一纯领域边界增加证明新鲜度和写权限判定，不把时钟/传输引入领域层"
+    },
+    {
+      "path": "plugins/runtime-composition/src/index.ts",
+      "reason": "Runtime 已有不可变 composition identity Service，可供 authority gate 生成只读探针并拒绝不匹配证明"
+    },
+    {
+      "path": "plugins/control-ledger/src/index.ts",
+      "reason": "现有 project(runId).throughSequence 可作为稳定控制水位；Watchdog 只读观察，不直接访问或修改 SQLite 表"
+    },
+    {
+      "path": "plugins/safety-client/src/index.ts",
+      "reason": "当前 Runtime 唯一现实写入口是 safetyIntentClient；需依赖 authorityGate，在缺失/过期/降级证明时本地返回 WATCHDOG_DEGRADED，同时保留 query 只读能力"
+    },
+    {
+      "path": "services/safety-executor/src/executor.ts",
+      "reason": "独立 Executor 是不可绕过的最终写门禁；授权和 Lease 前必须再次验证当前 AuthorityAttestation，不能只信 Runtime 客户端门禁"
+    },
+    {
+      "path": "services/safety-executor/src/server.ts",
+      "reason": "扩展已存在的 UDS/mTLS 服务，提供只读 Watchdog probe 与幂等 attestation 接收端；不得新增策略修改或重启接口"
+    },
+    {
+      "path": "packages/dsh-bridge/src/launcher.ts",
+      "reason": "受控 launcher 已拒绝 Executor-only secrets 和 profile/patch 旁路；需继续拒绝 Watchdog-only 证明配置，并增加固定 recovery Profile 启动路径"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "authority contract/gate、Bundle/Profile 和恢复入口必须进入受控组合指纹；Watchdog 独立服务本体不得成为 Cordis 生命周期项"
+    },
+    {
+      "path": "profiles/controlled/package.json",
+      "reason": "受控 Profile 需显式装载 authority-gate，并让 safety-client 依赖该 Service；不得依赖 services/watchdog"
+    },
+    {
+      "path": "tests/integration/safety-executor-process.spec.ts",
+      "reason": "复用真实独立 Executor、凭证隔离目标 fixture 和现实写计数，为 Watchdog 失联后零新增写提供端到端证据"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md",
+      "reason": "落实 GWT-020 与已确认 P0-3 第 4/5/7 条：独立 Watchdog、凭证/旁路证明、证明不完整时仅 evaluation/read-only"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-007/009、POST /v1/watchdog/attestations、WATCHDOG_DEGRADED、独立降级通道和 recovery Profile"
+    }
+  ],
+  "verified_architecture_facts": [
+    "Watchdog 必须是独立进程、身份与故障域，不进入 DSH Bundle/Profile，也不能由 Runtime 卸载",
+    "AuthorityAttestation 必须同时覆盖 Runtime/Executor 心跳、活动运行的控制水位、受控组合指纹、凭证与旁路证明，并有短 TTL",
+    "受控写采用双端失败关闭：Runtime safety-client 本地只读门禁用于即时反馈，独立 Executor 在签发 Lease 前执行不可绕过的权威门禁",
+    "缺失、过期、composition 不匹配、活动水位停滞、Runtime/Executor 失联或旁路证明不完整均为 WATCHDOG_DEGRADED，现实目标调用数必须为 0",
+    "read-only 状态仍允许 Action/Control 查询和 evaluation；recovery Profile 不包含 safety-client、control-supervisor 或任何现实写入口",
+    "B5 的完整故障矩阵、release rehearsal、生产部署/IAM 签署和最终 cutover 不在本 Story 提前完成"
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "将 authority-gate 与 watchdog 纳入 typecheck/devDependency，并增加独立 watchdog/recovery 启动脚本；保持固定 DSH/Cordis 与零新增运行时框架",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "冻结新增纯 workspace importer，不升级既有第三方依赖",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 AuthorityAttestation、AttestationReceipt、WatchdogProbe、模式/原因码及严格 assertion",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/safety-domain/src/index.ts",
+        "purpose": "导出纯 authority 判定入口，保持现有 SafetyPolicy/Lease API 兼容",
+        "layer": "Pure Safety Domain"
+      },
+      {
+        "path": "plugins/control-ledger/src/index.ts",
+        "purpose": "提供只读 watermark(runId) 窄接口，复用 projection 的 throughSequence/lifecycleStatus，不暴露数据库或写 Provider",
+        "layer": "Control Watermark Port"
+      },
+      {
+        "path": "plugins/safety-client/package.json",
+        "purpose": "声明对 authority-gate Service 的运行时依赖，仍只依赖 contracts，不依赖 Watchdog/Executor 服务包",
+        "layer": "Runtime Client Package"
+      },
+      {
+        "path": "plugins/safety-client/src/index.ts",
+        "purpose": "submit 前要求 authorityGate 对 intent fingerprint 放行；降级时返回 WATCHDOG_DEGRADED 且不发 UDS/mTLS 请求，query 保持可用",
+        "layer": "Runtime Read-only Gate"
+      },
+      {
+        "path": "services/safety-executor/src/ports.ts",
+        "purpose": "新增 AuthorityAttestationGate Port，使 Executor 核心不依赖 Watchdog transport 或具体存储",
+        "layer": "Safety Provider Port"
+      },
+      {
+        "path": "services/safety-executor/src/executor.ts",
+        "purpose": "在 policy/Lease/target apply 前验证 fresh trusted attestation；降级只追加 denied receipt，target 调用为 0，已有 query/reconcile 不受影响",
+        "layer": "Independent Write Gate"
+      },
+      {
+        "path": "services/safety-executor/src/server.ts",
+        "purpose": "增加 GET /v1/watchdog/probe 与 POST /v1/watchdog/attestations，复用 UDS 0600/mTLS TLS1.3；未知路由仍失败关闭",
+        "layer": "Watchdog Cross-process API"
+      },
+      {
+        "path": "services/safety-executor/src/main.ts",
+        "purpose": "装配 attestation gate，启动默认无证明即降级；Watchdog-only 凭证不得回流 Runtime",
+        "layer": "Independent Executor Entrypoint"
+      },
+      {
+        "path": "packages/dsh-bridge/src/launcher.ts",
+        "purpose": "拒绝 Watchdog-only evidence/identity 配置进入 Runtime；提供不接受任意 profile/patch overlay 的固定 recovery 启动函数",
+        "layer": "Runtime/Recovery Launcher Gate"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "purpose": "把 Authority contract/gate、受控 Bundle/Profile 与 launcher 变更纳入组合指纹并登记 authorityGate Provider；独立 Watchdog 不加入 Cordis provider 列表",
+        "layer": "Composition Verification"
+      },
+      {
+        "path": "bundles/control-base/cordis.patch.yml",
+        "purpose": "在 safety-client 前加入 @agent/plugin-authority-gate，利用 Cordis inject 保证门禁缺失时写客户端不能 Ready",
+        "layer": "Controlled Bundle"
+      },
+      {
+        "path": "bundles/control-production/cordis.patch.yml",
+        "purpose": "仅向 authority-gate 注入 Runtime probe/control UDS 路径、runId 与受控指纹；不注入 Watchdog 身份、旁路证据或 Executor 凭证",
+        "layer": "Production Gate Configuration"
+      },
+      {
+        "path": "profiles/controlled/package.json",
+        "purpose": "链接 authority-gate plugin；继续禁止 services/watchdog/safety-executor 进入 Runtime 依赖闭包",
+        "layer": "Controlled Profile"
+      },
+      {
+        "path": "profiles/controlled/pnpm-lock.yaml",
+        "purpose": "冻结 authority-gate 与 contracts 的 Profile 解析，并证明独立服务包未进入受控闭包",
+        "layer": "Profile Lock"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "重冻加入 authorityGate seam 后的受控组合事实与 fingerprint",
+        "layer": "Composition Evidence"
+      },
+      {
+        "path": "tests/integration/safety-executor-process.spec.ts",
+        "purpose": "为 B4-001 happy path 注入 fresh trusted attestation，并保持独立进程、一次现实写和凭证隔离回归",
+        "layer": "Safety Regression"
+      },
+      {
+        "path": "tests/fault-injection/safety-bypass.spec.ts",
+        "purpose": "补充 Runtime 卸载/绕过 authority-gate 仍被 Executor 拒绝的双门禁反例",
+        "layer": "Security Regression"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/authority-attestation.ts",
+        "reason": "定义 authority-attestation.v1、attestation-receipt.v1、watchdog-probe.v1、trusted/degraded 状态、原因码、短 TTL 与严格断言",
+        "naming_basis": "精确采用架构 AuthorityAttestation 与 Watchdog control channel 术语",
+        "layer": "Shared Cross-process Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/authority-attestation.v1.json",
+        "reason": "冻结 attestationId、runtimeId、compositionFingerprint、heartbeat/watermark/bypass proof、observedAt/expiresAt/evidenceRefs",
+        "naming_basis": "对应 POST /v1/watchdog/attestations 请求 Schema",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/attestation-receipt.v1.json",
+        "reason": "冻结接收状态、runtimeMode、writeAllowed、reasonCodes 与 recordedAt",
+        "naming_basis": "对应架构 attestation-receipt.v1 响应 Schema",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/watchdog-probe.v1.json",
+        "reason": "冻结 Runtime/Executor 只读探针中的 heartbeat、composition、active run、水位和服务身份字段",
+        "naming_basis": "跨进程 probe 必须版本化，不能只靠 TS 类型",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/test/authority-attestation.spec.ts",
+        "reason": "覆盖合法 trusted/degraded、过期、反向时间、指纹、reasonCodes 与 unknown 字段拒绝",
+        "naming_basis": "与 authority-attestation.ts 同名",
+        "layer": "Contract Red"
+      },
+      {
+        "path": "packages/safety-domain/src/authority-gate.ts",
+        "reason": "纯函数评估心跳、水位、组合、旁路证明和 TTL，生成 trusted/degraded attestation 与 fail-closed 写判定",
+        "naming_basis": "复用 safety-domain，避免创建依赖 transport/DSH 的 Watchdog 领域包",
+        "layer": "Pure Authority Domain"
+      },
+      {
+        "path": "packages/safety-domain/test/authority-gate.spec.ts",
+        "reason": "覆盖 healthy、Runtime/Executor 失联、活动水位停滞、composition 漂移、旁路证据缺失、Watchdog 证明过期",
+        "naming_basis": "直接对应 GWT-020 和 WATCHDOG_DEGRADED",
+        "layer": "Domain Red"
+      },
+      {
+        "path": "plugins/authority-gate/package.json",
+        "reason": "建立 Runtime 内无特权的 Cordis gate，只依赖 contracts、composition 和 ledger Services，不依赖独立 Watchdog/Executor",
+        "naming_basis": "表达 Runtime 侧 AuthorityAttestation 接收与 read-only 投影，不冒充独立 Watchdog",
+        "layer": "Runtime Gate Plugin"
+      },
+      {
+        "path": "plugins/authority-gate/tsconfig.json",
+        "reason": "独立 strict typecheck Runtime gate、UDS transport 和 Cordis Service",
+        "naming_basis": "遵循 plugins/* workspace 结构",
+        "layer": "Plugin Build"
+      },
+      {
+        "path": "plugins/authority-gate/src/index.ts",
+        "reason": "提供 authorityGate.mode/assertWriteAllowed，初始 read_only、按 expiresAt 动态失败关闭；probe 只读 composition/watermark，attestation 接收端不提供提权配置",
+        "naming_basis": "Runtime 内窄 Service + 可逆 Effect，安全最终裁决仍在独立 Executor",
+        "layer": "Runtime Authority Gate"
+      },
+      {
+        "path": "plugins/authority-gate/test/gate.spec.ts",
+        "reason": "覆盖初始只读、fresh trusted 放行、degraded/expired 立即只读、fingerprint 不匹配、dispose 后 safety-client 无法 Ready",
+        "naming_basis": "Runtime 门禁生命周期 Red",
+        "layer": "Plugin Red"
+      },
+      {
+        "path": "services/safety-executor/src/authority-gate.ts",
+        "reason": "保存最新幂等 attestation/receipt 并按时钟检查 trusted、TTL 与 intent composition；进程重启后默认无证明即拒绝写",
+        "naming_basis": "Executor 私有权威门禁，不共享 Runtime 插件内存",
+        "layer": "Executor Authority Adapter"
+      },
+      {
+        "path": "services/safety-executor/test/authority-gate.spec.ts",
+        "reason": "覆盖无证明、过期、降级、异 fingerprint、重复 attestation 和恢复后新 action 放行，所有拒绝 target 调用为 0",
+        "naming_basis": "不可绕过的 Executor 侧 Red",
+        "layer": "Service Red"
+      },
+      {
+        "path": "services/watchdog/package.json",
+        "reason": "建立可独立启动的 TypeScript service，只依赖 contracts/safety-domain，使用 Node 内置 UDS/HTTPS 与文件读取",
+        "naming_basis": "采用架构已批准 services/watchdog",
+        "layer": "Independent Watchdog Process"
+      },
+      {
+        "path": "services/watchdog/tsconfig.json",
+        "reason": "独立 strict typecheck monitor、ports、transport 与入口",
+        "naming_basis": "遵循 services/* workspace 结构",
+        "layer": "Service Build"
+      },
+      {
+        "path": "services/watchdog/src/ports.ts",
+        "reason": "定义 RuntimeProbe、ExecutorProbe、BypassEvidence、Clock 和双 AttestationSink Ports，隔离监控规则与 UDS/mTLS/文件系统",
+        "naming_basis": "独立权限域的窄 Provider Ports",
+        "layer": "Watchdog Provider Ports"
+      },
+      {
+        "path": "services/watchdog/src/watchdog.ts",
+        "reason": "周期采样并比较 heartbeat、活动水位、composition 与旁路证据，生成短 TTL attestation，同时投递 Runtime 与 Executor；任一 sink 失败保持 degraded",
+        "naming_basis": "GWT-020 核心用例编排",
+        "layer": "Watchdog Application Service"
+      },
+      {
+        "path": "services/watchdog/src/client.ts",
+        "reason": "实现 Watchdog 专属 HTTP-over-UDS/mTLS probe 与 attestation transport，严格校验版本化响应",
+        "naming_basis": "与已有 safety-client 传输约束一致，但不进入 Runtime Bundle",
+        "layer": "Watchdog Transport Adapter"
+      },
+      {
+        "path": "services/watchdog/src/main.ts",
+        "reason": "独立进程入口读取 expected fingerprint、阈值、旁路证据和专属 endpoint；配置缺失/权限过宽即失败关闭并周期续签短证明",
+        "naming_basis": "Watchdog 不能由 DSH Profile 启动或卸载",
+        "layer": "Independent Process Entrypoint"
+      },
+      {
+        "path": "services/watchdog/test/watchdog.spec.ts",
+        "reason": "使用 fake ports 验证健康续签、活动水位停滞、失联、组合漂移、旁路缺证和任一 sink 失败均降级",
+        "naming_basis": "服务级确定性 Red",
+        "layer": "Service Red"
+      },
+      {
+        "path": "profiles/recovery/cordis.yml",
+        "reason": "建立固定 read-only/recovery Profile 根配置",
+        "naming_basis": "采用架构目标目录 profiles/recovery",
+        "layer": "Recovery Profile"
+      },
+      {
+        "path": "profiles/recovery/cordis.patch.yml",
+        "reason": "保持空写能力补丁，禁止 safety-client/control-supervisor/domain write provider",
+        "naming_basis": "与 controlled Profile patch 分层一致",
+        "layer": "Recovery Profile"
+      },
+      {
+        "path": "profiles/recovery/package.json",
+        "reason": "只组合固定 DSH base/headless 只读能力，不链接 safety-client、control-supervisor、Watchdog 或 Executor",
+        "naming_basis": "明确的恢复依赖闭包",
+        "layer": "Recovery Profile"
+      },
+      {
+        "path": "profiles/recovery/pnpm-workspace.yaml",
+        "reason": "冻结独立 Profile workspace 安装边界",
+        "naming_basis": "复用 profiles/controlled 布局",
+        "layer": "Recovery Build"
+      },
+      {
+        "path": "profiles/recovery/pnpm-lock.yaml",
+        "reason": "证明 recovery 依赖闭包无现实写插件和独立服务包",
+        "naming_basis": "可复现 recovery Profile lock",
+        "layer": "Recovery Lock"
+      },
+      {
+        "path": "scripts/runtime/launch-recovery.ts",
+        "reason": "以固定 recovery Profile 启动 DSH，拒绝 --profile/--patch 覆盖及 Safety/Watchdog secrets",
+        "naming_basis": "与 launch-controlled.ts 分离，防止降级路径复用可写配置",
+        "layer": "Recovery Entrypoint"
+      },
+      {
+        "path": "tests/fault-injection/watchdog.spec.ts",
+        "reason": "真实派生独立 Watchdog，注入 Runtime 心跳失联或活动水位停滞，证明 Runtime gate 为 read_only、Executor 返回 WATCHDOG_DEGRADED、目标新增写为 0",
+        "naming_basis": "精确对应 fault-injection/watchdog 与 GWT-020",
+        "layer": "Cross-process Fault Injection"
+      },
+      {
+        "path": "tests/integration/recovery-profile.spec.ts",
+        "reason": "验证 recovery Profile 可启动/展示帮助且依赖与 dump-config 均无 safety-client、control-supervisor、目标凭证或任意 patch overlay",
+        "naming_basis": "read-only/recovery 可观察验收",
+        "layer": "Recovery Integration Red"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "versioned AuthorityAttestation/Probe contracts → pure safety-domain authority evaluation → independent Watchdog probe/attestation orchestration → Runtime authority-gate read-only projection + independent Executor authority gate → existing Safety policy/Lease/Reality；固定 recovery Profile 是无写能力的旁路恢复入口",
+    "dependency_rule": "contracts/safety-domain 不得 import Cordis、DSH、HTTP、SQLite、环境变量或凭证。services/watchdog 是独立进程，只通过只读 probes 与双 attestation sinks 观察 Runtime/Executor；它不得进入 Bundle/Profile 或直接执行现实动作。Runtime authority-gate 只负责可见模式和本地早拒绝，safety-client 必须 inject 它；真正不可绕过的写裁决在独立 Executor，缺失、过期、degraded、异 composition 的证明一律在 policy/Lease/target 前返回 WATCHDOG_DEGRADED。Watchdog 失联依靠短 TTL 自动失败关闭，不能依赖最后一次 trusted 永久有效。recovery Profile 不包含 safety-client/control-supervisor/domain write provider，也拒绝任意 profile/patch 覆盖。"
+  },
+  "execution_contract": {
+    "healthy": "Watchdog 从 Runtime、Executor 和独立旁路证据取得 fresh 样本；仅当 heartbeat、活动水位、composition 和 credential/network bypass checks 全绿时签发短 TTL trusted attestation，并由 Runtime/Executor 分别返回 writeAllowed=true 的 receipt",
+    "degraded": "任一证明缺失/超时、活动水位超过阈值不前进、composition 漂移、旁路证据非 denied 或 attestation 过期时，Runtime mode=read_only，Executor 对新 ActionIntent 返回 WATCHDOG_DEGRADED，target apply 调用数为 0",
+    "dual_gate": "卸载/绕过 Runtime authority-gate 不能开放写：Executor 独立持有并验证自己的最新 attestation；反之 Executor sink 失败也必须使 Watchdog cycle/deployment 状态保持 degraded",
+    "recovery": "query/evaluation 保持可用；固定 recovery Profile 可独立启动且无任何现实写 Provider。恢复写权限必须由新一轮全绿 Watchdog 证明签发 fresh trusted attestation，不能人工改内存状态或重放旧证明",
+    "watermark": "只在 Runtime probe 声明 active run 时要求 control watermark 在阈值内前进；idle run 不因无业务事件误报停滞，但 heartbeat、composition 和旁路证明仍必须 fresh"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/authority-attestation.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/authority-attestation.spec.ts"
+      },
+      {
+        "path": "packages/safety-domain/test/authority-gate.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/safety-domain/test/authority-gate.spec.ts"
+      },
+      {
+        "path": "plugins/authority-gate/test/gate.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run plugins/authority-gate/test/gate.spec.ts plugins/safety-client/test/client.spec.ts"
+      },
+      {
+        "path": "services/watchdog/test/watchdog.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run services/watchdog/test/*.spec.ts services/safety-executor/test/authority-gate.spec.ts"
+      },
+      {
+        "path": "tests/fault-injection/watchdog.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/fault-injection/watchdog.spec.ts tests/integration/recovery-profile.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/authority-attestation.spec.ts packages/safety-domain/test/authority-gate.spec.ts plugins/authority-gate/test/*.spec.ts plugins/safety-client/test/*.spec.ts services/watchdog/test/*.spec.ts services/safety-executor/test/*.spec.ts tests/fault-injection/watchdog.spec.ts tests/fault-injection/safety-bypass.spec.ts tests/integration/safety-executor-process.spec.ts tests/integration/recovery-profile.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py'",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "cd profiles/controlled && nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "cd profiles/recovery && nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "AGENT_CONTROL_LEDGER_PATH=<temp>/control.sqlite AGENT_SAFETY_SOCKET_PATH=<temp>/safety.sock AGENT_AUTHORITY_GATE_SOCKET_PATH=<temp>/authority.sock AGENT_AUTHORITY_RUN_ID=run-smoke nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh:recovery -- --help"
+    ]
+  },
+  "risks": [
+    "若只在 Runtime safety-client 检查 Watchdog 状态，Runtime 可绕过/卸载插件后继续调用 Executor；Executor 必须在 Lease 前独立验证同一证明",
+    "若 attestation 无 TTL 或进程重启沿用旧 trusted 状态，Watchdog 失联不会自动停止写；两端都必须按当前时钟检查 expiresAt，重启默认 degraded",
+    "若水位在 idle 时也强制推进，会在无业务事件时误降级；只有 active run 才应用 stall 阈值，heartbeat/composition/旁路仍持续检查",
+    "若 Watchdog 直接读写 Control Ledger SQLite，会破坏单写者和权限边界；必须通过只读 projection/watermark API",
+    "若 Watchdog、自身凭证或 authority evidence 进入 Runtime env/Profile，Runtime 可伪造证明；launcher 与依赖扫描必须拒绝",
+    "若 recovery Profile 仍包含 safety-client、control-supervisor 或可写工具，降级只是标签变化；依赖闭包、dump-config 与启动参数都要证明无写入口",
+    "若双 sink 只成功一个仍报告 trusted，两端权限状态会分裂；cycle 必须记录 degraded，下一周期持续收敛，Executor 端始终独立失败关闭",
+    "本地 UDS 0600 只能证明开发隔离，不能代替生产容器/IAM/网络策略签署；B5 rehearsal 仍需消费真实部署证据"
+  ],
+  "stop_conditions": [
+    "需要 fork/vendoring DSH、升级 rc.6/Cordis 4.0.1 或引入未经审计的运行时框架依赖",
+    "无法在独立 Executor 端于 target apply 前执行 fresh AuthorityAttestation 检查，只能依赖可卸载 Runtime 插件",
+    "recovery Profile 仍能加载 safety-client/control-supervisor/现实写 Provider 或允许未记录 patch/profile overlay",
+    "为通过 GWT-020 而提前执行 B5 全量 rehearsal、删除 Python、修改生产入口或声称真实生产 IAM/网络已签署"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

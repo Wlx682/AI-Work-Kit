@@ -1,0 +1,52 @@
+{
+  "commit": "582306a8675cea435ea33e53b8db82086947ff9f",
+  "tree": "b22e9a8f9913fb9b3faf8357839383b3e7abe389",
+  "executed_at": "2026-08-20T18:35:04+08:00",
+  "all_scope_stories_completed": true,
+  "approved_test_plan": "Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试计划.md",
+  "approved_case_index_sha256": "2c396550dcef63533055b18ab89f97be84119f81729b2904c3d952875c92de71",
+  "test_cases": [
+    {"id": "IT-ATS-001", "status": "passed"},
+    {"id": "IT-ATS-002", "status": "passed"},
+    {"id": "IT-ATS-003", "status": "passed"},
+    {"id": "IT-ATS-004", "status": "passed"},
+    {"id": "IT-ATS-005", "status": "passed"},
+    {"id": "IT-ATS-006", "status": "passed"},
+    {"id": "IT-ATS-007", "status": "passed"},
+    {"id": "IT-ATS-008", "status": "passed"},
+    {"id": "IT-ATS-009", "status": "passed"},
+    {"id": "IT-ATS-010", "status": "passed"}
+  ],
+  "suites": [
+    {
+      "name": "baseline-and-evaluation",
+      "command": "pnpm baseline:verify && pnpm verify:legacy-test-map && pnpm evaluate:legacy-case",
+      "exit_code": 0,
+      "summary": "baseline manifest 5/5；legacy test map 1/1；Oracle reference PASS、negative FAIL/INVALID、qualified=true"
+    },
+    {
+      "name": "all-typescript",
+      "command": "pnpm test && pnpm typecheck",
+      "exit_code": 0,
+      "summary": "69 test files and 213 tests passed；19 TypeScript project checks passed"
+    },
+    {
+      "name": "release-cutover",
+      "command": "pnpm composition:verify && root/controlled/recovery frozen installs && pnpm audit --prod && pnpm start -- --help && pnpm start:dsh:recovery -- --help；verify HEAD/tree/.py/tag/cutover plan and result hashes",
+      "exit_code": 0,
+      "summary": "composition e65f84dd...bad765；three frozen installs passed；0 known vulnerabilities；both entrypoints started；tree/.py/tag/hash checks matched"
+    }
+  ],
+  "evidence": {
+    "composition_sha256": "e65f84dd26c6f1ce6c067b4eeb453d54173965af4fd79714e264ed54efbad765",
+    "tracked_python_files": 0,
+    "baseline_tag_commit": "3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4",
+    "cutover_plan_sha256": "508f18f4858de8c976c7199ff4272120268d058002d4bd101f549df54e67c40f",
+    "cutover_result_sha256": "ab71efbe8cece3a80233caa4cc12590a6b5be248dc7917a4cc69b8d39d1eca33"
+  },
+  "defects": [],
+  "limitations": [
+    "未执行 production OS/IAM/network/certificate 部署验证；本结论仅适用于本地仓库 cutover"
+  ],
+  "conclusion": "14 个 Story、33 条 AC 与 10 个审核用例全部通过；纯 TypeScript 本地 cutover 可进入 Done。"
+}

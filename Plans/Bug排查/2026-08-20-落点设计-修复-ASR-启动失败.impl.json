@@ -1,0 +1,67 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/integrations/push_alias_lifecycle.dart",
+      "reason": "Push Alias 串行 owner 与 bind 前后 current-owner 校验所在层"
+    },
+    {
+      "path": "lib/app/composition_root.dart",
+      "reason": "pushAliasLifecycleProvider、authPushAliasCleanupPortProvider 与 authOwnerRepositoryProvider 的依赖环定义处"
+    },
+    {
+      "path": "lib/app/nami_work_app.dart",
+      "reason": "认证 HTTP runtime bind 后触发 Push Alias synchronize 的唯一生产调用点"
+    },
+    {
+      "path": "test/app/push_alias_lifecycle_test.dart",
+      "reason": "Push Alias bind 幂等、切号迟到结果和 cleanup physical tail 的既有单测落点"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "test/app/push_alias_lifecycle_test.dart",
+        "purpose": "先以新调用契约锁定 current-owner source 由 synchronize 调用边界注入，并回归 bind 期间切号时迟到成功不得确认",
+        "layer": "Unit tests"
+      },
+      {
+        "path": "lib/app/integrations/push_alias_lifecycle.dart",
+        "purpose": "从 coordinator 构造依赖中移除 Auth Owner 回调，改为每次 synchronize 显式接收 current-owner source，继续执行 bind 前后 owner fencing",
+        "layer": "App integration coordinator"
+      },
+      {
+        "path": "lib/app/composition_root.dart",
+        "purpose": "让 pushAliasLifecycleProvider 不再通过自身 Ref 反向读取 authOwnerRepositoryProvider，切断 Riverpod provider 依赖环",
+        "layer": "Composition root"
+      },
+      {
+        "path": "lib/app/nami_work_app.dart",
+        "purpose": "在已读取 AuthOwnerRepository 的生产调用边界把稳定 repository current getter 注入 synchronize",
+        "layer": "App runtime orchestration"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "NamiWorkApp runtime orchestration -> AppPushAliasLifecycleCoordinator -> PushAliasRepository; AuthOwnerRepository remains the owner truth and is injected only at the operation boundary",
+    "dependency_rule": "Composition provider may construct Push Alias coordinator and expose it as cleanup port, but the coordinator provider must not read the Auth Owner provider that already depends on that cleanup port; owner truth is supplied per synchronize call and checked both before and after external I/O"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/push_alias_lifecycle_test.dart",
+        "command": "flutter test test/app/push_alias_lifecycle_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "只做一次 owner 快照会允许 bind 迟到成功，因此必须注入可重复读取的 source 而不是 bool 或 AuthOwner 值",
+    "Auth Owner cleanup 仍依赖 Push Alias cleanup port，修复只能切断反向边，不能移除 cleanup participant",
+    "认证 HTTP runtime 是 ASR、目录、积分等共享能力，必须在真机冷启动日志中确认不再被 revoke",
+    "ASR WebSocket 与采音属于后续链路；本修复只解除 token 请求前的 runtime 阻断，仍需真机点击完成端到端验收"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

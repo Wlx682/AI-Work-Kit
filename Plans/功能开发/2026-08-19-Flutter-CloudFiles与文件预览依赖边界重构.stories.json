@@ -1,0 +1,127 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户于 2026-08-20 按提议确认 7 故事拆分、依赖顺序与故事点（P0×6 + P1×1，共 39 点）",
+  "confirmed_at": "2026-08-20",
+  "epic_scope": ["US-CFR-001", "US-CFR-002", "US-CFR-003", "US-CFR-004", "US-CFR-005", "US-CFR-006", "US-CFR-007"],
+  "current_implementation_scope": ["US-CFR-001"],
+  "stories": [
+    {
+      "id": "US-CFR-001",
+      "title": "边界与行为不变量回归网（先红后绿基线）",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC-06", "AC-08"],
+      "requirement_ids": ["CFR-001"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-001"
+      ]
+    },
+    {
+      "id": "US-CFR-002",
+      "title": "单向 App composition 装配链（Files 模块不再反向 import root）",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-001"],
+      "acceptance_criteria": ["AC-02"],
+      "requirement_ids": ["CFR-002"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-005"
+      ]
+    },
+    {
+      "id": "US-CFR-003",
+      "title": "分离 CloudFilesAppRuntime 与 CloudFilesFeatureRuntime",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-003.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-001", "US-CFR-002"],
+      "acceptance_criteria": ["AC-03", "AC-06"],
+      "requirement_ids": ["CFR-003"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-001",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-003"
+      ]
+    },
+    {
+      "id": "US-CFR-004",
+      "title": "Files 页面消费 Host 注入的窄依赖并去 app import",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-004.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-003"],
+      "acceptance_criteria": ["AC-01", "AC-04"],
+      "requirement_ids": ["CFR-004"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-002",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-004"
+      ]
+    },
+    {
+      "id": "US-CFR-005",
+      "title": "预览/传输 typed host actions（不泄漏 Runtime，复核 identity）",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-005.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-003", "US-CFR-004"],
+      "acceptance_criteria": ["AC-05", "AC-07"],
+      "requirement_ids": ["CFR-005"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-004"
+      ]
+    },
+    {
+      "id": "US-CFR-006",
+      "title": "迁移 Main/Projects/Download 等消费者并闭合生命周期",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-003", "US-CFR-004", "US-CFR-005"],
+      "acceptance_criteria": ["AC-07", "AC-08", "AC-09"],
+      "requirement_ids": ["CFR-006"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-003",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-005",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-006"
+      ]
+    },
+    {
+      "id": "US-CFR-007",
+      "title": "固化 Provider 装配规则与边界回归门禁",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.md",
+      "story_points": 3,
+      "estimate_confirmed": true,
+      "priority": "P1",
+      "sprint_scope": false,
+      "dependencies": ["US-CFR-001", "US-CFR-002", "US-CFR-003", "US-CFR-004", "US-CFR-005", "US-CFR-006"],
+      "acceptance_criteria": ["AC-10"],
+      "requirement_ids": ["CFR-007"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-001",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-005",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-007"
+      ]
+    }
+  ]
+}

@@ -67,11 +67,11 @@ JSON 真理源：`story_index`。所有故事均为纵向能力；共享底座�
 
 Scope 与故事点已由用户确认；`story-scope` 机械门禁通过后进入首个 Story 的 implementation-design，仍不得跳过 Red 测试直接开发。
 
-**Scope 语义**：14 个 Story 全部属于已确认的 Epic Scope。前 10 个 Story（截至 `US-B3-002`）已完成；当前滚动 Scope 仍只记录刚完成的 `US-B3-002`，等待用户再次确认后才切换下一 Story。其余 4 个未完成 Story 保持 `sprint_scope=false`，不因机械门禁误判为最终集成阶段而一次性扩张。
+**Scope 语义**：14 个 Story 全部完成并退出滚动 Scope。最后一条 `US-B5-002` 已按用户“当前无部署、直接本地切换”的明确决定完成 local_repository cutover；该决定不外推为未来生产部署批准。
 
 ## 五、实现落点设计
 
-当前唯一滚动 Scope `US-B3-002` 已完成并提交；下一 Story 尚未激活，不进入最终集成测试。
+当前无滚动 Story；14 个 Story 均已有 TDD 完成证据，下一阶段为集成测试计划/审核。
 
 | Story | 实现落点 | 关键边界 | 状态 |
 |---|---|---|---|
@@ -84,6 +84,10 @@ Scope 与故事点已由用户确认；`story-scope` 机械门禁通过后进入
 | US-B2-005 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B2-005.impl.json` | 共享 MCP 结果契约；Learning-only 本地工具；raw CLI + single/team TUI；同 thread resume；TS terminal adapter；M044—M060 | ✅ 已完成，提交 `61b2fed` |
 | US-B3-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-001.impl.json` | control-fact/projection 契约；rc.6 observer；flush durability；SQLite WAL/FULL Provider；确定性重放与损坏恢复 | ✅ 已完成，提交 `f52d855` |
 | US-B3-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.impl.json` | command/receipt 契约；纯 waterfall；rc.6 pause/restrict/stop adapter；逐段 durable receipt；短路/unknown 失败关闭 | ✅ 已完成，提交 `27d1021` |
+| US-B4-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.impl.json` | ActionIntent/Receipt 契约；独立 Safety Executor 进程与凭证域；策略/Lease/幂等/效果核验；旁路拒绝与 unknown reconcile | ✅ 已完成，提交 `48f069d` |
+| US-B4-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.impl.json` | AuthorityAttestation；独立 Watchdog；心跳/水位/组合/旁路证明；写门禁双端失败关闭；read-only/recovery | ✅ 已完成，提交 `72546b8` |
+| US-B5-001 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.impl.json` | 全量 rehearsal；G-EQ/60 parity/lifecycle/fault/safety/isolation/rollback/human 状态；不删除、不切入口 | ✅ 已完成，提交 `9739aec` |
+| US-B5-002 | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.impl.json` | local/production boundary 显式分支；精确 plan/tree；一次切换、纯 TS 工作树、baseline 回滚 | ✅ 已完成，提交 `582306a` |
 
 探针已证明只锁根 `@deepseek-ai/dsh@0.1.0-rc.6` 会被上游 caret 依赖拉向尚不完整的 rc.7 并报 `ETARGET`。实现以根 `pnpm-workspace.yaml` wildcard override 固定完整 rc.6 闭包，保留最小 `allowBuilds`，没有 fork 或重写 DSH Agent Loop。
 
@@ -238,6 +242,92 @@ US-B2-005 已完成并退出滚动 Scope；用户回复“继续”后，当前�
 - 目标 `33/33`、全仓 TypeScript `152/152`、Python `60/60`、typecheck、双 frozen install、官方 registry audit、composition verify 与受控 DSH smoke 全部通过。
 - TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.tdd.json`。
 
+US-B3-002 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B4-001。
+
+### 5.16 US-B4-001 实现落点草案
+
+- 新增版本化 `action-intent.v1` / `action-receipt.v1` 与纯 `packages/safety-domain`；Learning action 契约保持隔离，unknown 不能伪装 succeeded/verified。
+- Runtime 侧仅新增 `plugins/safety-client` Cordis Service，通过 HTTP over UDS（跨主机为 mTLS HTTPS）提交/查询 Intent；受控 Profile 不依赖 Executor、策略、数据库、目标 adapter 或长期写凭证。
+- `services/safety-executor` 是独立 TypeScript 进程，通过 Policy/Intent Store/Target Action/Effect Oracle/Reconcile Queue Ports 完成策略、最小 Lease、单次现实执行与效果核验；不能由 DSH Profile 卸载。
+- 独立 SQLite WAL/FULL 在调用现实目标前持久化 canonical intent 与 executing；同 key 同内容只返回旧执行引用，异内容冲突。崩溃、timeout 或核验不明只追加 `effect_unknown` 与唯一 reconcile task，禁止盲重试。
+- 受控 launcher 拒绝 Executor-only 策略、数据库及目标 token 进入 Runtime；安全纵向 Red 必须派生独立 Executor 子进程，并从目标侧证明 Runtime 直连/越权/改策略无现实写、重复 Intent 只执行一次。
+- 只把 safety-client 纳入 Bundle/Profile 与 Runtime composition fingerprint；Watchdog、AuthorityAttestation 自动降级、recovery Profile 和最终生产 IAM/rehearsal 留给 US-B4-002/B5。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.impl.json`；用户已回复“继续”确认，当前 `confirmed=true`，进入 Red。
+
+### 5.17 US-B4-001 实现证据
+
+- 代码提交：`48f069d3ad9252e0d764e817191e3839167c8984`。
+- 新增版本化 ActionIntent/ActionReceipt 契约与纯 `safety-domain`；Runtime 只装载 `safety-client`，独立 Safety Executor 持有策略、SQLite 和现实目标凭证。
+- Runtime 直连现实目标、越权扩大 scope/tool、修改策略及向受控 launcher 注入 Executor-only secret 均被拒绝，且无现实写；受控 Profile 不包含 Executor。
+- canonical 幂等在顺序、并发和 SQLite 重启后均保证相同意图只写一次；同 key 异内容冲突，崩溃或效果不明只进入 `effect_unknown + reconcile`，不盲重试。
+- 目标 `22/22`、全仓 TypeScript `174/174`、Python `60/60`、typecheck、双 frozen install、官方 registry audit、composition verify 与受控 DSH smoke 全部通过。
+- 组合指纹：`134d29a14cff20f35f405a55edd770ded9a219e22194efcf8305b77f849ce324`。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.tdd.json`；生产 OS/IAM/网络组合证明仍属于 `US-B4-002`/B5。
+
+US-B4-001 已完成并退出滚动 Scope；用户回复“继续”后，当前唯一 Scope 已切换为 US-B4-002。
+
+### 5.18 US-B4-002 实现落点草案
+
+- 新增版本化 `authority-attestation.v1` / `attestation-receipt.v1` / `watchdog-probe.v1`；心跳、活动水位、composition、凭证/旁路证明和短 TTL 任一不完整都不得表达成可写。
+- `services/watchdog` 是独立进程，通过只读 probes 与 owner-only 旁路证据生成短时证明，并分别投递 Runtime gate 与 Safety Executor；不进入 Cordis Bundle/Profile，也不执行现实动作。
+- Runtime 新增 `authority-gate` 可逆插件，初始/过期/降级时让 safety-client 本地 read-only；独立 Executor 在 policy/Lease/target 前再次检查自己的证明，Runtime 卸载或绕过插件仍不能写。
+- 只在 active run 上判断控制水位停滞，idle 不因无业务事件误报；Runtime/Executor 失联、组合漂移、旁路缺证或任一 sink 失败均为 `WATCHDOG_DEGRADED`。
+- 新增固定 recovery Profile/launcher，依赖闭包无 safety-client、control-supervisor、Watchdog、Executor 或现实写 Provider，并拒绝任意 profile/patch overlay。
+- 纵向 Red 必须真实派生独立 Watchdog 与 Executor，故障后同时证明 Runtime mode=read_only、Executor 拒绝新 Intent、目标新增写为 0；B5 rehearsal/切换不在本 Story。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.impl.json`；用户已回复“继续”确认，当前 `confirmed=true`，进入 Red。
+
+### 5.19 US-B4-002 实现证据
+
+- 代码提交：`72546b8bed912da8e5e06a299475c671c9856d27`。
+- 版本化 AuthorityAttestation/Receipt/Probe 与纯 authority 判定只在心跳、活动水位、冻结组合和旁路证明全绿时开放写；严格回执或任一 sink 失败即 degraded。
+- 独立 Watchdog 不进入 Cordis Profile；Runtime authority-gate 与独立 Executor 在现实写前分别失败关闭，卸载 Runtime 插件不能绕过 Executor。
+- 故障注入证明心跳失联、水位停滞和 Watchdog 退出后新增现实写为 0；idle 水位稳定不误报，旧 trusted 受短 TTL 限制。
+- 固定 recovery Profile 可启动、无现实写 Provider、拒绝任意 profile/patch overlay；recovery 独立锁无 rc.7 漂移。
+- 目标 `25/25`、全仓 TypeScript `192/192`、Python `60/60`、typecheck、三处 frozen install、官方 registry audit、composition verify 与 controlled/recovery 双 smoke 全部通过。
+- 组合指纹：`99ddf6cdc298937bb60ce7707aee8afe302b715e3e61b872ccf4a84235826516`。
+- TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.tdd.json`；B5 rehearsal/真实生产 OS、IAM 与网络签署仍未执行。
+
+US-B4-002 已完成并退出滚动 Scope；用户再次回复“继续”后，当前唯一 Scope 已切换为 US-B5-001。
+
+### 5.20 US-B5-001 Scope 激活
+
+- 依赖 `US-B2-004`、`US-B2-005`、`US-B3-002`、`US-B4-002` 均已完成并有 TDD/提交证据。
+- 本轮保持 8 点纵向边界：生成并运行完整 rehearsal，汇总自动门禁、缺证原因、回滚引用和人工状态；不执行 Python 删除或生产入口切换。
+- `US-B5-002` 继续 `sprint_scope=false`；任何 reviewer 未签署、证据不足或自动门禁红灯都必须保持 blocked。
+- 下一步由 `implementation-design-assistant` 规划 rehearsal runner、版本化报告、Red 测试和停止条件，确认前不创建业务实现。
+
+### 5.21 US-B5-001 实现落点草案
+
+- 新增 `cutover-rehearsal.v1` / `deployment-boundary-evidence.v1` 契约和纯 `release-domain`；B5-001 报告最多到 `ready_for_human_review`，`cutoverAllowed` 始终为 false。
+- `scripts/release` 以固定 argv 收集现有 G-EQ、60 parity、全仓测试、lifecycle、fault/safety、隔离、composition、recovery、audit、rollback 和 deployment 证据，禁止外部注入任意 shell。
+- 修正 M005/M008/M009 早期 targetRed 占位漂移，并让 60 条映射逐一验证目标测试文件存在；语义、ID 和 migrate disposition 不变。
+- 缺真实 OS/IAM/network/certificate 签署、cutover reviewer pending 或任一自动 gate 红灯时，dashboard 明确 blocked；本地 UDS/fixture 不能冒充生产证据。
+- 报告绑定 candidate SHA、baseline SHA、composition fingerprint、命令输出 hash 与 evidence refs，原子写入且拒绝覆盖；Python/生产入口/rollbackRef 均保持不变。
+- Red 覆盖契约闭集、纯聚合、映射目标存在性、ready-for-review 主链路和多类 blocked 故障；真实全量 rehearsal 只在独立 smoke/CI 运行，避免 Vitest 递归。
+- 机器真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.impl.json`；用户已回复“继续吧”确认，当前 `confirmed=true`，进入 Red。
+
+### 5.22 US-B5-001 实现证据
+
+- 代码提交：`9739aec319fee03ea17c3f6754b6cc7a93291adb`；TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json`。
+- 版本化 rehearsal/deployment 证据契约、纯 release 聚合与固定命令 runner 已落地；候选必须等于干净 HEAD，报告拒绝覆盖且绑定 baseline/rollback/composition/命令输出 hash。
+- 真实演练中 G-EQ、60 parity、plugin lifecycle、fault injection、safety、Learning isolation、composition、recovery、rollback、supply-chain 十个自动门禁全部 PASS。
+- 因未提供真实 production OS/IAM/network/certificate owner 签署，`deployment_boundary` 按 GWT-022 保持 blocked；`cutoverAllowed=false`、Python 保留、生产入口未变、无破坏性动作。
+- 目标 `11/11`、全仓 TypeScript `202/202`、Python `60/60`、typecheck、三处 frozen install、官方 registry audit 与双 profile smoke 通过；组合指纹 `244278a1a69fdf512abc4bc23cffb3fc18bb539a8da677c3bb3392c1bf6fceab`。
+- `US-B5-001` 已完成并退出滚动 Scope；用户回复“继续”后 `US-B5-002` 已激活进入 implementation-design，最终人工批准、Python 删除和生产入口切换均未执行。
+
+### 5.23 US-B5-002 Scope 与实现落点草案
+
+- 最后一条 Story 已成为唯一滚动 Scope；本轮“继续”只授权设计，不构成 deployment owner 签署、cutover reviewer 批准或破坏性 apply 授权。
+- 当前精确识别 44 个 Git-tracked `.py` 删除目标；禁止 glob/递归删除，prepare 必须绑定逐文件 before SHA、source candidate、rehearsal/deployment hash 和 expected target tree。
+- 先交非破坏性 tooling commit：独立 plan/authorization/result 契约、纯判定、prepare/verify、manifest、Red 与 runbook。tooling 会改变 composition，必须形成新 candidate 并重跑 final rehearsal。
+- 最终单一 cutover commit 同时达成 0 tracked `.py`、根 `pnpm start` 指向 controlled DSH、README 纯 TS；definitions/prompts、baseline evidence、migration map 与 LangGraph.js Learning Lab 保留。
+- 用户已确认最终仓库生产入口为根 `pnpm start → scripts/runtime/launch-controlled.ts`；annotated tag `python-baseline-v1` 已创建并精确指向 `3d0c7a3`。当前仍无 deploy manifest/remote，匹配新 candidate 的 deployment evidence 和指定 reviewer authorization 尚缺失。
+- 非破坏性 tooling 已提交 `eedd1be`，目标 9/9、全仓 TS 211/211、Python baseline 60/60 及全部回归门禁通过；composition 更新为 `455f7fe5…`。
+- 新 candidate final rehearsal 的十个仓库内 gate PASS，只有 `deployment_boundary=blocked(DEPLOYMENT_EVIDENCE_MISSING)`，human review pending；报告 SHA-256 `41e62b2d…`。
+- 用户确认当前无部署并要求直接本地切换后，新增 `local-cutover-decision.v1`，不再伪造或等待不适用的 production evidence；该决定仅覆盖 local_repository。
+- Final rehearsal 11/11 PASS；plan `508f18f4…`、expected tree `b22e9a8f…`、authorization 与 commit `582306a` 全部绑定。44 个 Python 已删除，根 start 已切换 controlled DSH，baseline tag 保留。
+- 切换后 TypeScript 213/213 与全套回归门禁通过；TDD 真理源：`Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.tdd.json`。14 个 Story 全部完成，下一阶段进入 integration-test-plan。
+
 ## 反馈（skill_run）
 
 ```yaml
@@ -258,6 +348,76 @@ skill_run:
       reason: "约束续做任务的反馈字段与写入位置"
   contexts_missing: []
   contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.impl.json
+      utility: high
+      reason: "续接用户已确认的 rehearsal 固定门禁、真实部署边界与零破坏停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "保持 US-B5-001 为唯一滚动 Scope，并确认 US-B5-002 未激活"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复并完成 US-B5-001；Epic 前 13 个 Story 完成，破坏性 US-B5-002 未自动开始"
+  utility: high
+  reason: "按确认后的 Story 边界完成非破坏性演练，未越权进入最终 cutover"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "验收 GWT-021-REHEARSAL 与 GWT-022 的完整证据、阻断原因和失败关闭"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "维持 rehearsal、真实部署签署、人工批准和一次性切换的阶段边界"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json
+      utility: high
+      reason: "汇总真实 Red→Green、全仓回归、候选提交与不可变演练报告"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B5-001 已完成并提交 9739aec；十个自动门禁全绿，deployment boundary 缺证按设计 blocked，B5-002 未激活"
+  utility: high
+  reason: "Epic 已具备可复跑且失败关闭的完整 rehearsal，同时零删除、零生产入口修改、零 cutover 授权"
+  outcome_status: pass
+  friction: "第一次真实演练因精简 PATH 缺 pnpm shim 使 G-EQ 子命令失败；修正执行环境后以新报告验证全部自动门禁，未覆盖旧证据"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: kanban-restart
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: .codex/skills/kanban-restart/SKILL.md
+      utility: high
+      reason: "按用户最初指定的运维流程先确认旧 PID、释放 7777 端口、重新拉起并检查关键 HTTP 接口"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "确认重启前 Story 已投影为 status=已完成、tdd_complete=true、state=done"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "停止旧看板 PID 62117，启动新 Python PID 68076；首页与 /api/tests 均返回 HTTP 200"
+  utility: high
+  reason: "让运行中的看板服务立即读取 US-B4-002 新完成态与 TDD 证据"
   outcome_status: pass
   revisit_needed: false
 ```
@@ -1545,5 +1705,500 @@ skill_run:
   reason: "三类控制命令的五段 durable receipt、短路证明与 unknown 失败关闭均有可执行证据"
   outcome_status: pass
   friction: "默认 npmmirror registry 不提供 audit endpoint；改用官方 npm registry 后确认无已知漏洞"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "确认 US-B3-002 已完成并有提交/TDD 证据，可以安全退出滚动 Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "确认下一条依赖满足的纵向 Story 为 US-B4-001，并维持 8 点与 GWT-015—018 边界"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "保持 B4 必须独立进程/身份/凭证且同进程 mock 不能充当安全证明的拆分约束"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B4-001；US-B3-002 退出滚动 Scope，其余 3 条未完成 Story 未扩张"
+  utility: high
+  reason: "将看板当前 Story 与真实滚动 Scope 对齐，同时避免误进最终集成测试"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实 GWT-015—018 与 Safety Executor v0.1 的独立权限、凭证、Lease、幂等和 unknown reconcile"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束 ActionIntent API、ENG-007/008/010、UDS/mTLS 与 Runtime→Executor→Reality 单向依赖"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "固化当前唯一 Story 的文件落点、跨进程 Red、风险与停止条件"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按有 Plan 任务协议记录待确认的实现门禁"
+  contexts_missing:
+    - "用户对 US-B4-001 文件落点、依赖方向、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B4-001 落点草案完成并停在 confirmed=false；未创建 Red、业务代码、Watchdog 或最终集成测试产物"
+  utility: high
+  reason: "把独立执行、凭证隔离、一次现实写、效果核验与 unknown 对账转化为可执行的跨进程 TDD 边界"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "确认 Epic 仍处于逐 Story 开发，不能因单个 Story 完成而跳到集成测试"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "续接已确认的实现设计、TDD 进度、验收边界与停止条件"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束独立进程、凭证隔离、幂等现实写和失败关闭"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复并完成 US-B4-001；未自动激活 US-B4-002，也未进入最终集成测试"
+  utility: high
+  reason: "从已确认的 B4-001 落点继续到完整 TDD、回归和提交，保持滚动 Scope 边界"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "逐项验收 GWT-015—018 的独立权限域、旁路拒绝、一次现实写和 unknown 对账"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "落实 Runtime→Safety Executor→Reality 单向依赖、UDS/mTLS 和最小 Lease"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.md
+      utility: high
+      reason: "复用已完成的控制回执、SQLite durability 与失败关闭边界"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、跨进程验收、提交和完成证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B4-001 已完成并提交 48f069d；US-B4-002 未自动激活，未进入最终集成测试"
+  utility: high
+  reason: "独立 Executor、凭证隔离、持久幂等、效果核验与 effect_unknown 对账均有可执行证据"
+  outcome_status: pass
+  friction: "根 Vitest 原先未发现 services/**/*.spec.ts；已补齐测试发现范围并纳入全仓回归"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "确认 US-B4-001 已完成并有提交/TDD 证据，可以安全退出滚动 Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "确认下一条依赖满足的纵向 Story 为 US-B4-002，并维持 5 点与 GWT-020 边界"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "保持 Watchdog 独立进程/身份/故障域，且 B5 rehearsal/cutover 不提前进入 Scope"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B4-002；US-B4-001 退出滚动 Scope，B5 两条未完成 Story 未扩张"
+  utility: high
+  reason: "将看板当前 Story 与真实滚动 Scope 对齐，同时继续阻止误进最终集成测试"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放当前仍为逐 Story TDD，B4-002 未完成是下一工作项而非集成测试入口"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "核验前置 Story 的提交、TDD 与独立 Safety Executor 证据"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "确认当前唯一滚动 Scope 已从 B4-001 切换为依赖满足的 B4-002"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复 Epic 并推进到 US-B4-002 implementation-design；未创建 Red、业务代码或最终集成测试产物"
+  utility: high
+  reason: "依据文件事实续做下一条 Story，避免将全局未完成提示误解释为当前 Story 失败"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实 GWT-020 与 P0-3 的独立 Watchdog、心跳/水位/组合/旁路证明和 read-only 降级"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束 ENG-007/009、AuthorityAttestation API、WATCHDOG_DEGRADED 与 recovery Profile"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-001.md
+      utility: high
+      reason: "在已完成的 Safety Executor、Runtime client 与凭证隔离上设计双端失败关闭"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按有 Plan 任务协议记录实现落点门禁和待确认上下文"
+  contexts_missing:
+    - "用户对 US-B4-002 文件落点、双端失败关闭、Red 与停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B4-002 落点草案完成并停在 confirmed=false；未创建 Red、Watchdog 实现、recovery Profile 或最终集成测试产物"
+  utility: high
+  reason: "把独立 Watchdog、短 TTL 证明、活动水位、Runtime/Executor 双门禁与 read-only recovery 转化为可执行 TDD 边界"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "续接用户已确认的 B4-002 实现落点、GWT-020、Red 与停止条件"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "持续约束独立 Watchdog、双端失败关闭、短 TTL 与无写 recovery"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复并完成 US-B4-002；未自动激活 B5，也未进入最终集成测试"
+  utility: high
+  reason: "按当前唯一 Story 的已确认落点完成 TDD、故障注入、回归和提交"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "逐项验收 GWT-020 的权限组合证明、失联降级和恢复边界"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "落实 ENG-007/009、AuthorityAttestation、Watchdog 故障域与 recovery Profile"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "汇总真实 Red、Green、Refactor、跨进程故障验收、提交与完成证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B4-002 已完成并提交 72546b8；前 12 个 Story 完成，B5 两条未自动激活"
+  utility: high
+  reason: "独立 Watchdog、严格证明回执、活动水位、Runtime/Executor 双门禁和 recovery 均有可执行证据"
+  outcome_status: pass
+  friction: "recovery 独立 workspace 的重复 DSH 直接依赖曾解析到 rc.7；移除后复用根工作区固定 rc.6 并通过 frozen install"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "确认 US-B4-002 已完成并有提交/TDD 证据，可以退出当前滚动 Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.md
+      utility: high
+      reason: "确认下一条依赖满足的纵向 Story 为 US-B5-001，并维持 8 点 rehearsal 边界"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "保持 rehearsal 与真实 cutover 分离，任一红灯、缺证或未签署都不得删除 Python"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "只激活 US-B5-001；US-B4-002 退出滚动 Scope，US-B5-002 未扩张"
+  utility: high
+  reason: "将当前 Story 对齐为依赖已满足的完整 rehearsal，同时阻止提前进入破坏性 cutover"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放当前仍为逐 Story TDD，B5-001 是下一条 Story 而非已批准的最终集成或 cutover"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B4-002.md
+      utility: high
+      reason: "确认前置 Watchdog Story 已完成并有提交/TDD，可安全退出滚动 Scope"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.md
+      utility: high
+      reason: "确认当前唯一滚动 Scope 已切换为不执行删除的 rehearsal Story"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复 Epic、只激活 US-B5-001 并推进到 implementation-design；未创建 Red 或执行 rehearsal/cutover"
+  utility: high
+  reason: "按依赖与文件事实续做下一条 Story，保持 rehearsal、人工批准和破坏性 cutover 三者边界"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实 GWT-021 rehearsal 前提、GWT-022 blocked 反例、Dashboard 与独立人工门禁"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束 ENG-005/009/011、一次 cutover、baseline 回滚和 Learning 隔离"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.md
+      utility: high
+      reason: "固化当前唯一 Story 的报告契约、固定 gate、Red、风险与零破坏停止条件"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按有 Plan 任务协议记录实现落点门禁和待确认上下文"
+  contexts_missing:
+    - "用户对 US-B5-001 文件落点、固定 gate、blocked 语义与非破坏性停止条件的确认"
+  contexts_stale: []
+  outcome: "US-B5-001 落点草案完成并停在 confirmed=false；未创建 Red、runner、报告或执行 Python 删除/入口切换"
+  utility: high
+  reason: "把全量证据汇总、production deployment 缺证、人工边界和 rehearsal 零破坏语义转化为可执行 TDD 边界"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.impl.json
+      utility: high
+      reason: "续接已确认的 rehearsal 门禁、部署证据边界与零破坏停止条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "保持 US-B5-001 为唯一滚动 Scope，US-B5-002 未激活"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "恢复并完成 US-B5-001；前 13 个 Story 完成，破坏性 US-B5-002 未开始"
+  utility: high
+  reason: "按已确认 Story 边界完成非破坏性 rehearsal，未越权进入最终 cutover"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "验收 GWT-021-REHEARSAL 与 GWT-022 的完整门禁证据和失败关闭"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "保持 rehearsal 与真实部署签署、人工批准和一次性切换分离"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json
+      utility: high
+      reason: "汇总真实 Red→Green、全仓回归、候选提交和不可变演练报告"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B5-001 已完成并提交 9739aec；十个自动门禁全绿，deployment boundary 缺证按设计 blocked，B5-002 未激活"
+  utility: high
+  reason: "Epic 已具备可复跑且失败关闭的完整 rehearsal，同时零删除、零生产入口修改、零 cutover 授权"
+  outcome_status: pass
+  friction: "首次演练因精简 PATH 缺 pnpm shim 使 G-EQ 子命令失败；修正执行环境后以新报告验证全部自动门禁，旧报告未覆盖"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: task-splitter
+  workflow_stage: story-split
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json
+      utility: high
+      reason: "确认最后前置 rehearsal Story 已完成并有提交与逐 AC 证据"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.md
+      utility: high
+      reason: "将最后一条独立 cutover Story 设为唯一滚动 Scope，同时保留破坏性人工边界"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "机器真理源只保留 US-B5-002 sprint_scope=true，已完成 B5-001 退出滚动 Scope"
+  contexts_missing:
+    - "匹配最终候选的真实 production deployment boundary owner 签署"
+    - "实现设计确认后的独立破坏性 cutover 批准"
+  contexts_stale: []
+  outcome: "只激活 US-B5-002 进入 implementation-design；没有删除 Python、修改生产入口或执行 cutover"
+  utility: high
+  reason: "最后一条 Story 已按用户继续指令与依赖证据激活，但 Scope 切换不冒充破坏性批准"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放当前仍为最后一条 Story 开发，尚未满足进入集成测试或 cutover 的条件"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json
+      utility: high
+      reason: "确认前置 Story 完成且 deployment/human 门禁仍需 B5-002 独立处理"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "恢复 US-B5-002 为唯一滚动 Scope"
+  contexts_missing:
+    - "production deployment owner 与指定 cutover reviewer 的外部签署"
+  contexts_stale: []
+  outcome: "Epic 继续到最后一条 B5-002 implementation-design；没有执行破坏性操作"
+  utility: high
+  reason: "按依赖和证据推进最后 Story，不提前进入集成测试或真实切换"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "落实最终 cutover 主链路和所有 blocked 反例"
+    - path: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
+      utility: high
+      reason: "约束纯 TS 目标、DSH 入口、一次切换、回滚与 Learning 隔离"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.impl.json
+      utility: high
+      reason: "固化精确 44-path manifest、临时 index prepare、外部签署、expected tree 和最终验证"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "记录实现落点门禁、缺失上下文与确认状态"
+  contexts_missing:
+    - "真实生产入口、durable baseline ref、deployment evidence、reviewer authorization 与 destructive apply 批准"
+  contexts_stale: []
+  outcome: "US-B5-002 实现落点完成并等待确认；未创建 Red/tooling 或执行 44 文件删除/生产入口切换"
+  utility: high
+  reason: "最终 cutover 被拆成可验证的非破坏性准备与独立人工批准后的单一破坏性变更"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.impl.json
+      utility: high
+      reason: "记录已确认的 tooling 边界、真实 candidate/composition 与外部门禁停点"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-001.tdd.json
+      utility: high
+      reason: "沿用 final rehearsal 固定门禁和不可自动授权 cutover 的设计"
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "保持 GWT-021/022 的人工批准与缺证不变原则"
+  contexts_missing:
+    - "production deployment owner evidence、指定 human reviewer authorization 与最终 destructive apply 批准"
+  contexts_stale: []
+  outcome: "US-B5-002 非破坏性 tooling 已提交 eedd1be；新 rehearsal 十个内部 gate PASS，因 deployment evidence 缺失保持 blocked，Epic 未提前进入集成测试"
+  utility: high
+  reason: "推进最后一条 Story 的安全准备，同时保持破坏性切换的外部人工边界"
+  outcome_status: pass
+  revisit_needed: true
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B5-002.tdd.json
+      utility: high
+      reason: "确认最后一条 Story 的 Red/Green/Refactor、plan/tree、cutover commit 与切换后回归证据完整"
+    - path: Plans/功能开发/2026-08-17-agent全仓TypeScript重构.stories.json
+      utility: high
+      reason: "14 个 Story 均已完成并退出滚动 Scope"
+    - path: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "本地适用性裁决已归位，GWT-021/022 仍有可执行证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "US-B5-002 提交 582306a 完成纯 TypeScript 本地 cutover；Epic 14/14 Story TDD 完成，可进入 integration-test-plan"
+  utility: high
+  reason: "最终 Story 已有真实提交、0 Python、唯一 DSH 根入口、baseline 回滚和全量回归证据"
+  outcome_status: pass
   revisit_needed: false
 ```

@@ -1,0 +1,67 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "package.json",
+      "reason": "确认全部根生命周期脚本中的裸 pnpm 调用及现有直接工具入口"
+    },
+    {
+      "path": "evaluation/cases/legacy-agent-definition-v1/package.json",
+      "reason": "确认 workspace filter 最终只执行 tsx src/run.ts"
+    },
+    {
+      "path": "tests/integration/dsh-controlled-profile.spec.ts",
+      "reason": "确认真实 Controlled 启动与 plain Node 探针的现有集成测试边界"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认根 package.json 已属于 runtime-scripts 组合指纹输入"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "消除所有 package script 对全局 pnpm shim 的依赖，直接执行项目工具与实现入口",
+        "layer": "tooling-entrypoint"
+      },
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "purpose": "增加无 pnpm shim PATH 下的真实 Corepack start 回归和脚本静态约束",
+        "layer": "integration-test"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "冻结 package script 修正后的生产组合指纹",
+        "layer": "runtime-integrity"
+      }
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "仓库 package scripts 与包管理器启动环境边界",
+    "dependency_rule": "用户可用 Corepack 选择并启动 pnpm；进入 package script 后只依赖 pnpm 自动注入的项目 node_modules/.bin 和显式源码入口，不再递归解析全局 pnpm 命令。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "command": "在临时 PATH 只放 node/corepack、不放 pnpm，运行 corepack pnpm@11.7.0 start -- --help，修复前因 pnpm command not found 失败"
+      },
+      {
+        "path": "package.json",
+        "command": "断言根 scripts 的命令值均不匹配裸 pnpm token"
+      }
+    ]
+  },
+  "risks": [
+    "直接展开 build:runtime 会在多个 scripts 中重复命令文本，但可避免依赖包管理器递归路由；需要用静态断言防止裸 pnpm 回流",
+    "evaluate:legacy-case 改为直接入口后必须跑评估回归，确认 workspace cwd 假设未变化",
+    "package.json 已纳入 composition fingerprint，修改后必须重新 freeze/verify",
+    "无 shim 启动测试必须使用 Node 22.19.0，否则会被既有组合版本门禁按预期阻断",
+    "临时 PATH 和目录必须在测试结束时清理"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

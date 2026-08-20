@@ -10,7 +10,7 @@ requirement_plan: Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md
 architecture_plan: Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md
 story_id: US-B3-002
 story_points: 8
-sprint_scope: true
+sprint_scope: false
 tdd_evidence: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.tdd.json
 implementation_design: Plans/功能开发/2026-08-17-agent全仓TypeScript重构-US-B3-002.impl.json
 ---
@@ -24,7 +24,7 @@ implementation_design: Plans/功能开发/2026-08-17-agent全仓TypeScript重构
 
 - 用户在 `US-B3-001` 完成后回复“继续”，因此本轮只激活 `US-B3-002`。
 - 前置 `US-B3-001` 已完成并有提交与 TDD 证据；其余 4 个未完成 Story 保持 `sprint_scope=false`。
-- 本 Story 已在提交 `27d1021` 完成 Red→Green→Refactor→纵向 smoke；未自动激活 B4，也未进入最终集成测试。
+- 本 Story 已在提交 `27d1021` 完成 Red→Green→Refactor→纵向 smoke；用户后续回复“继续”后，本 Story 已退出滚动 Scope，唯一 Scope 切换为 `US-B4-001`，仍未进入最终集成测试。
 
 ## 实现落点设计草案
 

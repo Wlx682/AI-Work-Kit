@@ -1,0 +1,308 @@
+{
+  "story_id": "US-B5-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "package.json",
+      "reason": "根脚本已有 start:dsh/start:dsh:recovery/release:rehearse，但没有默认 start 或部署脚本；仓库内生产入口切换只能显式落为 start→controlled DSH，外部部署入口仍需 owner 证据"
+    },
+    {
+      "path": "scripts/runtime/launch-controlled.ts",
+      "reason": "唯一正式 DSH launcher 已拒绝 profile/patch 逃逸，是 cutover 后根 start 的唯一合法目标"
+    },
+    {
+      "path": "scripts/release/main.ts",
+      "reason": "B5-001 runner 固定收集 11 门禁并要求 candidate=clean HEAD；B5-002 必须消费不可变报告而不是重算或改写 PASS"
+    },
+    {
+      "path": "packages/contracts/src/cutover-rehearsal.ts",
+      "reason": "rehearsal contract 明确 cutoverAllowed 永远为 false；最终授权、计划和结果必须是独立版本化契约，不能放宽 B5-001 不变量"
+    },
+    {
+      "path": "evidence/baselines/3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4/baseline-manifest.v1.json",
+      "reason": "冻结 baselineSha=3d0c7a3、Python 60/60 和 git-commit rollback URI；提交对象当前可达，但仓库没有 tag/remote，需在删除前确认长期不可变引用策略"
+    },
+    {
+      "path": "/var/folders/tg/g2t7zz792zd2tt6p0qq0l9jn9xwb8z/T/tmp.MTzP2QUmV9/cutover-rehearsal.v1.json",
+      "reason": "候选 9739aec 的十个仓库内自动门禁 PASS，但 deployment_boundary=blocked、humanReview=pending，因此不能直接授权 cutover；新增 B5-002 tooling 后 composition 还会变化，必须重跑最终 rehearsal"
+    },
+    {
+      "path": "README.md",
+      "reason": "仍把 main.py/TUI 作为入口并描述迁移中状态；最终同一 cutover 变更必须移除 Python 命令并只发布 DSH production 与隔离 Learning CLI"
+    },
+    {
+      "path": "migration/legacy-test-map.json",
+      "reason": "M001—M060 已绑定真实 TS tests；cutover 后保留这份历史语义/来源映射作为审计资产，不因删除 Python 测试而删除"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md",
+      "reason": "落实 GWT-021-CUTOVER：全绿+指定 reviewer 才删除/切入口，以及 GWT-022：任一缺证保持工作树和入口不变"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-001/002/005/009/011：纯 TS、DSH 唯一生产、一次 cutover、baseline 回滚和 Learning 隔离"
+    }
+  ],
+  "verified_architecture_facts": [
+    "当前代码候选为干净 HEAD 9739aec319fee03ea17c3f6754b6cc7a93291adb，Git 跟踪 44 个 .py 文件；Python 删除目标可精确枚举，不能用目录 glob 或宽泛 rm",
+    "根 package.json 没有 start/bin/main/deploy 字段；仓库内可验证目标入口应新增 start=tsx scripts/runtime/launch-controlled.ts，真实外部进程/容器入口必须由 deployment evidence 单独证明",
+    "B5-001 report 的 cutoverAllowed=false 是不可放宽的不变量；B5-002 使用独立 cutover-plan/authorization/result 契约",
+    "现有 rehearsal 对 9739aec 的 deployment_boundary blocked 且 humanReview pending；新增 cutover tooling 会改变 contracts/source/lock fingerprint，因此旧报告只能作为设计输入，不能批准最终候选",
+    "baseline commit 3d0c7a3 当前是 master 与本分支祖先；用户确认方案后已创建 annotated tag python-baseline-v1 并验证其 peeled commit 精确等于 3d0c7a3，仓库仍无 remote，发布/远端保护不在本轮授权范围",
+    "definitions/prompts、baseline manifest、migration map 与 TS tests 是保留资产；仅删除 44 个受 Git 跟踪的 .py 文件，不删除历史证据 JSON、离线映射或 LangGraph.js Learning Lab",
+    "最终切换必须分成非破坏性 tooling/prepare commit 与单一 destructive cutover commit；prepare 只能用临时 Git index 计算 expected target tree，不修改当前 worktree"
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "tooling 阶段加入 release:cutover:prepare/verify；最终 cutover commit 新增唯一默认 start 指向 controlled DSH launcher，保留 start:langgraph 为显式 Learning 命令",
+        "layer": "Workspace Release Entrypoint"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 cutover-plan.v1、cutover-authorization.v1、cutover-result.v1 及严格 assertions；不修改 B5-001 rehearsal 的 cutoverAllowed=false",
+        "layer": "Shared Release Contract"
+      },
+      {
+        "path": "packages/release-domain/src/index.ts",
+        "purpose": "导出纯 authorize/verify/finalize 判定，不依赖 Git、文件系统、shell、DSH 或环境变量",
+        "layer": "Pure Cutover Domain"
+      },
+      {
+        "path": "README.md",
+        "purpose": "仅在最终 cutover commit 移除 Python 结构/命令和迁移中措辞，记录 pnpm start 为唯一生产入口、start:langgraph 为隔离 Learning 入口",
+        "layer": "Repository Entrypoint Documentation"
+      },
+      {
+        "path": "profiles/controlled/composition.lock.json",
+        "purpose": "tooling commit 后按真实 contracts/root lock 重冻 composition；最终批准必须绑定这一新 fingerprint，不沿用 244278a 的旧报告",
+        "layer": "Production Composition Evidence"
+      },
+      {
+        "path": "docs/runbooks/cutover-rehearsal.md",
+        "purpose": "补充从最终 ready rehearsal 到独立 authorization/prepare/verify 的交接，不把 rehearsal 本身解释为批准",
+        "layer": "Release Operations"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/cutover.ts",
+        "reason": "定义独立 plan/authorization/result：绑定 source candidate、rehearsal/report hash、deployment evidence hash、baseline ref、composition、精确删除清单、入口变更、expected target tree、reviewer 和最终 commit/tree",
+        "naming_basis": "与永不授权的 cutover-rehearsal 明确分离",
+        "layer": "Versioned Cutover Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/cutover-plan.v1.json",
+        "reason": "冻结非破坏性 prepare 输出和 expected target tree；删除项必须是显式 path+beforeSha256，禁止 glob",
+        "naming_basis": "人工批准的精确变更对象",
+        "layer": "Cutover JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/cutover-authorization.v1.json",
+        "reason": "冻结 approved/rejected、指定 reviewer、plan SHA、target tree、deployment evidence SHA、signedAt/reason/sourceRefs；AI 不能生成 approved",
+        "naming_basis": "独立人工门禁真理源",
+        "layer": "Human Authorization Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/cutover-result.v1.json",
+        "reason": "记录最终 commit/tree、Python tracked count=0、DSH entrypoint、baseline reachability、apply/verify receipt 与失败状态",
+        "naming_basis": "一次 cutover 的不可变完成证据",
+        "layer": "Cutover Result Schema"
+      },
+      {
+        "path": "packages/contracts/test/cutover.spec.ts",
+        "reason": "Red 覆盖未知字段、SHA/tree/hash、精确路径、重复/宽泛删除、rehearsal/authorization/target mismatch、AI reviewer、自相矛盾结果和缺证拒绝",
+        "naming_basis": "三个 cutover 契约的共享 contract Red",
+        "layer": "Contract Red"
+      },
+      {
+        "path": "packages/release-domain/src/evaluate-cutover.ts",
+        "reason": "纯函数只在 final rehearsal ready、deployment gate PASS、authorization approved 且所有 SHA/tree/ref 一致时输出 authorized；任何 pending/rejected/mismatch/缺证均 blocked",
+        "naming_basis": "GWT-021-CUTOVER/GWT-022 核心判定",
+        "layer": "Pure Cutover Authorization"
+      },
+      {
+        "path": "packages/release-domain/test/evaluate-cutover.spec.ts",
+        "reason": "覆盖批准主链路和旧 blocked report、pending reviewer、candidate/composition/plan/tree 漂移、baseline 不可达、重复 apply 等失败关闭",
+        "naming_basis": "不触碰文件系统的领域 Red",
+        "layer": "Domain Red"
+      },
+      {
+        "path": "scripts/release/manifests/python-cutover.v1.json",
+        "reason": "登记当前 44 个 Git-tracked Python 文件及逐文件 SHA-256、README/package 预期前后 hash 与 baseline ref；任何路径/hash 漂移必须重新 prepare 和复审",
+        "naming_basis": "一次性删除的最小精确白名单，不使用 glob",
+        "layer": "Immutable Cutover Manifest"
+      },
+      {
+        "path": "scripts/release/prepare-cutover.ts",
+        "reason": "非破坏性读取 clean HEAD、ready rehearsal、deployment evidence、精确 manifest 和 Git objects；用临时 index 计算 expected target tree并拒绝写工作树",
+        "naming_basis": "批准前唯一允许运行的 prepare 阶段",
+        "layer": "Non-destructive Cutover Preparation"
+      },
+      {
+        "path": "scripts/release/verify-cutover.ts",
+        "reason": "批准后/提交前后验证 plan+authorization、staged/committed tree、0 tracked .py、默认 DSH start、Lab 非生产依赖、baseline ref 可达和 apply-once receipt；不负责自动批准",
+        "naming_basis": "把实际 mutation 与证据验证分开，失败不伪造 cutover 完成",
+        "layer": "Cutover Verification"
+      },
+      {
+        "path": "scripts/release/main-cutover.ts",
+        "reason": "只暴露 prepare/verify/finalize 固定子命令与版本化文件参数；destructive apply 必须要求匹配 plan hash 的外部 approved authorization 和本次明确确认，不接受任意 shell/path glob",
+        "naming_basis": "最终 release CLI，默认行为非破坏性",
+        "layer": "Release CLI Entrypoint"
+      },
+      {
+        "path": "tests/acceptance/cutover.spec.ts",
+        "reason": "fake Git/File ports 验证 prepare 零写、批准后单一精确变更、最终 0 tracked Python、DSH 默认入口、baseline 可达和 result 绑定最终 tree",
+        "naming_basis": "GWT-021-CUTOVER 主链路",
+        "layer": "Vertical Acceptance Red"
+      },
+      {
+        "path": "tests/fault-injection/cutover-blocked.spec.ts",
+        "reason": "注入旧 rehearsal、缺 deployment 签署、review pending/rejected、manifest/hash/tree 漂移、中途失败和重复执行，证明工作树/入口不变且无完成 result",
+        "naming_basis": "GWT-022 破坏性操作前失败关闭",
+        "layer": "Cutover Fault Injection Red"
+      },
+      {
+        "path": "docs/runbooks/cutover.md",
+        "reason": "记录 tooling commit→最终 rehearsal→deployment owner 签署→plan→reviewer 批准→明确 apply→单一 cutover commit→verify/finalize；任何缺口停止",
+        "naming_basis": "发布负责人可审计的最终操作手册",
+        "layer": "Release Operations"
+      }
+    ],
+    "delete": [
+      "__init__.py",
+      "capabilities/__init__.py",
+      "capabilities/act.py",
+      "capabilities/planning.py",
+      "capabilities/reviewing.py",
+      "cognition/__init__.py",
+      "cognition/memory.py",
+      "cognition/self_improve.py",
+      "cognition/world_model.py",
+      "core/__init__.py",
+      "core/definition.py",
+      "core/models.py",
+      "guardrails/__init__.py",
+      "guardrails/safety.py",
+      "infrastructure/__init__.py",
+      "infrastructure/checkpoints.py",
+      "infrastructure/llm.py",
+      "infrastructure/traces.py",
+      "main.py",
+      "orchestration/__init__.py",
+      "orchestration/langgraph.py",
+      "orchestration/orchestrator.py",
+      "orchestration/team_graph.py",
+      "roles/__init__.py",
+      "roles/base.py",
+      "roles/executor.py",
+      "roles/planner.py",
+      "roles/predictor.py",
+      "roles/reviewer.py",
+      "tests/__init__.py",
+      "tests/test_act.py",
+      "tests/test_agent_definition.py",
+      "tests/test_llm.py",
+      "tests/test_planning.py",
+      "tests/test_role_definitions.py",
+      "tests/test_runtime.py",
+      "tests/test_team_graph_runtime.py",
+      "tests/test_tool_results.py",
+      "tests/test_tui.py",
+      "tools/__init__.py",
+      "tools/file_ops.py",
+      "tools/registry.py",
+      "tools/shell.py",
+      "tui.py"
+    ]
+  },
+  "module_boundary": {
+    "layer": "B5-001 immutable rehearsal → versioned cutover plan + deployment evidence → external human authorization → exact manifest mutation in one cutover commit → committed-tree verification + immutable result；baseline/history remain outside current Python worktree",
+    "dependency_rule": "contracts/release-domain 不得 import Git、文件系统、shell、DSH、环境变量或 UI。prepare 只能读取并使用临时 Git index，默认零 worktree 写；任何 apply 能力只接受代码内固定 44-path manifest、匹配的 before hashes、ready rehearsal hash、deployment evidence hash、approved authorization、source candidate 和 expected tree，不接受 glob/任意命令/任意删除路径。AI 不得创建 approved authorization。最终 commit 同时实现 0 tracked .py 和根 start→controlled DSH；Learning Lab 保留但不得进入生产依赖/部署。"
+  },
+  "execution_contract": {
+    "phase_1_tooling": "先仅实现契约、纯判定、prepare/verify、manifest、测试与 runbook 并提交；此阶段绝不删除 Python或设置默认生产 start。tooling commit 会改变 composition，必须作为新 candidate 重跑 rehearsal",
+    "phase_2_external_evidence": "对 tooling candidate 运行 final rehearsal，并由 deployment owner 提供匹配 candidate/composition 的 OS identity、IAM、network、certificate evidence；报告须 ready_for_human_review。随后 prepare 输出 planSha256+expectedTargetTreeSha",
+    "phase_3_human_authorization": "指定 reviewer 对 rehearsal、deployment evidence、44-path manifest、baseline durable ref、生产入口和 expected tree 作 approved/rejected 决定；approved 文件必须外部提供，AI 不能代签",
+    "phase_4_destructive_apply": "只有用户在看到 exact plan hash、删除清单、入口变更和 rollback ref 后再次明确批准，才执行一次精确 mutation：删除 44 个 .py、更新 README、设置 root start→controlled DSH；任一前置漂移立即停止且不写完成 result",
+    "phase_5_verify_finalize": "TS 全仓 tests/typecheck/composition/frozen install/audit/controlled+recovery smoke、0 tracked .py、production graph no Lab、baseline ref reachable、committed tree=approved tree 全通过后才生成 cutover-result.v1；最终 Story TDD 绑定 cutover commit"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/cutover.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover.spec.ts"
+      },
+      {
+        "path": "packages/release-domain/test/evaluate-cutover.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/release-domain/test/evaluate-cutover.spec.ts"
+      },
+      {
+        "path": "tests/acceptance/cutover.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/acceptance/cutover.spec.ts"
+      },
+      {
+        "path": "tests/fault-injection/cutover-blocked.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/fault-injection/cutover-blocked.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/controlled install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/recovery install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 audit --prod --registry=https://registry.npmjs.org",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh:recovery -- --help",
+      "test \"$(git ls-files '*.py' | wc -l | tr -d ' ')\" = 0",
+      "git cat-file -e 3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4^{commit}"
+    ]
+  },
+  "risks": [
+    "当前 rehearsal 对旧 candidate 9739aec 且 deployment boundary blocked；若直接复用会越过 candidate/composition 绑定，必须在 tooling commit 后重跑并由 owner 签署",
+    "仓库无 deploy manifest/remote，package start 只是仓库入口；若真实生产由外部容器、systemd 或 CI 启动，未明确目标就无法证明 production entrypoint changed",
+    "baseline 已有本地 annotated tag python-baseline-v1，但仓库无 remote；最终 cutover 前仍须验证 tag 精确指向 3d0c7a3 且没有漂移",
+    "一次删除 44 文件若使用 glob/rm 或不校验 before hash，可能误删并行新增 Python 或用户文件；必须使用精确白名单和 expected tree",
+    "tooling commit 会改变 contracts/composition fingerprint；在同一旧报告上批准目标 tree 会形成 TOCTOU 漂移",
+    "若把本轮‘继续’解释为 approved authorization，AI 会越过 GWT-021 指定 reviewer 和 GWT-022 缺证边界",
+    "cutover 后旧 pytest 不可在当前工作树运行；60/60 运行日志、source node IDs 和 baseline assets 必须由 immutable baseline evidence 保留，必需 CI 改为 TS-only",
+    "如果删除成功但测试/入口/部署失败却仍写 cutover result，会制造假完成；result 只能在 committed tree 和全部 post-cutover verify 通过后生成"
+  ],
+  "stop_conditions": [
+    "ready rehearsal、deployment boundary evidence、指定 reviewer approved authorization、plan hash 或 expected target tree 任一缺失/不匹配",
+    "未明确仓库 package start 是否为真实生产入口，或外部部署入口无法由 owner evidence 证明已同步切换",
+    "annotated tag python-baseline-v1 不可达、未精确指向 3d0c7a3 或发生漂移",
+    "需要 AI 代填 reviewer/deployment owner 签署、改变 rejected/pending 状态或降低 B5-001 gate",
+    "任何被删 .py 的实际 SHA 与 manifest 不同、出现第 45 个 tracked Python、工作树不干净或 HEAD 不等于 plan candidate",
+    "需要删除 definitions/prompts、baseline manifest、migration map、TS Learning Lab 或任何不在精确 44-path 清单中的文件",
+    "用户尚未在看到最终 planSha256、expectedTargetTreeSha、44-path 清单、生产入口和 rollback ref 后明确批准 destructive apply"
+  ],
+  "tooling_evidence": {
+    "status": "local_cutover_completed",
+    "commitSha": "582306a8675cea435ea33e53b8db82086947ff9f",
+    "sourceCandidateSha": "9eff2b2b50cb5a65c43933223aee6a4ac8f14454",
+    "compositionFingerprint": "e65f84dd26c6f1ce6c067b4eeb453d54173965af4fd79714e264ed54efbad765",
+    "baselineRef": "refs/tags/python-baseline-v1",
+    "baselineSha": "3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4",
+    "rehearsalReportPath": "/var/folders/tg/g2t7zz792zd2tt6p0qq0l9jn9xwb8z/T/tmp.VgJoMKp61E/cutover-rehearsal.v1.json",
+    "rehearsalReportSha256": "55a1d23e0d65d9bb4db5ba7f9770d7b9cd3254b1cda91c79f42b1b560bf5f6e8",
+    "rehearsalStatus": "ready_for_human_review",
+    "passingGateCount": 11,
+    "boundaryMode": "local_repository",
+    "humanReview": "approved_by_workspace_owner",
+    "planSha256": "508f18f4858de8c976c7199ff4272120268d058002d4bd101f549df54e67c40f",
+    "expectedTargetTreeSha": "b22e9a8f9913fb9b3faf8357839383b3e7abe389",
+    "typescriptTests": "213/213",
+    "pythonBaselineTests": "60/60",
+    "trackedPythonCount": 0,
+    "defaultProductionEntrypointChanged": true,
+    "cutoverResultSha256": "ab71efbe8cece3a80233caa4cc12590a6b5be248dc7917a4cc69b8d39d1eca33"
+  },
+  "blocked_questions": [],
+  "confirmed": true
+}

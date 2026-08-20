@@ -2,11 +2,11 @@
 tags: [Epic, client-dev, 智能体, TypeScript, DSH, LangGraph]
 type: plan
 category: Epic
-status: 进行中
+status: 已归档
 date: 2026-08-17
 epic_id: agent-full-typescript-restructure
 workflow: client-dev
-lifecycle_state: story-development
+lifecycle_state: done
 platform: 服务端与智能体Runtime
 repo: /Users/wanglongxiang/git/agent
 branch: codex/full-ts-restructure
@@ -43,9 +43,9 @@ relations:
 | 正式架构设计 | architecture | `Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md` | ✅ 已采纳，ENG-012=SQLite WAL + Provider Port |
 | 功能故事拆分与故事点 | story-split | `Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md` | ✅ 14 个纵向 Story、点数与 Scope 已确认 |
 | 实现落点设计 | implementation-design | 同上及动态故事子 Plan | ✅ US-B2-005 落点已确认 |
-| 逐故事 TDD | story-development | 同上及动态故事子 Plan | 🟨 前 8 个 Story 已完成；等待确认下一滚动 Scope |
-| 集成测试计划与审核 | integration-test-plan | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试计划.md` | ⬜ |
-| 全量集成测试 | integration-test | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试.md` | ⬜ |
+| 逐故事 TDD | story-development | 同上及动态故事子 Plan | ✅ 14/14 Story 完成 |
+| 集成测试计划与审核 | integration-test-plan | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试计划.md` | ✅ 已采纳，10 个 P0 用例 / 33 条 AC |
+| 全量集成测试 | integration-test | `Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试.md` | ✅ 3 个 Suite 全部通过，Done |
 
 ## 二、阶段门禁
 
@@ -58,7 +58,7 @@ relations:
 | implementation-design | 每个 Scope Story 明确文件落点、依赖方向、Red 测试和删除保护 |
 | story-development | 每个 Story 有真实 Red/Green/Refactor/smoke 和逐 AC 证据 |
 | integration-test-plan | 覆盖 production DSH、Learning Runtime、插件生命周期、故障注入、60 tests parity、cutover rehearsal |
-| integration-test | 全量证据与人工签署通过后才允许删除 Python 并完成一次 cutover |
+| integration-test | 已审核计划在冻结目标提交上全部通过；核对纯 TS cutover、恢复和 baseline rollback 后进入 Done |
 
 ## 三、动态用户故事看板
 
@@ -74,12 +74,12 @@ relations:
 | US-B2-003 | 单 Agent 暂停/恢复/回放/fork | P0 | 8 | true | US-B2-001/002 | ✅ 已完成，提交 `b359c77` |
 | US-B2-004 | Team Learning Graph | P0 | 5 | true | US-B2-003 | ✅ 已完成，提交 `4931d32` |
 | US-B2-005 | 结构化工具与 CLI | P0 | 8 | true | US-B2-001/003 | ✅ 已完成，提交 `61b2fed` |
-| US-B3-001 | SQLite Ledger 动态镜像 | P0 | 8 | true | US-B1-001/B2-002 | 等待前置证据 |
-| US-B3-002 | 控制命令分段回执 | P0 | 8 | true | US-B3-001 | 等待前置证据 |
-| US-B4-001 | Safety Executor 受控执行 | P0 | 8 | true | US-B3-002 | 等待前置证据 |
-| US-B4-002 | Watchdog 组合证明与降级 | P0 | 5 | true | US-B1-001/B4-001 | 等待前置证据 |
-| US-B5-001 | Cutover rehearsal | P0 | 8 | true | B2/B3/B4 完成 | 等待前置证据 |
-| US-B5-002 | 人工批准后一次 cutover | P0 | 5 | true | US-B5-001 | 等待前置证据 |
+| US-B3-001 | SQLite Ledger 动态镜像 | P0 | 8 | true | US-B1-001/B2-002 | ✅ 已完成，提交 `f52d855` |
+| US-B3-002 | 控制命令分段回执 | P0 | 8 | true | US-B3-001 | ✅ 已完成，提交 `27d1021` |
+| US-B4-001 | Safety Executor 受控执行 | P0 | 8 | true | US-B3-002 | ✅ 已完成，提交 `48f069d` |
+| US-B4-002 | Watchdog 组合证明与降级 | P0 | 5 | true | US-B1-001/B4-001 | ✅ 已完成，提交 `72546b8` |
+| US-B5-001 | Cutover rehearsal | P0 | 8 | true | B2/B3/B4 完成 | ✅ 已完成，提交 `9739aec` |
+| US-B5-002 | 人工批准后一次 cutover | P0 | 5 | true | US-B5-001 | ✅ 本地 cutover 完成，提交 `582306a` |
 
 ## 四、已确认边界
 
@@ -133,12 +133,14 @@ relations:
 | 2026-08-18 | 激活 US-B2-005 为下一 implementation Scope | story-split | 用户在 US-B2-004 完成后回复“继续”；前置 TDD/提交证据通过；其余 6 条未完成 Story 未扩张 | wanglongxiang |
 | 2026-08-18 | 完成并确认 US-B2-005 实现落点 | implementation-design | 设计共享 MCP 结果契约、Learning-only 工具、single/team CLI、TS terminal adapter 与 M044—M060 Red；用户回复“继续”确认 | wanglongxiang |
 | 2026-08-18 | 完成 US-B2-005 Red→Green→Refactor | story-development | 代码 `61b2fed`；M044—M060 目标 18/18、TS 120/120、Python 60/60、typecheck、冻结安装与生产组合 `2467ba28…bbdd3` 通过 | Codex |
+| 2026-08-20 | 完成 14/14 Story 与本地纯 TypeScript cutover | story-development | 目标提交 `582306a`；tree `b22e9a8f`；tracked Python=0；baseline tag 可回滚 | wanglongxiang / Codex |
+| 2026-08-20 | 审核并冻结集成测试计划 | integration-test-plan | 10 个 P0 用例覆盖 33 条 AC；case index `2c396550…2de71`；未解决意见 0 | Codex QA / test-generator |
+| 2026-08-20 | 全量集成测试通过并进入 Done | integration-test | 3 个 Suite exit 0；69 files / 213 tests；typecheck、三套 frozen install、audit 与双入口 smoke 通过 | Codex |
+| 2026-08-20 | 归档已完成 Epic | done | 保留 Epic、子 Plan、审核记录与集成报告；不写 Contexts、不删除证据 | Codex |
 
-## 续做
+## 收尾
 
-```text
-/resume plan=Plans/功能开发/2026-08-17-agent全仓TypeScript重构.md 进度=next-story-scope
-```
+client-dev 机械门禁已派生为 `done`，无剩余 blocker。本 Epic 不包含生产部署、灰度或线上观察；本次结论限定为本地仓库 cutover。
 
 ## 反馈（skill_run）
 
@@ -386,4 +388,48 @@ skill_run:
   outcome: "Epic 已完成前 8 个 Story，保持逐 Story 推进并等待激活 US-B3-001"
   utility: high
   reason: "看板与真实代码、测试和人工门禁一致，没有把 B2 完成误报为全量系统完成"
+```
+
+```yaml
+skill_run:
+  skill: test-generator
+  workflow_stage: integration-test
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试计划.review.json
+      utility: high
+      reason: "确认测试计划绑定冻结 commit、最终用例哈希且未解决意见为 0"
+    - path: Plans/自动化测试/2026-08-17-agent全仓TypeScript重构-集成测试.integration.json
+      utility: high
+      reason: "同步三个 Suite exit 0、10 个用例通过和本地 cutover 证据"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "Epic 14/14 Story、测试审核与全量集成测试全部完成，client-dev 门禁进入 Done"
+  utility: high
+  reason: "修正 Epic 旧的进行中展示，使看板与机械门禁、提交和集成报告一致"
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: done
+  plan: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+  date: 2026-08-20
+  contexts_used:
+    - path: Plans/Epic/2026-08-17-agent全仓TypeScript重构.md
+      utility: high
+      reason: "回放确认 client-dev 已为 Done、无 blocker，并识别唯一剩余动作为归档收尾"
+    - path: Contexts/决策/Kit核心原则.md
+      utility: high
+      reason: "按 Plans 完成即归档或删除的生命周期规则选择可逆归档"
+  contexts_missing: []
+  contexts_stale: []
+  outcome: "已将完成态 Epic 标记为已归档；保留全部子 Plan 和集成证据，未写 Contexts、未删除文件"
+  utility: high
+  reason: "完成任务卫生收尾，同时避免不可逆删除或未经确认沉淀长期上下文"
+  outcome_status: pass
+  revisit_needed: false
 ```

@@ -1,0 +1,13 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-20T18:33:08+08:00",
+  "target_commit": "582306a8675cea435ea33e53b8db82086947ff9f",
+  "case_index_sha256": "2c396550dcef63533055b18ab89f97be84119f81729b2904c3d952875c92de71",
+  "unresolved_comments": 0,
+  "resolved_comments": [
+    "补充 controlled/recovery 两套独立 profile 的 frozen install 命令",
+    "补充 recovery profile 的真实启动冒烟命令"
+  ],
+  "review_summary": "10 个 P0 自动化用例精确覆盖 14 个 Story 的 33 条 AC；目标提交固定，主路径、反例、故障恢复、安全旁路、local cutover 与 baseline rollback 均可复现。"
+}

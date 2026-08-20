@@ -1,0 +1,67 @@
+{
+  "story_id": "US-B5-001",
+  "story_points": 8,
+  "commit": "9739aec319fee03ea17c3f6754b6cc7a93291adb",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts packages/release-domain/test/evaluate-rehearsal.spec.ts tests/acceptance/legacy-test-map.spec.ts tests/acceptance/cutover-rehearsal.spec.ts tests/fault-injection/cutover-rehearsal-blocked.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-20T16:23:39+08:00",
+    "reason": "四组新增套件只因 cutover rehearsal 契约、纯 release-domain 和非破坏性 runner 尚不存在而无法加载；legacy-test-map 同时准确暴露 M005/M008/M009 仍引用旧占位路径"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts packages/release-domain/test/evaluate-rehearsal.spec.ts tests/acceptance/legacy-test-map.spec.ts tests/acceptance/cutover-rehearsal.spec.ts tests/fault-injection/cutover-rehearsal-blocked.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-20T16:26:55+08:00",
+    "result": "版本化报告/部署证据契约、固定 11 门禁聚合、候选 SHA/干净工作区前置校验、不可覆盖写入和映射目标存在性达到 5 files / 11 tests 通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && /Users/wanglongxiang/miniconda3/bin/python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-20T16:28:49+08:00",
+    "result": "重冻受控组合后，全仓 TypeScript 64 files / 202 tests、Python 基线 60/60、strict typecheck、组合校验与 diff check 通过；组合指纹更新仅来自新增 contracts 与 root lock"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 release:rehearse --candidate-sha 9739aec319fee03ea17c3f6754b6cc7a93291adb --output <new-temp>/cutover-rehearsal.v1.json",
+    "exit_code": 0,
+    "at": "2026-08-20T16:30:00+08:00",
+    "result": "在提交 9739aec 的干净工作树上运行真实固定命令演练：G-EQ、60 parity、plugin lifecycle、fault injection、safety、Learning isolation、composition、recovery、rollback 与 supply-chain 共 10 个自动门禁全部 PASS；缺少独立生产部署边界签署时 deployment_boundary=blocked，报告按 GWT-022 失败关闭",
+    "report_id": "rehearsal-1dcfd5d2-37b2-4c8b-b6f3-e54785faed13",
+    "report_path": "/var/folders/tg/g2t7zz792zd2tt6p0qq0l9jn9xwb8z/T/tmp.MTzP2QUmV9/cutover-rehearsal.v1.json",
+    "report_sha256": "936281d511bca9ac41c56666b32b45ce5bd6c34a12d398a33bde5fcbf5c554a2",
+    "composition_fingerprint": "244278a1a69fdf512abc4bc23cffb3fc18bb539a8da677c3bb3392c1bf6fceab",
+    "rehearsal_status": "blocked",
+    "cutover_allowed": false
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-021-REHEARSAL",
+      "pass": true,
+      "evidence": "发布负责人可用固定 release:rehearse 入口在 candidate=clean HEAD 时执行完整非破坏性演练；不可变 cutover-rehearsal.v1 报告绑定 candidate 9739aec、baseline 3d0c7a3、rollbackRef、composition 244278a、每条命令 exit/time/outputSha256 和 evidenceRefs。真实运行的 10 个仓库内自动门禁全部 PASS，并明确展示 deployment/human 状态。"
+    },
+    {
+      "ac_id": "GWT-022",
+      "pass": true,
+      "evidence": "未提供真实 production OS identity、IAM、network、certificate owner 签署时，deployment_boundary 稳定输出 DEPLOYMENT_EVIDENCE_MISSING，总 rehearsalStatus=blocked；cutoverStatus=blocked、cutoverAllowed=false、pythonWorktreePreserved=true、productionEntrypointChanged=false、destructiveActions=[]。候选代码仓在演练前后保持干净，未删除 Python、未改生产入口、未移动 baseline tag。"
+    }
+  ],
+  "architecture_evidence": {
+    "contracts_and_release_domain_are_framework_free": true,
+    "runner_accepts_only_fixed_allowlisted_commands": true,
+    "candidate_must_equal_clean_head": true,
+    "report_write_is_exclusive": true,
+    "report_binds_candidate_baseline_rollback_and_composition": true,
+    "all_gate_receipts_include_output_hashes": true,
+    "legacy_migration_targets_exist": true,
+    "missing_real_deployment_evidence_fails_closed": true,
+    "b5_001_can_never_authorize_cutover": true,
+    "python_deleted": false,
+    "production_entrypoint_changed": false,
+    "dsh_or_cordis_version_changed": false,
+    "composition_fingerprint": "244278a1a69fdf512abc4bc23cffb3fc18bb539a8da677c3bb3392c1bf6fceab"
+  },
+  "limitations": [
+    "真实 production OS identity、IAM、network 与 certificate 证据未由 release owner 签署，所以 rehearsal 按设计保持 blocked；AI 未代填或伪造该证据",
+    "B5-001 最强状态只是 ready_for_human_review，永远不能把 cutoverAllowed 设为 true；实际删除 Python、切换生产入口和最终人工批准仍属于独立 US-B5-002",
+    "第一次本地演练使用的精简 PATH 缺少 pnpm shim，G-EQ 子脚本正确失败关闭；补齐既有 pnpm/Python 工具链路径后生成新报告，原失败报告未被覆盖"
+  ]
+}

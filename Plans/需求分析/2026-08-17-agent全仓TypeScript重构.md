@@ -408,6 +408,13 @@ flowchart LR
 | GWT-021 | G-EQ、60-test parity、插件生命周期、故障、安全、rehearsal 全绿且指定 reviewer 批准 | 执行最终 cutover | 删除 Python 工作树、切换 DSH 入口、保留 baseline 引用，且“TypeScript 生产入口已启用” | 主链路 | acceptance/cutover |
 | GWT-022 | 任一门禁红灯、证据不足或 reviewer 未批准 | 请求最终 cutover | 状态保持 blocked，Python 工作树和生产入口不变，且“Cutover 已拒绝/已阻断” | 反例 | acceptance/cutover-blocked |
 
+### 2026-08-20 本地仓库 Cutover 裁决
+
+- 用户明确确认当前尚无任何生产部署，当前目标是直接完成本地仓库切换；因此 production OS/IAM/network/certificate deployment evidence 对本次 cutover 为不适用，而非缺失。
+- 不得用伪造的 production evidence 通过门禁；改由版本化 `local-cutover-decision` 记录 `scope=local_repository`、candidate、composition、workspace owner 明确批准及本文件引用。
+- GWT-021 的其余条件不变：固定自动门禁全绿、精确 44-path/before-hash 清单、baseline annotated tag 可达、expected target tree 可计算、一次删除与入口切换、切换后全量验证。
+- 若未来发生真实部署，必须重新建立 production deployment boundary evidence；本次本地裁决不得外推为生产发布批准。
+
 **非功能验收**：
 
 - 可重放：同一版本的 Session/Control 前缀产生同一投影和证据引用；

@@ -1,0 +1,63 @@
+{
+  "story_id": "US-B5-002",
+  "story_points": 5,
+  "commit": "582306a8675cea435ea33e53b8db82086947ff9f",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-20T18:19:31+08:00",
+    "reason": "新增 local_repository 决策验收只因 local-cutover-decision.v1 契约与 assertion 尚不存在而失败；现有 production-only evidence 模型无法诚实表达当前无部署环境"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/cutover-rehearsal.spec.ts tests/acceptance/cutover.spec.ts tests/fault-injection/cutover-blocked.spec.ts packages/contracts/test/cutover.spec.ts packages/release-domain/test/evaluate-cutover.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-20T18:21:03+08:00",
+    "result": "显式 local-cutover-decision.v1、production/local 二选一 boundary gate、prepare hash 绑定和失败关闭达到 5 files / 14 tests 通过；未用 N/A 占位符伪造 production evidence"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && /Users/wanglongxiang/miniconda3/bin/python3 -m pytest -q && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+    "exit_code": 0,
+    "at": "2026-08-20T18:21:45+08:00",
+    "result": "cutover 前 TypeScript 69 files / 213 tests、Python baseline 60/60、strict typecheck 与 composition 全绿；local decision tooling 提交 9eff2b2，composition e65f84dd"
+  },
+  "integration_smoke": {
+    "command": "release:rehearse --local-cutover-decision <decision> && release:cutover:prepare && release:cutover:verify && git write-tree && pnpm test/typecheck/composition/install/audit/start",
+    "exit_code": 0,
+    "at": "2026-08-20T18:25:22+08:00",
+    "result": "本地 final rehearsal 11/11 gate PASS；plan/authorization verify=authorized；精确删除 44 个 Python、设置根 start、更新 README 后 staged/committed tree 均等于批准 tree；提交后 TS 213/213、typecheck、composition、三处 frozen install、audit、controlled/recovery smoke 全通过",
+    "rehearsal_report_sha256": "55a1d23e0d65d9bb4db5ba7f9770d7b9cd3254b1cda91c79f42b1b560bf5f6e8",
+    "plan_sha256": "508f18f4858de8c976c7199ff4272120268d058002d4bd101f549df54e67c40f",
+    "expected_target_tree_sha": "b22e9a8f9913fb9b3faf8357839383b3e7abe389",
+    "cutover_result_sha256": "ab71efbe8cece3a80233caa4cc12590a6b5be248dc7917a4cc69b8d39d1eca33",
+    "composition_fingerprint": "e65f84dd26c6f1ce6c067b4eeb453d54173965af4fd79714e264ed54efbad765"
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-021-CUTOVER",
+      "pass": true,
+      "evidence": "用户确认当前无生产部署并批准本地直接切换；local decision 绑定 candidate 9eff2b2 与 composition e65f84dd，final rehearsal 11/11 PASS。plan SHA 508f18f4 绑定精确 44-path/before hash、package/README after hash、baseline ref 与 expected tree b22e9a8f。单一 commit 582306a 的 tree 精确等于批准 tree，tracked .py=0，根 pnpm start 指向 controlled DSH，python-baseline-v1 仍精确指向 3d0c7a3。"
+    },
+    {
+      "ac_id": "GWT-022",
+      "pass": true,
+      "evidence": "缺 decision、production/local 同时提供、candidate/composition/plan/tree/hash 漂移、dirty worktree、非 44 清单、glob、AI reviewer 或测试红灯均失败关闭；本次执行前 verify=authorized，暂存树与提交树均机械匹配 expected tree。"
+    }
+  ],
+  "architecture_evidence": {
+    "local_scope_is_explicit_and_not_production_evidence": true,
+    "tracked_python_count": 0,
+    "production_entrypoint": "tsx scripts/runtime/launch-controlled.ts",
+    "cutover_commit_tree_matches_approved_tree": true,
+    "baseline_tag_verified": true,
+    "baseline_sha": "3d0c7a3fa5aea600d4d0a9b5c5dde012b8e9b5c4",
+    "learning_runtime_retained_and_isolated": true,
+    "migration_and_baseline_evidence_retained": true,
+    "typescript_tests": "213/213",
+    "python_baseline_before_cutover": "60/60"
+  },
+  "limitations": [
+    "本次批准只覆盖 local_repository；未来若发生真实生产部署，必须重新提供 OS/IAM/network/certificate boundary evidence，不能复用本地决定",
+    "Python 源文件已从当前工作树删除；60/60 日志、逐文件 hash、migration map 和完整源代码由 python-baseline-v1/3d0c7a3 保留",
+    "运行时 plan/authorization/result 位于任务临时目录；长期机器真理源由本 TDD JSON 记录不可变 hash、candidate、tree 和 commit"
+  ]
+}

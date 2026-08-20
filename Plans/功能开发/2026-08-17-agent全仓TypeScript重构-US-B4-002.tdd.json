@@ -1,0 +1,56 @@
+{
+  "story_id": "US-B4-002",
+  "story_points": 5,
+  "commit": "72546b8bed912da8e5e06a299475c671c9856d27",
+  "red": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/authority-attestation.spec.ts packages/safety-domain/test/authority-gate.spec.ts services/watchdog/test/watchdog.spec.ts services/safety-executor/test/authority-gate.spec.ts tests/integration/recovery-profile.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-20T15:34:19+08:00",
+    "reason": "五组新增套件只因 AuthorityAttestation/Probe/Receipt 契约、纯 authority 判定、独立 Watchdog、Executor 双门禁与固定 recovery Profile 尚不存在而失败；既有回归未参与该非零退出"
+  },
+  "green": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/authority-attestation.spec.ts packages/safety-domain/test/authority-gate.spec.ts plugins/authority-gate/test/gate.spec.ts plugins/safety-client/test/client.spec.ts services/watchdog/test/watchdog.spec.ts services/safety-executor/test/authority-gate.spec.ts tests/fault-injection/watchdog.spec.ts tests/fault-injection/safety-bypass.spec.ts tests/integration/safety-executor-process.spec.ts tests/integration/recovery-profile.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-20T15:52:01+08:00",
+    "result": "版本化证明与回执、心跳/活动水位/组合/旁路判定、双端失败关闭、任一 sink 失败降级、独立 Watchdog 故障注入和无写 recovery Profile 达到 10 files / 25 tests 通过"
+  },
+  "refactor": {
+    "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 test && nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck && nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-20T15:50:59+08:00",
+    "result": "补齐严格 sink receipt 校验、投递失败后的 degraded 收敛、活动水位首次观察时间保留和 recovery 独立锁收敛；全仓 60 files / 192 tests、typecheck、组合校验与 diff check 通过"
+  },
+  "integration_smoke": {
+    "command": "PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py' && nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/controlled install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 --dir profiles/recovery install --frozen-lockfile && nvm exec 22.19.0 corepack pnpm@11.7.0 audit --audit-level=high --registry=https://registry.npmjs.org && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help && nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh:recovery -- --help",
+    "exit_code": 0,
+    "at": "2026-08-20T15:51:24+08:00",
+    "result": "提交 72546b8 上 Python 60/60、root/controlled/recovery 三处 frozen install、官方 npm registry audit、controlled 与 recovery 双启动 smoke 全部通过；recovery lock 不含 DSH rc.7",
+    "composition_fingerprint": "99ddf6cdc298937bb60ce7707aee8afe302b715e3e61b872ccf4a84235826516"
+  },
+  "acceptance": [
+    {
+      "ac_id": "GWT-020",
+      "pass": true,
+      "evidence": "独立 Watchdog 从 Runtime/Executor UDS 只读 probe 和 owner-only 旁路证据生成短 TTL AuthorityAttestation；只有 fresh heartbeat、活动水位、冻结 composition 与 runtime_credentials/target_network 证明全绿才 trusted。Runtime authority-gate 与独立 Executor 在现实写前分别验证同一证明；心跳失联、水位停滞、组合漂移、旁路缺证、证明过期或任一 sink/回执失败均降级为 WATCHDOG_DEGRADED。真实派生 Watchdog 故障注入证明降级后新增现实写为 0，Watchdog 退出后 TTL 到期仍失败关闭；固定 recovery Profile 可启动且无 safety-client/control-supervisor/Watchdog/Executor/现实写 Provider。"
+    }
+  ],
+  "architecture_evidence": {
+    "contracts_and_safety_domain_are_framework_free": true,
+    "watchdog_is_an_independent_process_not_a_cordis_provider": true,
+    "runtime_and_executor_both_fail_closed": true,
+    "sink_receipts_are_versioned_and_strictly_validated": true,
+    "active_watermark_stall_is_measured_from_first_unchanged_observation": true,
+    "idle_watermark_does_not_false_positive": true,
+    "watchdog_evidence_is_owner_only": true,
+    "recovery_profile_contains_no_reality_write_provider": true,
+    "recovery_launcher_rejects_profile_and_patch_overlays": true,
+    "runtime_rejects_watchdog_only_configuration": true,
+    "dsh_or_cordis_version_changed": false,
+    "composition_fingerprint": "99ddf6cdc298937bb60ce7707aee8afe302b715e3e61b872ccf4a84235826516"
+  },
+  "limitations": [
+    "本 Story 以真实独立进程、owner-only UDS/evidence 文件、双端门禁和目标写计数证明仓库内安全语义；生产 OS 用户、容器、IAM、网络策略与证书轮换仍须由 B5 rehearsal 提供环境签署证据",
+    "双 sink 不是分布式事务；任一投递失败时 Watchdog 立即生成 degraded 证明并向两端重新收敛，已接受的旧 trusted 最迟在短 TTL 到期后失败关闭",
+    "recovery Profile 仅用于 query/evaluation/read-only 恢复；重新开放现实写必须由下一轮全绿 Watchdog 证明完成，不能靠 profile/patch 覆盖或重放旧证明"
+  ]
+}

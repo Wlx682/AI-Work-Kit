@@ -1,0 +1,140 @@
+{
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "确认 plain Node 子进程、组合指纹输入与启动前一致性校验"
+    },
+    {
+      "path": "profiles/controlled/package.json",
+      "reason": "确认生产 Cordis 插件闭包和 bundle 顺序"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "reason": "确认现有 TypeScript 仅 noEmit 类型检查，没有部署产物"
+    },
+    {
+      "path": "tests/integration/dsh-controlled-profile.spec.ts",
+      "reason": "确认现有集成测试只覆盖 dump/help，没有真实插件实现导入"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "增加集中生产构建与 plain Node 插件探针，并让 test/start/composition 在消费 dist 前先构建",
+        "layer": "tooling-entrypoint"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "purpose": "把构建脚本与九包 dist JavaScript 纳入 composition fingerprint，拒绝缺失或陈旧产物",
+        "layer": "runtime-integrity"
+      },
+      {
+        "path": "scripts/release/main.ts",
+        "purpose": "在 rehearsal 中执行 plain Node Controlled 插件挂载探针",
+        "layer": "release-gate"
+      },
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "purpose": "保留 DSH 配置/help 验证并补充真实生产 exports 探针断言",
+        "layer": "integration-test"
+      },
+      {
+        "path": "README.md",
+        "purpose": "写明真实启动所需环境变量，并修正 Learning CLI 示例",
+        "layer": "operator-docs"
+      },
+      {
+        "path": ".gitignore",
+        "purpose": "屏蔽 DSH_HOME 在仓库根生成的 sessions、settings、identity 与 credential 文件",
+        "layer": "runtime-security"
+      },
+      {
+        "path": "packages/contracts/package.json",
+        "purpose": "类型解析继续使用 src，plain Node 运行改用 dist/index.js",
+        "layer": "runtime-package-contract"
+      },
+      {
+        "path": "packages/control-domain/package.json",
+        "purpose": "切换生产运行时 export 到编译 JS",
+        "layer": "runtime-package-contract"
+      },
+      {
+        "path": "packages/safety-domain/package.json",
+        "purpose": "切换生产运行时 export 到编译 JS",
+        "layer": "runtime-package-contract"
+      },
+      {
+        "path": "packages/dsh-bridge/package.json",
+        "purpose": "切换生产运行时 export 到编译 JS",
+        "layer": "runtime-package-contract"
+      },
+      {
+        "path": "plugins/runtime-composition/package.json",
+        "purpose": "让 Cordis 动态加载编译后的插件入口",
+        "layer": "cordis-plugin-contract"
+      },
+      {
+        "path": "plugins/control-ledger/package.json",
+        "purpose": "让 Cordis 动态加载编译后的插件入口",
+        "layer": "cordis-plugin-contract"
+      },
+      {
+        "path": "plugins/control-supervisor/package.json",
+        "purpose": "让 Cordis 动态加载编译后的插件入口",
+        "layer": "cordis-plugin-contract"
+      },
+      {
+        "path": "plugins/authority-gate/package.json",
+        "purpose": "让 Cordis 动态加载编译后的插件入口",
+        "layer": "cordis-plugin-contract"
+      },
+      {
+        "path": "plugins/safety-client/package.json",
+        "purpose": "让 Cordis 动态加载编译后的插件入口",
+        "layer": "cordis-plugin-contract"
+      }
+    ],
+    "create": [
+      {
+        "path": "scripts/runtime/build-production-packages.ts",
+        "reason": "集中定义九包生产闭包并用 tsc 输出各自 dist，避免九份重复 build tsconfig",
+        "naming_basis": "与现有 scripts/runtime/freeze-composition.ts 同层，名称表达生产包构建职责",
+        "layer": "build-tooling"
+      },
+      {
+        "path": "scripts/runtime/probe-controlled-plugins.mjs",
+        "reason": "必须由 plain Node import 生产 exports 并真实挂载五个 Cordis 插件，才能复现用户路径",
+        "naming_basis": "与 launch-controlled.ts 同层，mjs 强制禁止测试转译器介入",
+        "layer": "runtime-probe"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "生产构建与 Controlled DSH 运行时加载边界",
+    "dependency_rule": "TypeScript src 仅供开发和类型解析；plain Node/Cordis 只消费 package 内 dist JavaScript。构建工具不得注入 NODE_OPTIONS/tsx 到生产子进程，composition 必须校验实际加载的 dist。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "tests/integration/dsh-controlled-profile.spec.ts",
+        "command": "pnpm build:runtime && node scripts/runtime/probe-controlled-plugins.mjs"
+      },
+      {
+        "path": "scripts/runtime/probe-controlled-plugins.mjs",
+        "command": "使用临时 ledger/socket 环境执行 pnpm start -- 'Controlled DSH plugin boot probe'，修复前稳定出现 plugin tree failed"
+      }
+    ]
+  },
+  "risks": [
+    "package exports 切换会影响 Vitest 和所有跨包导入，必须在 test 前构建并跑全量 213 条测试",
+    "若 composition 不包含 dist，源码与实际加载 JS 可能漂移，因此必须把生成产物加入指纹",
+    "plain Node 探针挂载 authority Unix socket 和 SQLite，必须使用临时目录并可靠 dispose",
+    "构建清理只能作用于清单内九个 package 的 dist，禁止扩大删除范围",
+    "真实 DeepSeek 模型调用仍依赖用户 API Key；自动回归只验证插件树，不伪造网络成功"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

@@ -1,0 +1,344 @@
+{
+  "story_id": "US-B4-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {
+      "path": "packages/contracts/src/control-command.ts",
+      "reason": "沿用版本常量、闭集联合、严格运行时断言与 unknown 不得伪装 verified 的契约风格；ActionIntent/Receipt 仍须独立 Schema 和状态机"
+    },
+    {
+      "path": "packages/contracts/src/action.ts",
+      "reason": "确认现有 action.ts 只属于 Learning Runtime checkpoint 语义；生产 ActionIntent 不得复用或污染 LearningActionEvent"
+    },
+    {
+      "path": "packages/dsh-bridge/src/launcher.ts",
+      "reason": "受控生产 launcher 已在组合校验后启动 DSH；需在此失败关闭地拒绝 Executor 专属策略、数据库和目标写凭证进入 Runtime 环境"
+    },
+    {
+      "path": "packages/dsh-bridge/src/composition.ts",
+      "reason": "Safety client、契约、纯领域包和受控 Bundle/Profile 都属于可执行组合证据，需纳入不可变 artifact 指纹且不升级 DSH/Cordis"
+    },
+    {
+      "path": "plugins/domain-tools/src/index.ts",
+      "reason": "现有领域工具只校验 MCP 输出且没有现实写；B4 通过独立 safety-client Service 提交 Intent，不让领域工具获得目标适配器或生产凭证"
+    },
+    {
+      "path": "plugins/control-ledger/src/sqlite-provider.ts",
+      "reason": "参考 Node 原生 SQLite、WAL/FULL、canonical 幂等冲突和损坏失败关闭的持久化做法；Safety Executor 使用独立数据库和独立 Provider Port，不共享 Control Ledger 表"
+    },
+    {
+      "path": "bundles/control-base/cordis.patch.yml",
+      "reason": "受控 Runtime 当前只装 composition、ledger、supervisor；需要加入无目标凭证的 safety-client，而不能把 safety-executor 作为可卸载插件装入"
+    },
+    {
+      "path": "bundles/control-production/cordis.patch.yml",
+      "reason": "生产配置只能向 Runtime 注入 ActionIntent endpoint，不得注入策略路径、Executor 数据库、Lease 密钥或目标系统凭证"
+    },
+    {
+      "path": "profiles/controlled/package.json",
+      "reason": "受控 Profile 需要显式链接 safety-client workspace plugin；独立 safety-executor 不能成为 Profile dependency 或 Cordis lifecycle 子项"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/需求分析/2026-08-17-agent全仓TypeScript重构.md",
+      "reason": "落实 GWT-015—018 与已确认 Safety Executor v0.1 七条边界：独立进程/身份/凭证、UDS/mTLS、最小 Lease、旁路拒绝、幂等和 unknown reconcile"
+    },
+    {
+      "path": "/Users/wanglongxiang/git/AI-Work-Kit/Plans/技术方案/2026-08-17-智能体控制系统工程架构-v0.1.md",
+      "reason": "落实 ENG-007/008/010、ActionIntent 状态机、POST/GET API、版本化 JSON Schema 和 Runtime→Executor→Reality 单向依赖"
+    }
+  ],
+  "verified_architecture_facts": [
+    "本地开发允许 HTTP over Unix Domain Socket；生产跨主机必须 mTLS HTTPS，payload 先过版本化 JSON Schema/运行时断言",
+    "Runtime 无目标写凭证且只能提交 ActionIntent；Safety Executor 是独立进程、配置、身份、凭证与故障域，不能被 DSH Profile 卸载",
+    "Lease 必须短时、最小 scope，并绑定 actionId、idempotencyKey、policyVersion、compositionFingerprint",
+    "相同 canonical idempotencyKey 只执行一次；同 key 异内容冲突；执行中断或目标效果不明进入 EFFECT_UNKNOWN/reconcile，禁止盲重试",
+    "Watchdog、AuthorityAttestation 自动降级和 recovery Profile 属于 US-B4-002，不在本 Story 提前实现"
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "package.json",
+        "purpose": "把 safety-domain、safety-client 与 safety-executor 纳入根 typecheck/devDependency 和目标测试命令；不增加 HTTP 框架、模型 SDK 或浮动依赖",
+        "layer": "Workspace Build"
+      },
+      {
+        "path": "vitest.config.ts",
+        "purpose": "将 services/**/*.spec.ts 纳入根测试发现，防止独立 Executor 的 Red/Green 被全仓回归静默漏扫",
+        "layer": "Test Discovery"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "purpose": "显式纳入 services/* workspace；保持 DSH rc.6/Cordis 4.0.1 overrides 与构建白名单不变",
+        "layer": "Workspace Boundary"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "purpose": "记录纯 workspace importer 与 Node 内置 http/https/sqlite 实现，不升级既有第三方依赖",
+        "layer": "Dependency Lock"
+      },
+      {
+        "path": "packages/contracts/src/index.ts",
+        "purpose": "导出 action-intent.v1/action-receipt.v1、Lease、错误与严格 assertion；保持 Learning action 契约独立",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/dsh-bridge/src/launcher.ts",
+        "purpose": "在启动 DSH 前拒绝 AGENT_SAFETY_POLICY_PATH、AGENT_SAFETY_DATABASE_PATH、AGENT_SAFETY_TARGET_TOKEN 等 Executor-only 配置出现在 Runtime 环境；只允许客户端 endpoint",
+        "layer": "Runtime Credential Gate"
+      },
+      {
+        "path": "packages/dsh-bridge/src/composition.ts",
+        "purpose": "把 Action 契约、safety-domain、safety-client 及 Bundle/Profile 变更纳入 Runtime 组合指纹，并登记 safetyIntentClient Provider；独立 Executor 不作为 Cordis 插件生命周期项",
+        "layer": "Composition Verification"
+      },
+      {
+        "path": "bundles/control-base/cordis.patch.yml",
+        "purpose": "加入 @agent/plugin-safety-client，使 Runtime 只有 submit/query ActionIntent 的 Cordis Service，不装载 Executor、策略、数据库或目标 adapter",
+        "layer": "Controlled Bundle"
+      },
+      {
+        "path": "bundles/control-production/cordis.patch.yml",
+        "purpose": "仅从 AGENT_SAFETY_SOCKET_PATH 配置本地客户端 endpoint；服务端策略/存储/目标凭证变量不得进入最终 Runtime 配置",
+        "layer": "Production Client Configuration"
+      },
+      {
+        "path": "profiles/controlled/package.json",
+        "purpose": "链接 safety-client workspace plugin；禁止依赖 services/safety-executor 或目标系统 adapter",
+        "layer": "Controlled Profile"
+      },
+      {
+        "path": "profiles/controlled/pnpm-lock.yaml",
+        "purpose": "冻结 Profile 对 safety-client 与 contracts 的解析，证明 Executor 服务端包未进入 Runtime 依赖闭包",
+        "layer": "Profile Lock"
+      }
+    ],
+    "create": [
+      {
+        "path": "packages/contracts/src/action-intent.ts",
+        "reason": "定义 ActionIntent、ActionReceipt、ActionLease、分段 stage/status、统一错误和失败关闭 assertion；禁止把 unknown 映射为 succeeded/verified",
+        "naming_basis": "与架构 action-intent.v1/action-receipt.v1 名称一致，并与 Learning action.ts 明确分离",
+        "layer": "Shared Contract"
+      },
+      {
+        "path": "packages/contracts/schemas/action-intent.v1.json",
+        "reason": "冻结 actionId/runId/idempotencyKey/toolName/argumentsDigest/scope/riskLevel/compositionFingerprint/evidenceRefs",
+        "naming_basis": "沿用 schemas/<contract>.v1.json",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/schemas/action-receipt.v1.json",
+        "reason": "冻结 receiptId/actionId/stage/executionStatus/effectStatus/policyVersion/leaseId/externalRefs/reconcileTaskId/recordedAt",
+        "naming_basis": "沿用架构已采纳 action-receipt.v1",
+        "layer": "Shared JSON Schema"
+      },
+      {
+        "path": "packages/contracts/test/action-intent.spec.ts",
+        "reason": "锁定合法契约、闭集字段、Lease 绑定、stage 单调约束和 unknown 不得 verified",
+        "naming_basis": "与 action-intent.ts 同名",
+        "layer": "Contract Test"
+      },
+      {
+        "path": "packages/safety-domain/package.json",
+        "reason": "建立只依赖 @agent/contracts 的纯安全领域包，不接触 Cordis/DSH/http/sqlite/env/凭证",
+        "naming_basis": "沿用 packages/*-domain 分层并补齐 B4 纯策略状态机",
+        "layer": "Pure Domain Package"
+      },
+      {
+        "path": "packages/safety-domain/tsconfig.json",
+        "reason": "为授权、Lease 与 receipt reducer 提供独立 strict typecheck",
+        "naming_basis": "遵循现有 packages/* 构建结构",
+        "layer": "Domain Build"
+      },
+      {
+        "path": "packages/safety-domain/src/index.ts",
+        "reason": "导出策略判定、最小 Lease 构造、canonical intent 与 receipt 单调/终态规则",
+        "naming_basis": "workspace package 公共入口",
+        "layer": "Safety Domain"
+      },
+      {
+        "path": "packages/safety-domain/test/action-policy.spec.ts",
+        "reason": "覆盖 scope/risk/evidence/composition 拒绝、Lease 绑定和 expired Lease 不可执行",
+        "naming_basis": "直接对应 GWT-015/016 策略与 Lease Red",
+        "layer": "Domain Test"
+      },
+      {
+        "path": "packages/safety-domain/test/action-receipt.spec.ts",
+        "reason": "覆盖 happy path、跳段、重复、denied、effect_unknown、reconciled 和 unknown 不得完成",
+        "naming_basis": "直接对应 ActionIntent 状态机",
+        "layer": "Domain Test"
+      },
+      {
+        "path": "plugins/safety-client/package.json",
+        "reason": "建立只持 endpoint 的 Runtime Cordis plugin，依赖 contracts 且精确 peer Cordis；不依赖 safety-executor、SQLite 或目标 adapter",
+        "naming_basis": "明确它是 Runtime 侧 Intent client，而非安全执行器",
+        "layer": "Production Runtime Plugin"
+      },
+      {
+        "path": "plugins/safety-client/tsconfig.json",
+        "reason": "独立 typecheck Cordis Service 与 UDS client",
+        "naming_basis": "遵循 plugins/* 构建结构",
+        "layer": "Plugin Build"
+      },
+      {
+        "path": "plugins/safety-client/src/index.ts",
+        "reason": "提供 ActionIntentClientService.submit/query，使用 Node HTTP over UDS 并严格校验响应；配置只有 socketPath，不读取服务端策略/数据库/目标凭证",
+        "naming_basis": "Cordis plugin 公共入口与窄客户端 Service",
+        "layer": "Runtime ActionIntent Client"
+      },
+      {
+        "path": "plugins/safety-client/test/client.spec.ts",
+        "reason": "覆盖版本化请求/响应、非 2xx 统一错误、连接失联失败关闭和 dispose 后无 Service 残留",
+        "naming_basis": "与 safety-client plugin 同名",
+        "layer": "Runtime Client Test"
+      },
+      {
+        "path": "services/safety-executor/package.json",
+        "reason": "建立可独立启动的 TypeScript service workspace，只依赖 contracts/safety-domain，使用 Node 内置 http/https/sqlite",
+        "naming_basis": "采用架构已批准 services/safety-executor",
+        "layer": "Independent Safety Process"
+      },
+      {
+        "path": "services/safety-executor/tsconfig.json",
+        "reason": "独立 strict typecheck 服务、Provider Ports、transport 与进程入口",
+        "naming_basis": "遵循 workspace service 构建结构",
+        "layer": "Service Build"
+      },
+      {
+        "path": "services/safety-executor/src/ports.ts",
+        "reason": "定义 PolicyStore、IntentStore、TargetAction、EffectOracle、ReconcileQueue 与 Clock/Id Ports，使凭证/现实 adapter 不泄漏到 domain 或 Runtime",
+        "naming_basis": "以明确 Provider Port 隔离权限、存储与外部现实",
+        "layer": "Safety Provider Ports"
+      },
+      {
+        "path": "services/safety-executor/src/executor.ts",
+        "reason": "编排 validate→policy→Lease→durable executing→单次 target apply→effect observe；部分链或 timeout 只进入 EFFECT_UNKNOWN 并排 reconcile",
+        "naming_basis": "Safety Executor 核心用例服务",
+        "layer": "Safety Application Service"
+      },
+      {
+        "path": "services/safety-executor/src/sqlite-store.ts",
+        "reason": "以独立 SQLite WAL/FULL 数据库持久化 canonical intent、append-only receipts 和 reconcile task；同 key 异内容冲突，崩溃后的 executing 禁止自动重放",
+        "naming_basis": "与 Control Ledger 技术基线一致但保持独立数据库、表和权限域",
+        "layer": "Safety Persistence Adapter"
+      },
+      {
+        "path": "services/safety-executor/src/server.ts",
+        "reason": "实现 POST /v1/actions/intents 与 GET /v1/actions/{actionId}；本地 HTTP over UDS，跨主机配置必须为校验客户端证书的 mTLS HTTPS，未知路由不可修改策略",
+        "naming_basis": "精确对应架构 API 表",
+        "layer": "Cross-process Transport"
+      },
+      {
+        "path": "services/safety-executor/src/main.ts",
+        "reason": "独立进程入口，只在服务进程读取 policy/database/target credential/UDS 或 mTLS 配置，缺失或不安全组合即退出",
+        "naming_basis": "service 可执行入口，不进入 DSH Profile",
+        "layer": "Independent Process Entrypoint"
+      },
+      {
+        "path": "services/safety-executor/test/executor.spec.ts",
+        "reason": "覆盖合法动作分段 receipt、policy denied 无 target call、重复 canonical intent 只执行一次、异内容冲突和 crash/timeout unknown reconcile",
+        "naming_basis": "GWT-015—018 的服务级 Red",
+        "layer": "Service Test"
+      },
+      {
+        "path": "services/safety-executor/test/sqlite-store.spec.ts",
+        "reason": "覆盖 WAL/FULL、重开幂等、append-only receipt、executing 崩溃恢复为 unknown/reconcile 和损坏失败关闭",
+        "naming_basis": "持久化不变量 Red",
+        "layer": "Persistence Test"
+      },
+      {
+        "path": "tests/integration/safety-executor-process.spec.ts",
+        "reason": "真实派生独立 Executor 子进程，经 UDS 从 Runtime client 提交 Intent，目标 fixture 仅接受 Executor 专属 token，并核验效果与分段 receipts",
+        "naming_basis": "integration/safety-happy-path 与 action-idempotency 纵向证据",
+        "layer": "Cross-process Integration Test"
+      },
+      {
+        "path": "tests/fault-injection/safety-bypass.spec.ts",
+        "reason": "证明 Runtime 直接调用目标、携带 Executor-only env、越 scope/风险请求或尝试策略修改均被拒绝且现实写未发生",
+        "naming_basis": "GWT-016 safety-bypass 安全反例",
+        "layer": "Security Fault Injection"
+      },
+      {
+        "path": "tests/fault-injection/effect-unknown.spec.ts",
+        "reason": "目标 apply 超时或连接中断后只产生 effectStatus=unknown 与单个 reconcile task；重复 Intent 不触发第二次现实写",
+        "naming_basis": "GWT-018 effect-unknown 故障反例",
+        "layer": "Reliability Fault Injection"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "action-intent/action-receipt JSON contracts → pure safety-domain policy/Lease/receipt rules → Runtime safety-client Cordis Service → HTTP over UDS or mTLS boundary → independent safety-executor application service → private policy/store/target/effect/reconcile adapters → Reality",
+    "dependency_rule": "contracts/safety-domain 不得 import Cordis、DSH、HTTP、SQLite、环境变量或凭证。Runtime 依赖图只能到 safety-client 和 contracts，不得 import services/safety-executor、policy store、target adapter 或 Executor-only env。Safety Executor 不加入 Cordis Profile/Bundle，由独立进程读取策略、数据库和目标凭证；客户端只持 endpoint。每个 canonical idempotencyKey 只允许一次 target apply，同 key 异内容冲突。durable executing 后任何崩溃、timeout 或效果不可判定必须 append effect_unknown 并建立 reconcile task，不得重放现实写或覆盖为成功。只有独立 EffectOracle 核验后才能追加 effect_verified。"
+  },
+  "execution_contract": {
+    "happy_path": [
+      "received",
+      "authorized",
+      "executing",
+      "applied",
+      "effect_verified"
+    ],
+    "denied": "契约、身份、composition、scope、risk、evidence 或 policy 任一不满足时返回 POLICY_DENIED/CONTRACT_INVALID，target apply 调用数必须为 0",
+    "idempotency": "相同 idempotencyKey + canonical intent 返回已持久化 actionId/executionRef/receipt refs，现实动作总计一次；异 canonical 内容返回冲突",
+    "effect_unknown": "apply 可能已发生但响应/核验不确定时追加 effect_unknown 与唯一 reconcileTaskId；重复提交只查询/对账，不再次 apply",
+    "lease": "短 TTL、最小 scope，绑定 actionId/idempotencyKey/policyVersion/compositionFingerprint；过期、扩 scope 或换 fingerprint 后不可执行"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "packages/contracts/test/action-intent.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action-intent.spec.ts"
+      },
+      {
+        "path": "packages/safety-domain/test/action-policy.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/safety-domain/test/*.spec.ts"
+      },
+      {
+        "path": "services/safety-executor/test/executor.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run services/safety-executor/test/*.spec.ts"
+      },
+      {
+        "path": "tests/integration/safety-executor-process.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/integration/safety-executor-process.spec.ts"
+      },
+      {
+        "path": "tests/fault-injection/safety-bypass.spec.ts",
+        "command": "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run tests/fault-injection/safety-bypass.spec.ts tests/fault-injection/effect-unknown.spec.ts"
+      }
+    ],
+    "refactor_regression": [
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 vitest run packages/contracts/test/action-intent.spec.ts packages/safety-domain/test/*.spec.ts plugins/safety-client/test/*.spec.ts services/safety-executor/test/*.spec.ts tests/integration/safety-executor-process.spec.ts tests/fault-injection/safety-bypass.spec.ts tests/fault-injection/effect-unknown.spec.ts",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 typecheck",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 test",
+      "PYTHONPATH=/Users/wanglongxiang/git nvm exec 22.19.0 python -m unittest discover -s tests -p 'test_*.py'",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 install --frozen-lockfile",
+      "nvm exec 22.19.0 corepack pnpm@11.7.0 composition:verify",
+      "AGENT_CONTROL_LEDGER_PATH=<temp>/control.sqlite AGENT_SAFETY_SOCKET_PATH=<temp>/safety.sock nvm exec 22.19.0 corepack pnpm@11.7.0 start:dsh -- --help"
+    ]
+  },
+  "risks": [
+    "若 safety-executor 被做成普通 Cordis plugin 或进入 controlled Profile，Runtime 可通过配置/卸载绕过安全边界；必须保持独立进程和依赖闭包",
+    "若 Runtime launcher 继承 Executor-only policy/database/target credential，UDS 本身不能证明最小权限；必须启动前扫描并拒绝服务端变量",
+    "若只在内存中记 idempotency，进程重启会重复现实写；canonical intent、receipts 与 reconcile task 必须在 apply 前后独立 durable commit",
+    "若 target apply 完成而回执落盘前崩溃，重启后不能判断是否生效；持久化 executing 的请求只能进入 unknown/reconcile，不得自动调用第二次",
+    "若同 key 异内容返回旧成功，会把不同动作伪装为幂等；必须按 canonical intent 冲突失败",
+    "若 effect_verified 只依据 HTTP 2xx 或 adapter 无异常推断，会把技术接纳当现实结果；必须通过独立 EffectOracle/外部引用核验",
+    "若 Lease 未绑定 scope/policy/composition 或 TTL 无上限，旧授权可在新组合或扩大权限后复用；执行前必须再次校验全部绑定字段和过期时间",
+    "同进程 fake、mock credential scan 或只检查代码字符串不能充当纵向安全证明；GWT-015—018 必须派生独立进程并观察目标侧调用计数/效果",
+    "本机 CI 不能证明真实生产 OS 用户、容器、IAM 和网络策略已部署；代码验收只证明 fail-closed 拓扑，现实生产写仍须 B4-002/B5 的 AuthorityAttestation/rehearsal",
+    "新增 service workspace、Profile link 和受控 artifacts 会改变 root/profile lock 与 composition fingerprint；必须显式重冻并证明 DSH/Cordis 版本未漂移"
+  ],
+  "stop_conditions": [
+    "只能把 Safety Executor 装进 DSH/Cordis 同进程或让 Runtime import 服务端策略/target adapter 才能实现",
+    "Runtime 必须持有目标系统长期写凭证、Lease 签发材料、Executor 数据库或可修改策略配置",
+    "无法在 target apply 前 durable 记录 canonical intent/executing，或重启后会自动重放部分执行",
+    "相同 idempotencyKey 异内容会返回旧成功，或 effect unknown 会被自动提升为 verified/succeeded",
+    "没有独立效果核验端口，只能以请求返回成功推断现实效果",
+    "UDS 文件权限或 mTLS 客户端认证缺失时仍允许服务启动并接受 ActionIntent",
+    "安全反例只能用同进程 mock，无法派生独立 Executor 进程和隔离目标凭证环境",
+    "实现必须提前引入 Watchdog、修改 recovery Profile、签署 AuthorityAttestation 或执行最终 cutover 才能通过 GWT-015—018",
+    "需要 fork/vendoring DSH、升级 rc.6/Cordis 4.0.1，或新增未经审计的 HTTP/数据库框架依赖"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

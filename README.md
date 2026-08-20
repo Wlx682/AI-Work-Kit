@@ -4,9 +4,12 @@ Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环�
 
 ## 可运行代码
 
-- [`agent/`](agent/README.md)：通用智能体底座。
-- [`knowledge_graph_learning/`](knowledge_graph_learning/README.md)：R4 知识图谱驱动学习产品（Python 后端 + Flutter 客户端）。
-- `.runtime/`：本地运行数据，已忽略；`tmp/` 只保留实验和静态原型。
+> 两个独立项目已移出本仓库，与 Kit 并列存放在同一 git workspace 下：
+
+- `../agent`：通用智能体底座。
+- `../knowledge_graph_learning`：R4 知识图谱驱动学习产品（Python 后端 + Flutter 客户端）。
+
+Kit 仓库内保留：`.runtime/` 本地运行数据（已忽略）；`tmp/` 只放实验和静态原型。
 
 ## 读文档（按顺序）
 
