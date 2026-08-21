@@ -1,0 +1,75 @@
+{
+  "codebase_available": true,
+  "codebase_read": [
+    "/Users/wanglongxiang/git/agent/package.json",
+    "/Users/wanglongxiang/git/agent/pnpm-workspace.yaml",
+    "/Users/wanglongxiang/git/agent/plugins",
+    "/Users/wanglongxiang/git/agent/packages/dsh-bridge",
+    "/Users/wanglongxiang/git/agent/bundles",
+    "/Users/wanglongxiang/git/agent/profiles",
+    "/Users/wanglongxiang/git/agent/tests",
+    "/Users/wanglongxiang/git/agent/node_modules/@deepseek-ai/dsh/README.zh.md"
+  ],
+  "target_files": {
+    "modify": [
+      "README.md",
+      "package.json",
+      "pnpm-workspace.yaml",
+      "vitest.config.ts",
+      "packages/contracts/src/index.ts",
+      "packages/dsh-bridge/src/index.ts",
+      "plugins/authority-gate/src/index.ts",
+      "plugins/authority-gate/package.json",
+      "tests/acceptance/workspace-boundaries.spec.ts"
+    ],
+    "create": [
+      "bundles/control-suite/package.json",
+      "bundles/control-suite/cordis.patch.yml"
+    ],
+    "delete": [
+      "Contexts",
+      "labs",
+      "evaluation",
+      "evidence",
+      "migration",
+      "profiles",
+      "scripts/baseline",
+      "scripts/release",
+      "packages/domain-tools",
+      "packages/evaluation-domain",
+      "packages/evaluation-oracles",
+      "packages/release-domain",
+      "plugins/runtime-composition",
+      "packages/dsh-bridge/src/composition.ts",
+      "packages/dsh-bridge/src/launcher.ts",
+      "bundles/control-base",
+      "bundles/control-production",
+      "tests/acceptance/*baseline*",
+      "tests/acceptance/*cutover*",
+      "tests/acceptance/*composition*",
+      "tests/acceptance/controlled-web-release-gate.spec.ts",
+      "tests/integration/*learning*",
+      "tests/integration/*controlled*",
+      "tests/integration/recovery-profile.spec.ts",
+      "tests/integration/evaluation-domain-isolation.spec.ts",
+      "tests/fault-injection/composition-drift.spec.ts"
+    ]
+  },
+  "module_boundary": {
+    "layer": "DSH plugin extension repository",
+    "dependency_rule": "upstream DSH -> profile composition -> control-suite bundle -> Cordis plugins -> internal libraries; plugins may call explicit safety sidecars, but no local module may own DSH boot/profile locks"
+  },
+  "tests": {
+    "red": [
+      "tests/acceptance/workspace-boundaries.spec.ts: reject legacy platform directories and require exactly one DSH bundle with four plugins",
+      "plugins/authority-gate/test/gate.spec.ts: authority identity comes from plugin config without runtime-composition service"
+    ]
+  },
+  "risks": [
+    "bundle file dependency behavior must be verified through the official dsh plugin command",
+    "removing composition service changes authority-gate configuration but must not weaken fingerprint matching",
+    "tracked deletions are large; preserve untracked docs/plans owned by the user"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}
