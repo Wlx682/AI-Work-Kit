@@ -74,7 +74,7 @@ relations:
 ## 三、约束与前提
 
 - 当前生产代码、现有测试和已采纳需求是事实。
-- App composition 仍是生产依赖唯一创建者；“不在根文件”不等于“放进 Feature”。
+- App composition 仍是生产对象唯一绑定者；预览/transfer 具体实现可位于 Feature 的 infrastructure，“App 负责装配”不等于“实现文件都放 App”。
 - `CloudFilesSessionSnapshot/Store` 是 App 内部的鉴权/环境快照和 revision store，不是页面 Session，不进入 Feature。
 - 现有具体 Repository 已包含 owner 判断时继续复用；新边界不得削弱 generation/identity fence。
 - App 根中被 Files composition 使用的共享 Provider 需要提取其**最小依赖闭包**为叶子装配模块；非 Files 消费者可经 root 兼容 export 过渡。
@@ -110,6 +110,29 @@ flowchart TB
   Host --> Files
 ```
 
+## 2026-08-21 架构纠偏：文件预览归位 Feature
+
+用户明确裁决“跨 Feature 共用不等于属于 App”。原方案中“预览实现留 App”只能视为 US-CFR-004 的保守过渡态，不是目标架构。目标修订为 `features/file_preview` 承载预览纵切，`features/files` 承载 transfer，App 只保留 composition/navigation/host owner 复核。本裁决由 ADR-CFR-008 固化，不改变任何产品、协议、缓存或平台行为。
+
+```yaml
+skill_run:
+  skill: architecture-design-assistant
+  workflow_stage: architecture
+  plan: Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/需求分析/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "复核 AC-05、Feature→App 禁止关系和无产品行为变化的真理源"
+    - path: Contexts/决策/2026-08-21-文件预览归位Feature-变更影响.md
+      utility: high
+      reason: "使用用户已确认的归位裁决修订模块边界与 ADR"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
 禁止边：
 
 ```text
@@ -128,7 +151,8 @@ Files callbacks -X-> CloudFilesAppRuntime
 | App composition primitives | 提供目录、Gateway runtime identity、transition、ClawApi、CloudFiles session 等共享前置 Provider | 输出可被其他 composition 模块 watch 的 Provider | Core/Claw/App runtime；不得依赖 Files composition |
 | CloudFiles composition | 构造网络、签名、token、Repository、上传下载/Cloud preview 资源 | 输出 `AsyncValue<CloudFilesAppRuntime?>` | primitives、Core、Files Repository 实现、平台包 |
 | File preview/download composition | 构造 Gateway/Workspace/AI 预览、下载、缓存与平台实现 | 输出 App runtime/launcher | primitives、App integrations、平台包 |
-| `FilesDestination` | 将 App Runtime 投影成 Feature Runtime；将 Preview/Download/Upload/Document 动作注入 Feature | 输入 App Provider；输出 Feature dependency overrides | App composition + Files contracts |
+| File Preview Feature | 预览 source/result/port、协调与取消、缓存/阅读进度、图片/Markdown/HTML/媒体/文档 UI 及 Flutter 插件适配 | 输入 typed source 与 owner lease；输出显式预览结果 | Core contracts、Files domain、Flutter 插件；不得依赖 App |
+| `FilesDestination` | 将 App Runtime 投影成 Feature Runtime；将 App composition 创建的 Preview/Download/Upload/Document port 注入 Feature | 输入 App Provider；输出 Feature dependency overrides | App composition + Feature contracts；不实现预览 UI/业务 |
 | `composition_root.dart` | 启动汇聚、跨 App 协调、兼容 export | 输入叶子 Provider；输出 App 入口 | App composition modules；子模块不得依赖它 |
 
 ### 4.3 Provider 归属规则
@@ -136,7 +160,7 @@ Files callbacks -X-> CloudFilesAppRuntime
 | Provider 类型 | 定义位置 | 示例 |
 |---|---|---|
 | Feature dependency slot | Files Feature | Cloud runtime state、Workspace Repository、Gateway lease、Host actions |
-| 具体生产 builder/provider | App composition | CloudFiles App runtime、preview runtime、download runtime |
+| 具体生产 provider 绑定 | App composition | CloudFiles App runtime 与 Feature infrastructure 实现的绑定 |
 | 跨 composition 前置 Provider | App composition primitive | directories、gateway identity/API、CloudFiles session |
 | 启动协调/全局副作用 | composition root 或 App coordinator | 登录变化 invalidation、App lifecycle coordination |
 
@@ -193,7 +217,7 @@ classDiagram
 - `AppFilePreviewCoordinator`、App cache、platform previewer；
 - `Ref`、`WidgetRef` 或任何 App Provider。
 
-上传、下载、分享和预览由 Host action 接受 typed item + expected identity/generation；App host 在执行时读取当前 `CloudFilesAppRuntime` 并复核 owner，绝不让 Feature 把 Runtime 传回来。
+上传、下载、分享和预览的 port 接受 typed item + expected identity/generation；App host 只投影当前 Runtime 为无凭据 binding 并在执行前后复核 owner，具体 UI/编排/插件适配由 Feature 实现。
 
 ### 4.5 Gateway/AI/Workspace 边界
 
@@ -398,10 +422,11 @@ sequenceDiagram
 
 | ADR ID | 决策 | 备选与取舍 | 影响范围 | 状态 |
 |---|---|---|---|---|
-| ADR-CFR-001 | 具体 Provider graph 留 App composition，Feature 只持有 contract/slot | 全搬 Feature 会泄漏平台与鉴权；全放 root 继续耦合 | Files/App composition | 已采纳 |
+| ADR-CFR-001 | Provider 绑定留 App composition；Feature 持有 contract/slot 与自身 infrastructure 实现 | 全放 App 会把 App 变成实现仓库；鉴权凭据仍由 App 投影/注入 | Files/FilePreview/App composition | 已修订采纳 |
 | ADR-CFR-002 | 使用 Feature-owned dependency slots，由 `FilesDestination` 以子 Scope/等价方式注入 | 全构造参数会穿透巨大页面树；Feature 直接 watch App Provider 违反 DIP | Files presentation/controller | 已采纳 |
 | ADR-CFR-003 | 拆为 `CloudFilesAppRuntime` + `CloudFilesFeatureRuntime`，SessionSnapshot 留 App 私有 | 单大 Runtime 简单但持续泄漏；完全不聚合会参数爆炸 | CloudFiles runtime | 已采纳 |
-| ADR-CFR-004 | Preview/Download/Upload 由 Host typed actions 读取并验证当前 AppRuntime | 把 Runtime 传入 callback 会让边界失效 | FilesDestination/launchers | 已采纳 |
+| ADR-CFR-004 | Preview/Download/Upload 由 typed ports 接收无凭据 binding/identity，App Host 只装配并前后复核 owner | 把 AppRuntime 传入 Feature 或把全部实现留 App 都会让边界失效 | FilePreview/FilesDestination/transfer | 已修订采纳 |
+| ADR-CFR-008 | 文件预览作为独立 `features/file_preview` 纵切，UI/application/data/plugin adapter 同属该 Feature；App 只留 composition/navigation | “跨 Feature 共用”不等于“属于 App”；独立 Feature 可复用且不产生 Feature→App | FilePreview、Files、Projects、Attachment | 已采纳（2026-08-21 用户确认） |
 | ADR-CFR-005 | 提取 composition primitives 的最小依赖闭包，root 可临时兼容 export | 一次拆完整 root 风险过大；保留反向 import 则仍有环 | App composition/root | 已采纳 |
 | ADR-CFR-006 | 无数据迁移、无 feature flag；按可回滚结构提交推进 | 双架构长期共存增加分支与生命周期复杂度 | 发布/回滚 | 已采纳 |
 | ADR-CFR-007 | CloudFiles/预览模块统一后缀词典 + 前缀单复数规则 + Port(边界)/Contract(平台通道·注册表)裁决（§4.6）；漂移按处置表收敛，新代码遵循，存量仅改真违规 #2/#4 | 放任各处自造后缀会持续漂移；一次性全改名波及 core 且风险大 | 全模块命名 / core preview 枚举 / US-CFR-005·006·007 | 已采纳 |
@@ -545,6 +570,25 @@ skill_run:
     - path: Contexts/决策/Skill反馈协议.md
       utility: high
       reason: 保留原评审记录并追加采纳记录，形成可审计反馈链。
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: architecture-design-assistant
+  workflow_stage: architecture
+  plan: Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Contexts/决策/2026-08-21-文件预览归位Feature-变更影响.md
+      utility: high
+      reason: "依据用户对 App-heavy 目录的质疑，修正 Preview UI/协调/缓存/plugin adapter 的业务归属"
+    - path: Plans/需求分析/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "保持无行为变化、owner 隔离、协议签名与平台预览选择等已采纳约束"
   contexts_missing: []
   contexts_stale: []
   outcome_status: pass

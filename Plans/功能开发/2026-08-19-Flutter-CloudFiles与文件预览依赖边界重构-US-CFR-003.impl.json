@@ -1,0 +1,127 @@
+{
+  "story_id": "US-CFR-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/cloud_files_runtime.dart",
+      "reason": "确认当前单一 CloudFilesRuntime 同时持有 CloudFileClient/SignedHttpClient/Auth context/上传预览平台与五组 Feature owner/repository，CloudFilesSessionSnapshot 与 AuthSession 仍在 App 文件"
+    },
+    {
+      "path": "lib/app/composition/cloud_files_providers.dart",
+      "reason": "确认生产 Provider 从同一 session snapshot 构造 owner、repository、网络、上传下载与 preview coordinator，isCurrentSnapshot 是现有迟到结果围栏真理源"
+    },
+    {
+      "path": "lib/features/automation/automation_runtime.dart",
+      "reason": "复用 Feature 模块根目录放置 *FeatureRuntime、只暴露 owner/controller/repository 能力的仓库命名与分层惯例"
+    },
+    {
+      "path": "lib/features/files/cloud_file/browser/domain/cloud_file_browser_models.dart",
+      "reason": "确认 CloudFileOwner 已携带 environment/account/provider/stableId/generation，新 identity 可从生产 browser owner 不变换投影"
+    },
+    {
+      "path": "lib/features/files/cloud_file/browser/domain/cloud_file_browser_repository.dart",
+      "reason": "确认 Feature Runtime 可依赖纯领域 repository contract，不需 CloudFileClient 或 App preview coordinator"
+    },
+    {
+      "path": "lib/features/files/cloud_file/folder_creation/domain/folder_creation_repository.dart",
+      "reason": "确认文件夹创建投影只需 owner 与领域 repository contract"
+    },
+    {
+      "path": "lib/features/files/cloud_file/move/domain/cloud_move_repository.dart",
+      "reason": "确认移动投影只需 owner 与领域 repository contract"
+    },
+    {
+      "path": "lib/features/files/cloud_file/rename/domain/cloud_drive_rename_repository.dart",
+      "reason": "确认重命名投影只需 owner 与领域 repository contract"
+    },
+    {
+      "path": "lib/features/files/cloud_file/deletion/domain/cloud_drive_deletion_repository.dart",
+      "reason": "确认删除投影只需 owner 与领域 repository contract"
+    },
+    {
+      "path": "lib/features/files/presentation/files_page.dart",
+      "reason": "确认当前页面仍标注 CloudFilesRuntime 并直读上传/预览能力；本 Story 用 App 侧兼容面保持源码不动，不提前执行 US-CFR-004/005"
+    },
+    {
+      "path": "test/app/cloud_files_runtime_provider_test.dart",
+      "reason": "复用已有同 owner 单实例/单释放和平台预览回归，增加 AppRuntime→FeatureRuntime 投影与旧 owner guard 失效断言"
+    },
+    {
+      "path": "test/app/app_composition_boundary_test.dart",
+      "reason": "确认现有 SourceImportBoundaryProbe 可复用于新 Feature Runtime 文件的 Feature→App 静态依赖门禁"
+    },
+    {
+      "path": "test/features/files/presentation/files_page_integration_test.dart",
+      "reason": "确认既有 Fake Runtime 构造与 owner/preview 集成基线；本 Story 保留其 CloudFilesRuntime 标注和构造入口以验证增量兼容"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/app/cloud_files_runtime.dart",
+        "purpose": "保留 CloudFilesSessionSnapshot/Store 为 App-private；将 App 专属 client、signed client、context factory、upload/preview 平台与 isCurrentOwner 归入 CloudFilesAppRuntime，持有唯一 featureRuntime 投影；为尚未迁移的 Files/Main/Projects 保留有限的 CloudFilesRuntime 类型别名与 App 侧兼容 getter/constructor，不污染 Feature 类型",
+        "layer": "App-private runtime and incremental compatibility seam"
+      },
+      {
+        "path": "lib/app/composition/cloud_files_providers.dart",
+        "purpose": "从现有 browser owner 构造 CloudFilesRuntimeIdentity，将五组 owner/repository 装配为一个 CloudFilesFeatureRuntime，再注入 CloudFilesAppRuntime；复用原 isCurrentSnapshot closure 且不新增 Provider 或 onDispose hook",
+        "layer": "App composition"
+      },
+      {
+        "path": "test/app/cloud_files_runtime_provider_test.dart",
+        "purpose": "Red 锁定 Provider 返回 CloudFilesAppRuntime、其 featureRuntime identity/domain refs 与生产 owner 一致，会话换代后旧 isCurrentOwner 为 false；保留同 owner 只构造/释放一次的已有回归",
+        "layer": "App runtime projection, owner fence and lifecycle tests"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/files/cloud_files_feature_runtime.dart",
+        "reason": "定义可值比较的 CloudFilesRuntimeIdentity（environmentId/providerId/stableId/generation）与只含 identity、五组 domain owner/repository 不变引用的 CloudFilesFeatureRuntime",
+        "naming_basis": "技术方案 §4.4/§7.1 + lib/features/automation/automation_runtime.dart 的 Feature 根目录 Runtime 惯例",
+        "layer": "Files feature contract"
+      },
+      {
+        "path": "test/features/files/cloud_files_feature_runtime_test.dart",
+        "reason": "Red 先锁定全部允许字段可构造/读取，再用源码 import 与禁止类型 token 断言证明不含 App、network/auth/signing/platform/Riverpod 依赖",
+        "naming_basis": "CloudFilesFeatureRuntime 类型字段 AC-03",
+        "layer": "Files feature contract and static dependency tests"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "CloudFilesSessionSnapshot (App private) -> App composition -> CloudFilesAppRuntime (App-only implementation + current-owner guard) -> CloudFilesFeatureRuntime (identity + domain owners/repositories); existing consumers temporarily compile through an App-side CloudFilesRuntime compatibility alias until US-CFR-004/006",
+    "dependency_rule": "CloudFilesFeatureRuntime 只可 import lib/features/files/cloud_file/** 的 domain model/repository contract，不得 import lib/app/**、core network/auth/signing、平台包或 Riverpod。CloudFilesSessionSnapshot/AuthSession、CloudFileClient/SignedHttpClient/context factory、upload/download platform、CloudFilePreviewer/AppFilePreviewCoordinator 与 isCurrentSnapshot guard 全部留在 App runtime/composition。旧 CloudFilesRuntime 只是 App 文件内的过渡别名/构造面，不在 FeatureRuntime 增加泄漏字段；本 Story 不改 files_page.dart 消费方式、不新增 Host action、不迁移 Main/Projects。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/features/files/cloud_files_feature_runtime_test.dart",
+        "command": "flutter test test/features/files/cloud_files_feature_runtime_test.dart"
+      },
+      {
+        "path": "test/app/cloud_files_runtime_provider_test.dart",
+        "command": "flutter test test/app/cloud_files_runtime_provider_test.dart"
+      },
+      {
+        "path": "test/features/claw_discovery/claw_environment_owner_integration_test.dart",
+        "command": "flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效'"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "command": "flutter test test/features/files/presentation/files_page_integration_test.dart --plain-name 'runtime owner 换代会取消旧预览且迟到结果不覆盖新 owner'"
+      }
+    ]
+  },
+  "risks": [
+    "US-CFR-003 是增量切分：Files 页面零 App import 属于 US-CFR-004，Main/Projects/Download 兼容面删除属于 US-CFR-006；本 Story 不得为了形式清零而跨 Story 修改消费链",
+    "CloudFilesRuntimeIdentity 按已采纳 schema 只含 environmentId/providerId/stableId/generation，不重复暴露 accountId；五组现有 domain owner 仍原样传入，不改 owner equality/hashCode",
+    "新增 AppRuntime.isCurrentOwner 必须直接持有现有 isCurrentSnapshot closure，不通过 identity 字符串重算或仅比较 account/provider，避免 A→B→A 复活旧 generation",
+    "Runtime 切分不得创建第二个 FutureProvider、Dio、upload/download platform、preview coordinator 或 dispose hook；同 owner 创建/释放计数必须与 US-CFR-001 基线一致",
+    "App 侧兼容 constructor/getter 只为未迁移消费者过渡，生产 composition 必须显式先构造 CloudFilesFeatureRuntime 再注入 AppRuntime，否则类型已拆但生产装配未拆",
+    "字段边界测试不能只验证允许字段存在；还要扫描 import 和精确类型 token，且避免将 providerId 误判为 Provider",
+    "本 Story 无 HTTP schema、签名参数、personal-cloud namespace、缓存/下载目录或平台 UI 变更；若聚焦回归发现这些行为差异应回退结构改动而非扩 Scope"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

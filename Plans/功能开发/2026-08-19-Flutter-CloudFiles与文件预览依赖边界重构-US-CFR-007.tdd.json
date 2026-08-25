@@ -1,0 +1,61 @@
+{
+  "story_id": "US-CFR-007",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test test/app/cloud_files_runtime_compatibility_boundary_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T17:34:17+08:00",
+    "reason": "Red 扫描命中 18 个 FilePreview Feature 文件仍使用 AppFilePreview* 所有权命名，失败只来自待固化的命名边界。"
+  },
+  "green": {
+    "command": "flutter test <runtime compatibility, FilePreview Feature/App boundary, composition, preview runtime/coordinator/pages/source/session and core capability focused targets>",
+    "exit_code": 0,
+    "at": "2026-08-21T17:36:40+08:00",
+    "evidence": "最终聚焦测试 60/60 PASS；FilePreview 实现类统一改为 FilePreview*，Feature→App import=0，App integrations 不再承载 Preview 实现。"
+  },
+  "refactor": {
+    "command": "dart format <affected FilePreview/App/test Dart paths> && flutter analyze <FilePreview/core/App composition scoped targets> && git diff --check && python3 scripts/validate-task-id-naming.py",
+    "exit_code": 0,
+    "at": "2026-08-21T17:37:20+08:00",
+    "evidence": "scoped analyze No issues found；diff check 与 task-ID naming PASS；源码扫描确认 Feature 零 App import，旧 Preview/Runtime/Download 生产类名归零。"
+  },
+  "integration_smoke": {
+    "command": "flutter run active iPhone session: hot restart (R)",
+    "exit_code": 0,
+    "at": "2026-08-21T17:38:38+08:00",
+    "evidence": "连接 iPhone 热重启成功（2.011s），composition_root、Cloud config、Gateway websocket 与 authenticated recovery 均 success，home_first_frame=1776ms。"
+  },
+  "additional_runs": [
+    {
+      "command": "python3 scripts/select-impacted-tests.py --base-ref HEAD",
+      "exit_code": 0,
+      "at": "2026-08-21T17:39:20+08:00",
+      "evidence": "命中 Preview、Files download、Projects、Claw 真网络和支付围栏；Preview/Files/Projects 聚焦路径已由本 Epic 各 Story 测试闭合，高风险真机矩阵留集成阶段。"
+    },
+    {
+      "command": "Android Phone/Pad/Fold and iPhone/iPad full device regression matrix",
+      "exit_code": -1,
+      "at": "2026-08-21T17:39:20+08:00",
+      "evidence": "NOT_RUN：已连接 iPhone 启动 smoke 通过；完整双平台形态矩阵留 Epic 集成里程碑。"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-10",
+      "pass": true,
+      "evidence": "28 号文件预览架构与 target architecture 已明确 FilePreview Feature 承载 UI/协调/缓存/plugin adapter，App composition 只生产装配、root 只汇聚；自动边界与命名测试同口径通过。"
+    }
+  ],
+  "regression_guards": [
+    "FilePreview/Files Feature 禁止 import app/**",
+    "App integrations 禁止恢复 FilePreview UI、coordinator、cache 或 plugin adapter 实现",
+    "App composition 子模块禁止反向 import composition_root.dart",
+    "Feature 实现类禁止使用 AppFilePreview*/AppFileDownload* 所有权命名",
+    "App Provider 变量可保留 app 前缀，用于表达装配层归属"
+  ],
+  "limitations": [
+    "Android Phone/Pad/Fold 与 iPhone/iPad 完整真机矩阵未运行，标记 NOT_RUN",
+    "Epic 集成测试计划审核与全量集成测试尚未开始"
+  ]
+}

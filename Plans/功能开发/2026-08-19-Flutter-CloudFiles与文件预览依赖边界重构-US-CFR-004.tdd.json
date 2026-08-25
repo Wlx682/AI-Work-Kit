@@ -1,0 +1,67 @@
+{
+  "story_id": "US-CFR-004",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test --dart-define=CFR_BOUNDARY_EXPECT_CLEAN=true test/app/app_composition_boundary_test.dart --plain-name 'Files feature does not gain untracked App imports' && flutter test test/features/files/files_dependency_scope_test.dart test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T15:40:39+08:00",
+    "reason": "clean boundary 精确报出 FilesPage、CloudBrowserController、CloudDriveSdk 到 App 的 6 条既有 import；contract/SDK Red 因 files_dependency_scope.dart 和 injected gateway preparation 尚不存在而编译失败。修正测试脚手中不存在的 AppErrorKind.offline 为 transport 后复跑，失败只来自未实现能力。"
+  },
+  "green": {
+    "command": "flutter test test/features/files/presentation/files_page_integration_test.dart && flutter test test/app/app_composition_boundary_test.dart test/features/files/files_dependency_scope_test.dart test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart test/app/files_destination_dependency_scope_test.dart test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart test/app/app_file_preview_runtime_provider_test.dart test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_main_boundary_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T16:18:00+08:00",
+    "evidence": "FilesPage 57/57 PASS；边界、dependency slots、SDK preparation、真实 FilesDestination 注入、Controller owner、Workspace host、App preview/runtime 共 31/31 PASS。features/files/** 到 app/** import 归零。"
+  },
+  "refactor": {
+    "command": "dart format <19 changed Dart paths> && flutter analyze lib/features/files/files_dependency_scope.dart lib/features/files/cloud_files_feature_runtime.dart lib/features/files/ai_files/sdk/cloud_drive_sdk.dart lib/features/files/ai_files/browser/data/filesystem_cloud_drive_repository.dart lib/features/files/ai_files/browser/application/cloud_browser_controller.dart lib/features/files/presentation/files_page.dart lib/app/composition/files_providers.dart lib/app/integrations/files_destination.dart lib/app/integrations/app_file_preview_launcher_provider.dart && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-21T16:18:00+08:00",
+    "evidence": "19 个变更 Dart 路径已格式化，9 个本 Story 生产路径 scoped analyze No issues found，diff check PASS；Overlay route owner feed 避免同一 ProviderContainer 多挂载，并在 runtime/lease 换代时关闭目录和旧弹层。"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/app/integrations/app_file_download_launcher_test.dart test/app/composition/file_download_providers_test.dart test/core/photo_library_export test/features/files/download test/features/files/cloud_files_feature_runtime_test.dart && python3 scripts/validate-task-id-naming.py",
+    "exit_code": 0,
+    "at": "2026-08-21T16:19:00+08:00",
+    "evidence": "下载 launcher/provider、相册权限、Files 下载持久化/恢复、Feature Runtime 边界 30/30 PASS；task-ID naming PASS。App shell preview 边界测试同步到真实 nami_work_app.dart 装配入口。"
+  },
+  "additional_runs": [
+    {
+      "command": "python3 scripts/select-impacted-tests.py --base-ref HEAD",
+      "exit_code": 0,
+      "at": "2026-08-21T16:18:00+08:00",
+      "evidence": "selector 由整个累积工作树选中真网络、下载和支付围栏；下载围栏已全跑。unresolved 的 controller/repository/SDK/FeatureRuntime/dependency scope 已由本 Story 专用测试、57 项 FilesPage 回归和 owner smoke 人工闭合。"
+    },
+    {
+      "command": "integration_test/claw_network_device_regression_test.dart and integration_test/membership_payment_readiness_device_regression_test.dart",
+      "exit_code": -1,
+      "at": "2026-08-21T16:19:00+08:00",
+      "evidence": "NOT_RUN：Android/iOS 真网络与支付设备围栏由当前累积 App composition/root 工作树触发；US-CFR-004 不改 HTTP/签名、支付或原生插件，留待 Epic 里程碑设备矩阵。"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-01",
+      "pass": true,
+      "evidence": "clean boundary 测试与 rg 双重证明 lib/features/files/** 不再 import lib/app/**；原 6 条债务清单已清零。"
+    },
+    {
+      "ac_id": "AC-04",
+      "pass": true,
+      "evidence": "FilesDestination 真实 GoRouter 入口逐槽注入 runtime state、Gateway lease、CloudDrive/Workspace repository、附件能力、retry 与 route owner feeds；Feature 默认 unavailable/fail-fast，Controller 不读 clawApiProvider 或 ActiveGatewayRuntimeIdentity。"
+    }
+  ],
+  "regression_guards": [
+    "FilesystemCloudDriveSdk 的每个读写方法先执行 injected preparation，失败保留原 AppError 并短路业务 RPC",
+    "CloudBrowser/AI/Workspace notifier 显式声明 scoped dependencies，确保 FilesDestination 子 Scope 真正生效",
+    "目录 Overlay 只持有无凭证 CloudFilesRuntimeIdentity/FilesGatewayLease feed，owner 换代会取消旧预览、关闭旧目录和旧菜单",
+    "非 Files 的 Projects/attachment preview 读取 App concrete CloudDrive repository，不依赖 Files 子 Scope",
+    "FilesPage 57 项现有目录、搜索、预览、取消、上传下载分享、RTL/大字体与 Golden 回归保持全绿"
+  ],
+  "limitations": [
+    "FilesPage 的预览/下载/上传/分享仍使用收窄 identity/lease callback seam；正式聚合 FilesHostActions typed port 由 US-CFR-005 完成",
+    "CloudFilesRuntime App 侧兼容别名与 Main/Projects/Download 等旧消费者仍由 US-CFR-006 收口",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真网络/支付设备围栏未运行，标记 NOT_RUN，留待 Epic 里程碑矩阵"
+  ]
+}

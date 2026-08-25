@@ -1,0 +1,115 @@
+{
+  "story_id": "US-CFR-006",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/cloud_files_runtime.dart",
+      "reason": "确认旧 CloudFilesRuntime 仅剩到 CloudFilesAppRuntime 的兼容 typedef；生产 composition 已使用 fromFeatureRuntime，Feature 已只消费 CloudFilesFeatureRuntime/Binding"
+    },
+    {
+      "path": "lib/app/composition_root.dart",
+      "reason": "确认 root 的剩余旧类型引用仅用于 App shell 动作装配，可直接显式改为 CloudFilesAppRuntime 而不改变调用链"
+    },
+    {
+      "path": "lib/app/projects_destination.dart",
+      "reason": "确认 Projects 已向 Preview Feature 传 filePreviewBinding，仅一个方法签名仍使用 CloudFilesRuntime 兼容名"
+    },
+    {
+      "path": "lib/app/composition/file_download_providers.dart",
+      "reason": "确认下载 Provider 负责 owner-scoped repository/manager 的创建与 onDispose，Feature concrete 类型仍带 App 前缀"
+    },
+    {
+      "path": "lib/features/files/download/application/file_download_launcher.dart",
+      "reason": "确认 launcher/runtime 已完全位于 Files Feature 且只依赖 FilesGatewayLease/领域 Repository，AppFile* 前缀属于遗留兼容命名"
+    },
+    {
+      "path": "test/app/cloud_files_runtime_provider_test.dart",
+      "reason": "复用同 owner 单实例、owner 换代和 Provider dispose 一次基线，强化 App/Feature runtime 投影闭合"
+    },
+    {
+      "path": "test/app/composition/file_download_providers_test.dart",
+      "reason": "增加下载 runtime/manager 同 owner 单实例与 ProviderContainer 单次 dispose 回归"
+    },
+    {
+      "path": "test/features/files/presentation/files_page_integration_test.dart",
+      "reason": "测试 helper 仍使用 CloudFilesRuntime 兼容名；迁移为显式 CloudFilesAppRuntime，生产 Files 继续只读 Feature 投影"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/app/cloud_files_runtime.dart",
+        "purpose": "删除 CloudFilesRuntime 兼容 typedef；CloudFilesAppRuntime 作为 App-private concrete，Feature 投影与 preview binding 保持不变",
+        "layer": "App-private runtime"
+      },
+      {
+        "path": "lib/app/composition_root.dart",
+        "purpose": "剩余 shell 消费者显式使用 CloudFilesAppRuntime，不再依赖旧兼容名",
+        "layer": "App composition root"
+      },
+      {
+        "path": "lib/app/projects_destination.dart",
+        "purpose": "Projects helper 签名显式收窄为 CloudFilesAppRuntime，并继续只把 filePreviewBinding 传入 Feature launcher",
+        "layer": "App route host"
+      },
+      {
+        "path": "lib/features/files/download/application/file_download_launcher.dart",
+        "purpose": "将 AppFileDownloadLauncher/AppFileDownloadRuntime/AppCloudFileDownloadRuntime 及 reader typedef 改为 Feature 语义命名，不改行为",
+        "layer": "Files download application"
+      },
+      {
+        "path": "lib/app/composition/file_download_providers.dart",
+        "purpose": "Provider 保留 app 前缀作为装配入口，产出重命名后的 Feature launcher/runtime，并保持 onDispose/owner 复核",
+        "layer": "App composition"
+      },
+      {
+        "path": "test/app/composition/file_download_providers_test.dart",
+        "purpose": "补同 owner 重复读取和 ProviderContainer dispose 一次回归",
+        "layer": "App lifecycle regression"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "purpose": "测试宿主显式构造 CloudFilesAppRuntime，移除旧 typedef 消费",
+        "layer": "Files integration test host"
+      }
+    ],
+    "create": [
+      {
+        "path": "test/app/cloud_files_runtime_compatibility_boundary_test.dart",
+        "reason": "以源码边界 Red 证明旧大 Runtime 兼容名与 Feature 内 AppFile download 命名尚未收口",
+        "naming_basis": "AC-09 旧消费者/暴露面关闭",
+        "layer": "Architecture boundary test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "App shell/routes -> CloudFilesAppRuntime and App composition providers -> CloudFilesFeatureRuntime / CloudFilePreviewBinding / Files download application -> domain/core/platform ports.",
+    "dependency_rule": "lib/features/** 不得引用 CloudFilesAppRuntime 或 lib/app/**。App 消费者必须显式使用 CloudFilesAppRuntime，禁止恢复 CloudFilesRuntime 兼容 typedef。Files download application 的类型使用 Feature 语义名；只有 App Provider 变量保留 app 前缀。ProviderContainer 对同 owner runtime/manager 最多实例化一次并幂等释放。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/cloud_files_runtime_compatibility_boundary_test.dart",
+        "command": "flutter test test/app/cloud_files_runtime_compatibility_boundary_test.dart"
+      },
+      {
+        "path": "test/app/composition/file_download_providers_test.dart",
+        "command": "flutter test test/app/composition/file_download_providers_test.dart test/app/cloud_files_runtime_provider_test.dart"
+      },
+      {
+        "path": "test/app/projects_destination_test.dart",
+        "command": "flutter test test/app/projects_destination_test.dart test/app/projects_runtime_test.dart test/app/app_composition_boundary_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "CloudFilesRuntime 是 typedef，机械替换必须排除 CloudFilesRuntimeIdentity，避免破坏 Feature identity",
+    "下载类型重命名跨 App composition、FilePreview、Files 页面与测试；只改符号不改 provider key、持久化或 reason code",
+    "Provider lifecycle 测试不得以重复 close 作为成功；需验证同 owner identical 实例和 provider dispose 事件各一次",
+    "Projects/Attachment 仍由 App route host 读取当前 runtime 是允许方向，但传入 Feature 时只能使用 binding/lease",
+    "完整双平台设备矩阵仍留 Epic 里程碑，本 Story 至少复用已连接 iPhone 启动 smoke"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

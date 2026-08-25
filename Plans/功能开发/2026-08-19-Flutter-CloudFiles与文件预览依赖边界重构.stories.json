@@ -1,9 +1,9 @@
 {
   "scope_confirmed": true,
-  "confirmed_by": "用户于 2026-08-20 按提议确认 7 故事拆分、依赖顺序与故事点（P0×6 + P1×1，共 39 点）",
+  "confirmed_by": "用户于 2026-08-20 确认初始 Scope；2026-08-21 明确要求将预览 UI/协调/插件适配归位 Feature，US-CFR-005 调整为 8 点",
   "confirmed_at": "2026-08-20",
   "epic_scope": ["US-CFR-001", "US-CFR-002", "US-CFR-003", "US-CFR-004", "US-CFR-005", "US-CFR-006", "US-CFR-007"],
-  "current_implementation_scope": ["US-CFR-001"],
+  "current_implementation_scope": ["US-CFR-007"],
   "stories": [
     {
       "id": "US-CFR-001",
@@ -13,7 +13,7 @@
       "story_points": 5,
       "estimate_confirmed": true,
       "priority": "P0",
-      "sprint_scope": true,
+      "sprint_scope": false,
       "dependencies": [],
       "acceptance_criteria": ["AC-06", "AC-08"],
       "requirement_ids": ["CFR-001"],
@@ -73,10 +73,10 @@
     },
     {
       "id": "US-CFR-005",
-      "title": "预览/传输 typed host actions（不泄漏 Runtime，复核 identity）",
+      "title": "文件预览 Feature 归位与 typed host actions",
       "vertical_slice": true,
       "path": "Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-005.md",
-      "story_points": 5,
+      "story_points": 8,
       "estimate_confirmed": true,
       "priority": "P0",
       "sprint_scope": false,
@@ -84,7 +84,8 @@
       "acceptance_criteria": ["AC-05", "AC-07"],
       "requirement_ids": ["CFR-005"],
       "architecture_refs": [
-        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-004"
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-004",
+        "Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md#ADR-CFR-008"
       ]
     },
     {
@@ -113,7 +114,7 @@
       "story_points": 3,
       "estimate_confirmed": true,
       "priority": "P1",
-      "sprint_scope": false,
+      "sprint_scope": true,
       "dependencies": ["US-CFR-001", "US-CFR-002", "US-CFR-003", "US-CFR-004", "US-CFR-005", "US-CFR-006"],
       "acceptance_criteria": ["AC-10"],
       "requirement_ids": ["CFR-007"],

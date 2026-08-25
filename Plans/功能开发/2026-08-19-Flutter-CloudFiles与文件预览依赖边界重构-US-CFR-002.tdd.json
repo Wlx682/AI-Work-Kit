@@ -1,0 +1,61 @@
+{
+  "story_id": "US-CFR-002",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test test/app/app_composition_boundary_test.dart --plain-name 'Files App composition modules do not import composition root'",
+    "exit_code": 1,
+    "at": "2026-08-21T14:11:00+08:00",
+    "reason": "聚焦边界用例仅因四个 Files App composition 模块尚在 import composition_root.dart 而失败；输出精确列出 app_file_preview、cloud_files、file_download、files_providers 四条边，无编译或环境错误"
+  },
+  "green": {
+    "command": "flutter test test/app/app_composition_boundary_test.dart && flutter test test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_runtime_provider_test.dart test/app/composition/file_download_providers_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T14:15:00+08:00",
+    "evidence": "边界 5/5、CloudFiles/Preview/Download Provider 11/11 PASS；四个目标 composition 对 root import 为 0，全 composition 债务快照仅剩 4 条非 Scope Chat 边，Provider 单例、owner 换代与 dispose 行为不变"
+  },
+  "refactor": {
+    "command": "dart format <10 changed Dart paths> && flutter analyze <10 changed Dart paths> && flutter analyze <8 root compatibility consumers>",
+    "exit_code": 0,
+    "at": "2026-08-21T14:18:00+08:00",
+    "evidence": "10 个当前 Story Dart 路径格式无变化，两组 scoped analyze 均 No issues found；root 只 import 内部需要的 environment/gateway 叶子，以 export 保留 permission/QQ 等旧消费者的同一 Provider 声明"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart && flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效' && flutter test test/features/files/presentation/files_page_integration_test.dart --name 'owner replacement 后重放当前搜索|根页预览中 runtime owner 换代|云盘文件目录在 runtime owner 换代' && flutter test test/app/active_device_coordinator_test.dart && flutter test test/app/integrations/app_file_download_launcher_test.dart test/features/files/download && python3 scripts/select-impacted-tests.py --base-ref origin/dev && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-21T14:20:00+08:00",
+    "evidence": "Workspace 1/1、凭据换代 owner fence 1/1、Files owner/preview 3/3、设备切换 13/13、下载/导出 22/22 PASS；impact selector unresolved_impacts=[]，task-ID naming 与 diff check PASS"
+  },
+  "additional_runs": [
+    {
+      "command": "flutter test test/app/permission_notification_prompt_app_wiring_test.dart",
+      "exit_code": 1,
+      "at": "2026-08-21T14:18:30+08:00",
+      "evidence": "单独复跑仍在 NamiWorkApp 创建时因 SharedPreferencesAsyncPlatform 未注册而失败，堆栈位于 ActiveDeviceHomeModePreference.platform，早于 permissionCoordinatorProvider 读取；本 Story 未改该测试/偏好实现，root 兼容消费者 scoped analyze 已通过"
+    },
+    {
+      "command": "integration_test/claw_network_device_regression_test.dart and integration_test/membership_payment_readiness_device_regression_test.dart",
+      "exit_code": -1,
+      "at": "2026-08-21T14:20:00+08:00",
+      "evidence": "NOT_RUN：impact selector 因 composition_root 路径触发真网络及支付双端设备围栏；本次只迁移 Provider 声明与 import/export，未改协议、签名、支付或原生插件，按仓库规范留待里程碑设备矩阵"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-02",
+      "pass": true,
+      "evidence": "app_file_preview_providers.dart、cloud_files_providers.dart、file_download_providers.dart、files_providers.dart 对 composition_root.dart import 全部归零；environment/storage、gateway runtime、permission、QQ share 四个最小叶子闭包装配原 Provider，root 兼容 export 和现有行为回归通过"
+    }
+  ],
+  "regression_guards": [
+    "四个 Files composition 文件有独立零 root import 用例，不会被非 Scope Chat 债务遮蔽",
+    "全 composition 快照精确剩余 4 条 Chat 边，新增 root import 仍会失败",
+    "迁移原 Provider 声明而非创建 alias，root import 与叶子直接 import 共享同一 override/identity/lifecycle 节点",
+    "Gateway config/home-offline/pending/identity/controller/API 整体同叶，设备切换与 owner 换代回归均通过"
+  ],
+  "limitations": [
+    "permission notification Widget 回归有与本 Story 无关的 SharedPreferencesAsyncPlatform 测试初始化失败，未越界修改",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真网络/支付设备围栏未运行，标记 NOT_RUN；留待功能链路里程碑统一执行",
+    "CFR_BOUNDARY_EXPECT_CLEAN=true 仍会如实报告 Files→App 与 Chat composition→root 后续债务，本 Story 不伪报整个 Epic 已 clean"
+  ]
+}

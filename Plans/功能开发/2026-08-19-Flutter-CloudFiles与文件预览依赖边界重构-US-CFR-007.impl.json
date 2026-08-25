@@ -1,0 +1,37 @@
+{
+  "story_id": "US-CFR-007",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {"path": "docs/versions/2.0.0/plan/28-file-preview-architecture.md", "reason": "正式文档仍把预览描述为 App 级子系统并引用已迁移旧路径"},
+    {"path": "docs/versions/2.0.0/plan/baseline/target-architecture.md", "reason": "目标架构已有 Feature 不依赖 App 总规则，但缺文件预览具体归属"},
+    {"path": "lib/features/file_preview/domain/file_preview_source.dart", "reason": "Feature 物理归位后类型仍使用 AppFilePreview 前缀，词典与目录含义冲突"},
+    {"path": "test/app/cloud_files_runtime_compatibility_boundary_test.dart", "reason": "可扩展为正式类型命名与旧兼容面回退门禁"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "docs/versions/2.0.0/plan/28-file-preview-architecture.md", "purpose": "修正文档模块落点、依赖方向与类型词典", "layer": "Architecture documentation"},
+      {"path": "docs/versions/2.0.0/plan/baseline/target-architecture.md", "purpose": "固化 App/Feature 文件能力归属规则", "layer": "Architecture baseline"},
+      {"path": "lib/features/file_preview/domain/file_preview_source.dart", "purpose": "AppFilePreview* 统一改为 FilePreview*，同规则覆盖整个 Feature", "layer": "FilePreview domain and vertical slice"},
+      {"path": "test/app/cloud_files_runtime_compatibility_boundary_test.dart", "purpose": "禁止 Feature 类型恢复 AppFilePreview 前缀", "layer": "Architecture boundary test"}
+    ],
+    "create": []
+  },
+  "module_boundary": {
+    "layer": "App composition/navigation -> Feature typed binding/lease -> FilePreview/Files vertical slices -> core/plugin ports",
+    "dependency_rule": "Feature 零 App import；Preview UI/application/data/infrastructure 归 features/file_preview；Feature 类型使用 FilePreview*，App 前缀只用于 App Provider/host 变量。"
+  },
+  "tests": {
+    "red": [
+      {"path": "test/app/cloud_files_runtime_compatibility_boundary_test.dart", "command": "flutter test test/app/cloud_files_runtime_compatibility_boundary_test.dart --plain-name 'FilePreview feature types do not claim App ownership'"},
+      {"path": "test/app/file_preview_feature_boundary_test.dart", "command": "flutter test test/app/file_preview_feature_boundary_test.dart test/app/app_composition_boundary_test.dart"}
+    ]
+  },
+  "risks": [
+    "类型改名必须只改 Dart 符号，不改 provider key、缓存 key、日志 reason code 或文件格式",
+    "正式文档必须指向真实 Feature 路径，不能只写抽象原则",
+    "测试文件名可保留历史 app_ 前缀，但生产 Feature 类型不得保留 AppFilePreview"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

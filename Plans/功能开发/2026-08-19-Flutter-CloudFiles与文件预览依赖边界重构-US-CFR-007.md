@@ -2,13 +2,15 @@
 tags: [功能开发, 用户故事, TDD, Flutter, CloudFiles, 边界重构, 门禁]
 type: plan
 category: 功能开发
-status: 草稿
+status: 已完成
 date: 2026-08-20
-lifecycle_state: story-split
+lifecycle_state: story-development
 parent: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
 story_id: US-CFR-007
 story_points: 3
-sprint_scope: false
+sprint_scope: true
+implementation_design: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.impl.json
+tdd_evidence: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.tdd.json
 ---
 
 # US-CFR-007：固化 Provider 装配规则与边界回归门禁
@@ -47,8 +49,58 @@ sprint_scope: false
 
 US-CFR-001..US-CFR-006（规则与门禁在全部边界闭合后固化）。
 
+## 实现落点设计
+
+- 修订正式 28 号文件预览架构与 target architecture，明确 App 只装配、Feature 承载 UI/协调/缓存/plugin adapter。
+- `AppFilePreview*` 类型统一为 `FilePreview*`；App Provider 变量可保留 app 前缀。
+- 自动门禁同时约束 Feature→App import、App integrations 职责、旧 Runtime/download/preview 类型名。
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.impl.json
+      utility: high
+      reason: "把正式文档、类型词典和现有边界测试收敛成最后一个可验收纵切"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
 ## 续做
 
 ```text
 /resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=implementation-design US-CFR-007
+```
+
+## TDD 结果
+
+- Red：边界测试命中 18 个 `AppFilePreview*` 命名债务。
+- Green：60/60 聚焦测试通过，Feature→App import 为 0，App integrations 预览实现为 0。
+- Refactor：scoped analyze、diff check、task-ID naming 均通过。
+- Smoke：连接 iPhone 热重启成功，`home_first_frame=1776ms`。
+- AC-10：PASS。完整 Android Phone/Pad/Fold + iPhone/iPad 矩阵 `NOT_RUN`。
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.impl.json
+      utility: high
+      reason: "按落点固化 Feature/App 归属、类型词典与自动边界"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-007.tdd.json
+      utility: high
+      reason: "记录 Red/Green/Refactor、AC-10、iPhone smoke 和未运行设备矩阵"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  friction: "需要区分 Feature 实现类的中性命名与 App composition Provider 变量的宿主归属命名"
+  revisit_needed: false
 ```

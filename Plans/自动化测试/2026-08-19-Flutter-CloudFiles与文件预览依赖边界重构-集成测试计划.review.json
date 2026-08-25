@@ -1,0 +1,31 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-21T18:05:00+08:00",
+  "target_commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87+snapshot:bf0d4e69586d5259dbf71fbed32f950398edf7fbc6700cf5faefe6049a07f4a6",
+  "case_index_sha256": "855d6e25efb8187fa3b92c0d54ab2b588d6d247b086f9b9b524034f0d53eb740",
+  "unresolved_comments": 0,
+  "resolved_comments": [
+    {
+      "finding": "只验证物理迁移会漏掉旧 AppFilePreview/CloudFilesRuntime/AppFileDownload 所有权类名回流",
+      "resolution": "IT-CFR-001 同时固化 import、App integrations 职责、旧符号和正式文档四类门禁"
+    },
+    {
+      "finding": "聚焦 Flutter 测试不能代替 Claw 真网络、支付及完整设备围栏",
+      "resolution": "IT-CFR-007 要求 impact selector 显式闭合，IT-CFR-008 保持 P0 manual 五类设备矩阵，未执行不得标绿"
+    },
+    {
+      "finding": "架构边界回归若只做静态扫描，不足以证明 owner 迟到结果与 Provider 释放语义不变",
+      "resolution": "IT-CFR-002/003 独立覆盖 Runtime 投影、owner/generation、identical 复用与 add/dispose 各一次"
+    },
+    {
+      "finding": "FilePreviewSourceKind 核心物理来源与 FilePreviewOriginKind 业务入口不应被测试语义混同",
+      "resolution": "IT-CFR-005 分别使用 remote/local/memory 与 cloudFile/aiFile/workspace/inputAttachment 数据，同时验证四入口共用统一 Feature"
+    },
+    {
+      "finding": "真实 PDF 设备回归仍用已删除的 homeDebugToolsEntryKey 判断首页就绪，导致 iOS 编译失败",
+      "resolution": "改为当前生产 HomeDestination 的 homeDestinationKey，对目标测试 scoped analyze 通过后重新冻结 snapshot 并重审"
+    }
+  ],
+  "review_summary": "8 条用例覆盖 US-CFR-001..007 的全部 14 组 Story/AC 关系；7 条自动化 suite 覆盖边界、Runtime/owner、Provider 生命周期、Files Host、Preview、Transfer 和质量围栏，1 条 P0 manual suite 保留 Android Phone/Pad/Fold 与 iPhone/iPad 真实矩阵。"
+}

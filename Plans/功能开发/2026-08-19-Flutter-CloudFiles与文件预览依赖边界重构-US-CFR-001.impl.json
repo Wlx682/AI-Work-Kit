@@ -1,0 +1,116 @@
+{
+  "story_id": "US-CFR-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "test/app/app_composition_boundary_test.dart",
+      "reason": "确认现有边界测试只保护 Provider 不回流 composition_root.dart，尚未扫描 Feature→App 与 composition→root import 边"
+    },
+    {
+      "path": "lib/features/files/presentation/files_page.dart",
+      "reason": "确认 Files 页面当前直接导入 composition_root、Files/CloudFiles composition Provider 与 CloudFilesRuntime，是 Feature→App Red 锚点"
+    },
+    {
+      "path": "lib/features/files/ai_files/browser/application/cloud_browser_controller.dart",
+      "reason": "确认 AI 文件 Controller 通过 composition_root 读取 Gateway App 依赖，是第二类 Feature→App Red 锚点"
+    },
+    {
+      "path": "lib/features/files/ai_files/sdk/cloud_drive_sdk.dart",
+      "reason": "确认 AI 文件 SDK 通过 composition_root 获取 ClawApi，是第三类 Feature→App Red 锚点"
+    },
+    {
+      "path": "lib/app/composition/cloud_files_providers.dart",
+      "reason": "确认 CloudFiles Provider 反向读取 appFileDirectoriesProvider，并在单次 Runtime 构造中创建两组 Dio、上传/下载平台、预览 Coordinator 与对应 onDispose hook"
+    },
+    {
+      "path": "lib/app/composition/app_file_preview_providers.dart",
+      "reason": "确认统一预览 Runtime 依赖 root Gateway primitives，按 owner identity 构造一次 download platform/coordinator，并在 Provider dispose 时关闭下载平台"
+    },
+    {
+      "path": "test/app/cloud_files_runtime_provider_test.dart",
+      "reason": "确认现有测试已覆盖双端平台选择与 fail-closed，但尚未锁定同 owner 重复读取的 Runtime identity 和构造次数"
+    },
+    {
+      "path": "test/app/app_file_preview_runtime_provider_test.dart",
+      "reason": "确认现有测试已覆盖 Gateway owner 与双端 presenter，适合补同 owner 单实例及 owner 换代后旧 guard 失效"
+    },
+    {
+      "path": "test/features/files/presentation/files_page_integration_test.dart",
+      "reason": "复用现有预览取消、Runtime owner 换代、搜索重放和目录关闭回归作为 AC-06 绿基线，不复制 Widget 场景"
+    },
+    {
+      "path": "test/features/claw_discovery/claw_environment_owner_integration_test.dart",
+      "reason": "复用现有凭据 A→B→A、迟到目录结果丢弃和 CloudFilesSession revision 回归作为 owner fencing 绿基线"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "purpose": "接入源码 import 探针；默认模式精确锁定当前违规清单并输出路径，CFR_BOUNDARY_EXPECT_CLEAN=true 时要求违规为零以产生可复跑 Red 证据",
+        "layer": "App static boundary tests"
+      },
+      {
+        "path": "test/app/cloud_files_runtime_provider_test.dart",
+        "purpose": "增加计数 metadata gateway 与 ProviderObserver，证明同 owner 并发/重复读取只构造一个 CloudFilesRuntime，ProviderContainer dispose 只触发一次 Runtime 生命周期结束",
+        "layer": "App composition lifecycle tests"
+      },
+      {
+        "path": "test/app/app_file_preview_runtime_provider_test.dart",
+        "purpose": "锁定同 Gateway owner 重复读取返回同一 Preview Runtime；owner 换代后旧 source guard 失效且新 owner 获得唯一新 Runtime",
+        "layer": "App preview owner/lifecycle tests"
+      }
+    ],
+    "create": [
+      {
+        "path": "test/support/source_import_boundary_probe.dart",
+        "reason": "提供可复用的 Dart import 解析与违规路径格式化；只扫描仓库源码，不依赖 App Provider 或生产网络",
+        "naming_basis": "现有 test/support 共享脚手架约定 + CFR 静态依赖探针职责",
+        "layer": "Test support"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "source import probe -> App boundary test; ProviderContainer/ProviderObserver -> CloudFiles and Preview runtime lifecycle regressions; existing Files/owner integration tests -> behavior baseline",
+    "dependency_rule": "US-CFR-001 只改 test/**：不删除生产 import、不拆 Runtime、不新增 Provider/factory seam。静态探针必须同时识别 package:namiwork/app/** 与解析后落入 lib/app/** 的相对 import；默认测试锁定已知债务且禁止新增，显式 clean 模式保留真实 Red。生命周期只从 ProviderContainer 可观察边界、同 owner identity、owner guard 与既有 onDispose 装配证明，不访问私有字段、不发真实网络请求。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test --dart-define=CFR_BOUNDARY_EXPECT_CLEAN=true test/app/app_composition_boundary_test.dart"
+      },
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test test/app/app_composition_boundary_test.dart"
+      },
+      {
+        "path": "test/app/cloud_files_runtime_provider_test.dart",
+        "command": "flutter test test/app/cloud_files_runtime_provider_test.dart"
+      },
+      {
+        "path": "test/app/app_file_preview_runtime_provider_test.dart",
+        "command": "flutter test test/app/app_file_preview_runtime_provider_test.dart"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "command": "flutter test test/features/files/presentation/files_page_integration_test.dart"
+      },
+      {
+        "path": "test/features/claw_discovery/claw_environment_owner_integration_test.dart",
+        "command": "flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效'"
+      }
+    ]
+  },
+  "risks": [
+    "Red 探针若直接作为默认失败测试会污染所有中间提交，因此必须采用显式 clean 模式失败、默认模式精确快照当前债务；两种命令都要写入 TDD 证据",
+    "相对 import 含不同 ../ 深度，探针必须做路径归一化，不能只用字符串 contains 导致漏报或误报",
+    "composition→root 当前还包含非 Files 模块；探针应如实输出全量现状，不得静默 allowlist，后续 Story 若发现超出已采纳 Scope须回到变更影响分析",
+    "CloudFiles Provider 内部 Dio/平台没有可注入 factory；本 Story 以单次 Provider 构造、同 owner identity、Provider dispose 事件及源码 onDispose 配对共同锁基线，不为测试修改生产装配",
+    "owner A→B→A 不能复活旧 Runtime 或 lease；测试必须比较 identity/generation 与旧 guard，不得只比较账号字符串",
+    "现有 Files Widget 集成测试较大，本 Story 只复用已存在的 owner/preview 场景，不复制 Fake Runtime 或扩大 UI 回归"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

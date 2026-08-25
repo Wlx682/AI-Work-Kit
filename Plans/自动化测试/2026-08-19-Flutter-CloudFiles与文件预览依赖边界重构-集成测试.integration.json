@@ -1,0 +1,94 @@
+{
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87+snapshot:bf0d4e69586d5259dbf71fbed32f950398edf7fbc6700cf5faefe6049a07f4a6",
+  "all_scope_stories_completed": true,
+  "status": "partial",
+  "started_at": "2026-08-21T17:58:00+08:00",
+  "updated_at": "2026-08-21T18:12:00+08:00",
+  "suites": [
+    {
+      "name": "architecture-boundaries",
+      "command": "flutter test test/app/app_composition_boundary_test.dart test/app/file_preview_feature_boundary_test.dart test/app/cloud_files_runtime_compatibility_boundary_test.dart test/app/app_file_preview_naming_boundary_test.dart test/app/app_file_preview_main_boundary_test.dart",
+      "exit_code": 0,
+      "evidence": "12/12 PASS"
+    },
+    {
+      "name": "runtime-owner",
+      "command": "flutter test test/app/cloud_files_runtime_test.dart test/app/cloud_files_runtime_provider_test.dart test/app/projects_runtime_test.dart test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart",
+      "exit_code": 0,
+      "evidence": "19/19 PASS"
+    },
+    {
+      "name": "provider-lifecycle",
+      "command": "flutter test test/app/cloud_files_runtime_provider_test.dart test/app/composition/file_download_providers_test.dart test/app/app_file_preview_runtime_provider_test.dart",
+      "exit_code": 0,
+      "evidence": "11/11 PASS"
+    },
+    {
+      "name": "files-host-browser",
+      "command": "flutter test test/features/files/files_dependency_scope_test.dart test/app/files_destination_dependency_scope_test.dart test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart test/features/files/presentation/files_page_integration_test.dart test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart",
+      "exit_code": 0,
+      "evidence": "63/63 PASS"
+    },
+    {
+      "name": "file-preview",
+      "command": "flutter test <FilePreview cache/coordinator/pages/session/source/EPUB/telemetry/core router targets>",
+      "exit_code": 0,
+      "evidence": "89/89 PASS"
+    },
+    {
+      "name": "file-transfer",
+      "command": "flutter test test/features/files/download test/core/photo_library_export <download/upload launcher, stager and Foundation platform targets>",
+      "exit_code": 0,
+      "evidence": "53/53 PASS"
+    },
+    {
+      "name": "quality-gates",
+      "command": "flutter analyze <FilePreview/Files/App composition scoped targets> && validate-task-id-naming && git diff --check && Feature->App scan && select-impacted-tests",
+      "exit_code": 0,
+      "evidence": "No issues found; naming/diff/import gates PASS; impact selector completed"
+    },
+    {
+      "name": "device-matrix",
+      "command": "Android Phone/Pad/Fold and iPhone/iPad; connected iPhone runs EPUB, in-app preview and real personal-cloud PDF suites",
+      "exit_code": 1,
+      "evidence": "iPhone EPUB PASS; iPhone in-app multi-format preview PASS; real PDF suite BLOCKED by PRIVACY_NOT_ACCEPTED before business path; Android Phone/Pad/Fold and iPhone/iPad full matrix NOT_RUN"
+    }
+  ],
+  "device_evidence": [
+    {
+      "platform": "ios",
+      "device_form": "phone",
+      "device": "00008110-000168C23A82801E / iOS 18.6.2",
+      "case": "personal-cloud-epub-reader-phone-dual-platform-v1",
+      "result": "pass"
+    },
+    {
+      "platform": "ios",
+      "device_form": "phone",
+      "device": "00008110-000168C23A82801E / iOS 18.6.2",
+      "case": "personal-cloud-in-app-preview-phone-dual-platform-v1",
+      "result": "pass"
+    },
+    {
+      "platform": "ios",
+      "device_form": "phone",
+      "device": "00008110-000168C23A82801E / iOS 18.6.2",
+      "case": "personal-cloud-document-preview-phone-dual-platform-v1",
+      "result": "blocked",
+      "reason": "PRIVACY_NOT_ACCEPTED"
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "CFR-IT-001",
+      "severity": "P1",
+      "finding": "PDF device regression referenced removed homeDebugToolsEntryKey and failed iOS compilation",
+      "resolution": "Use current homeDestinationKey readiness signal; scoped analyze PASS; test plan snapshot and review were refreshed"
+    }
+  ],
+  "blockers": [
+    "Real personal-cloud PDF suite needs privacy consent plus a valid authenticated account containing a root PDF fixture",
+    "No Android Phone/Pad/Fold or iPad device evidence is available in the current run",
+    "Impact selector required Claw real-network and membership payment device fences remain NOT_RUN"
+  ]
+}

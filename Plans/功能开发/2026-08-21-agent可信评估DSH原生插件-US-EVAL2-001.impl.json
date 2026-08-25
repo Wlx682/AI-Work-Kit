@@ -1,0 +1,52 @@
+{
+  "story_id": "US-EVAL2-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {"path": "packages/contracts/src/index.ts", "reason": "评估契约必须沿用现有版本化 contracts 出口"},
+    {"path": "packages/dsh-bridge/src/control-observer.ts", "reason": "从现有 DSH turn/end 事实派生技术状态"},
+    {"path": "plugins/control-ledger/src/index.ts", "reason": "读取 replay/project 和 watermark"},
+    {"path": "plugins/control-supervisor/src/index.ts", "reason": "读取 command receipt waterfall"},
+    {"path": "plugins/authority-gate/src/index.ts", "reason": "补充只读 attestation snapshot"},
+    {"path": "plugins/safety-client/src/index.ts", "reason": "读取 ActionExecution 而不提交新 Action"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "package.json", "purpose": "纳入 evaluation 包和插件的类型检查/工作区测试", "layer": "Workspace"},
+      {"path": "scripts/build-packages.ts", "purpose": "按依赖顺序构建 evaluation-domain 与 evaluation 插件", "layer": "Build"},
+      {"path": "packages/contracts/src/index.ts", "purpose": "导出版本化 Evaluation 契约", "layer": "Contract"},
+      {"path": "packages/dsh-bridge/src/index.ts", "purpose": "导出 TechnicalExecution 投影", "layer": "DSH Adapter"},
+      {"path": "plugins/authority-gate/src/index.ts", "purpose": "增加不泄露写能力的只读 authority evidence snapshot", "layer": "Evidence Provider"}
+    ],
+    "create": [
+      {"path": "packages/contracts/src/evaluation.ts", "reason": "集中四态、技术执行、证据和报告契约", "naming_basis": "evaluation bounded context", "layer": "Contract"},
+      {"path": "packages/contracts/schemas/evaluation-report.v1.json", "reason": "固定跨 Remote/SQLite 的报告 wire schema", "naming_basis": "schemaVersion", "layer": "Contract Schema"},
+      {"path": "packages/evaluation-domain/src/index.ts", "reason": "纯领域四态裁决", "naming_basis": "独立 evaluation domain", "layer": "Domain"},
+      {"path": "packages/evaluation-domain/package.json", "reason": "声明无框架领域包", "naming_basis": "workspace package", "layer": "Package"},
+      {"path": "packages/evaluation-domain/tsconfig.json", "reason": "独立严格类型检查", "naming_basis": "workspace convention", "layer": "Build"},
+      {"path": "packages/dsh-bridge/src/technical-execution.ts", "reason": "从 control facts 映射 DSH 技术终态", "naming_basis": "TechnicalExecution contract", "layer": "DSH Adapter"},
+      {"path": "plugins/evaluation/src/index.ts", "reason": "Cordis Evaluation Service 软发现四个 provider", "naming_basis": "DSH native plugin", "layer": "Host Plugin"},
+      {"path": "plugins/evaluation/src/control-evidence.ts", "reason": "四插件只读取证与缺失诊断", "naming_basis": "architecture evidence adapter", "layer": "Evidence Adapter"},
+      {"path": "plugins/evaluation/src/file-effect-oracle.ts", "reason": "隔离根内独立验证文件事实", "naming_basis": "first Case oracle", "layer": "Oracle"},
+      {"path": "plugins/evaluation/src/store.ts", "reason": "独立 append-only SQLite 报告库", "naming_basis": "evaluation.sqlite", "layer": "Persistence"},
+      {"path": "plugins/evaluation/package.json", "reason": "独立 DSH Host bundle 声明", "naming_basis": "existing control plugin convention", "layer": "Plugin Package"},
+      {"path": "plugins/evaluation/cordis.patch.yml", "reason": "安装时挂载 Evaluation 且不硬注入四 provider", "naming_basis": "DSH bundle patch", "layer": "Plugin Composition"},
+      {"path": "plugins/evaluation/tsconfig.json", "reason": "Host 插件严格类型检查", "naming_basis": "workspace convention", "layer": "Build"},
+      {"path": "packages/evaluation-domain/test/verdict.spec.ts", "reason": "先红锁定 completed 不覆盖 external failure 和四态真值表", "naming_basis": "domain behavior", "layer": "Unit Test"},
+      {"path": "plugins/evaluation/test/evaluation.spec.ts", "reason": "先红锁定四源证据、Oracle 边界和 append-only 报告", "naming_basis": "vertical slice", "layer": "Integration Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "contracts → pure evaluation-domain → DSH/evidence/oracle adapters → EvaluationService → isolated SQLite",
+    "dependency_rule": "四个插件是 Case 的强证据契约但不是 Cordis static inject；Evaluation 通过 ctx.get 软发现并保持可启动。Oracle 不读取 Action 回执作为现实结果，领域包不 import DSH/Cordis/SQLite。"
+  },
+  "tests": {
+    "red": [
+      {"path": "packages/evaluation-domain/test/verdict.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/verdict.spec.ts"},
+      {"path": "plugins/evaluation/test/evaluation.spec.ts", "command": "corepack pnpm@11.7.0 vitest run plugins/evaluation/test/evaluation.spec.ts"}
+    ]
+  },
+  "risks": ["硬注入会令缺插件诊断失活", "Oracle 路径逃逸会读取非隔离目标", "幂等实现错误会覆盖历史报告"],
+  "blocked_questions": [],
+  "confirmed": true
+}

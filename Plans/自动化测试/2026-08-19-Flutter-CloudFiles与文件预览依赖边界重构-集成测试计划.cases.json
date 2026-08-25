@@ -1,0 +1,142 @@
+{
+  "target_commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87+snapshot:bf0d4e69586d5259dbf71fbed32f950398edf7fbc6700cf5faefe6049a07f4a6",
+  "cases": [
+    {
+      "id": "IT-CFR-001",
+      "title": "Feature/App 依赖方向、实现归属与命名词典常驻门禁",
+      "priority": "P0",
+      "type": "architecture-boundary",
+      "preconditions": ["namiwork-flutter 工作树与 target_commit 快照一致"],
+      "test_data": ["lib/features/file_preview/**", "lib/features/files/**", "lib/app/composition/**", "lib/app/integrations/**", "旧 AppFilePreview/CloudFilesRuntime/AppFileDownload 符号"],
+      "steps": ["运行 FilePreview Feature 边界、App composition 边界和 Runtime 兼容性测试", "扫描 Feature→App 和 composition→root 禁止 import", "核对 28 号架构文档与 target architecture 的归属规则"],
+      "expected_results": ["Files/FilePreview Feature 对 app/** import 为 0", "App integrations 不承载预览 UI/协调/缓存/plugin adapter", "App composition 子模块不反向 import root", "旧所有权类名不得恢复，文档与自动门禁口径一致"],
+      "automation": "automated",
+      "suite": "architecture-boundaries",
+      "ac_refs": [
+        {"story_id": "US-CFR-002", "ac_id": "AC-02"},
+        {"story_id": "US-CFR-004", "ac_id": "AC-01"},
+        {"story_id": "US-CFR-005", "ac_id": "AC-05"},
+        {"story_id": "US-CFR-006", "ac_id": "AC-09"},
+        {"story_id": "US-CFR-007", "ac_id": "AC-10"}
+      ]
+    },
+    {
+      "id": "IT-CFR-002",
+      "title": "CloudFiles App/Feature Runtime 投影与 owner 换代围栏",
+      "priority": "P0",
+      "type": "runtime-owner-isolation",
+      "preconditions": ["可构造 environment/account/workspace/gateway generation 和迟到结果"],
+      "test_data": ["owner A/B", "generation 1/2", "App Runtime session/network/platform 能力", "Feature Runtime identity/repository 投影"],
+      "steps": ["构造 App Runtime 并投影 Feature Runtime", "校验 Feature 可见字段不包含鉴权、签名、transport 或平台对象", "切换 owner/generation 后返回旧请求结果", "执行退出与 LKG 恢复路径"],
+      "expected_results": ["App Runtime 保持宿主私有能力，Feature 只获得窄投影", "owner/generation 变更后迟到结果不覆盖新 owner", "退出不因外部 Push cleanup 污染 CloudFiles/Projects 缓存验收"],
+      "automation": "automated",
+      "suite": "runtime-owner",
+      "ac_refs": [
+        {"story_id": "US-CFR-001", "ac_id": "AC-06"},
+        {"story_id": "US-CFR-003", "ac_id": "AC-03"},
+        {"story_id": "US-CFR-003", "ac_id": "AC-06"}
+      ]
+    },
+    {
+      "id": "IT-CFR-003",
+      "title": "CloudFiles、Preview 与 Download Provider 单例/单次释放",
+      "priority": "P0",
+      "type": "provider-lifecycle",
+      "preconditions": ["可通过 ProviderContainer/ProviderObserver 观察实例创建和 dispose"],
+      "test_data": ["同 owner 重复读取", "owner A→B", "container dispose", "Gateway download runtime/manager"],
+      "steps": ["同 owner 重复读取 runtime、manager 和 preview provider", "切换 owner 检查旧实例释放", "销毁 ProviderContainer 并统计 add/dispose 事件"],
+      "expected_results": ["同 owner 返回 identical 实例", "owner 换代不复用旧资源", "每个 runtime/manager 创建一次且 dispose 一次，无重复 client/监听器"],
+      "automation": "automated",
+      "suite": "provider-lifecycle",
+      "ac_refs": [
+        {"story_id": "US-CFR-001", "ac_id": "AC-08"},
+        {"story_id": "US-CFR-006", "ac_id": "AC-08"}
+      ]
+    },
+    {
+      "id": "IT-CFR-004",
+      "title": "Files Host 窄依赖注入与 AI/Workspace/云盘浏览生产链",
+      "priority": "P0",
+      "type": "production-composition",
+      "preconditions": ["FilesDestination 使用生产 ProviderScope 注入", "可构造 CloudDrive/Workspace repository 和 Gateway lease"],
+      "test_data": ["三 Tab 入口", "CloudFilesRuntimeIdentity", "FilesGatewayLease", "repository unavailable/retry", "owner A/B"],
+      "steps": ["从 FilesDestination 打开 FilesPage", "遍历 AI、Workspace 和个人云盘浏览路径", "触发 connection preparation、失败重试与 owner 切换", "检查 Feature 仅读 dependency slots 而不读 App Provider"],
+      "expected_results": ["生产 Host 逐槽注入窄契约", "三类浏览与失败恢复行为不变", "Gateway preparation 位于 SDK/data 边界", "owner 切换不丢草稿、不使旧结果越权"],
+      "automation": "automated",
+      "suite": "files-host-browser",
+      "ac_refs": [
+        {"story_id": "US-CFR-004", "ac_id": "AC-01"},
+        {"story_id": "US-CFR-004", "ac_id": "AC-04"}
+      ]
+    },
+    {
+      "id": "IT-CFR-005",
+      "title": "云盘、Workspace、AI 与附件统一 FilePreview 纵切",
+      "priority": "P0",
+      "type": "cross-source-preview",
+      "preconditions": ["FilePreview Feature 已由 App binding 装配", "可构造 remote/local/memory 来源和多格式文件"],
+      "test_data": ["Markdown/HTML/PDF/EPUB/PPTX/图片/音视频", "cloudFile/aiFile/workspace/inputAttachment", "cache hit/miss", "share/download"],
+      "steps": ["对四类业务来源生成 Preview source/session", "经 Planner→Coordinator→Launcher 打开各格式页面", "验证缓存、EPUB 进度、媒体遥测、分享和失败恢复", "关闭页面检查 session/临时资源释放"],
+      "expected_results": ["四来源共用同一 FilePreview Feature 而无 App 实现分支", "平台预览选择、UI、reason code 与缓存 namespace 不变", "失败可恢复且临时资源按 ownership 释放"],
+      "automation": "automated",
+      "suite": "file-preview",
+      "ac_refs": [
+        {"story_id": "US-CFR-005", "ac_id": "AC-05"},
+        {"story_id": "US-CFR-005", "ac_id": "AC-07"}
+      ]
+    },
+    {
+      "id": "IT-CFR-006",
+      "title": "上传/下载/分享协议不变与中断恢复",
+      "priority": "P0",
+      "type": "transfer-recovery",
+      "preconditions": ["可注入 Gateway/S3/cloud 下载来源、上传 platform 和权限结果"],
+      "test_data": ["cloud file/Gateway/S3 descriptor", "cancel/timeout/offline/denied", "owner A/B", "允许/拒绝照片库导出"],
+      "steps": ["通过 Files/Preview 触发上传、下载、分享与系统导出", "对取消、超时、离线、权限拒绝执行恢复", "在传输中切换 owner 并返回旧结果", "核对协议、签名、持久化和诊断脱敏"],
+      "expected_results": ["上传/下载协议、签名参数、namespace 和持久化格式不变", "取消/拒绝/未知结果不伪成成功", "迟到结果不覆盖新 owner，重试不盲换 key", "日志不含 token、cookie、签名或文件二进制"],
+      "automation": "automated",
+      "suite": "file-transfer",
+      "ac_refs": [
+        {"story_id": "US-CFR-005", "ac_id": "AC-07"},
+        {"story_id": "US-CFR-006", "ac_id": "AC-07"},
+        {"story_id": "US-CFR-006", "ac_id": "AC-09"}
+      ]
+    },
+    {
+      "id": "IT-CFR-007",
+      "title": "边界重构静态质量与围栏选择回归",
+      "priority": "P1",
+      "type": "quality-gate",
+      "preconditions": ["当前 target_commit 快照无额外功能改动"],
+      "test_data": ["本 Epic 变更的 Dart/测试/文档/围栏 registry", "HEAD impact baseline"],
+      "steps": ["运行 scoped flutter analyze", "运行 task-ID naming 与 git diff --check", "运行 impacted-test selector 并人工闭合 unresolved impacts", "扫描生产符号与禁止 import"],
+      "expected_results": ["analyze、naming 和 diff check 全部通过", "impact selector 的 Preview/Files/Projects 路径有对应 suite", "Claw 真网络、支付和真机设备围栏不得被静默跳过"],
+      "automation": "automated",
+      "suite": "quality-gates",
+      "ac_refs": [
+        {"story_id": "US-CFR-006", "ac_id": "AC-09"},
+        {"story_id": "US-CFR-007", "ac_id": "AC-10"}
+      ]
+    },
+    {
+      "id": "IT-CFR-008",
+      "title": "Android Phone/Pad/Fold 与 iPhone/iPad 真机预览、传输与自适应矩阵",
+      "priority": "P0",
+      "type": "device-matrix",
+      "preconditions": ["五类真机或对应实体设备形态可用", "有效登录、CloudFiles/Gateway/签名环境", "相册、文件、媒体权限可分别允许和拒绝"],
+      "test_data": ["个人云盘/Workspace/AI/附件四来源", "Markdown/PDF/EPUB/PPTX/HTML/图片/音视频", "上传/下载/分享", "旋转/分屏/折叠展开/前后台"],
+      "steps": ["五类设备从 Files 和附件入口打开四来源预览", "逐格式验证查看、分享、下载与返回恢复", "在传输/预览中旋转、分屏、折叠展开或切换前后台", "切换 account/workspace/device 并模拟权限拒绝、离线与恢复"],
+      "expected_results": ["平台预览、分享和传输生产链可用", "Compact/Medium/Expanded 可换 renderer 但共享 route/ViewModel/Repository", "形态和前后台变化不重发、不丢状态、不重置 session", "owner 换代、权限拒绝和离线显式失败且可恢复"],
+      "automation": "manual",
+      "suite": "device-matrix",
+      "ac_refs": [
+        {"story_id": "US-CFR-001", "ac_id": "AC-06"},
+        {"story_id": "US-CFR-003", "ac_id": "AC-06"},
+        {"story_id": "US-CFR-004", "ac_id": "AC-04"},
+        {"story_id": "US-CFR-005", "ac_id": "AC-05"},
+        {"story_id": "US-CFR-005", "ac_id": "AC-07"},
+        {"story_id": "US-CFR-006", "ac_id": "AC-07"}
+      ]
+    }
+  ]
+}

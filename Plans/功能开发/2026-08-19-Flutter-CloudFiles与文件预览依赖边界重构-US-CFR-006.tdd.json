@@ -1,0 +1,71 @@
+{
+  "story_id": "US-CFR-006",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test test/app/cloud_files_runtime_compatibility_boundary_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T17:28:09+08:00",
+    "reason": "两个 Red 分别命中 CloudFilesRuntime 兼容 typedef/生产消费者，以及 Files download application 内 AppFileDownload*/AppCloudFileDownload* 类型名；失败只来自待关闭兼容面。"
+  },
+  "green": {
+    "command": "flutter test <runtime compatibility, cloud/download lifecycle, launcher, Files page, Preview boundary, Projects destination/runtime focused targets>",
+    "exit_code": 0,
+    "at": "2026-08-21T17:31:30+08:00",
+    "evidence": "最终聚焦包 84/84、14/14 与 Projects runtime 2/2 PASS。CloudFilesRuntime typedef 已删除；App shell/Projects 显式使用 CloudFilesAppRuntime；Files 下载类型改为 FileDownloadLauncher、GatewayFileDownloadRuntime、CloudFileDownloadRuntime。"
+  },
+  "refactor": {
+    "command": "dart format <11 renamed/affected Dart paths> && flutter analyze <11 production/test targets> && git diff --check && python3 scripts/validate-task-id-naming.py",
+    "exit_code": 0,
+    "at": "2026-08-21T17:31:48+08:00",
+    "evidence": "scoped analyze No issues found；diff check 与 task-ID naming PASS；源码扫描仅在边界测试的否定断言中保留旧符号文本。"
+  },
+  "integration_smoke": {
+    "command": "flutter run active iPhone session: hot restart (R)",
+    "exit_code": 0,
+    "at": "2026-08-21T17:31:02+08:00",
+    "evidence": "连接 iPhone 热重启成功（2.743s），composition_root、Cloud config、Gateway websocket 与 authenticated recovery 均 success，home_first_frame=1650ms。"
+  },
+  "additional_runs": [
+    {
+      "command": "python3 scripts/select-impacted-tests.py --base-ref HEAD",
+      "exit_code": 0,
+      "at": "2026-08-21T17:31:48+08:00",
+      "evidence": "下载、Projects、Claw 真网络与支付围栏被选中；下载/Projects/Preview/owner 路径已由 focused bundles 人工闭合，新 Feature 目录 unresolved 已在 US-CFR-005 全量聚焦证据覆盖。"
+    },
+    {
+      "command": "Android Phone/Pad/Fold and iPhone/iPad full device regression matrix",
+      "exit_code": -1,
+      "at": "2026-08-21T17:31:48+08:00",
+      "evidence": "NOT_RUN：已连接 iPhone 启动 smoke 通过；完整双平台形态矩阵留 Epic 里程碑。"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-07",
+      "pass": true,
+      "evidence": "本 Story 仅删除 typedef/改符号名和测试装配，不改协议、签名、缓存 namespace、持久化、UI、reason code；Files/Preview/下载回归全绿。"
+    },
+    {
+      "ac_id": "AC-08",
+      "pass": true,
+      "evidence": "CloudFiles runtime 同 owner identical 且 provider dispose 一次；Gateway download runtime/manager 重复读取 identical，ProviderObserver 证明 add/dispose 各一次。"
+    },
+    {
+      "ac_id": "AC-09",
+      "pass": true,
+      "evidence": "生产 lib 中 CloudFilesRuntime 旧名归零；Projects/App root 显式使用 App runtime，Feature 只接收 binding/lease；Files download application 去除 App 所有权命名。"
+    }
+  ],
+  "regression_guards": [
+    "禁止恢复 CloudFilesRuntime typedef 或生产消费者旧名",
+    "CloudFilesAppRuntime 生产只通过 fromFeatureRuntime 构造，testing constructor 仅供测试 host",
+    "Files download application 类型不得使用 AppFile/AppCloudFile 前缀",
+    "同 owner CloudFiles/download runtime 与 manager 必须复用，ProviderContainer dispose 事件各一次",
+    "Projects logout LKG 用例显式注入 no-registered-alias capability，避免外部 Push cleanup 污染项目缓存验收"
+  ],
+  "limitations": [
+    "FilePreview 领域/页面的 AppFilePreview* 兼容类型名留 US-CFR-007 词典与边界门禁统一评估，不影响物理归属或依赖方向",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 完整真机矩阵未运行，标记 NOT_RUN"
+  ]
+}

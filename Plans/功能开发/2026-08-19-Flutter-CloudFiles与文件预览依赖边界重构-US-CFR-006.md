@@ -2,13 +2,15 @@
 tags: [功能开发, 用户故事, TDD, Flutter, CloudFiles, 边界重构]
 type: plan
 category: 功能开发
-status: 草稿
+status: 已完成
 date: 2026-08-20
-lifecycle_state: story-split
+lifecycle_state: story-development
 parent: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
 story_id: US-CFR-006
 story_points: 5
 sprint_scope: false
+implementation_design: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json
+tdd_evidence: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.tdd.json
 ---
 
 # US-CFR-006：迁移剩余生产消费者并闭合生命周期
@@ -50,5 +52,97 @@ US-CFR-003、US-CFR-004、US-CFR-005。
 ## 续做
 
 ```text
-/resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=implementation-design US-CFR-006
+/resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=implementation-design US-CFR-007
+```
+
+## TDD 与验收结果
+
+- Red：旧 Runtime typedef/消费者和 Files download 的 `AppFile*` 类型命名被边界测试精确命中。
+- Green：最终 focused bundles 84/84、14/14、Projects runtime 2/2 PASS；连接 iPhone 启动 smoke 通过。
+- Refactor：scoped analyze、format、diff check、task-ID naming 全部通过。
+- AC-07、AC-08、AC-09：**PASS**；完整设备矩阵 `NOT_RUN`。机器证据见 `…-US-CFR-006.tdd.json`。
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json
+      utility: high
+      reason: "按落点删除旧 Runtime 别名、收口 download Feature 命名并强化单实例生命周期"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.tdd.json
+      utility: high
+      reason: "以 Red/Green/Refactor、Projects/Files/Preview 回归和 iPhone smoke 作为完成真理源"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json
+      utility: high
+      reason: "按落点删除旧 Runtime 别名、收口 download Feature 命名并强化单实例生命周期"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.tdd.json
+      utility: high
+      reason: "以 Red/Green/Refactor、Projects/Files/Preview 回归和 iPhone smoke 作为完成真理源"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+## 实现落点设计
+
+- 删除旧 `CloudFilesRuntime` typedef，App 消费者显式使用 `CloudFilesAppRuntime`；Feature 继续只见 `CloudFilesFeatureRuntime`/binding/lease。
+- Files download application 去除 `AppFile*` 类型前缀，App Provider 变量保留 app 前缀以表达装配入口。
+- Red 锁在兼容名源码边界和 runtime/manager 单实例生命周期；不改协议、缓存、UI、provider key 或下载 reason code。
+- 结构化证据：`Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json`。
+
+## 反馈（skill_run）
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json
+      utility: high
+      reason: "以真实剩余引用锁定旧 Runtime typedef、下载 Feature 命名与 Provider 生命周期 Red"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-005.tdd.json
+      utility: high
+      reason: "在 FilePreview 已归位且 binding/lease 回归全绿的基础上只收剩余兼容消费者"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.impl.json
+      utility: high
+      reason: "按落点删除旧 Runtime 别名、收口 download Feature 命名并强化单实例生命周期"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-006.tdd.json
+      utility: high
+      reason: "以 Red/Green/Refactor、Projects/Files/Preview 回归和 iPhone smoke 作为完成真理源"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
 ```

@@ -1,0 +1,30 @@
+{
+  "story_id": "US-EVAL2-002",
+  "commit": "worktree@e99d926458ca7cbf8e739aef2ed3524ce0219d13",
+  "red": {
+    "command": "corepack pnpm@11.7.0 vitest run plugins/evaluation/test/remote.spec.ts plugins/evaluation-ui/test/client.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-21T11:56:35+08:00",
+    "reason": "Typert Remote 依赖与 evaluation-ui 插件包尚不存在，测试仅因目标功能缺失而失败"
+  },
+  "green": {
+    "command": "corepack pnpm@11.7.0 vitest run plugins/evaluation/test/remote.spec.ts plugins/evaluation-ui/test/client.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-21T11:59:39+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 typecheck",
+    "exit_code": 0,
+    "at": "2026-08-21T12:10:10+08:00"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-plugin-bundle.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-21T12:03:52+08:00"
+  },
+  "acceptance": [
+    {"ac_id": "AC-06", "pass": true},
+    {"ac_id": "AC-07", "pass": true},
+    {"ac_id": "AC-08", "pass": true}
+  ]
+}

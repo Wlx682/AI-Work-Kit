@@ -1,0 +1,147 @@
+{
+  "story_id": "US-CFR-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/composition_root.dart",
+      "reason": "确认 Files composition 所需的目录、Gateway runtime、权限与 QQ 分享 Provider 当前都定义在 root，并追踪其最小依赖闭包与非 Files 兼容消费者"
+    },
+    {
+      "path": "lib/app/composition/files_providers.dart",
+      "reason": "确认 Workspace Repository 装配只需 clawApiProvider，不应继续获得整个 composition root 可见面"
+    },
+    {
+      "path": "lib/app/composition/cloud_files_providers.dart",
+      "reason": "确认 CloudFiles Runtime 对 root 的唯一需求是 appFileDirectoriesProvider，其 session、Dio、签名与资源 dispose 仍留在现模块"
+    },
+    {
+      "path": "lib/app/composition/file_download_providers.dart",
+      "reason": "确认下载装配需目录、Gateway identity/transition/API、权限与 QQ 分享四类前置 Provider，以及现有 owner guard 和 repository close 语义"
+    },
+    {
+      "path": "lib/app/composition/app_file_preview_providers.dart",
+      "reason": "确认统一预览装配只需目录与 Gateway identity/transition/API，且必须保留旧 source owner guard 和 download platform onDispose"
+    },
+    {
+      "path": "test/app/app_composition_boundary_test.dart",
+      "reason": "确认 US-CFR-001 探针已精确快照 8 条 composition→root 债务；US-CFR-002 需新增只扫描四个 Files 模块的零违规 Red，同时保留 4 条 Chat 范围债务"
+    },
+    {
+      "path": "test/app/cloud_files_runtime_provider_test.dart",
+      "reason": "复用同 owner 单 Runtime、单次 metadata 读取与 Provider dispose 基线，验证目录 Provider 迁移没有导致重复装配"
+    },
+    {
+      "path": "test/app/app_file_preview_runtime_provider_test.dart",
+      "reason": "复用 Gateway owner 换代、旧 source guard 失效与双端 presenter 基线，验证迁移的 Gateway Provider 仍是同一声明对象"
+    },
+    {
+      "path": "test/app/composition/file_download_providers_test.dart",
+      "reason": "复用真实 ProviderContainer 的 Gateway 下载 Runtime、目录 override 与 manager 装配回归，覆盖四类 primitive 的主要消费链"
+    },
+    {
+      "path": "test/support/source_import_boundary_probe.dart",
+      "reason": "确认边界探针支持以单个 Dart 文件为 sourceRoot，可精确限定 US-CFR-002 的四文件 Scope"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/app/composition_root.dart",
+        "purpose": "删除已迁移的 Provider/身份/控制器定义，改为 import 叶子模块供 root 内部使用并 export 同一声明对象给非 Files 旧消费者；只清理因迁移产生的未使用 import",
+        "layer": "App composition root / compatibility surface"
+      },
+      {
+        "path": "lib/app/composition/files_providers.dart",
+        "purpose": "将 composition_root import 替换为 gateway_runtime_providers.dart，保留 workspaceBrowserRepositoryProvider 实现不变",
+        "layer": "Files App composition"
+      },
+      {
+        "path": "lib/app/composition/cloud_files_providers.dart",
+        "purpose": "将 root 的 show import 替换为 environment_storage_providers.dart，不改 CloudFiles session、签名、transport、namespace 或 dispose 顺序",
+        "layer": "CloudFiles App composition"
+      },
+      {
+        "path": "lib/app/composition/file_download_providers.dart",
+        "purpose": "按需 import 环境/目录、Gateway runtime、权限、QQ 分享四个叶子模块，移除对 root 的反向依赖且不改 owner fencing 和下载生命周期",
+        "layer": "File download App composition"
+      },
+      {
+        "path": "lib/app/composition/app_file_preview_providers.dart",
+        "purpose": "按需 import 环境/目录与 Gateway runtime 叶子模块，移除 root import 且不改 preview runtime、owner guard 或平台选择",
+        "layer": "File preview App composition"
+      },
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "purpose": "先新增四个 Files composition 文件的零 root import 断言产生 Red；Green 后将全 composition 债务快照缩减为仅 4 条非本 Story 的 Chat 边",
+        "layer": "App static boundary tests"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/app/composition/environment_storage_providers.dart",
+        "reason": "appFileDirectoriesProvider 的最小闭包包含 environmentRepositoryProvider；两者一起作为无 Files/root 依赖的环境与目录叶子",
+        "naming_basis": "沿用 app/composition/*_providers.dart 命名，以 environment_storage 表达该闭包仅负责环境 owner 与文件目录",
+        "layer": "App composition primitives / environment and storage"
+      },
+      {
+        "path": "lib/app/composition/gateway_runtime_providers.dart",
+        "reason": "clawApiProvider 与 identity/transition/config/home-offline 必须整体迁移才能保留同一 Provider 图、pending fail-closed 与 owner 换代语义",
+        "naming_basis": "沿用 app/composition/*_providers.dart 命名，gateway_runtime 对齐现有 ActiveGatewayRuntimeIdentity 与 ClawRuntimeConfig 概念",
+        "layer": "App composition primitives / Gateway runtime"
+      },
+      {
+        "path": "lib/app/composition/permission_providers.dart",
+        "reason": "file download 与多个 App 集成共用 permissionCoordinatorProvider；Provider、平台 policy、持久 history fallback 与诊断 helper 需作为一个闭包迁移",
+        "naming_basis": "沿用 app/composition/*_providers.dart 命名，与 core/permissions 领域词汇一致",
+        "layer": "App composition primitives / permissions"
+      },
+      {
+        "path": "lib/app/composition/qq_share_providers.dart",
+        "reason": "QQ/QZone 平台 Provider 是 file download/share 装配所需的独立前置，不应因单一声明继续依赖整个 root",
+        "naming_basis": "沿用 app/composition/*_providers.dart 命名并保留现有 qqSharePlatformProvider 公开名",
+        "layer": "App composition primitives / QQ share"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "composition_root -> primitive leaves -> Files composition modules -> App runtime/repository/platform implementations",
+    "dependency_rule": "四个 Files composition 模块只能 import 所需的 primitive 叶子，叶子只依赖 Core/Claw/平台 package，不得 import composition_root 或 Files composition。必须迁移原 Provider 声明对象而非新建代理/alias Provider，否则 root override、identity 比较、资源创建/释放次数会改变。root 仅 import/export 同一声明做兼容汇聚；Chat 模块的 root import 是本 Story 明确不处理的已知债务。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test test/app/app_composition_boundary_test.dart --plain-name 'Files App composition modules do not import composition root'"
+      }
+    ],
+    "green": [
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test test/app/app_composition_boundary_test.dart"
+      },
+      {
+        "path": "test/app/cloud_files_runtime_provider_test.dart",
+        "command": "flutter test test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_runtime_provider_test.dart test/app/composition/file_download_providers_test.dart"
+      },
+      {
+        "path": "test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart",
+        "command": "flutter test test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart"
+      },
+      {
+        "path": "test/features/claw_discovery/claw_environment_owner_integration_test.dart",
+        "command": "flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效'"
+      }
+    ]
+  },
+  "risks": [
+    "若使用 Provider((ref) => ref.watch(oldProvider)) 之类 alias 而不是整体迁移声明，测试 override 与 identical owner guard 将落在不同 Provider 节点，必须禁止",
+    "Gateway primitive 闭包跨越 root 中两个现有区段；config、home-offline、pending transition、identity、controller 与 API 必须一次移完，避免冷启动或设备切换短暂回看旧 Runtime",
+    "environmentRepositoryProvider 是 appFileDirectoriesProvider 的直接依赖；只移目录 Provider 会重建反向边或引入新的环境代理节点，因此两者必须同叶迁移",
+    "permissionCoordinatorProvider 的私有 history fallback 和 diagnostics 是生产/纯 Widget 测试兼容链一部分，不得在搬移时简化或更换平台 policy",
+    "CFR_BOUNDARY_EXPECT_CLEAN=true 在 US-CFR-002 完成后仍会因 4 条非 Scope 的 Chat composition 边失败；本 Story 的 Green 门禁是四个 Files 文件的独立零违规测试，全量债务快照仅缩减不伪报全库已 clean",
+    "本 Story 只搬移 Provider 定义与 import/export，不拆 CloudFilesRuntime、不改 Files feature import、不改 namespace/协议/签名/平台选择"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

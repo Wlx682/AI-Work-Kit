@@ -1,0 +1,31 @@
+{
+  "story_id": "US-EVAL2-003",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/agent",
+  "codebase_read": [
+    {"path": "packages/safety-domain/src/authority-gate.ts", "reason": "复用 fail-closed 与时效判断表达"},
+    {"path": "plugins/control-ledger/src/sqlite-provider.ts", "reason": "沿用现有 SQLite append-only 与幂等实现方式"},
+    {"path": "packages/contracts/src/index.ts", "reason": "资格契约仍从版本化 contracts 出口发布"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "packages/contracts/src/index.ts", "purpose": "导出 QualificationAttempt/HumanReview 契约", "layer": "Contract"},
+      {"path": "package.json", "purpose": "纳入资格化测试门禁", "layer": "Workspace"}
+    ],
+    "create": [
+      {"path": "packages/evaluation-domain/test/qualification.spec.ts", "reason": "先红锁定六道全通过和任一失败规则", "naming_basis": "qualification state machine", "layer": "Unit Test"},
+      {"path": "packages/evaluation-domain/src/qualification.ts", "reason": "实现六道资格与 fingerprint stale 纯规则", "naming_basis": "qualification state machine", "layer": "Domain"},
+      {"path": "plugins/evaluation/src/qualification.ts", "reason": "编排资格尝试、复核和 stale 投影", "naming_basis": "qualification application service", "layer": "Host Plugin"},
+      {"path": "plugins/evaluation/src/qualification-store.ts", "reason": "追加资格尝试和人工复核", "naming_basis": "append-only qualification records", "layer": "Persistence"},
+      {"path": "plugins/evaluation/test/qualification.spec.ts", "reason": "先红锁定 append-only review 与 fingerprint stale", "naming_basis": "qualification vertical slice", "layer": "Integration Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "versioned qualification contract → pure six-gate state machine → append-only qualification/review store → read projection",
+    "dependency_rule": "单次 PASS 不可直接 qualified；local-explicit review 不可表述为生产身份；fingerprint 改变只产生 stale 投影，不修改旧记录。"
+  },
+  "tests": {"red": [{"path": "packages/evaluation-domain/test/qualification.spec.ts", "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/qualification.spec.ts"}]},
+  "risks": ["把单次 PASS 当资格会跳过校准", "覆盖旧资格记录会破坏审计", "本地 reviewer 被误称生产签名"],
+  "blocked_questions": [],
+  "confirmed": true
+}

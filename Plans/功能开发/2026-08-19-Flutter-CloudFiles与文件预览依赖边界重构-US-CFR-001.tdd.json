@@ -1,0 +1,66 @@
+{
+  "story_id": "US-CFR-001",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test --dart-define=CFR_BOUNDARY_EXPECT_CLEAN=true test/app/app_composition_boundary_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T13:51:26+08:00",
+    "reason": "严格 clean 模式仅因当前依赖边界尚未重构而失败；输出精确列出 6 条 Files→App 与 8 条 app/composition→composition_root 违规，没有编译、网络或环境失败"
+  },
+  "green": {
+    "command": "flutter test test/app/app_composition_boundary_test.dart test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_runtime_provider_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T13:53:04+08:00",
+    "evidence": "14/14 PASS；默认边界快照锁定现有债务且禁止新增，CloudFiles 同 owner 重复读取保持单 Runtime/单 metadata read/单 dispose，Preview 换代后新 Runtime 拒绝旧 source owner"
+  },
+  "refactor": {
+    "command": "dart format test/support/source_import_boundary_probe.dart test/app/app_composition_boundary_test.dart test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_runtime_provider_test.dart && flutter analyze test/support/source_import_boundary_probe.dart test/app/app_composition_boundary_test.dart test/app/cloud_files_runtime_provider_test.dart test/app/app_file_preview_runtime_provider_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T13:54:49+08:00",
+    "evidence": "4 个 changed Dart path 格式无变化，scoped analyze 为 No issues found；探针集中解析 package 与相对 import，测试不接触生产网络"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效' && flutter test test/features/files/presentation/files_page_integration_test.dart --name 'owner replacement 后重放当前搜索|根页预览中 runtime owner 换代|云盘文件目录在 runtime owner 换代' && python3 scripts/select-impacted-tests.py --base-ref origin/dev && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-21T13:55:00+08:00",
+    "evidence": "owner fencing 1/1、Files owner/preview 3/3 PASS；impact selector selected_cases=[]、unresolved_impacts=[]；task-ID naming 与 diff check PASS"
+  },
+  "additional_runs": [
+    {
+      "command": "flutter test test/features/files/presentation/files_page_integration_test.dart",
+      "exit_code": 1,
+      "at": "2026-08-21T13:53:40+08:00",
+      "evidence": "业务/owner/preview 用例 56 个通过，仅既有 Figma Golden 报 0.11%（327 px）差异；本 Story 无生产/UI/Golden 修改，未更新基线"
+    },
+    {
+      "command": "并发启动 flutter analyze 与 flutter test",
+      "exit_code": 1,
+      "at": "2026-08-21T13:53:40+08:00",
+      "evidence": "Flutter 工具争用 ios/Flutter/ephemeral/Packages/.packages；改为串行后 owner 用例与 scoped analyze 均通过，生成的 crash/golden failure 文件已精确清理"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-06",
+      "pass": true,
+      "evidence": "新 Preview Runtime 拒绝旧 source owner；既有 Files Widget 验证 runtime owner 换代取消预览、重放搜索并关闭旧目录；环境 owner A→B→A 旧租约持续失效"
+    },
+    {
+      "ac_id": "AC-08",
+      "pass": true,
+      "evidence": "ProviderObserver 与计数 metadata gateway 证明同 ProviderContainer/同 owner 只创建一个 CloudFilesRuntime、重复读取 identity 相同且 dispose 事件一次；Preview Runtime 同 owner identity 相同、换代创建唯一新实例"
+    }
+  ],
+  "regression_guards": [
+    "默认边界模式必须与完整已知债务集合精确相等，新增或未经 Story 追踪的删除都会失败",
+    "CFR_BOUNDARY_EXPECT_CLEAN=true 始终要求两个依赖方向都为零，供 US-CFR-002..006 逐步转绿",
+    "源码探针只扫描 Dart import 并解析 package:namiwork 与相对路径，不跟随符号链接或读取生成目录",
+    "测试不新增网络请求、缓存、Provider factory 或生产依赖"
+  ],
+  "limitations": [
+    "全量 Files Widget 文件的唯一失败是既有 Golden 0.11%（327 px）差异；未更新 Golden，相关 owner/preview smoke 3/3 独立通过",
+    "Dio、download/upload platform 没有公开测试 factory；本 Story 从 ProviderContainer 可观察的 Runtime 构造/释放、metadata read 次数与现有 onDispose 装配锁定生命周期，生产拆分后由 US-CFR-006 再闭合",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真机矩阵未运行，标记 NOT_RUN；本 Story 只新增测试脚手架，不改变产品 UI 或平台选择"
+  ]
+}

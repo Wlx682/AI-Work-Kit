@@ -1,0 +1,198 @@
+{
+  "story_id": "US-CFR-004",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/integrations/files_destination.dart",
+      "reason": "确认唯一生产路由入口已集中注入预览、下载、分享、上传与 Workspace document callback，但 callback 仍把 CloudFilesAppRuntime/ActiveGatewayRuntimeIdentity 传回 Feature，且尚未安装 Feature 子 ProviderScope"
+    },
+    {
+      "path": "lib/features/files/presentation/files_page.dart",
+      "reason": "确认 4 条 App import 分别用于 Cloud runtime、Gateway identity、Workspace repository、附件能力和重试；Cloud 子树与文件夹页还持有 CloudFilesAppRuntime，AI/Workspace 子树还持有 ActiveGatewayRuntimeIdentity"
+    },
+    {
+      "path": "lib/features/files/ai_files/browser/application/cloud_browser_controller.dart",
+      "reason": "确认 Cloud/AI/旧 Workspace controller 均直读 clawApiProvider、activeGatewayRuntimeIdentityProvider 与 cloudDriveRepositoryProvider，并以本地 generation + identity 拒绝迟到结果"
+    },
+    {
+      "path": "lib/features/files/ai_files/sdk/cloud_drive_sdk.dart",
+      "reason": "确认 CloudDriveSdk/FilesystemCloudDriveSdk 可留在 Files data 边界，但 cloudDriveSdkProvider 直接从 App root 取得 FilesystemGateway；所有 gateway 方法尚未统一执行连接准备"
+    },
+    {
+      "path": "lib/features/files/ai_files/browser/data/filesystem_cloud_drive_repository.dart",
+      "reason": "确认 repository concrete 只是 SDK 委托，当前 Provider 通过 cloudDriveSdkProvider 隐式装配具体 gateway，适合改为 Feature fail-fast slot + App concrete builder"
+    },
+    {
+      "path": "lib/features/files/workspace/browser/data/gateway_workspace_browser_repository.dart",
+      "reason": "复用 WorkspaceGatewayPreparation 与 _afterPreparation 既有模式，把 connect/recovery 放在 DataSource 而非 Controller"
+    },
+    {
+      "path": "lib/app/composition/files_providers.dart",
+      "reason": "确认 Workspace concrete repository 已在 App 读取 ClawApi 并注入 preparation；该文件可同时承接 CloudDrive concrete repository、Gateway lease 与 Cloud runtime state 的 App 投影，不需反向 import composition root"
+    },
+    {
+      "path": "lib/app/composition/gateway_runtime_providers.dart",
+      "reason": "确认 ActiveGatewayRuntimeIdentity 含 GatewayOwner/stableId/isLocalTarget 且由 App Provider 缓存；FilesGatewayLease 应在 App builder 中从它投影，Feature 不读取该 App 类型"
+    },
+    {
+      "path": "lib/app/composition/cloud_files_providers.dart",
+      "reason": "确认 cloudFilesRuntimeProvider 输出 AsyncValue<CloudFilesAppRuntime?>；App 投影 Provider 可稳定映射为 FilesRuntimeState<CloudFilesFeatureRuntime>，不在 Files 页面解析 App AsyncValue"
+    },
+    {
+      "path": "lib/app/integrations/app_file_preview_launcher_provider.dart",
+      "reason": "确认 FilesDestination 之外的 Projects/attachment 预览也读取 CloudDrive repository；需改读 App concrete provider，避免依赖只在 Files 子 Scope 覆盖的 Feature slot"
+    },
+    {
+      "path": "test/app/app_composition_boundary_test.dart",
+      "reason": "确认 CFR clean 模式已精确列出 Files→App 的 6 条债务边，US-CFR-004 可先以 CFR_BOUNDARY_EXPECT_CLEAN=true 形成 Red 并最终将 known debt 清空"
+    },
+    {
+      "path": "test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart",
+      "reason": "确认已有 A→B、同 stableId generation、迟到结果、分页与动作 owner 回归；测试应改为只 override Feature lease/repository，不再启动 App Claw runtime"
+    },
+    {
+      "path": "test/features/files/presentation/files_page_integration_test.dart",
+      "reason": "确认页面已有目录、搜索、预览取消、owner 换代、AI/Workspace 菜单回归；Fake 装配应迁到 Feature runtime state/lease/repository slots"
+    },
+    {
+      "path": "test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart",
+      "reason": "确认 Workspace 页面当前通过 App provider override 注入 repository；应改用 Files Feature slot，锁定 Widget 测试无需 App composition"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/features/files/presentation/files_page.dart",
+        "purpose": "删除全部 app/** import；Cloud 页面/文件夹页改持有 CloudFilesFeatureRuntime 并 watch FilesRuntimeState slot；AI/Workspace 改持有 FilesGatewayLease；Workspace/附件/重试改读 Feature slots；现有 preview/download/share/upload constructor callbacks 改为 typed item + CloudFilesRuntimeIdentity/FilesGatewayLease，禁止传回 App runtime",
+        "layer": "Files presentation"
+      },
+      {
+        "path": "lib/features/files/ai_files/browser/application/cloud_browser_controller.dart",
+        "purpose": "State 与 stale fence 改用 FilesGatewayLease；Controller 只 watch/read Feature lease 与 CloudDriveRepository slot，删除 _ensureBusinessRpc 和 clawApiProvider；保留本地 generation、item identity、分页与错误提交规则",
+        "layer": "Files application"
+      },
+      {
+        "path": "lib/features/files/ai_files/sdk/cloud_drive_sdk.dart",
+        "purpose": "移除 Riverpod/App provider 装配；为 FilesystemCloudDriveSdk 注入 CloudDriveGatewayPreparation，并由所有 list/search/action gateway 调用统一先执行 preparation，失败直接返回 AppFailure",
+        "layer": "Files data gateway adapter"
+      },
+      {
+        "path": "lib/features/files/ai_files/browser/data/filesystem_cloud_drive_repository.dart",
+        "purpose": "移除从 cloudDriveSdkProvider 构造 concrete 的生产 Provider，使 concrete repository 保持纯委托；旧 cloudDriveRepositoryProvider 仅可作为同一 Feature slot 的兼容别名，不得再创建 gateway",
+        "layer": "Files data repository"
+      },
+      {
+        "path": "lib/app/composition/files_providers.dart",
+        "purpose": "新增 appCloudDriveRepositoryProvider、appFilesGatewayLeaseProvider 与 appFilesCloudRuntimeStateProvider；复用一个 App-private business-RPC preparation 为 CloudDrive SDK 与 Workspace DataSource 装配真实 ClawApi，投影只输出 Feature 类型",
+        "layer": "App concrete composition"
+      },
+      {
+        "path": "lib/app/integrations/files_destination.dart",
+        "purpose": "成为唯一生产注入点：在 FilesPage 外安装子 ProviderScope，覆盖 runtime state、gateway lease、CloudDrive/Workspace repository、附件能力与两类 retry slot；全部现有动作 callback 在 App 内按 expected CloudFilesRuntimeIdentity/FilesGatewayLease 前后复核当前 runtime，再调用既有 launcher/platform",
+        "layer": "App host adapter and route destination"
+      },
+      {
+        "path": "lib/app/integrations/app_file_preview_launcher_provider.dart",
+        "purpose": "非 Files 子树的 preview launcher 改读 appCloudDriveRepositoryProvider，避免依赖 FilesDestination 才会覆盖的 Feature dependency slot；不迁移 Projects 等调用方行为",
+        "layer": "App integration composition"
+      },
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "purpose": "将 Files feature 的 6 条 known debt 清空，并保留 clean-mode 静态探针证明 features/files/** 对 lib/app/** 为零",
+        "layer": "Static dependency boundary test"
+      },
+      {
+        "path": "test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart",
+        "purpose": "以可换代的 FilesGatewayLease test provider + Fake CloudDriveRepository 重写 owner 测试，继续锁定 A→B、同 stableId 新 generation、迟到响应、动作与分页，不再 import App root/runtime",
+        "layer": "Files application owner-fencing tests"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "purpose": "Fake CloudFilesFeatureRuntime、FilesRuntimeState、FilesGatewayLease 与 Feature repository slots 取代 App runtime/provider override；保留目录/搜索/取消/owner 换代/菜单既有断言",
+        "layer": "Files presentation integration regression"
+      },
+      {
+        "path": "test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart",
+        "purpose": "改用 Feature gateway lease/workspace repository slots，证明 Workspace 页面可脱离 App composition 测试且加载/搜索/取消行为不变",
+        "layer": "Files workspace presentation integration"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/files/files_dependency_scope.dart",
+        "reason": "集中定义 FilesRuntimeState<T>、FilesGatewayLease、Feature-owned runtime/lease/CloudDrive/Workspace/attachment/retry Provider slots；默认值只允许显式 unavailable/null/false 或 files_dependency_not_installed fail-fast",
+        "naming_basis": "技术方案 §4.2、§4.3、§5、§7.2 与 ADR-CFR-002 的 Feature dependency scope",
+        "layer": "Files feature contracts and dependency slots"
+      },
+      {
+        "path": "test/features/files/files_dependency_scope_test.dart",
+        "reason": "Red 锁定 state/lease schema、value equality/generation 和所有 slot 的 unavailable/fail-fast 默认，防止测试容器意外回退到 App 或 FakeClawApi",
+        "naming_basis": "AC-04 dependency slots 全覆盖与 files_dependency_not_installed 错误码",
+        "layer": "Files feature contract tests"
+      },
+      {
+        "path": "test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart",
+        "reason": "Red 锁定每类 gateway 调用先执行 injected preparation、准备失败短路为原 AppError，证明 Controller 删除 connect 后连接恢复仍在 DataSource",
+        "naming_basis": "CloudDriveSdk concrete adapter + AC-04 connection recovery",
+        "layer": "Files data gateway preparation tests"
+      },
+      {
+        "path": "test/app/files_destination_dependency_scope_test.dart",
+        "reason": "从真实 FilesDestination 路由入口取得其子 ProviderContainer，逐一读取全部 Feature slots 并验证 App runtime/lease/repository/附件投影与 retry override，防止只在测试 Fake 中闭合",
+        "naming_basis": "AC-04 FilesDestination 唯一生产注入点",
+        "layer": "App-to-Files production injection integration test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "App providers (CloudFilesAppRuntime, ActiveGatewayRuntimeIdentity, ClawApi, attachment capability) -> App concrete projections/builders -> FilesDestination child ProviderScope -> FilesRuntimeState<CloudFilesFeatureRuntime> / FilesGatewayLease / repository and retry slots -> FilesPage and controllers -> Files repository/data source; platform preview/download/upload launchers remain App-only and are reached through existing typed constructor callbacks",
+    "dependency_rule": "lib/features/files/** 可依赖 Flutter/Riverpod、Files contracts/domain/data 和稳定 lib/claw/api.dart 的 GatewayOwner/FilesystemGateway contract，但不得 import lib/app/** 或读取 App Provider。Feature dependency slots 的定义和默认 unavailable/fail-fast 在 Files；具体 ClawApi/CloudFilesAppRuntime/ActiveGatewayRuntimeIdentity/平台插件创建只在 App composition。FilesDestination 是生产唯一 override 点。Cloud callback 只传 CloudFilesRuntimeIdentity，AI/Workspace callback 只传 FilesGatewayLease；不得传 CloudFilesAppRuntime、ActiveGatewayRuntimeIdentity、Ref 或 Provider。本 Story保留既有 callback 注入 seam，正式聚合为 FilesHostActions typed port 属于 US-CFR-005。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test --dart-define=CFR_BOUNDARY_EXPECT_CLEAN=true test/app/app_composition_boundary_test.dart --plain-name 'Files feature does not gain untracked App imports'"
+      },
+      {
+        "path": "test/features/files/files_dependency_scope_test.dart",
+        "command": "flutter test test/features/files/files_dependency_scope_test.dart"
+      },
+      {
+        "path": "test/app/files_destination_dependency_scope_test.dart",
+        "command": "flutter test test/app/files_destination_dependency_scope_test.dart"
+      },
+      {
+        "path": "test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart",
+        "command": "flutter test test/features/files/ai_files/sdk/cloud_drive_sdk_test.dart"
+      },
+      {
+        "path": "test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart",
+        "command": "flutter test test/features/files/ai_files/browser/application/cloud_browser_runtime_owner_test.dart"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "command": "flutter test test/features/files/presentation/files_page_integration_test.dart"
+      },
+      {
+        "path": "test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart",
+        "command": "flutter test test/features/files/workspace/browser/presentation/workspace_browser_host_integration_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "子 ProviderScope 的 override value 若在 FilesDestination 任意 rebuild 时重新创建，会重建 Controller 并丢搜索/导航状态；App projection Provider 必须缓存 FilesRuntimeState 与 FilesGatewayLease，只有真实 runtime/owner generation 变化才换值",
+    "FilesGatewayLease 必须比较 GatewayOwner 全维度（含 generation）与 stableId/isLocalTarget，不能只比较 stableId；否则 A→B→A 或同设备凭据换代会接受旧结果",
+    "Controller 删除 _ensureBusinessRpc 前必须让 FilesystemCloudDriveSdk 的所有读写方法统一走 preparation；只覆盖 listFolder 会让搜索、分页或 action 离线失败路径回归",
+    "CloudFilesFeatureRuntime 不含 previewer/upload platform。Cloud/AI/Workspace 动作 callback 必须由 Feature 传 expected identity/lease，FilesDestination 执行前后读取并复核当前 App runtime；不得为兼容把 App runtime getter 加回 Feature",
+    "本 Story 只把现有 callback 签名变窄，不建立 FilesHostActions/FilePreviewPort 聚合接口；该正式 typed port、结果模型与预览/下载全链迁移留 US-CFR-005，避免两个 Story 重复改同一抽象",
+    "appFilePreviewLauncherProvider 位于 FilesDestination 外也被 Projects/attachment 使用，不能直接改读仅由 Files 子 Scope 覆盖的 slot；必须读 App concrete repository provider，非 Files 消费者的能力迁移仍留 US-CFR-006",
+    "Feature slot 默认不能创建 FakeClawApi 或返回假空数据；runtime/lease/capability 使用显式 unavailable，Repository 缺失以 files_dependency_not_installed fail-fast，生产入口测试逐槽证明 override",
+    "Workspace 现有 GatewayWorkspaceFilesystemDataSource preparation 与 Cloud 新 preparation 应共享相同 App-private连接判定，避免一次页面操作重复 connect 或 Controller/DataSource 双重连接",
+    "页面内部 folder route 与 preview cancellation 依赖 runtime/identity 换代关闭；把 App 类型换为 Feature 类型时必须保留关闭 signal、generation 和迟到结果不提交断言，不能只满足 import 静态测试",
+    "本 Story 不改 HTTP schema、签名、personal-cloud namespace、缓存/下载目录、平台插件、最低系统版本或用户文案；Android/iOS 真机矩阵仍在 Epic 里程碑统一执行"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

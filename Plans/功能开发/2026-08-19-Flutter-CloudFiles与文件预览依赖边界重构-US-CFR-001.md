@@ -2,13 +2,15 @@
 tags: [功能开发, 用户故事, TDD, Flutter, CloudFiles, 边界重构]
 type: plan
 category: 功能开发
-status: 进行中
+status: 已完成
 date: 2026-08-20
-lifecycle_state: implementation-design
+lifecycle_state: story-development
 parent: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
 story_id: US-CFR-001
 story_points: 5
-sprint_scope: true
+sprint_scope: false
+implementation_design: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.impl.json
+tdd_evidence: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.tdd.json
 ---
 
 # US-CFR-001：边界与行为不变量回归网（先红后绿基线）
@@ -41,12 +43,25 @@ sprint_scope: true
 - `lib/features/files/ai_files/browser/application/cloud_browser_controller.dart`、`lib/features/files/ai_files/sdk/cloud_drive_sdk.dart` import `app/composition_root.dart` 并读取 `clawApiProvider` / `ActiveGatewayRuntimeIdentity`。
 - `lib/app/composition/{files_providers,file_download_providers,cloud_files_providers,app_file_preview_providers}.dart` 反向 import `../composition_root.dart`。
 
-## 当前进度（2026-08-20）
+## 实际结果（2026-08-21）
 
 - 已完成前置事实盘点：确认现有 CloudFiles/Preview 生产链、owner 围栏与既有测试均作为绿基线保留。
 - 已确认两组待转绿的静态依赖：Feature → App 与 composition module → root。
-- 尚未创建 `implementation_design` JSON，尚未新增本 Story 的边界探针和生命周期回归；因此当前状态为“实现落点设计中”，不是 TDD 开发中或已完成。
-- 下一步只做落点设计：明确新增/复用的测试文件、源码扫描规则、已知 Red 表达方式和不变量绿基线，不修改生产代码。
+- 已完成 `implementation_design`：边界探针落在现有 App boundary test + `test/support`，生命周期分别落在 CloudFiles/Preview Provider 测试；既有 Files/owner 集成用例作为绿基线复用。
+- Red 表达固定为显式 `CFR_BOUNDARY_EXPECT_CLEAN=true` 命令；默认测试精确锁定并输出当前债务，避免把普通提交永久留红。
+- 严格 clean 模式真实 Red：退出码 1，输出 6 条 Files→App 与 8 条 composition→root 违规。
+- 默认债务快照、CloudFiles/Preview lifecycle 回归 `14/14 PASS`；owner fencing `1/1 PASS`；Files owner/preview smoke `3/3 PASS`。
+- scoped analyze、impact selector（`unresolved_impacts=[]`）、task-ID naming 与 diff check 通过；本 Story 只修改 `test/**`，生产代码未变。
+- Files 全文件额外运行时 56 个业务用例通过，唯一失败为既有 Figma Golden `0.11% / 327 px`，未更新基线。
+
+## 实现落点设计
+
+机器契约：`Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.impl.json`。
+
+- 新建 `test/support/source_import_boundary_probe.dart`，统一解析 package 与相对 import。
+- 修改 `test/app/app_composition_boundary_test.dart`，提供默认债务快照与显式 clean Red 两种运行模式。
+- 修改 CloudFiles/Preview Provider 测试，锁定同 owner 单实例、换代后旧 guard 失效及 ProviderContainer 生命周期。
+- 复用 Files 页面与 environment owner 既有回归，不复制大体量 Widget/网络 Fake。
 
 ## 架构引用
 
@@ -78,8 +93,101 @@ skill_run:
   revisit_needed: false
 ```
 
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.impl.json
+      utility: high
+      reason: "按已确认的 test-only 落点实现显式 Red、默认债务快照与 Provider 生命周期回归，没有提前修改生产依赖"
+    - path: Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "用 ADR-CFR-001 和 owner/lifecycle NFR 校准静态边界与换代验收语义"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "将 Red/Green/Refactor/Smoke 和已知 Golden 缺口写入可聚合反馈"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  friction: "并发 Flutter 命令会争用 iOS ephemeral；后续同工作树 Flutter 工具调用应串行"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: implementation-design-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "按 ADR-CFR-001、依赖可维护性、owner 并发和 Provider 生命周期约束确定测试落点与依赖方向"
+    - path: Plans/需求分析/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "以 AC-06/AC-08 和无产品行为变化边界锁定 Red 探针与绿基线"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "确认 US-CFR-001 是当前唯一滚动 Scope，后续 Runtime 拆分与消费者迁移不得提前进入"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按 implementation-design 阶段协议记录可聚合的 plan 反馈"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  friction: "内部 Dio/平台无测试 factory，落点以 Provider 可观察生命周期 + onDispose 配对静态证据锁定基线，不改生产装配"
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: resume-assistant
+  workflow_stage: implementation-design
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/Epic/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "回放最新 lifecycle 与滚动 Story，纠正旧线程停点并确认当前应完成 US-CFR-001 落点设计"
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "确认 7 Story 已拆分、当前 Scope 仅 US-CFR-001，并在落点门禁通过后推进到 story-development"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "按续作协议记录本次回放、阶段推进和下一继续点"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
+```yaml
+skill_run:
+  skill: feature-dev-assistant
+  workflow_stage: story-development
+  plan: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.md
+  date: 2026-08-21
+  contexts_used:
+    - path: Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构-US-CFR-001.impl.json
+      utility: high
+      reason: "按确认落点完成 test-only Red、Green、Refactor 与 integration smoke"
+    - path: Plans/技术方案/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md
+      utility: high
+      reason: "保持 Provider graph、owner 围栏和平台预览生产行为不变"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "将当前 Story 完成反馈置于历史小票之后，供 story-development 门禁读取"
+  contexts_missing: []
+  contexts_stale: []
+  outcome_status: pass
+  revisit_needed: false
+```
+
 ## 续做
 
 ```text
-/resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=implementation-design US-CFR-001
+/resume plan=Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=implementation-design US-CFR-002
 ```

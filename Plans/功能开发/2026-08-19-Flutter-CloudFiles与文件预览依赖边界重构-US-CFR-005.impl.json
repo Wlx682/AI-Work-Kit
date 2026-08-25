@@ -1,0 +1,229 @@
+{
+  "story_id": "US-CFR-005",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/namiwork-flutter",
+  "codebase_read": [
+    {
+      "path": "lib/app/integrations/app_file_preview_coordinator.dart",
+      "reason": "1679 行文件承载 preview source 加载、renderer 选择、取消、缓存与 presentation model，属 FilePreview application 而非 App 装配"
+    },
+    {
+      "path": "lib/app/integrations/app_file_preview_launcher.dart",
+      "reason": "确认路由打开与多源 source 适配与 UI 绑定混在 App，且直接依赖 ActiveGatewayRuntimeIdentity/CloudFilesAppRuntime/AppFileDownloadLauncher，是本 Story 去 App 类型的主攻点"
+    },
+    {
+      "path": "lib/app/integrations/app_file_preview_source.dart",
+      "reason": "确认 typed source/owner/kind 是预览领域契约，不应位于 app/integrations"
+    },
+    {
+      "path": "lib/app/integrations/app_file_preview_session_contract.dart",
+      "reason": "确认预览 session/result/registry contract 是 Feature 内部契约，与 App shell 无关"
+    },
+    {
+      "path": "lib/app/integrations/app_file_image_preview_page.dart",
+      "reason": "代表性复核图片页只依赖 Flutter、core image pipeline、l10n 与 preview model，应归 FilePreview presentation"
+    },
+    {
+      "path": "lib/app/integrations/app_file_cloud_file_markdown_repository.dart",
+      "reason": "802 行文件是 Markdown 读写、草稿与 owner cancellation 的 data repository，不是 App integration"
+    },
+    {
+      "path": "lib/app/integrations/app_file_download_launcher.dart",
+      "reason": "确认下载/分享编排已依赖 Files download domain/application，只因 ActiveGatewayRuntimeIdentity 暂留 App；改用 FilesGatewayLease 后可归位 Files"
+    },
+    {
+      "path": "lib/app/integrations/app_cloud_file_upload_launcher.dart",
+      "reason": "确认上传 picker/launcher 只依赖 Flutter services 与 nami_cloud_upload，可归位 Files upload infrastructure"
+    },
+    {
+      "path": "lib/app/composition/app_file_preview_providers.dart",
+      "reason": "确认 App Provider 作为生产绑定点应保留，但 builder 对象与插件适配类改从 Feature 导入"
+    },
+    {
+      "path": "lib/app/integrations/files_destination.dart",
+      "reason": "确认 App 路由入口仍负责 ProviderScope/identity 前后复核，但不再持有 preview/download/upload 实现文件"
+    },
+    {
+      "path": "lib/features/files/files_dependency_scope.dart",
+      "reason": "复用已有 FilesGatewayLease 与 CloudFilesRuntimeIdentity，替换 preview/transfer 链中 App 的 ActiveGatewayRuntimeIdentity"
+    },
+    {
+      "path": "test/app/app_composition_boundary_test.dart",
+      "reason": "复用 SourceImportBoundaryProbe 新增 file_preview/files transfer 对 App 零 import 与 app/integrations 职责白名单 Red"
+    },
+    {
+      "path": "test/app/integrations/app_file_preview_coordinator_test.dart",
+      "reason": "保留 coordinator 现有取消、owner、renderer、失败恢复回归，迁移后改为 Feature 测试路径/导入"
+    }
+  ],
+  "target_files": {
+    "modify": [
+      {
+        "path": "lib/app/integrations/app_file_preview_launcher.dart",
+        "purpose": "迁移为 features/file_preview/presentation/file_preview_launcher.dart；去除 ActiveGatewayRuntimeIdentity、CloudFilesAppRuntime 和 AppFileDownloadLauncher 依赖，改用 FilesGatewayLease、CloudFilePreviewBinding 和 Feature transfer launcher",
+        "layer": "FilePreview presentation/application adapter"
+      },
+      {
+        "path": "lib/app/integrations/app_file_preview_coordinator.dart",
+        "purpose": "迁移为 features/file_preview/application/file_preview_coordinator.dart，保留 renderer、owner、取消、缓存和降级语义",
+        "layer": "FilePreview application"
+      },
+      {
+        "path": "lib/app/integrations/app_file_preview_source.dart",
+        "purpose": "迁移为 Feature domain typed source，不引用 App 类型",
+        "layer": "FilePreview domain"
+      },
+      {
+        "path": "lib/app/integrations/app_file_preview_session_contract.dart",
+        "purpose": "迁移为 Feature domain session/result contract",
+        "layer": "FilePreview domain"
+      },
+      {
+        "path": "lib/app/integrations/app_file_cloud_file_markdown_repository.dart",
+        "purpose": "迁移到 FilePreview data，保留 CloudFileClient、草稿、owner fence 和持久化语义",
+        "layer": "FilePreview data"
+      },
+      {
+        "path": "lib/app/integrations/app_file_download_launcher.dart",
+        "purpose": "迁移到 features/files/download/application，Gateway 身份改用 FilesGatewayLease，不依赖 App root",
+        "layer": "Files transfer application"
+      },
+      {
+        "path": "lib/app/integrations/app_cloud_file_upload_launcher.dart",
+        "purpose": "迁移到 features/files/upload/infrastructure，保留 picker/plugin 适配和安全日志",
+        "layer": "Files upload infrastructure"
+      },
+      {
+        "path": "lib/app/composition/app_file_preview_providers.dart",
+        "purpose": "保留 App 生产装配，改为从 FilePreview/Files Feature 导入 concrete；Provider 只绑定 owner/directory/plugin capability",
+        "layer": "App composition"
+      },
+      {
+        "path": "lib/app/composition/file_download_providers.dart",
+        "purpose": "保留 App 生产 Provider，改为创建 Files transfer Feature 的 launcher/runtime binding",
+        "layer": "App composition"
+      },
+      {
+        "path": "lib/app/composition/cloud_files_providers.dart",
+        "purpose": "从 Feature 导入 preview coordinator/cache/plugin adapter，CloudFilesAppRuntime 只持有可投影的 preview binding",
+        "layer": "App composition"
+      },
+      {
+        "path": "lib/app/cloud_files_runtime.dart",
+        "purpose": "preview coordinator 类型改从 FilePreview Feature 导入；App runtime 不被 Feature 反向引用",
+        "layer": "App-private runtime"
+      },
+      {
+        "path": "lib/app/integrations/files_destination.dart",
+        "purpose": "保留路由、ProviderScope 和 identity 双检，改读 App composition Provider 产出的 Feature launcher/binding，删除 concrete plugin import",
+        "layer": "App route host"
+      },
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "purpose": "增加 FilePreview/Files transfer 零 App import 与 app/integrations 只留路由/装配适配的边界规则",
+        "layer": "Static architecture regression"
+      }
+    ],
+    "create": [
+      {
+        "path": "lib/features/file_preview/domain/file_preview_binding.dart",
+        "reason": "定义 Cloud/Gateway 预览所需的无 App 类型 binding，只含 owner/identity、窄 client/port 和有效性检查",
+        "naming_basis": "ADR-CFR-004/008 的 typed binding 与 FilePreview Feature 边界",
+        "layer": "FilePreview domain/application contract"
+      },
+      {
+        "path": "lib/features/file_preview/application/file_preview_coordinator.dart",
+        "reason": "承接现 AppFilePreviewCoordinator 的业务编排",
+        "naming_basis": "Feature application 按职责命名，不使用 App 路径",
+        "layer": "FilePreview application"
+      },
+      {
+        "path": "lib/features/file_preview/presentation/file_preview_launcher.dart",
+        "reason": "承接多源 typed intent 到 Flutter 路由/页面的转换",
+        "naming_basis": "FilePreview presentation 入口",
+        "layer": "FilePreview presentation"
+      },
+      {
+        "path": "lib/features/file_preview/presentation/file_image_preview_page.dart",
+        "reason": "图片预览 UI 归位 Feature；其他 HTML/Markdown/Media/PPTX/EPUB/Source 页按同样分层迁移",
+        "naming_basis": "FilePreview presentation renderer pages",
+        "layer": "FilePreview presentation"
+      },
+      {
+        "path": "lib/features/file_preview/data/io_file_preview_cache.dart",
+        "reason": "预览 artifact cache 与 owner fence 归 FilePreview data",
+        "naming_basis": "Feature data concrete 以实现类型命名",
+        "layer": "FilePreview data"
+      },
+      {
+        "path": "lib/features/file_preview/infrastructure/document_preview_platform_adapter.dart",
+        "reason": "统一放置 nami_document_preview/nami_media_playback/nami_secure_webview/nami_cloud_download 等 Flutter 插件适配",
+        "naming_basis": "ADR-CFR-008 Feature infrastructure 容纳插件依赖",
+        "layer": "FilePreview infrastructure"
+      },
+      {
+        "path": "lib/features/files/download/application/file_download_launcher.dart",
+        "reason": "下载/分享编排归 Files transfer，依赖 FilesGatewayLease 而非 App identity",
+        "naming_basis": "既有 features/files/download 纵切",
+        "layer": "Files download application"
+      },
+      {
+        "path": "lib/features/files/upload/infrastructure/cloud_file_upload_launcher.dart",
+        "reason": "上传 picker/plugin adapter 归 Files upload Feature",
+        "naming_basis": "Files upload infrastructure",
+        "layer": "Files upload infrastructure"
+      },
+      {
+        "path": "test/app/file_preview_feature_boundary_test.dart",
+        "reason": "Red 锁定 app/integrations 不再存放 preview UI/application/data，且 features/file_preview 与 features/files transfer 不得 import lib/app",
+        "naming_basis": "AC-05 + ADR-CFR-008 静态边界",
+        "layer": "Architecture boundary test"
+      },
+      {
+        "path": "test/features/file_preview/application/file_preview_coordinator_test.dart",
+        "reason": "迁移原 coordinator 回归到 Feature 测试语义，保留 owner/cancellation/renderer 断言",
+        "naming_basis": "FilePreview application focused tests",
+        "layer": "FilePreview application test"
+      }
+    ]
+  },
+  "module_boundary": {
+    "layer": "App composition/navigation -> FilePreview and Files typed ports/bindings -> FilePreview presentation/application/data/infrastructure and Files transfer application/infrastructure -> core/domain/plugin packages. Native code remains inside plugin packages.",
+    "dependency_rule": "lib/features/file_preview/** 和 lib/features/files/** 不得 import lib/app/**。App Provider 可创建 Feature concrete 并注入 owner/directory/client capability，但 FilesDestination 只负责路由、Scope 和 identity 前后复核。FilePreview presentation/application 不接收 CloudFilesAppRuntime、ActiveGatewayRuntimeIdentity、Ref 或 Provider；Gateway 使用 FilesGatewayLease，Cloud 使用 Feature-owned CloudFilePreviewBinding。"
+  },
+  "tests": {
+    "red": [
+      {
+        "path": "test/app/file_preview_feature_boundary_test.dart",
+        "command": "flutter test test/app/file_preview_feature_boundary_test.dart"
+      },
+      {
+        "path": "test/app/app_composition_boundary_test.dart",
+        "command": "flutter test test/app/app_composition_boundary_test.dart"
+      },
+      {
+        "path": "test/app/integrations/app_file_preview_coordinator_test.dart",
+        "command": "flutter test test/app/integrations/app_file_preview_coordinator_test.dart test/app/integrations/app_file_preview_pages_test.dart test/app/integrations/app_file_preview_source_test.dart"
+      },
+      {
+        "path": "test/app/app_file_preview_runtime_provider_test.dart",
+        "command": "flutter test test/app/app_file_preview_runtime_provider_test.dart test/app/app_file_preview_main_boundary_test.dart"
+      },
+      {
+        "path": "test/features/files/presentation/files_page_integration_test.dart",
+        "command": "flutter test test/features/files/presentation/files_page_integration_test.dart"
+      }
+    ]
+  },
+  "risks": [
+    "只移目录但 launcher 仍 import CloudFilesAppRuntime/ActiveGatewayRuntimeIdentity 会把 Feature→App 反向依赖搬到新位置；必须先建 typed binding/lease",
+    "FilePreview 依赖 Files 的 item/domain 类型时，Files presentation 不应反向 import FilePreview；Files 继续使用自有 callback/port，由 App composition 绑定以避免 Feature 循环",
+    "插件适配迁移不得改变 iOS QuickLook、Android OpenFilex、PPTX/EPUB/Media/WebView capability 选择和 fallback reason code",
+    "迁移 preview cache/progress/markdown repository 时不得更改目录名、key、draft 格式或 personal-cloud namespace",
+    "AppFileDownloadLauncher 改用 FilesGatewayLease 必须比较 GatewayOwner 全字段 + stableId/isLocalTarget，不得只比较 stableId",
+    "工作树包含 US-CFR-001～004 累计改动；移动文件时保留现有未提交内容，禁止覆盖/清理",
+    "完整 Android/iOS 插件真机矩阵在 Epic 里程碑执行；本 Story 至少需已连接 iPhone 启动和预览聚焦回归"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

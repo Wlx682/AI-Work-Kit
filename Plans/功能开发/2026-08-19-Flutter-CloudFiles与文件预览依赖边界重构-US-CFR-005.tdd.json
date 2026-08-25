@@ -1,0 +1,73 @@
+{
+  "story_id": "US-CFR-005",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test test/app/file_preview_feature_boundary_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T17:05:12+08:00",
+    "reason": "新增归位边界测试精确列出 lib/app/integrations 下 27 个预览 UI/application/data/plugin adapter 与文件传输实现；Feature→App import 子用例已为绿，失败仅来自尚未迁移的生产实现。"
+  },
+  "green": {
+    "command": "flutter test test/app/file_preview_feature_boundary_test.dart test/tool/dual_platform_device_regression_test.dart test/app/app_composition_boundary_test.dart test/app/app_file_preview_main_boundary_test.dart test/app/app_file_preview_runtime_provider_test.dart test/features/files/presentation/files_page_integration_test.dart && flutter test <23 preview/transfer/runtime/owner focused targets>",
+    "exit_code": 0,
+    "at": "2026-08-21T17:18:00+08:00",
+    "evidence": "两轮最终定向回归 113/113 与 120/120 PASS。27 个实现从 App 归位 features/file_preview 或 features/files；Files、Projects、Attachment 继续通过 App composition 注入无凭据 CloudFilePreviewBinding / FilesGatewayLease。"
+  },
+  "refactor": {
+    "command": "dart format <57 affected Dart paths> && flutter analyze lib/features/file_preview lib/features/files/download/application/file_download_launcher.dart lib/features/files/download/data/file_download_artifact_stager.dart lib/features/files/upload <affected App composition/route and integration targets> && git diff --check && python3 scripts/validate-task-id-naming.py",
+    "exit_code": 0,
+    "at": "2026-08-21T17:16:00+08:00",
+    "evidence": "57 个受影响 Dart 路径格式化；14 项生产/集成范围 analyze No issues found；diff check 与 task-ID naming PASS。当前标准 registry 与 integration target 已更新到 Feature 路径。"
+  },
+  "integration_smoke": {
+    "command": "flutter run active iPhone session: hot restart (R)",
+    "exit_code": 0,
+    "at": "2026-08-21T17:19:12+08:00",
+    "evidence": "连接 iPhone 上热重启成功（6.740s），composition_root、authenticated recovery、Gateway websocket 均 success，home_first_frame=1800ms；无迁移编译或启动错误。"
+  },
+  "additional_runs": [
+    {
+      "command": "python3 scripts/select-impacted-tests.py --base-ref HEAD",
+      "exit_code": 0,
+      "at": "2026-08-21T17:16:00+08:00",
+      "evidence": "selector 正确选中下载、Claw 真网络、Projects 与支付围栏；新 Feature 目录显示 unresolved，已由 233 项最终定向回归、scoped analyze、边界扫描和 iPhone 启动人工闭合。"
+    },
+    {
+      "command": "python3 scripts/validate-client-dev.py story-development --plan Plans/功能开发/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md --story-id US-CFR-005",
+      "exit_code": 0,
+      "at": "2026-08-21T17:24:00+08:00",
+      "evidence": "OK:client-dev:story-development；验收后滚动 Scope 已切到 US-CFR-006 implementation-design。"
+    },
+    {
+      "command": "Android Phone/Pad/Fold and iPhone/iPad full device regression matrix",
+      "exit_code": -1,
+      "at": "2026-08-21T17:19:12+08:00",
+      "evidence": "NOT_RUN：本 Story 已完成连接 iPhone 启动 smoke；完整双平台形态矩阵留 Epic 里程碑执行。"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-05",
+      "pass": true,
+      "evidence": "FilePreview 的 domain/application/data/infrastructure/presentation 全部位于 lib/features/file_preview；下载/上传实现位于 lib/features/files；App 仅保留 composition/navigation 与 typed binding，边界测试 2/2 PASS。"
+    },
+    {
+      "ac_id": "AC-07",
+      "pass": true,
+      "evidence": "预览规划、缓存、EPUB、HTML/Markdown/image/media/PPTX、系统打开、上传下载、取消与 owner 换代回归全绿；未改 HTTP/签名、personal-cloud namespace、持久化格式、UI/文案。"
+    }
+  ],
+  "regression_guards": [
+    "features/file_preview、features/files/download 与 features/files/upload 禁止 import lib/app",
+    "lib/app/integrations 禁止重新承载预览页面、协调器、缓存、进度 Repository 或文件传输插件实现",
+    "CloudFilePreviewBinding 只投影 client、owner、previewer、coordinator 与 current-owner guard，不暴露 App Runtime、Ref、Provider 或凭据",
+    "FilesGatewayLease 比较 target、environment/account/workspace/session 与 generation，旧 owner 异步结果不得借新 owner 续跑",
+    "设备回归 registry 与 integration targets 以 features/file_preview 生产路径为事实源"
+  ],
+  "limitations": [
+    "Projects 专属下载 route/provider 仍位于 App integrations，属于 US-CFR-006 的剩余生产消费者收口，不是 FilePreview 实现",
+    "部分公开类型仍保留 AppFile* 兼容名称以减少同批迁移风险，命名兼容面随 US-CFR-006/007 收窄",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 完整真机矩阵未运行，标记 NOT_RUN"
+  ]
+}

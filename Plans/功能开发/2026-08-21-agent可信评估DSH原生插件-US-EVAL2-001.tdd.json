@@ -1,0 +1,32 @@
+{
+  "story_id": "US-EVAL2-001",
+  "commit": "worktree@e99d926458ca7cbf8e739aef2ed3524ce0219d13",
+  "red": {
+    "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/verdict.spec.ts plugins/evaluation/test/evaluation.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-21T11:51:05+08:00",
+    "reason": "evaluation-domain 与 plugin-evaluation 尚不存在，测试仅因目标功能模块缺失而失败"
+  },
+  "green": {
+    "command": "corepack pnpm@11.7.0 vitest run packages/evaluation-domain/test/verdict.spec.ts plugins/evaluation/test/evaluation.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-21T11:55:26+08:00"
+  },
+  "refactor": {
+    "command": "corepack pnpm@11.7.0 test",
+    "exit_code": 0,
+    "at": "2026-08-21T12:09:36+08:00"
+  },
+  "integration_smoke": {
+    "command": "corepack pnpm@11.7.0 vitest run tests/integration/dsh-plugin-bundle.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-21T12:03:52+08:00"
+  },
+  "acceptance": [
+    {"ac_id": "AC-01", "pass": true},
+    {"ac_id": "AC-02", "pass": true},
+    {"ac_id": "AC-03", "pass": true},
+    {"ac_id": "AC-04", "pass": true},
+    {"ac_id": "AC-05", "pass": true}
+  ]
+}

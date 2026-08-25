@@ -19,10 +19,10 @@ repo: namiwork-flutter
 
 本轮是一次**不改变产品行为的架构重构**：保留 CloudFiles、Workspace 文件浏览、上传下载与系统文件预览的现有生产能力，只修正依赖方向、运行时职责和 Provider 装配边界。
 
-1. 具体生产依赖仍由 App composition 创建和持有；不把鉴权、签名、网络客户端、平台预览下沉到 Feature。
+1. 具体生产对象由 App composition 创建和绑定；预览 UI、协调逻辑与 Flutter 插件适配归独立 `features/file_preview` 分层，鉴权/签名凭据不进入 Presentation/Domain。
 2. `lib/features/files/**` 不再导入 `lib/app/**`，Files 页面只依赖 Feature 自己的窄接口、仓库和状态对象。
 3. 当前 `CloudFilesRuntime` 拆分为 App 内部运行时与 Feature 可见能力投影；暂定 `CloudFilesAppRuntime` 与 `CloudFilesFeatureRuntime`。
-4. `FilesDestination` 作为 App host 读取 Provider，并向 Feature 注入窄依赖；预览通过 `FilePreviewPort` 或等价类型化接口注入。
+4. `FilesDestination` 作为 App host 读取 Provider，并向 Files 注入窄依赖；具体预览能力由 `features/file_preview` 实现，App 只经 `FilePreviewPort` 或等价类型化接口完成绑定。
 5. `lib/app/composition/**` 不得反向导入 `composition_root.dart`；共享前置依赖进入无反向依赖的叶子装配模块。
 6. owner identity、generation/lease、迟到结果隔离、缓存 namespace、协议、签名、持久化格式及 UI 均保持不变。
 
@@ -127,7 +127,7 @@ Files Feature（页面、ViewModel、Feature contract）
 | 热点 | 风险 | 裁决 |
 |---|---|---|
 | Runtime 粒度 | 参数爆炸或继续泄漏 App 细节 | Feature 对象只聚合领域 Repository、owner lease 与必要 capability |
-| Preview 所属层 | 搬到 Feature 会复制下载/缓存/平台能力 | 具体实现留 App，Feature 只依赖 `FilePreviewPort` |
+| Preview 所属层 | App 变成跨 Feature 实现仓库 | 独立 `file_preview` Feature 持有 UI/application/infrastructure，App 只装配 |
 | Provider 生命周期 | 拆模块后重复创建 client/coordinator | 生命周期与当前 ProviderContainer 一致，并增加 identity/dispose 测试 |
 | Projects 消费旧 Runtime | 只迁 Files 会残留大对象依赖 | 架构影响矩阵列全生产消费者与迁移顺序 |
 | 文档规则歧义 | “由 Composition Root 注册”被理解成写进根文件 | 改为“对应 App composition 模块装配，root 只汇聚/暴露” |
@@ -287,7 +287,7 @@ flowchart TD
 | AC-02 | composition 子模块不反向依赖聚合根 | 自动边界测试 |
 | AC-03 | App runtime 与 Feature 投影职责分离 | 类型字段审查 + 单测 |
 | AC-04 | Files 入口由 Host 注入窄依赖 | 生产调用链/Widget 测试 |
-| AC-05 | 预览实现留 App，Feature 通过 port | contract + adapter 定向测试 |
+| AC-05 | 预览 UI、编排与插件适配归 `features/file_preview`，App 只经 port/provider 装配 | contract + adapter + 边界定向测试 |
 | AC-06 | owner 切换与迟到结果隔离有效 | 目录加载与预览 fencing 回归 |
 | AC-07 | 协议、签名、缓存 namespace、持久化和 UI 不变 | diff 审查 + focused regression |
 | AC-08 | Provider 生命周期无重复创建/释放 | ProviderContainer lifecycle 测试 |

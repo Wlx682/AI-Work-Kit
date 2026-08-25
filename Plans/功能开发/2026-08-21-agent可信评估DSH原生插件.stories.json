@@ -1,0 +1,48 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户于 2026-08-21 确认 Evaluation 依赖四个控制插件并要求开发",
+  "confirmed_at": "2026-08-21",
+  "epic_scope": ["US-EVAL2-001", "US-EVAL2-002", "US-EVAL2-003"],
+  "current_implementation_scope": [],
+  "stories": [
+    {
+      "id": "US-EVAL2-001",
+      "title": "对四插件控制链运行生成不可变四态报告",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-21-agent可信评估DSH原生插件-US-EVAL2-001.md",
+      "story_points": 8,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC-01", "AC-02", "AC-03", "AC-04", "AC-05"],
+      "architecture_refs": ["Plans/技术方案/2026-08-21-agent可信评估DSH原生插件架构-v0.2.md#四模块边界"]
+    },
+    {
+      "id": "US-EVAL2-002",
+      "title": "在 DSH Web 设置中查看可信评估与四源证据",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-21-agent可信评估DSH原生插件-US-EVAL2-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-EVAL2-001"],
+      "acceptance_criteria": ["AC-06", "AC-07", "AC-08"],
+      "architecture_refs": ["Plans/技术方案/2026-08-21-agent可信评估DSH原生插件架构-v0.2.md#十一Web-UI-落点"]
+    },
+    {
+      "id": "US-EVAL2-003",
+      "title": "用参考负对照人工复核和指纹完成 Case 资格化",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-21-agent可信评估DSH原生插件-US-EVAL2-003.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": ["US-EVAL2-001"],
+      "acceptance_criteria": ["AC-09", "AC-10", "AC-11", "AC-12"],
+      "architecture_refs": ["Plans/技术方案/2026-08-21-agent可信评估DSH原生插件架构-v0.2.md#八状态机"]
+    }
+  ]
+}

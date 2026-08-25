@@ -1,0 +1,66 @@
+{
+  "story_id": "US-CFR-003",
+  "commit": "working-tree@a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "base_commit": "a77bf828a587c882c3376aa73d3ccba8138f3c87",
+  "red": {
+    "command": "flutter test test/features/files/cloud_files_feature_runtime_test.dart && flutter test test/app/cloud_files_runtime_provider_test.dart",
+    "exit_code": 1,
+    "at": "2026-08-21T14:53:00+08:00",
+    "reason": "两条 Red 均在编译阶段失败：缺少 lib/features/files/cloud_files_feature_runtime.dart、CloudFilesRuntimeIdentity、CloudFilesFeatureRuntime、CloudFilesAppRuntime.featureRuntime 与 isCurrentOwner；修正 Red 脚手的非 const AuthSession 参数后复跑，无其他测试或环境错误"
+  },
+  "green": {
+    "command": "flutter test test/features/files/cloud_files_feature_runtime_test.dart test/app/cloud_files_runtime_provider_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T14:57:00+08:00",
+    "evidence": "9/9 PASS；Feature Runtime 字段/依赖边界 2/2，CloudFiles App Runtime 生产投影、同 owner 单实例/单释放、Android/iOS/非移动平台和 metadata fail-closed 7/7"
+  },
+  "refactor": {
+    "command": "dart format lib/features/files/cloud_files_feature_runtime.dart lib/app/cloud_files_runtime.dart lib/app/composition/cloud_files_providers.dart test/features/files/cloud_files_feature_runtime_test.dart test/app/cloud_files_runtime_provider_test.dart && flutter analyze lib/features/files/cloud_files_feature_runtime.dart lib/app/cloud_files_runtime.dart lib/app/composition/cloud_files_providers.dart test/features/files/cloud_files_feature_runtime_test.dart test/app/cloud_files_runtime_provider_test.dart && flutter test test/features/files/cloud_files_feature_runtime_test.dart test/app/cloud_files_runtime_provider_test.dart",
+    "exit_code": 0,
+    "at": "2026-08-21T15:00:00+08:00",
+    "evidence": "5 个 US-CFR-003 Dart 路径已格式化，scoped analyze No issues found，9/9 重跑保持全绿；字段边界测试同时禁止外部 package import、App/Core import 和网络/鉴权/平台/Riverpod 类型 token"
+  },
+  "integration_smoke": {
+    "command": "flutter test test/features/claw_discovery/claw_environment_owner_integration_test.dart --plain-name '生产 owner 租约在 App owner 值不变但凭据换代时失效' && flutter test test/features/files/presentation/files_page_integration_test.dart --plain-name '根页预览中 runtime owner 换代安全取消并恢复新 owner' && flutter test test/features/files/presentation/files_page_integration_test.dart --plain-name '云盘文件目录在 runtime owner 换代时立即关闭' && flutter test test/app/app_composition_boundary_test.dart && python3 scripts/validate-task-id-naming.py && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-21T15:02:00+08:00",
+    "evidence": "凭据 A→B→A owner fence 1/1、Files 旧预览取消/新 owner 恢复 1/1、目录 owner 换代关闭 1/1、App 边界 5/5 PASS；旧 CloudFilesRuntime 类型别名/兼容构造使未迁移 Files 消费者保持可编译与行为不变，task-ID naming 与 diff check PASS"
+  },
+  "additional_runs": [
+    {
+      "command": "python3 scripts/select-impacted-tests.py --base-ref HEAD",
+      "exit_code": 0,
+      "at": "2026-08-21T15:01:00+08:00",
+      "evidence": "selector 由当前整个未提交工作树选中真网络、下载和支付围栏，仅 unresolved lib/features/files/cloud_files_feature_runtime.dart；该新文件已人工归类到 Files Feature contract，由新增专用字段/import 测试及两个 Files owner smoke 覆盖"
+    },
+    {
+      "command": "integration_test/claw_network_device_regression_test.dart and integration_test/membership_payment_readiness_device_regression_test.dart",
+      "exit_code": -1,
+      "at": "2026-08-21T15:02:00+08:00",
+      "evidence": "NOT_RUN：真网络/支付 Android+iOS 设备围栏由当前累积工作树的 App composition/root 路径触发；US-CFR-003 未改 HTTP/签名/支付/原生插件，按仓库规范留待功能链路里程碑设备矩阵"
+    }
+  ],
+  "acceptance": [
+    {
+      "ac_id": "AC-03",
+      "pass": true,
+      "evidence": "CloudFilesFeatureRuntime 仅有 identity、browser/folder/move/rename/deletion owners 与对应 repository contracts；专用测试证明零 App/Core/外部 package import，且不含 CloudFileClient、SignedHttpClient、AuthSession、upload/download platform、AppFilePreviewCoordinator、CloudFilePreviewer、Ref/WidgetRef/Provider"
+    },
+    {
+      "ac_id": "AC-06",
+      "pass": true,
+      "evidence": "CloudFilesAppRuntime 持有原 isCurrentSnapshot closure，当 session generation 换代后旧 runtime guard 立即 false；生产 owner 凭据换代、Files 预览取消/恢复与目录关闭 smoke 均通过"
+    }
+  ],
+  "regression_guards": [
+    "CloudFilesFeatureRuntime 源码 import 只允许 cloud_file domain contracts，禁止类型 token 清单锁定 AC-03 边界",
+    "生产 Provider 先显式构造唯一 FeatureRuntime 再注入 AppRuntime，不新增 Provider、Dio、平台实例或 dispose hook",
+    "CloudFilesRuntime 是 CloudFilesAppRuntime 的 App 侧过渡别名，现有 Files/Main/Projects 类型标注与 Fake 构造不在本 Story 跨 Scope 迁移",
+    "identity 仅投影 environment/provider/stableId/generation，不暴露 AuthSession/token/signing 材料，现有 domain owner equality/hashCode 不变"
+  ],
+  "limitations": [
+    "Files 页面仍 import App Runtime/Provider，由 US-CFR-004 迁移为 Host 注入窄依赖；不伪报 Feature→App 全部归零",
+    "CloudFilesRuntime 过渡别名及 App 侧上传/预览兼容 getter 仍存在，由 US-CFR-005/006 删除",
+    "Android Phone/Pad/Fold 与 iPhone/iPad 真网络/支付设备围栏未运行，标记 NOT_RUN，留待本 Epic 里程碑矩阵"
+  ]
+}
