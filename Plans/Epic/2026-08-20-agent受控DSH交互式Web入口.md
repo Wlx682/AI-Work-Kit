@@ -2,7 +2,7 @@
 tags: [Epic, client-dev, DSH, Controlled, Web]
 type: plan
 category: Epic
-status: 已完成
+status: 已归档
 date: 2026-08-20
 epic_id: agent-controlled-dsh-web
 workflow: client-dev
@@ -114,3 +114,9 @@ skill_run:
   outcome_status: pass
   revisit_needed: false
 ```
+
+## 四、变更日志
+
+| 日期 | 变更类型 | 影响阶段 | 重开切片 | 确认人 | 说明 |
+|------|----------|----------|----------|--------|------|
+| 2026-08-25 | 归档 | — | — | web | status → 已归档 |

@@ -1,0 +1,37 @@
+{
+  "story_id": "US-CL-002",
+  "story_points": 5,
+  "commit": "802186d7b953104c19af2f022683e437015b39d2",
+  "red": {
+    "command": "npm test -- --run tests/projection.spec.ts && npm test -- --run tests/service.spec.ts && npm test -- --run tests/client-export.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-28T18:54:46+08:00",
+    "reason": "projection/service 只因 throughSequence 尚未实现而返回边界后事件；client suite 只因 src/client/export.ts 尚不存在而失败"
+  },
+  "green": {
+    "command": "npm test -- --run tests/projection.spec.ts tests/service.spec.ts tests/client-export.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-28T18:55:40+08:00",
+    "result": "3 files / 28 tests 通过；固定上界、250 条分页汇集、空会话、失败中止、schema 与文件名均通过"
+  },
+  "refactor": {
+    "command": "npm run typecheck",
+    "exit_code": 0,
+    "at": "2026-08-28T18:55:40+08:00",
+    "result": "Host 有界窗口、纯 collector、browser adapter 与 React single-flight 依赖方向通过严格类型检查"
+  },
+  "integration_smoke": {
+    "command": "npm test && npm run typecheck && npm run build && git diff --check",
+    "exit_code": 0,
+    "at": "2026-08-28T18:56:11+08:00",
+    "result": "全量 4 files / 31 tests、typecheck、Host/client build 与 diff check 通过；后续集成发现 CSS key 顺序漂移并在 802186d 固定排序"
+  },
+  "acceptance": [
+    {"ac_id": "AC6", "pass": true, "evidence": "首次 latestSequence=249，后续请求固定 throughSequence=249 并汇集 250 条；null 边界只请求一页并导出空 events"},
+    {"ac_id": "AC7", "pass": true, "evidence": "第二页抛错使 collector reject 且 download boundary 未执行；详情按钮在 loading 状态禁用并拒绝重复入口"},
+    {"ac_id": "AC8", "pass": true, "evidence": "schemaVersion/exportedAt/runId/capturedThroughSequence/summary/dossier/events 可 JSON 解析，标题与 runId 文件名去除跨平台非法字符"},
+    {"ac_id": "AC9", "pass": true, "evidence": "throughSequence 可选；原 window/queryRun 测试与详情 load-more 请求保持未传上界并全部通过"},
+    {"ac_id": "AC10", "pass": true, "evidence": "npm test 31/31、typecheck、Host/client 连续双构建、README 与 lib 重建均完成；CSS export 排序已稳定"}
+  ],
+  "limitations": ["本轮导出为单会话 schema v1 JSON；不含批量、CSV/PDF、服务端落盘或额外脱敏"]
+}

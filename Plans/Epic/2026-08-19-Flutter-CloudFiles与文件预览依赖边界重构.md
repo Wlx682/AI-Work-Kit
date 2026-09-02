@@ -2,7 +2,7 @@
 tags: [Epic, client-dev, Flutter, Files, CloudFiles, 文件预览, 架构重构]
 type: plan
 category: Epic
-status: 进行中
+status: 已归档
 date: 2026-08-19
 epic_id: flutter-cloud-files-preview-boundary-refactor
 workflow: client-dev
@@ -177,3 +177,9 @@ skill_run:
 ```text
 /resume plan=Plans/Epic/2026-08-19-Flutter-CloudFiles与文件预览依赖边界重构.md 进度=integration-test-plan
 ```
+
+## 四、变更日志
+
+| 日期 | 变更类型 | 影响阶段 | 重开切片 | 确认人 | 说明 |
+|------|----------|----------|----------|--------|------|
+| 2026-08-25 | 归档 | — | — | web | status → 已归档 |

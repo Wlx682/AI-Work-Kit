@@ -1,0 +1,36 @@
+{
+  "confirmed": true,
+  "confirmed_by": "用户 2026-08-28 明确要求控制账本支持分页与导出某个会话",
+  "requirements": [
+    {
+      "id": "REQ-CL-001",
+      "title": "会话历史稳定游标分页",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "先消除当前 50 条硬上限，并用锚点游标验证新增会话时不重复或跳项",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-CL-002",
+      "title": "固定快照边界的单会话 JSON 导出",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": [],
+      "priority": "P0",
+      "reason": "用户直接要求导出；先固定 throughSequence，才能保证大会话分页汇集有限且一致",
+      "confirmed": true
+    },
+    {
+      "id": "REQ-CL-003",
+      "title": "分页与导出 UI、错误恢复及发布回归",
+      "business_value": "high",
+      "urgency": "high",
+      "dependencies": ["REQ-CL-001", "REQ-CL-002"],
+      "priority": "P0",
+      "reason": "把两项 Host 契约接入真实 Settings 和详情入口，并闭合中英文、失败态、类型和构建产物",
+      "confirmed": true
+    }
+  ]
+}

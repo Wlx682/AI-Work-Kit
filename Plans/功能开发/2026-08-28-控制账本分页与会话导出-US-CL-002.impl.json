@@ -1,0 +1,53 @@
+{
+  "story_id": "US-CL-002",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/dsh-control-ledger",
+  "codebase_read": [
+    {"path": "src/projection.ts", "reason": "windowControlLedgerEvents 已按 afterSequence 有界分页，是 throughSequence 固定上界的最小扩展点"},
+    {"path": "src/types.ts", "reason": "query request、event window 和 summary 已提供导出所需证据，需增加上界与 schema v1 类型"},
+    {"path": "src/client/ControlLedgerPage.tsx", "reason": "详情已能追加事件，标题区是显式单会话导出的真实用户入口"},
+    {"path": "src/client/index.ts", "reason": "浏览器 RPC 与 window/document 位于此 adapter，适合注入导出动作"},
+    {"path": "tests/projection.spec.ts", "reason": "现有事件窗口测试可先红锁定 throughSequence 与旧请求兼容"},
+    {"path": "README.md", "reason": "公开 Remote/只读边界与构建产物说明需补充分页导出行为"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "src/types.ts", "purpose": "Query request 增加 optional throughSequence，并定义 ControlLedgerSessionExport schema v1", "layer": "Public Contract"},
+      {"path": "src/projection.ts", "purpose": "事件候选增加 seq <= throughSequence，校验 after/through 边界且旧调用语义不变", "layer": "Pure Domain Projection"},
+      {"path": "src/typert.ts", "purpose": "queryRun schema 接受 optional throughSequence", "layer": "Remote Schema"},
+      {"path": "src/client/index.ts", "purpose": "组合 queryRun collector 与 Blob 下载，并向详情页注入 exportRun", "layer": "Client Remote/Browser Adapter"},
+      {"path": "src/client/ControlLedgerPage.tsx", "purpose": "标题区增加 single-flight 导出按钮、忙碌与失败恢复", "layer": "Presentation"},
+      {"path": "src/client/ControlLedgerSection.module.css", "purpose": "增加详情操作区、导出按钮、错误和小屏换行样式", "layer": "Presentation Style"},
+      {"path": "src/client/locales.ts", "purpose": "增加导出、导出中、失败的中英文文案", "layer": "Presentation Locale"},
+      {"path": "tests/projection.spec.ts", "purpose": "Red 锁定固定上界、空边界、非法 after/through 与兼容行为", "layer": "Domain Unit Test"},
+      {"path": "tests/service.spec.ts", "purpose": "Red 锁定 queryRun throughSequence 的 Host 行为和 Remote schema marker", "layer": "Host Integration Test"},
+      {"path": "README.md", "purpose": "记录会话列表分页、单会话 JSON 导出格式和固定快照语义", "layer": "Public Documentation"}
+      ,{"path": "tsdown.config.ts", "purpose": "稳定排序 CSS module 导出键，保证连续构建的已提交 client bundle 不漂移", "layer": "Build Tooling"}
+    ],
+    "create": [
+      {"path": "src/client/export.ts", "reason": "纯分页汇集、schema v1 对象和安全文件名与 React/DOM 解耦；DOM 下载函数保持小边界", "naming_basis": "按单会话导出能力命名", "layer": "Client Application"},
+      {"path": "tests/client-export.spec.ts", "reason": "Red 锁定 250 条多页、追加不越界、空事件、第二页失败、JSON 字段与文件名", "naming_basis": "与 export helper 对应", "layer": "Client Unit Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "optional Host event boundary → queryRun page adapter → pure export collector → explicit browser download → React single-flight state",
+    "dependency_rule": "Host 仍只返回有界 JSON page；collector 以首次 summary.latestSequence 为唯一固定上界并保留首次 summary/dossier；所有页成功后才调用下载。React 不拼 export JSON，Host 不生成文件或持久化。"
+  },
+  "tests": {
+    "red": [
+      {"path": "tests/projection.spec.ts", "command": "npm test -- --run tests/projection.spec.ts"},
+      {"path": "tests/client-export.spec.ts", "command": "npm test -- --run tests/client-export.spec.ts"},
+      {"path": "tests/service.spec.ts", "command": "npm test -- --run tests/service.spec.ts"}
+    ],
+    "refactor_regression": ["npm test", "npm run typecheck", "npm run build"]
+  },
+  "risks": [
+    "不固定 throughSequence 会让运行中 Session 导出漂移或持续追赶",
+    "复用详情已加载 events 可能形成旧边界，导出应重新从首次页开始建立新快照",
+    "任一页失败后仍下载会产生无法识别的半文件",
+    "文件名必须去除路径和控制字符，object URL 必须 finally 释放"
+    ,"CSS module 导出枚举顺序若未固定，会让同一 target commit 连续重建产生不同 lib/client.js"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

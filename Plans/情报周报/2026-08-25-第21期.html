@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SWE-bench Science 揭示编码 Agent 的验证盲区：公开测试接近满分，完整科学契约通过率却不足一半。">
+  <title>公开测试 96.64%，完整正确只有 47.90% · AI-Work-Kit 情报周报第21期</title>
+  <style>
+    :root{--bg:#080914;--panel:#111323;--panel2:#16192d;--ink:#f5f5ff;--body:#c9cbe0;--muted:#8e93ac;--line:#2a2d47;--cyan:#59e1e7;--violet:#a78bfa;--pink:#f472b6;--lime:#b7f36b;--amber:#ffcc66;--red:#ff7082;--wide:1240px;--read:850px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--shadow:0 28px 80px rgba(0,0,0,.42)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--bg)}body{margin:0;overflow-x:hidden;color:var(--ink);background:radial-gradient(circle at 10% 0,rgba(167,139,250,.16),transparent 32rem),radial-gradient(circle at 92% 16rem,rgba(89,225,231,.1),transparent 30rem),var(--bg);font:clamp(15.5px,1.1vw,17px)/1.9 var(--sans);-webkit-font-smoothing:antialiased}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}strong{color:#fff}code,pre{font-family:var(--mono)}code{color:#c7baff;background:rgba(167,139,250,.09);padding:.1em .32em;border-radius:5px}#progress{position:fixed;z-index:100;inset:0 auto auto 0;width:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--violet),var(--cyan));box-shadow:0 0 16px var(--cyan)}
+    .topbar{position:fixed;z-index:90;inset:0 0 auto;height:56px;display:flex;align-items:center;padding:0 clamp(16px,4vw,48px);border-bottom:1px solid rgba(42,45,71,.86);background:rgba(8,9,20,.75);backdrop-filter:blur(18px)}.brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:760}.brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:linear-gradient(135deg,var(--pink),var(--violet),var(--cyan));color:#080914;font:900 12px var(--mono)}.topmeta{margin-left:auto;color:#737990;font:11px var(--mono)}
+    .hero{position:relative;min-height:min(810px,92vh);display:grid;align-items:center;padding:clamp(118px,14vw,178px) clamp(20px,6vw,78px) clamp(94px,11vw,140px);overflow:hidden}.hero:before{content:"";position:absolute;inset:0;opacity:.3;background-image:linear-gradient(rgba(42,45,71,.65) 1px,transparent 1px),linear-gradient(90deg,rgba(42,45,71,.65) 1px,transparent 1px);background-size:56px 56px;mask-image:linear-gradient(to bottom,#000,transparent 92%)}.orb{position:absolute;border-radius:50%;filter:blur(1px);pointer-events:none}.orb.one{width:min(46vw,640px);aspect-ratio:1;right:-12vw;top:8vh;border:1px solid rgba(89,225,231,.24);box-shadow:inset 0 0 110px rgba(167,139,250,.08),0 0 90px rgba(89,225,231,.08);animation:drift 10s ease-in-out infinite}.orb.two{width:210px;height:210px;right:22vw;bottom:-70px;background:radial-gradient(circle,rgba(244,114,182,.16),transparent 66%)}@keyframes drift{50%{transform:translate(-16px,18px) rotate(8deg)}}.hero-inner{position:relative;z-index:2;width:min(100%,var(--wide));margin:auto}.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(17,19,35,.72);color:var(--cyan);font:12px var(--mono);letter-spacing:1px}.pulse{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 12px var(--lime);animation:pulse 2.1s ease infinite}@keyframes pulse{50%{opacity:.3}}h1{max-width:1060px;margin:28px 0 24px;font-size:clamp(38px,6.4vw,80px);line-height:1.05;letter-spacing:-.052em;background:linear-gradient(115deg,#fff 8%,#ddd8ff 48%,#7ee9ec 92%);background-clip:text;-webkit-background-clip:text;color:transparent}.dek{max-width:820px;margin:0;color:#b9bdd3;font-size:clamp(17px,2vw,22px);line-height:1.72}.source{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:30px;color:#7e849c;font:12px var(--mono)}.source span{display:inline-flex;align-items:center;gap:7px}.source b{color:#c3c6d8}
+    .metric-wall{position:relative;z-index:5;width:min(calc(100% - 32px),var(--wide));margin:-72px auto 32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.5vw,18px)}.stat{position:relative;min-height:192px;padding:25px 23px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(155deg,rgba(22,25,45,.98),rgba(12,14,27,.97));box-shadow:var(--shadow);overflow:hidden}.stat:after{content:"";position:absolute;inset:auto 0 0;height:3px;background:linear-gradient(90deg,var(--pink),var(--violet))}.stat.cyan:after{background:linear-gradient(90deg,var(--violet),var(--cyan))}.stat.lime:after{background:linear-gradient(90deg,var(--cyan),var(--lime))}.stat-label{color:#7d829a;font:11px var(--mono);letter-spacing:.9px;text-transform:uppercase}.num{margin:20px 0 12px;font-size:clamp(38px,5.4vw,58px);line-height:.95;font-weight:880;letter-spacing:-.055em;font-variant-numeric:tabular-nums;background:linear-gradient(120deg,#fff,#c5b8ff 58%,#7ae9ed);background-clip:text;-webkit-background-clip:text;color:transparent}.stat-copy{color:#9ca1ba;font-size:13.5px;line-height:1.56}.stat-copy b{color:var(--lime);font-family:var(--mono)}
+    .chart-shell{width:min(calc(100% - 32px),var(--wide));margin:30px auto 76px;padding:clamp(20px,3vw,34px);border:1px solid var(--line);border-radius:20px;background:linear-gradient(160deg,rgba(17,19,35,.96),rgba(10,11,24,.96));box-shadow:var(--shadow)}.chart-head{display:flex;gap:20px;justify-content:space-between;align-items:end;margin-bottom:18px}.chart-kicker{color:var(--pink);font:11px var(--mono);letter-spacing:1.2px}.chart-head h2{margin:5px 0 0;font-size:clamp(24px,3vw,34px)}.chart-note{max-width:420px;color:#858ba5;font-size:12px;line-height:1.6;text-align:right}.chart{height:420px;width:100%}.chart-fallback{display:grid;gap:9px}.chart-ready .chart-fallback{display:none}.chart:not(:empty)+.chart-fallback{margin-top:0}.fallback-row{display:grid;grid-template-columns:minmax(135px,1.6fr) 4fr 64px;gap:10px;align-items:center;font-size:12px;color:#aeb2c7}.fallback-track{height:8px;border-radius:9px;background:#22263d;overflow:hidden}.fallback-fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--violet),var(--cyan))}
+    .layout{width:min(calc(100% - 32px),var(--wide));margin:auto;display:grid;grid-template-columns:minmax(0,var(--read)) minmax(220px,290px);justify-content:space-between;gap:clamp(30px,6vw,78px);align-items:start}article{min-width:0;padding-bottom:110px}.toc{position:sticky;top:82px;max-height:calc(100vh - 105px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(17,19,35,.84);backdrop-filter:blur(14px)}.toc-title{margin-bottom:12px;color:#727891;font:11px var(--mono);letter-spacing:1px}.toc ul{list-style:none;margin:0;padding:0}.toc ul ul{padding-left:8px;border-left:1px solid var(--line)}.toc li{margin:0}.toc a{display:block;padding:6px 8px;border-radius:7px;color:#969bb3;font-size:12.5px;line-height:1.45}.toc a:hover{background:rgba(167,139,250,.1);color:#fff;text-decoration:none}.toc-note{margin-top:15px;padding-top:14px;border-top:1px solid var(--line);color:#747a92;font-size:12px;line-height:1.6}
+    article>h2{margin:0;padding:clamp(46px,7vw,76px) 0 19px;border-top:1px solid var(--line);font-size:clamp(28px,4vw,42px);line-height:1.18;letter-spacing:-.035em}article>h2:first-child{border-top:0;padding-top:12px}article h3{position:relative;margin:48px 0 16px;padding-left:16px;font-size:clamp(21px,2.4vw,27px);line-height:1.36;letter-spacing:-.018em}article h3:before{content:"";position:absolute;left:0;top:.2em;bottom:.2em;width:3px;border-radius:6px;background:linear-gradient(var(--pink),var(--cyan))}article p{margin:16px 0;color:var(--body)}article h2+p{color:#e0e1ef;font-size:clamp(17px,1.55vw,19px)}blockquote{margin:30px 0;padding:22px 24px;border-left:3px solid var(--cyan);background:linear-gradient(90deg,rgba(89,225,231,.08),transparent);color:#e0f7f7;font-size:clamp(17px,2vw,21px);line-height:1.7}
+    .table-wrap,article table{width:100%}article table{display:block;max-width:100%;margin:26px 0;overflow-x:auto;border:1px solid var(--line);border-radius:14px;border-spacing:0;border-collapse:separate;background:rgba(17,19,35,.75);font-size:13px}article thead,article tbody{display:table;width:max(100%,780px);table-layout:auto}article tr{display:table-row}article th,article td{display:table-cell;padding:12px 13px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:top;text-align:left}article th:last-child,article td:last-child{border-right:0}article tbody tr:last-child td{border-bottom:0}article th{color:#8f95ae;background:#171a30;font:10.5px var(--mono);letter-spacing:.42px;text-transform:uppercase}article td{color:#bcc0d5;min-width:70px}article td:first-child{color:#f0f1fa;font-weight:650;min-width:132px}.diagram{margin:30px 0;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:linear-gradient(180deg,var(--panel),#0c0e1b);box-shadow:var(--shadow)}.card-bar{padding:11px 15px;border-bottom:1px solid var(--line);color:#767c94;font:11px var(--mono);letter-spacing:.8px}.mermaid{margin:0;padding:28px 14px;text-align:center;overflow-x:auto;background:transparent;color:#cfd2e7}.diagram figcaption{padding:0 20px 18px;text-align:center;color:#747b93;font-size:12px}.math{max-width:100%;overflow:auto;margin:25px 0;padding:19px;border:1px solid rgba(167,139,250,.26);border-radius:13px;background:rgba(167,139,250,.06);text-align:center;color:#eeeaff}
+    footer{padding:42px 16px 92px;text-align:center;color:#646a82;font:12px var(--mono)}#backBtn{position:fixed;z-index:80;right:18px;bottom:18px;width:44px;height:44px;border:1px solid rgba(167,139,250,.42);border-radius:12px;background:rgba(22,25,45,.86);color:#fff;cursor:pointer;opacity:0;pointer-events:none;transition:.25s;backdrop-filter:blur(10px)}#backBtn.show{opacity:1;pointer-events:auto}
+    @media(max-width:1000px){.metric-wall{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.toc{position:relative;top:0;max-height:none;order:-1}.toc>ul{columns:2;column-gap:18px}.toc li{break-inside:avoid}.toc ul ul{display:none}.chart-head{align-items:start;flex-direction:column}.chart-note{text-align:left}}
+    @media(max-width:600px){.topmeta{display:none}.hero{min-height:auto;padding-bottom:95px}.metric-wall{grid-template-columns:1fr;margin-top:-50px}.stat{min-height:155px}.chart{height:350px}.chart-shell{margin-bottom:45px}.toc>ul{columns:1}.fallback-row{grid-template-columns:115px 1fr 50px}h1{font-size:clamp(37px,12vw,58px)}article table{font-size:12px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+  <nav class="topbar"><span class="brand"><span class="brand-mark">21</span>AI-Work-Kit 情报周报</span><span class="topmeta">2026-08-25 · 约 18 分钟</span></nav>
+  <header class="hero"><span class="orb one"></span><span class="orb two"></span><div class="hero-inner">
+    <span class="eyebrow"><span class="pulse"></span>SCIENTIFIC SOFTWARE · INDEPENDENT ORACLE</span>
+    <h1>公开测试 96.64%<br>完整正确只有 47.90%</h1>
+    <p class="dek">SWE-bench Science 用 119 个真实科学软件任务揭开编码 Agent 的验证盲区：会沿可见反馈修补现象，不等于能守住科学不变量、跨模块契约和未见边界。</p>
+    <div class="source"><span><b>作者</b> Zhipeng Xu、Jiahao Lu、Yining Zheng、Yuxin Wang、Xipeng Qiu</span><span><b>发布</b> 2026-08-20</span><span><a href="https://arxiv.org/abs/2608.19799">阅读英文论文 ↗</a></span></div>
+  </div></header>
+  <div class="metric-wall">
+    <div class="stat"><div class="stat-label">真实任务</div><div class="num" data-to="119">119</div><div class="stat-copy">来自 <b>98</b> 个真实 GitHub 科学软件仓库</div></div>
+    <div class="stat cyan"><div class="stat-label">领域覆盖</div><div class="num" data-to="20">20</div><div class="stat-copy">化学、材料、生物、物理、数学、天文等领域</div></div>
+    <div class="stat"><div class="stat-label">最佳公开分</div><div class="num" data-to="96.64" data-dec="2" data-suf="%">96.64%</div><div class="stat-copy">Claude Opus 5 配合 Claude Code</div></div>
+    <div class="stat lime"><div class="stat-label">对应完整 Pass@1</div><div class="num" data-to="47.90" data-dec="2" data-suf="%">47.90%</div><div class="stat-copy">全部私有契约通过才计成功，差距 <b>48.74pp</b></div></div>
+  </div>
+  <section class="chart-shell" aria-labelledby="chart-title"><div class="chart-head"><div><div class="chart-kicker">PUBLIC SIGNAL ≠ COMPLETE CORRECTNESS</div><h2 id="chart-title">八组配置：公开测试与完整通过率</h2></div><div class="chart-note">横轴为论文中的模型 × 编码工具配置；公开分是平均用例通过率，Pass@1 要求整项任务全部私有测试通过。</div></div><div id="mainChart" class="chart" role="img" aria-label="八组模型与编码工具配置的公开分和 Pass@1 对比"></div><div class="chart-fallback" aria-label="图表静态终值">
+    <div class="fallback-row"><span>GPT-5.6 / Codex</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:46.22%"></span></span><b>46.22%</b></div><div class="fallback-row"><span>Claude 5 / CC</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:47.9%"></span></span><b>47.90%</b></div><div class="fallback-row"><span>DeepSeek Pro / CC</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:42.02%"></span></span><b>42.02%</b></div><div class="fallback-row"><span>Kimi K3 / KC</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:35.29%"></span></span><b>35.29%</b></div><div class="fallback-row"><span>GLM-5.2 / Codex</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:31.93%"></span></span><b>31.93%</b></div><div class="fallback-row"><span>Nex N2 / Codex</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:24.37%"></span></span><b>24.37%</b></div><div class="fallback-row"><span>DeepSeek Flash / CC</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:23.53%"></span></span><b>23.53%</b></div><div class="fallback-row"><span>Qwen3.5 / Codex</span><span class="fallback-track"><span class="fallback-fill" style="display:block;width:14.29%"></span></span><b>14.29%</b></div>
+  </div></section>
+  <div class="layout"><article><h2 id="文章介绍">文章介绍</h2>
+<p>2026 年 8 月 20 日，上海创智学院与复旦大学团队发布论文 <a
+href="https://arxiv.org/abs/2608.19799">SWE-bench Science: An Agentic
+Coding Benchmark for Scientific Software</a>，同时开放了<a
+href="https://github.com/OpenMOSS/SWE-bench-Science">代码</a>、<a
+href="https://huggingface.co/datasets/OpenMOSS-Team/SWE-bench-Science">数据集</a>与<a
+href="https://swescience.github.io">排行榜</a>。它收集了 98 个真实
+GitHub 科学软件仓库中的 119
+个任务，横跨化学、材料、生物、医学、物理、数学、天文等 20
+个领域，要求编码 Agent
+在冻结的仓库快照里定位并修复真实缺陷、补齐科学能力或完成跨模块集成。</p>
+<p>论文最刺眼的数字不是某个模型赢了，而是两类成绩之间的断层。在八组“模型
+× 编码工具”配置中，Claude Opus 5 配合 Claude Code 的公开测试平均分达到
+96.64%，完整通过私有测试的 Pass@1 却只有 47.90%；GPT-5.6-sol 配合 Codex
+的公开测试平均分为 99.16%，Pass@1 是
+46.22%。公开反馈几乎全绿，仍有超过一半任务没有真正完成。这个差距说明：编码
+Agent
+已经很会顺着可见信号把局部现象修到“看起来正确”，但面对科学对象、等价表示、边界条件、跨模块契约和未见输入时，最后一公里仍然缺少独立验证。</p>
+<p>这不是一篇“新榜单又换了第一名”的文章。SWE-bench Science
+重新设计了任务来源、测试可见性、科学知识注入与失败归因，试图回答一个更接近生产的问题：当软件正确性不只由
+API
+和普通单测定义，还取决于物理不变量、数学等价关系与科学工作流时，什么才算真正修好？对普通工程团队，它提供了一面放大镜——科学软件把日常系统里同样存在的验证盲区放大了：公开测试可以是调试接口，却不应成为最终真相；外部知识可以帮助推理，也可能让
+Agent 过早锚定；聚合分数可以比较能力，却无法替代失败机制。</p>
+<p>本文按论文的完整证据链展开：先解释任务为什么不同，再拆解构造方法、评估协议、八组结果、四类失败和知识消融实验，最后把可迁移原则映射回
+AI-Work-Kit。论文仍是 v1
+预印本，领域样本不均、模型与工具框架混杂、知识实验只覆盖两组配置，因此下文会把作者实测、本文推断与工作流建议明确分开。</p>
+<h2 id="知识总结">知识总结</h2>
+<h3 id="不是把-humaneval-做难而是把正确性换成科学契约">不是把 HumanEval
+做难，而是把正确性换成科学契约</h3>
+<p>传统函数级基准通常给出清晰题目和输入输出，仓库级基准则要求 Agent
+在真实代码环境里修
+issue。科学软件又多了一层：输出“能运行”并不等于结果在科学上成立。同一个晶体可能有不同周期表示，同一个坐标可能经不同路径转换，同一统计分布可能只在受约束的流形上定义。补丁必须同时保持数值稳定、单位和坐标一致、物理或数学不变量、旧行为兼容以及跨模块数据流。</p>
+<p>论文把相关评测谱系放在同一张地图里。这里的区别不是难度线性增加，而是被验证对象发生了变化。</p>
+<table>
+<thead>
+<tr>
+<th>方法家族</th>
+<th>典型代表</th>
+<th>被验证的主要对象</th>
+<th>核心机制</th>
+<th>主要局限</th>
+<th>与本基准的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>函数级代码生成</td>
+<td>HumanEval、MBPP</td>
+<td>单函数输入输出</td>
+<td>题面明确，运行少量单元测试</td>
+<td>缺少仓库上下文、依赖和长期状态</td>
+<td>提供基础代码能力下限，但不能代表维护科学系统</td>
+</tr>
+<tr>
+<td>通用仓库修复</td>
+<td>SWE-bench</td>
+<td>真实 issue 与回归测试</td>
+<td>冻结仓库，让 Agent 定位并修改多文件</td>
+<td>科学语义与领域不变量覆盖有限</td>
+<td>奠定真实仓库任务范式，本基准扩展科学契约</td>
+</tr>
+<tr>
+<td>长时工程 Agent</td>
+<td>SWE-Bench Pro、DeepSWE、Terminal-Bench</td>
+<td>长链工具使用与环境操作</td>
+<td>增大任务跨度、终端交互和系统复杂度</td>
+<td>“做得久”不自动等于“科学上正确”</td>
+<td>补充执行跨度，本基准聚焦结果契约</td>
+</tr>
+<tr>
+<td>科学代码生成</td>
+<td>SciCode、MMSciCode</td>
+<td>科研问题对应的函数或算法</td>
+<td>用论文、公式或专家问题定义科学功能</td>
+<td>多数仍是从题面生成独立代码</td>
+<td>提供领域知识维度，但缺少生产仓库维护</td>
+</tr>
+<tr>
+<td>科研工作流 Agent</td>
+<td>ScienceAgentBench、SUPER、ResearchCodeBench 等</td>
+<td>实验、研究任务或科研工作流</td>
+<td>组合检索、实验设计、代码与工具</td>
+<td>任务环境和最终正确性口径不一</td>
+<td>覆盖“做科研”，不专门衡量维护科学软件</td>
+</tr>
+<tr>
+<td>垂直软件工程</td>
+<td>AInsteinBench、SWE-Bench 5G</td>
+<td>少数科学/工程领域中的仓库任务</td>
+<td>在垂直仓库中修复真实问题</td>
+<td>前者 6 个领域/仓库，后者集中于单一领域</td>
+<td>最接近的前序工作；本基准扩到 20 领域、98 仓库和三类任务</td>
+</tr>
+</tbody>
+</table>
+<p>SWE-bench Science 的 119 个任务不是均匀抽样。化学 24 个、材料 16
+个、生物 13 个、生物医学 12 个、物理 11 个，五大领域合计 76 个，占
+63.9%；另有六个领域只有一个任务。仓库非空代码行平均约 80,600 行，最小
+174 行、最大超过 202 万行；参考补丁平均新增 117.81 行、删除 44.53
+行。这些数字说明它确实进入了生产仓库尺度，也同时意味着“某个模型更擅长天文或地学”一类细分结论暂时不可靠。</p>
+<h3 id="三种任务不是三档难度">三种任务，不是三档难度</h3>
+<p>作者把任务分成三种互补范式，而不是按简单、中等、困难排档。</p>
+<p>第一类是 issue-driven，共 52 个，占 43.7%。它从历史 issue、pull
+request 或 commit
+中寻找真实缺陷，冻结缺陷修复前的快照，在容器里复现最小现象，再把原始描述净化成不泄露补丁的题面。它的优势是分布失真较低：问题确实发生过，修复也确实进入过项目。私有测试会改变规模、边界、输入顺序或等价表示，检查
+Agent 是否只记住公开复现用例。</p>
+<p>第二类是 expert-exploratory，共 49 个，占
+41.2%。专家先在真实仓库里设计科学场景、寻找异常，再区分“看见的现象”和“真正的根因”。这类任务没有可直接回滚的历史补丁，目标是发现尚未以
+issue
+形式固定的问题。验证重点因此不是复刻维护者的改法，而是补丁是否能跨尺度、拓扑、顺序和边界条件泛化。</p>
+<p>第三类是 engineering-integration，共 18 个，占
+15.1%。它要求补齐跨模块的完整能力链，例如解析、转换、计算和输出之间缺少的一段接口，或多个组件分别正确、组合后却破坏了状态与契约。构造者需要沿数据管线分析缺口，保留足够工程上下文，再用替代路径、状态重置和模块间契约做隐藏验证。它测的不是某个函数会不会写，而是
+Agent 能否识别系统里真正的能力边界。</p>
+<figure class="diagram"><div class="card-bar">CHAIN OF EVIDENCE</div><pre class="mermaid">flowchart LR
+    S["真实科学软件来源"] --&gt; I["历史 issue / PR / commit"]
+    S --&gt; E["专家探索科学场景"]
+    S --&gt; G["工程能力链分析"]
+    I --&gt; T1["Issue-driven 52"]
+    E --&gt; T2["Expert-exploratory 49"]
+    G --&gt; T3["Engineering-integration 18"]
+    T1 --&gt; F["冻结缺陷时仓库与容器"]
+    T2 --&gt; F
+    T3 --&gt; F
+    F --&gt; P["公开复现与科学不变量"]
+    F --&gt; H["私有独立 Oracle"]
+    P --&gt; A["Agent 调试与提交补丁"]
+    A --&gt; H
+    H --&gt; R{"全部私有契约通过？"}
+    R --&gt;|是| X["Pass@1 = 1"]
+    R --&gt;|否| Y["Pass@1 = 0，并进入失败归因"]</pre><figcaption>三类任务共享冻结仓库、公开反馈与独立私有 Oracle。</figcaption></figure>
+<p>三类任务共同避免了两个极端：只依赖历史 issue
+会受已有问题分布和泄漏影响；只靠专家出题又可能变成人工竞赛题。历史证据提供真实性，专家探索补充未知缺陷，工程集成覆盖真实系统里“局部都对、串起来不对”的能力空洞。</p>
+<h3
+id="chain-of-evidence先冻结事实再分离可见反馈与最终-oracle">Chain-of-Evidence：先冻结事实，再分离可见反馈与最终
+Oracle</h3>
+<p>论文把构造流程称为统一的 Chain-of-Evidence。第一步从
+issue、PR、commit、论文和专家审计中筛任务，排除过于简单、环境不稳定、答案泄漏或任务重叠的候选。第二步冻结缺陷发生时的仓库，移除
+Git 历史、远端、未来
+changelog、构建缓存和解题产物，并在容器中重现。第三步从具体补丁中抽象出可公开的科学不变量和数据流约束，但不泄露修复位置。第四步建立私有
+Oracle，用语义等价输入、边界条件、逆向检查和替代执行路径排除硬编码、伪修复和覆盖不完整。</p>
+<p>Agent
+能看到的是冻结仓库、题面、必需科学上下文与公开测试。评估器单独持有私有测试、契约标签、参考或其他有效补丁、定位与理由块、期望文件以及污染元数据；私有测试只在干净环境中挂载。这个隔离很关键：如果
+Agent 能反复查询最终
+Oracle，它就可能把本应衡量的泛化能力重新优化成对测试样本的拟合。</p>
+<p>论文给出的物理示例很直观。两种周期表示描述同一个晶体：一种在原胞上使用
+k 点采样，另一种把体系扩成超胞并只取 Γ
+点。若实现正确，折算到每个原胞的能量应近似不变：</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>E</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>E</mi><mi>k</mi></msub><mo>−</mo><mfrac><msub><mi>E</mi><mi mathvariant="normal">Γ</mi></msub><mi>N</mi></mfrac><mo stretchy="true" form="postfix">|</mo></mrow><mo>≤</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup><mspace width="0.222em"></mspace><mtext mathvariant="normal">Hartree/cell</mtext></mrow><annotation encoding="application/x-tex">
+\Delta E = \left|E_k-\frac{E_{\Gamma}}{N}\right| \le 5\times10^{-5}\ \text{Hartree/cell}
+</annotation></semantics></math></p>
+<p>公开测试只告诉 Agent
+计算能收敛、结果有限，并暴露一个代表性表示差。私有测试则用 10
+个科学场景改变 FFT 网格奇偶性、k 点顺序、几何和 MDF
+积分等条件。一个补丁即使公开测试通过，私有场景只过 7/10，Pass@1 仍是
+0。因为契约不是“把这个数调小”，而是“所有等价表示都保持同一物理量”。</p>
+<p>这类设计比单纯增加隐藏样例更强。它先写出被保护的不变量，再寻找能证伪表面修复的输入族。公开测试承担定位和快速反馈，私有
+Oracle 承担独立裁决，两者角色不同却共享同一科学契约。</p>
+<h3
+id="八组配置没有全能冠军模型与工具框架也是一个整体">八组配置没有全能冠军，模型与工具框架也是一个整体</h3>
+<p>论文评估了八组模型与编码工具配置。它们不是只换模型：同一张表同时混入
+Codex、Claude Code 和 Kimi Code，因此结果应解释为“模型 × harness
+配置”的系统表现，不能完全归因于模型权重。</p>
+<table>
+<thead>
+<tr>
+<th>模型 / 编码工具</th>
+<th style="text-align: right;">公开分</th>
+<th style="text-align: right;">私有分</th>
+<th style="text-align: right;">Fail2Pass</th>
+<th style="text-align: right;">Pass2Pass</th>
+<th style="text-align: right;">总 Pass@1</th>
+<th style="text-align: right;">Issue</th>
+<th style="text-align: right;">探索</th>
+<th style="text-align: right;">集成</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-5.6-sol / Codex</td>
+<td style="text-align: right;">99.16</td>
+<td style="text-align: right;"><strong>78.82</strong></td>
+<td style="text-align: right;"><strong>72.30</strong></td>
+<td style="text-align: right;"><strong>97.66</strong></td>
+<td style="text-align: right;">46.22</td>
+<td style="text-align: right;">36.54</td>
+<td style="text-align: right;">59.18</td>
+<td style="text-align: right;">38.89</td>
+</tr>
+<tr>
+<td>Claude Opus 5 / Claude Code</td>
+<td style="text-align: right;">96.64</td>
+<td style="text-align: right;">75.11</td>
+<td style="text-align: right;">68.60</td>
+<td style="text-align: right;">97.37</td>
+<td style="text-align: right;"><strong>47.90</strong></td>
+<td style="text-align: right;"><strong>38.46</strong></td>
+<td style="text-align: right;"><strong>65.31</strong></td>
+<td style="text-align: right;">27.78</td>
+</tr>
+<tr>
+<td>DeepSeek V4 Pro / Claude Code</td>
+<td style="text-align: right;"><strong>100.00</strong></td>
+<td style="text-align: right;">73.16</td>
+<td style="text-align: right;">65.77</td>
+<td style="text-align: right;">96.58</td>
+<td style="text-align: right;">42.02</td>
+<td style="text-align: right;">26.92</td>
+<td style="text-align: right;">57.14</td>
+<td style="text-align: right;"><strong>44.44</strong></td>
+</tr>
+<tr>
+<td>Kimi K3 / Kimi Code</td>
+<td style="text-align: right;">98.32</td>
+<td style="text-align: right;">66.34</td>
+<td style="text-align: right;">57.55</td>
+<td style="text-align: right;">94.94</td>
+<td style="text-align: right;">35.29</td>
+<td style="text-align: right;">25.00</td>
+<td style="text-align: right;">44.90</td>
+<td style="text-align: right;">38.89</td>
+</tr>
+<tr>
+<td>GLM-5.2 / Codex</td>
+<td style="text-align: right;">94.12</td>
+<td style="text-align: right;">63.61</td>
+<td style="text-align: right;">53.81</td>
+<td style="text-align: right;">97.53</td>
+<td style="text-align: right;">31.93</td>
+<td style="text-align: right;">17.31</td>
+<td style="text-align: right;">46.94</td>
+<td style="text-align: right;">33.33</td>
+</tr>
+<tr>
+<td>Nex N2 / Codex</td>
+<td style="text-align: right;">93.28</td>
+<td style="text-align: right;">61.89</td>
+<td style="text-align: right;">51.09</td>
+<td style="text-align: right;">94.92</td>
+<td style="text-align: right;">24.37</td>
+<td style="text-align: right;">11.54</td>
+<td style="text-align: right;">36.73</td>
+<td style="text-align: right;">27.78</td>
+</tr>
+<tr>
+<td>DeepSeek V4 Flash / Claude Code</td>
+<td style="text-align: right;">98.32</td>
+<td style="text-align: right;">61.41</td>
+<td style="text-align: right;">52.34</td>
+<td style="text-align: right;">95.74</td>
+<td style="text-align: right;">23.53</td>
+<td style="text-align: right;">19.23</td>
+<td style="text-align: right;">26.53</td>
+<td style="text-align: right;">27.78</td>
+</tr>
+<tr>
+<td>Qwen3.5-397B / Codex</td>
+<td style="text-align: right;">96.64</td>
+<td style="text-align: right;">51.79</td>
+<td style="text-align: right;">38.33</td>
+<td style="text-align: right;">95.16</td>
+<td style="text-align: right;">14.29</td>
+<td style="text-align: right;">5.77</td>
+<td style="text-align: right;">24.49</td>
+<td style="text-align: right;">11.11</td>
+</tr>
+</tbody>
+</table>
+<p>PublicScore 和 PrivateScore 是平均通过的公开、私有用例比例；Fail2Pass
+衡量原本失败的私有测试被修复多少；Pass2Pass
+衡量原本通过的行为保留多少；Pass@1 最严格，只有全部私有测试通过才记
+1。于是 78.82 的 PrivateScore 与 46.22 的 Pass@1
+并不矛盾：前者允许“十个场景过八个”，后者要求任务完整闭合。</p>
+<p>没有一组配置统治所有指标。GPT-5.6-sol 的私有分、Fail2Pass 和
+Pass2Pass 最高，说明平均修复覆盖和回归保持最好；Claude Opus 5 的总
+Pass@1、issue-driven 和 expert-exploratory
+最高，更常把整项任务完全做完；DeepSeek V4 Pro
+公开分满分、工程集成最好，却在 issue-driven 上明显落后。论文的 token
+图还显示，更多上下文或更长输出并不自动换来更高 Pass@1。Claude 以中等
+token 取得最高完整成功率，GPT 输出更短但接近，DeepSeek V4 Pro
+输入更多仍落后于两者。真正相关的是配置如何检索、探索、验证和利用上下文，而不是单纯“想得更久”。</p>
+<p>最稳妥的结论因此不是某模型绝对更强，而是不同配置有不同失败轮廓。选择
+Agent
+时，聚合榜单只能告诉你平均结果；若任务偏向跨模块集成、科学探索或历史缺陷，配置排序可能改变。更进一步，因为模型和工具框架没有做全交叉实验，论文不能回答“同一个
+Claude 放进 Codex 会怎样”。</p>
+<h3
+id="四类失败揭开了差一点的真实含义">四类失败揭开了“差一点”的真实含义</h3>
+<p>作者没有把所有失败归为“推理不够”，而是逐项审查补丁，建立四个互斥机制。这个分型比总分更可操作，因为它对应四种不同的补救方式。</p>
+<table>
+<thead>
+<tr>
+<th>失败机制</th>
+<th>典型行为</th>
+<th>为什么公开测试可能仍通过</th>
+<th>需要的补强</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>科学知识或抽象缺失</td>
+<td>选错科学对象、定义或领域抽象</td>
+<td>可见样例没有覆盖定义边界</td>
+<td>明确不变量、单位、坐标和适用域，并验证理解</td>
+</tr>
+<tr>
+<td>探索误导或表面修复</td>
+<td>围绕报错或单一指标打补丁</td>
+<td>对公开现象局部拟合</td>
+<td>建立独立 Oracle，主动寻找反例与替代解释</td>
+</tr>
+<tr>
+<td>修复覆盖或系统集成不完整</td>
+<td>局部函数合理，交互、数据流或兼容性断裂</td>
+<td>公开路径只经过已改模块</td>
+<td>覆盖替代路径、状态重置、模块契约与回归行为</td>
+</tr>
+<tr>
+<td>科学泛化失败</td>
+<td>修好一个案例，等价表示或边界仍错</td>
+<td>可见输入与补丁假设一致</td>
+<td>用变换、缩放、顺序、拓扑和边界生成测试族</td>
+</tr>
+</tbody>
+</table>
+<p>八组配置的失败数量也呈现不同形状。GPT 的 64
+个失败中，系统集成不完整最多，为 22 个；Claude 的 58
+个有效失败中，知识/抽象缺失 24 个、集成不完整 21 个，另有 4
+个运行时问题；DeepSeek V4 Pro 的 69 个失败里，泛化失败最多，为 23
+个。更低分配置也并非同一种弱法：DeepSeek V4 Flash 有 48
+个集成不完整，远高于其 6 个泛化失败；Qwen
+则在知识、集成和泛化三类上都高。</p>
+<p>这意味着“再补几个公开测试”不是统一处方。抽象错了，需要澄清领域对象；探索被误导，需要独立证伪；集成不完整，需要扩展系统路径；泛化失败，需要围绕不变量生成等价输入族。若团队只记录最终红绿，不记录失败机制，同类错误就会在下一个模块里重新出现。</p>
+<h3 id="给-agent-更多知识可能帮忙也可能让它更早确信自己是对的">给 Agent
+更多知识，可能帮忙，也可能让它更早确信自己是对的</h3>
+<p>119 个任务中有 91
+个可以把“仓库本身无法推断的辅助科学信息”单独分离。研究者固定仓库、环境、公开入口、私有验证器和必需上下文，只切换是否提供额外的论文片段、专家指导、上游修复理由或审计发现，比较信息的边际作用。这不是“有知识”和“完全无知识”的比较，因为代码、运行轨迹和测试仍然提供大量线索。</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>辅助信息</th>
+<th style="text-align: right;">公开分</th>
+<th style="text-align: right;">私有分</th>
+<th style="text-align: right;">Pass@1</th>
+<th style="text-align: right;">平均输入 token</th>
+<th style="text-align: right;">平均输出 token</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-5.6-sol / Codex</td>
+<td>有</td>
+<td style="text-align: right;">97.80</td>
+<td style="text-align: right;">74.06</td>
+<td style="text-align: right;">31.87</td>
+<td style="text-align: right;">3.70M</td>
+<td style="text-align: right;">40.25K</td>
+</tr>
+<tr>
+<td>GPT-5.6-sol / Codex</td>
+<td>无</td>
+<td style="text-align: right;">96.70</td>
+<td style="text-align: right;">73.23</td>
+<td style="text-align: right;"><strong>36.26</strong></td>
+<td style="text-align: right;">3.86M</td>
+<td style="text-align: right;">43.75K</td>
+</tr>
+<tr>
+<td>DeepSeek V4 Flash / Claude Code</td>
+<td>有</td>
+<td style="text-align: right;"><strong>100.00</strong></td>
+<td style="text-align: right;"><strong>62.53</strong></td>
+<td style="text-align: right;"><strong>23.08</strong></td>
+<td style="text-align: right;">7.40M</td>
+<td style="text-align: right;">159.26K</td>
+</tr>
+<tr>
+<td>DeepSeek V4 Flash / Claude Code</td>
+<td>无</td>
+<td style="text-align: right;">98.90</td>
+<td style="text-align: right;">61.21</td>
+<td style="text-align: right;">16.48</td>
+<td style="text-align: right;">4.84M</td>
+<td style="text-align: right;">128.43K</td>
+</tr>
+</tbody>
+</table>
+<p>额外知识对两组配置的平均作用方向相反。GPT 有信息时通过 29
+个任务、无信息时通过 33 个；二者共同通过 21
+个，说明知识并不是简单地让同一批任务加分，而是改变了解题路径：8
+个只在有信息时通过，12 个只在无信息时通过。DeepSeek V4 Flash 则从 15
+个提升到 21 个：12 个共同通过，9 个只在有信息时通过，3
+个只在无信息时通过。</p>
+<p>作者提出两种可能机制。正面上，领域资料可以提供极限情形、坐标一致性、独立可观测量和权威接口，帮助
+Agent 形成更好的
+Oracle。负面上，它也可能造成锚定、范围外溢和过早依赖：Agent
+把一段权威解释当成补丁指令，没有回到运行证据验证。较弱基线可能从知识中获益更多，但目前只测试了两组配置，作者明确说这些描述性差异不能建立统计显著性或因果关系。</p>
+<p>因此，知识不是越多越好的上下文燃料。更安全的做法是把它标成“带来源的假设”：记录来自论文、维护者还是专家审计；指出它声称保护哪个不变量；再用独立用例证伪。知识通过验证后才升级为工程契约，而不是因为写得权威就直接控制修改。</p>
+<h3 id="附录的-119-项清单说明这不是只会算能量的窄基准">附录的 119
+项清单说明：这不是只会算能量的窄基准</h3>
+<p>论文附录逐项列出任务、领域、仓库、对应
+issue/PR、知识范围与关注点。代表性任务包括：bedtools 中 split-read
+的区间重叠；Osprey 对多子谱编辑 MRS 数据的一致处理；nilearn 把离散 atlas
+投影到表面时的插值模式与 NaN 行为；PyMC 的 ZeroSumNormal 在零和流形上的
+log probability；SunPy 的坐标变换；MDAnalysis 的周期边界跳跃处理；SymPy
+有理积分结果的导数恒等；pvlib 的时区等价性。</p>
+<p>这些例子共同强调：科学契约并不只存在于“高深公式”。它也藏在数组的所有子谱是否一起更新、离散标签能否被连续插值、坐标系切换是否保持物理含义、跨越周期边界时轨迹是否连续、时区表示不同但太阳位置是否等价。普通业务系统里的货币、时区、权限、库存守恒和状态机，同样具有这种不变量结构。</p>
+<h3
+id="论文能证明什么暂时不能证明什么">论文能证明什么，暂时不能证明什么</h3>
+<p>它能证明的是：在这 119
+个真实科学软件任务上，当前强配置的公开测试表现与完整私有契约之间存在巨大差距；任务类型和失败机制会显著改变配置画像；额外知识的作用依赖
+Agent
+如何使用它。它还提供了可复查的数据、容器、任务清单和评测口径，便于后续复现与扩展。</p>
+<p>它不能证明的是：科学软件一定比所有业务软件更难；某个基础模型脱离当前编码工具后仍保持同样排名；辅助知识对所有模型存在稳定的正负效应；单个小样本领域的高低分代表真实领域能力。20
+个领域看起来很广，但样本高度集中；八组配置没有模型与 harness
+的全因子交叉；知识消融只覆盖 91 个任务和两组配置；论文还是刚发布的 v1
+预印本。排行榜未来更新时，本文数字也只对应论文当时版本。</p>
+<h2 id="工作流提炼">工作流提炼</h2>
+<h3 id="把可见反馈和结果-oracle写成两个不同对象">把“可见反馈”和“结果
+Oracle”写成两个不同对象</h3>
+<p>这篇论文最值得迁移的不是私藏测试，而是双层验证职责。公开测试应当快速、可诊断，帮助
+Agent 缩小问题；结果 Oracle
+应独立于补丁过程，覆盖最终契约、回归行为和等价输入。两者可以共享同一个不变量，却不应共享全部样例。</p>
+<p>AI-Work-Kit 已有 test-generator
+的测试计划冻结、审核门禁、全套测试退出码要求，也在 2026-08-18
+的工作流控制就绪度审计中识别了 validator/oracle
+身份、<code>FAIL/PASS/ABSTAIN/INVALID</code> 语义和 Outcome Oracle
+缺口。因此这里不是发现一个全新问题，而是给现有 backlog
+补充了可操作的测试形状：在 <code>evidenceContract</code> 中区分
+<code>debug_feedback</code> 与
+<code>outcome_oracle</code>，要求后者至少包含替代路径、边界或等价变换中的一类，并声明哪些证据在执行阶段不可被修改。</p>
+<p>机器可以检查两个对象是否存在、Oracle
+是否与实现提交分离、回归集是否执行；机器不能自动决定一个物理、业务或合规不变量是否充分。契约内容仍需领域负责人审核，尤其不能让实现
+Agent 自己定义最终成功标准。</p>
+<h3
+id="把失败从红灯升级成可积累的机制标签">把失败从红灯升级成可积累的机制标签</h3>
+<p>Kit 当前能记录测试失败和 Gate
+阻塞，但跨任务的失败归因仍容易停留在日志文本。可以借用论文的四分法作为初始
+taxonomy：<code>abstraction</code>、<code>exploration</code>、<code>integration</code>、<code>generalization</code>，再保留
+<code>runtime/evaluator</code>
+作为非能力故障。每次失败不仅绑定日志，还绑定被破坏的不变量、最小反例和后来新增的回归样本。</p>
+<p>这项能力适合进入反馈进化链，而不是立即固化成所有项目的强制枚举。业务系统可能还需要权限、并发或数据迁移等专门类型。先通过数个
+Story 验证标签是否能稳定指导下一步，再决定是否写入长期
+Context。自动分类可以给候选，最终归因应由开发者或评审者确认，避免模型用一个漂亮标签掩盖未知根因。</p>
+<h3
+id="把外部知识当成待验证假设而不是提示词附件">把外部知识当成待验证假设，而不是提示词附件</h3>
+<p>现有 Kit 强调真理源、Contexts 新鲜度和
+<code>verified_against</code>，但对一次 Agent
+运行中临时引入的论文片段、专家意见或网络资料，仍缺少统一的证据状态。可补一个轻量字段组：<code>source</code>、<code>claim</code>、<code>applies_to</code>、<code>validation_status</code>、<code>counterexample</code>。知识刚进入上下文时状态为
+hypothesis，只有独立测试或权威契约确认后才可变为 accepted evidence。</p>
+<p>这里的人机边界尤其重要。Agent
+可以追踪来源、生成反例、运行验证并标记冲突；是否采纳领域知识、冲突时以谁为权威、是否允许改变业务契约，必须由责任人决定。论文只说明信息可能改变解题路径，并没有给出“自动信任更多资料”的依据。</p>
+<h3
+id="评估模型时必须连同-harness版本和失败轮廓一起记录">评估“模型”时必须连同
+harness、版本和失败轮廓一起记录</h3>
+<p>论文表格把模型与工具框架成对列出，是一个容易被忽略的提醒。Agent
+结果还受上下文收集、命令执行、编辑策略、token 预算和评估器版本影响。Kit
+若建立长期能力台账，至少应记录
+<code>model</code>、<code>harness</code>、<code>reasoning_budget</code>、<code>repo_snapshot</code>、<code>evaluator_version</code>
+和失败分型；否则一次升级后的分数变化无法定位来源。</p>
+<p>对于选型，建议用与目标任务匹配的分层指标，而不是只看总
+Pass@1。历史缺陷、开放探索和工程集成需要分别观察；同时保留 Fail2Pass 与
+Pass2Pass，防止“修新问题、破旧行为”。当样本不足时应明确标注
+<code>ABSTAIN</code>，不要把少数成功包装成领域优势。</p>
+<p>最终，SWE-bench Science
+给出的不是一个更难的排行榜，而是一套更严格的完成定义：公开反馈负责让
+Agent 前进，独立 Oracle
+负责阻止它过早宣布成功；领域知识负责提出更好的假设，反例负责决定假设能否留下；聚合指标负责比较，失败机制负责改进。科学软件只是把这些关系表现得更清楚。任何依赖不变量、跨模块契约和高代价错误的工程系统，都值得用同样的问题重新审视自己的
+Gate：我们现在验证的是实现碰巧通过了可见样例，还是结果真的满足了不可妥协的契约？</p></article><aside class="toc" aria-label="文章目录"><div class="toc-title">ON THIS PAGE</div><ul>
+<li><a href="#文章介绍" id="toc-文章介绍">文章介绍</a></li>
+<li><a href="#知识总结" id="toc-知识总结">知识总结</a>
+<ul>
+<li><a href="#不是把-humaneval-做难而是把正确性换成科学契约"
+id="toc-不是把-humaneval-做难而是把正确性换成科学契约">不是把 HumanEval
+做难，而是把正确性换成科学契约</a></li>
+<li><a href="#三种任务不是三档难度"
+id="toc-三种任务不是三档难度">三种任务，不是三档难度</a></li>
+<li><a href="#chain-of-evidence先冻结事实再分离可见反馈与最终-oracle"
+id="toc-chain-of-evidence先冻结事实再分离可见反馈与最终-oracle">Chain-of-Evidence：先冻结事实，再分离可见反馈与最终
+Oracle</a></li>
+<li><a href="#八组配置没有全能冠军模型与工具框架也是一个整体"
+id="toc-八组配置没有全能冠军模型与工具框架也是一个整体">八组配置没有全能冠军，模型与工具框架也是一个整体</a></li>
+<li><a href="#四类失败揭开了差一点的真实含义"
+id="toc-四类失败揭开了差一点的真实含义">四类失败揭开了“差一点”的真实含义</a></li>
+<li><a href="#给-agent-更多知识可能帮忙也可能让它更早确信自己是对的"
+id="toc-给-agent-更多知识可能帮忙也可能让它更早确信自己是对的">给 Agent
+更多知识，可能帮忙，也可能让它更早确信自己是对的</a></li>
+<li><a href="#附录的-119-项清单说明这不是只会算能量的窄基准"
+id="toc-附录的-119-项清单说明这不是只会算能量的窄基准">附录的 119
+项清单说明：这不是只会算能量的窄基准</a></li>
+<li><a href="#论文能证明什么暂时不能证明什么"
+id="toc-论文能证明什么暂时不能证明什么">论文能证明什么，暂时不能证明什么</a></li>
+</ul></li>
+<li><a href="#工作流提炼" id="toc-工作流提炼">工作流提炼</a>
+<ul>
+<li><a href="#把可见反馈和结果-oracle写成两个不同对象"
+id="toc-把可见反馈和结果-oracle写成两个不同对象">把“可见反馈”和“结果
+Oracle”写成两个不同对象</a></li>
+<li><a href="#把失败从红灯升级成可积累的机制标签"
+id="toc-把失败从红灯升级成可积累的机制标签">把失败从红灯升级成可积累的机制标签</a></li>
+<li><a href="#把外部知识当成待验证假设而不是提示词附件"
+id="toc-把外部知识当成待验证假设而不是提示词附件">把外部知识当成待验证假设，而不是提示词附件</a></li>
+<li><a href="#评估模型时必须连同-harness版本和失败轮廓一起记录"
+id="toc-评估模型时必须连同-harness版本和失败轮廓一起记录">评估“模型”时必须连同
+harness、版本和失败轮廓一起记录</a></li>
+</ul></li>
+</ul><div class="toc-note">指标对应论文 v1 的八组“模型 × 编码工具”配置；不把 harness 差异归因于模型权重。</div></aside></div>
+  <footer>AI-WORK-KIT · WEEKLY INTEL DIGEST · ISSUE 21</footer><button id="backBtn" type="button" aria-label="返回顶部">↑</button>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script><script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    (function(){
+      const progress=document.getElementById('progress'),back=document.getElementById('backBtn');addEventListener('scroll',()=>{const d=document.documentElement,m=d.scrollHeight-d.clientHeight;progress.style.width=(m?d.scrollTop/m*100:0)+'%';back.classList.toggle('show',scrollY>650)},{passive:true});back.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+      const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const seen=new WeakSet();const counter=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting||seen.has(e.target))return;seen.add(e.target);const el=e.target,t=Number(el.dataset.to),dec=Number(el.dataset.dec||0),s=el.dataset.suf||'';if(reduced){el.textContent=t.toFixed(dec)+s;return}let st;const run=ts=>{if(!st)st=ts;const p=Math.min(1,(ts-st)/950),v=t*(1-Math.pow(1-p,3));el.textContent=v.toFixed(dec)+s;if(p<1)requestAnimationFrame(run)};requestAnimationFrame(run)}),{threshold:.4});document.querySelectorAll('.num').forEach(e=>counter.observe(e));
+      if(window.echarts){const box=document.getElementById('mainChart'),chart=echarts.init(box);chart.setOption({backgroundColor:'transparent',grid:{left:48,right:18,top:34,bottom:94},legend:{top:0,textStyle:{color:'#aeb2c7'},data:['公开分','Pass@1']},tooltip:{trigger:'axis',valueFormatter:v=>v.toFixed(2)+'%'},xAxis:{type:'category',axisLabel:{color:'#878da7',fontSize:10,interval:0,rotate:28},axisLine:{lineStyle:{color:'#343851'}},data:['GPT-5.6\nCodex','Claude 5\nClaude Code','DeepSeek Pro\nClaude Code','Kimi K3\nKimi Code','GLM-5.2\nCodex','Nex N2\nCodex','DeepSeek Flash\nClaude Code','Qwen3.5\nCodex']},yAxis:{type:'value',min:0,max:100,axisLabel:{color:'#7f859f',formatter:'{value}%'},splitLine:{lineStyle:{color:'rgba(74,78,105,.28)'}}},series:[{name:'公开分',type:'bar',barGap:'10%',data:[99.16,96.64,100,98.32,94.12,93.28,98.32,96.64],itemStyle:{color:'#5a607b',borderRadius:[4,4,0,0]}},{name:'Pass@1',type:'bar',data:[46.22,47.90,42.02,35.29,31.93,24.37,23.53,14.29],itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#59e1e7'},{offset:1,color:'#8d6df2'}]),borderRadius:[4,4,0,0]}}]});document.querySelector('.chart-shell').classList.add('chart-ready');addEventListener('resize',()=>chart.resize(),{passive:true})}
+      if(window.mermaid){mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',primaryColor:'#171a30',primaryTextColor:'#f5f5ff',primaryBorderColor:'#494e70',lineColor:'#858ca8'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:30,rankSpacing:42,padding:12}})}
+    })();
+  </script>
+</body></html>

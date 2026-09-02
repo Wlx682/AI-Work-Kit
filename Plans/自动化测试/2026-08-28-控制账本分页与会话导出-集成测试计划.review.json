@@ -1,0 +1,15 @@
+{
+  "approved": true,
+  "reviewer": "Codex QA / test-generator",
+  "reviewed_at": "2026-08-28T19:00:30+08:00",
+  "target_commit": "802186d7b953104c19af2f022683e437015b39d2",
+  "case_index_sha256": "ebcb3cd8e3bbed9e90b9a42c5483a272b4f7ff53592d07cebc7ab1be806e2817",
+  "unresolved_comments": 0,
+  "resolved_comments": [
+    "将顶部新增 Session 的稳定锚点行为与非法 cursor 的 read-before-validation 风险纳入同一 Host 集成用例",
+    "将运行中会话增长到 259 但导出固定 249 的一致性设为 P0 自动化证据",
+    "补充重建 lib 后 git diff --exit-code，避免源码已更新但提交产物漂移"
+    ,"首次集成发现 lightningcss export 枚举顺序导致连续构建漂移；802186d 固定键排序，并把 IT-CL-005 提升为连续双构建 clean 门禁"
+  ],
+  "review_summary": "5 条 P0 自动化用例覆盖两个 Scope Story 的 AC1–AC10；Host/客户端主链路、并发新增、非法边界、空会话、导出失败中止、兼容性与提交构建产物均可复现。"
+}

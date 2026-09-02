@@ -1,0 +1,60 @@
+{
+  "commit": "802186d7b953104c19af2f022683e437015b39d2",
+  "executed_at": "2026-08-28T19:00:38+08:00",
+  "all_scope_stories_completed": true,
+  "approved_test_plan": "Plans/自动化测试/2026-08-28-控制账本分页与会话导出-集成测试计划.md",
+  "approved_case_index_sha256": "ebcb3cd8e3bbed9e90b9a42c5483a272b4f7ff53592d07cebc7ab1be806e2817",
+  "test_cases": [
+    {"id": "IT-CL-001", "status": "passed"},
+    {"id": "IT-CL-002", "status": "passed"},
+    {"id": "IT-CL-003", "status": "passed"},
+    {"id": "IT-CL-004", "status": "passed"},
+    {"id": "IT-CL-005", "status": "passed"}
+  ],
+  "suites": [
+    {
+      "name": "host-page",
+      "command": "npm test -- --run tests/service.spec.ts",
+      "exit_code": 0,
+      "summary": "7/7 PASS；分页、插入新 Session、非法 cursor/limit 与 Remote markers 通过"
+    },
+    {
+      "name": "client-pagination",
+      "command": "npm test -- --run tests/client-pagination.spec.ts",
+      "exit_code": 0,
+      "summary": "3/3 PASS；无 cursor 首页、前后 cursor 栈、首尾不推进通过"
+    },
+    {
+      "name": "bounded-query",
+      "command": "npm test -- --run tests/projection.spec.ts tests/service.spec.ts",
+      "exit_code": 0,
+      "summary": "24/24 PASS；throughSequence、非法边界与旧 queryRun 分页兼容通过"
+    },
+    {
+      "name": "client-export",
+      "command": "npm test -- --run tests/client-export.spec.ts",
+      "exit_code": 0,
+      "summary": "4/4 PASS；250 条固定快照、空会话、失败中止、schema 与文件名通过"
+    },
+    {
+      "name": "full-quality-double-build",
+      "command": "npm test && npm run typecheck && npm run build && git diff --exit-code && npm run build && git diff --exit-code && git diff --check",
+      "exit_code": 0,
+      "summary": "4 files / 31 tests PASS；strict typecheck PASS；Host/client 连续两次构建后工作树均 clean"
+    }
+  ],
+  "resolved_defects": [
+    {
+      "id": "CL-IT-001",
+      "severity": "P0",
+      "finding": "首次 target commit 重建会改变 lib/client.js 中 CSS module 映射键顺序",
+      "resolution": "802186d 在 tsdown CSS plugin 中按 local key 排序；连续双构建 hash 稳定且 git diff 为空"
+    }
+  ],
+  "defects": [],
+  "limitations": [
+    "仓库不自带可启动的完整 DSH Web profile，因此未做真实浏览器点击和操作系统下载文件 smoke；Remote、纯 UI 状态/collector 与生产 bundle 已自动化覆盖",
+    "本轮明确不包含批量导出、CSV/PDF、服务端落盘或额外脱敏配置"
+  ],
+  "conclusion": "两个 Scope Story、AC1–AC10 与 5 条审核用例全部通过；连续双构建无产物漂移，可以进入 Done。"
+}

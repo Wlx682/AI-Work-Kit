@@ -2,7 +2,7 @@
 tags: [Epic, client-dev, Flutter, InputBar, 组件化]
 type: plan
 category: Epic
-status: 进行中
+status: 已归档
 date: 2026-08-18
 epic_id: flutter-componentized-input-bar
 workflow: client-dev
@@ -186,3 +186,9 @@ skill_run:
 ```text
 /resume plan=Plans/Epic/2026-08-18-Flutter组件化InputBar.md 进度=派生阶段 / Story ID
 ```
+
+## 四、变更日志
+
+| 日期 | 变更类型 | 影响阶段 | 重开切片 | 确认人 | 说明 |
+|------|----------|----------|----------|--------|------|
+| 2026-08-25 | 归档 | — | — | web | status → 已归档 |

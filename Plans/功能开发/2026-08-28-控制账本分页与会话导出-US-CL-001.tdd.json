@@ -1,0 +1,37 @@
+{
+  "story_id": "US-CL-001",
+  "story_points": 5,
+  "commit": "f25f8369d0f565d75a7b800dbf8e7066d7dd32be",
+  "red": {
+    "command": "npm test -- --run tests/service.spec.ts && npm test -- --run tests/client-pagination.spec.ts",
+    "exit_code": 1,
+    "at": "2026-08-28T18:52:00+08:00",
+    "reason": "service 只因 listRunPage Remote/marker 尚不存在而失败；client suite 只因 src/client/pagination.ts 尚不存在而失败"
+  },
+  "green": {
+    "command": "npm test -- --run tests/service.spec.ts tests/client-pagination.spec.ts",
+    "exit_code": 0,
+    "at": "2026-08-28T18:53:13+08:00",
+    "result": "2 files / 9 tests 通过；多页、插入新 Session、失效 cursor、limit 校验与纯客户端 cursor 栈均通过"
+  },
+  "refactor": {
+    "command": "npm run typecheck && npm run build",
+    "exit_code": 0,
+    "at": "2026-08-28T18:53:13+08:00",
+    "result": "Host-only cursor 选择、纯 pagination state 与保留当前页的 React 错误恢复均通过类型检查和双端构建"
+  },
+  "integration_smoke": {
+    "command": "npm test && npm run typecheck && npm run build",
+    "exit_code": 0,
+    "at": "2026-08-28T18:53:36+08:00",
+    "result": "全量 3 files / 25 tests、typecheck、Host/client build 通过，lib 已更新"
+  },
+  "acceptance": [
+    {"ac_id": "AC1", "pass": true, "evidence": "45/5 Session 场景按 2 条分页，nextCursor 连续覆盖全部；默认值在实现中固定为 20"},
+    {"ac_id": "AC2", "pass": true, "evidence": "末页仅返回剩余 runs 且省略 nextCursor；空/一页沿同一分支无伪 cursor"},
+    {"ac_id": "AC3", "pass": true, "evidence": "第一页后插入新 Session，第二页仍从旧末项锚点之后开始；missing cursor 明确 TypeError"},
+    {"ac_id": "AC4", "pass": true, "evidence": "0/101/1.5 limit 与失效 cursor 均在 readSession 调用前失败"},
+    {"ac_id": "AC5", "pass": true, "evidence": "纯分页状态证明首尾不推进；React 按上一页栈/nextCursor 禁用按钮，翻页失败保留 ready page 并提供 retry"}
+  ],
+  "limitations": ["本 Story 不实现导出；详情事件分页行为保持原样"]
+}

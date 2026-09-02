@@ -1,0 +1,46 @@
+{
+  "scope_confirmed": true,
+  "confirmed_by": "用户 2026-08-28 明确要求控制账本支持分页与导出某个会话；两项均纳入本轮",
+  "confirmed_at": "2026-08-28",
+  "epic_scope": ["US-CL-001", "US-CL-002"],
+  "current_implementation_scope": ["US-CL-002"],
+  "stories": [
+    {
+      "id": "US-CL-001",
+      "title": "稳定前后翻页浏览全部控制账本会话",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-28-控制账本分页与会话导出-US-CL-001.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC1", "AC2", "AC3", "AC4", "AC5"],
+      "requirement_ids": ["REQ-CL-001", "REQ-CL-003"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-28-控制账本分页与会话导出.md#adr必填",
+        "ADR-001",
+        "ADR-002"
+      ]
+    },
+    {
+      "id": "US-CL-002",
+      "title": "导出当前会话的固定边界 JSON 快照",
+      "vertical_slice": true,
+      "path": "Plans/功能开发/2026-08-28-控制账本分页与会话导出-US-CL-002.md",
+      "story_points": 5,
+      "estimate_confirmed": true,
+      "priority": "P0",
+      "sprint_scope": true,
+      "dependencies": [],
+      "acceptance_criteria": ["AC6", "AC7", "AC8", "AC9", "AC10"],
+      "requirement_ids": ["REQ-CL-002", "REQ-CL-003"],
+      "architecture_refs": [
+        "Plans/技术方案/2026-08-28-控制账本分页与会话导出.md#adr必填",
+        "ADR-003",
+        "ADR-004",
+        "ADR-005"
+      ]
+    }
+  ]
+}

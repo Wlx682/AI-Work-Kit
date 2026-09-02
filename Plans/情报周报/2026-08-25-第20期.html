@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Asana 用 Codex 在两周内清除 Enzyme 迁移余量：真正起作用的是可执行规格、仓库范例与快速反馈。">
+  <title>不是提示词变短了，而是环境变成了规格 · AI-Work-Kit 情报周报第20期</title>
+  <style>
+    :root {
+      --bg:#070a10;--panel:#0c111c;--panel-2:#101827;--ink:#eef3ff;--muted:#9aa8c0;
+      --line:#202c42;--cyan:#43e0cf;--blue:#5e91ff;--amber:#ffc05c;--red:#ff7183;
+      --green:#4addad;--shadow:0 24px 70px rgba(0,0,0,.38);--read:860px;--wide:1160px;
+      --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;overflow-x:hidden;color:var(--ink);background:
+      radial-gradient(circle at 20% 0,rgba(94,145,255,.13),transparent 28rem),
+      radial-gradient(circle at 90% 18rem,rgba(67,224,207,.08),transparent 24rem),var(--bg);
+      font-family:var(--sans);font-size:clamp(15.5px,1.15vw,17px);line-height:1.86;-webkit-font-smoothing:antialiased}
+    a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+    strong{color:#fff}code,pre{font-family:var(--mono)}
+    #progress{position:fixed;z-index:90;inset:0 auto auto 0;height:2px;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));box-shadow:0 0 14px rgba(67,224,207,.65)}
+    .topbar{position:fixed;z-index:80;inset:0 0 auto;height:54px;display:flex;align-items:center;padding:0 clamp(16px,4vw,42px);background:rgba(7,10,16,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(32,44,66,.8)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:13px;letter-spacing:.25px}.brand-mark{display:grid;place-items:center;width:25px;height:25px;border-radius:7px;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#05131a;font:800 12px var(--mono)}
+    .topmeta{margin-left:auto;color:#6f7d96;font:11px var(--mono)}
+    .hero{position:relative;min-height:min(760px,88vh);display:grid;align-items:center;padding:clamp(112px,14vw,170px) clamp(20px,6vw,72px) clamp(60px,8vw,96px);overflow:hidden}
+    .hero:before{content:"";position:absolute;inset:0;opacity:.24;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,#000,transparent 92%)}
+    .hero:after{content:"";position:absolute;width:min(54vw,680px);aspect-ratio:1;right:-12vw;top:3rem;border:1px solid rgba(67,224,207,.2);border-radius:36% 64% 63% 37%;filter:drop-shadow(0 0 55px rgba(94,145,255,.18));transform:rotate(18deg);animation:float 9s ease-in-out infinite}
+    @keyframes float{50%{transform:rotate(23deg) translateY(14px)}}
+    .hero-inner{position:relative;z-index:2;width:min(100%,var(--wide));margin:auto}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;padding:6px 13px;color:var(--cyan);background:rgba(12,17,28,.7);font:12px var(--mono);letter-spacing:1.1px}
+    .pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 2s ease infinite}@keyframes pulse{50%{opacity:.28}}
+    h1{max-width:960px;margin:28px 0 22px;font-size:clamp(36px,6.4vw,78px);line-height:1.07;letter-spacing:-.045em;background:linear-gradient(120deg,#fff 12%,#b6cfff 58%,#80f3df);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .dek{max-width:760px;color:#b3bfd2;font-size:clamp(17px,2vw,22px);line-height:1.7;margin:0}
+    .source{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:28px;color:#71809a;font:12px var(--mono)}
+    .source span{display:inline-flex;align-items:center;gap:7px}.source b{color:#b9c6da}
+    .metric-wall{position:relative;z-index:4;width:min(calc(100% - 32px),var(--wide));margin:-55px auto 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:clamp(12px,2vw,20px)}
+    .stat{min-height:190px;padding:27px 24px;border:1px solid var(--line);border-radius:19px;background:linear-gradient(160deg,rgba(16,24,39,.98),rgba(9,14,24,.96));box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .stat:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(var(--blue),var(--cyan))}.stat.amber:before{background:linear-gradient(var(--amber),var(--red))}.stat.green:before{background:linear-gradient(var(--green),var(--cyan))}
+    .stat-label{color:#75839b;font:11px var(--mono);letter-spacing:1px;text-transform:uppercase}.num{margin:19px 0 10px;font-size:clamp(38px,6vw,58px);line-height:.95;font-weight:850;letter-spacing:-.05em;font-variant-numeric:tabular-nums;background:linear-gradient(120deg,#fff,#a8c6ff 65%,#6ff0da);background-clip:text;-webkit-background-clip:text;color:transparent}.stat.amber .num{background:linear-gradient(120deg,#fff1cf,#ffc05c);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .stat-copy{color:#9eabc0;font-size:13.5px;line-height:1.55}.stat-copy b{color:var(--green);font-family:var(--mono)}
+    .layout{width:min(calc(100% - 32px),var(--wide));margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,260px);gap:clamp(28px,5vw,68px);align-items:start}
+    article{min-width:0;padding-bottom:110px}.toc{position:sticky;top:86px;padding:18px;border:1px solid var(--line);border-radius:15px;background:rgba(12,17,28,.82);backdrop-filter:blur(12px)}
+    .toc-title{color:#6f7d96;font:11px var(--mono);letter-spacing:1px;margin-bottom:12px}.toc a{display:block;padding:7px 9px;border-radius:8px;color:#9eabc0;font-size:13px;line-height:1.4}.toc a:hover,.toc a.active{background:rgba(94,145,255,.12);color:#e7efff;text-decoration:none}.toc-note{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);color:#728099;font-size:12px;line-height:1.6}
+    section{padding:clamp(40px,6vw,70px) 0;border-bottom:1px solid var(--line);opacity:1;transform:none}.js-reveal section{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease}.js-reveal section.in{opacity:1;transform:none}
+    .section-no{color:var(--cyan);font:12px var(--mono);letter-spacing:1.8px;margin-bottom:10px}h2{font-size:clamp(27px,4vw,39px);line-height:1.2;letter-spacing:-.03em;margin:0 0 18px}h3{font-size:clamp(19px,2.3vw,24px);line-height:1.35;margin:38px 0 11px;padding-left:14px;position:relative}h3:before{content:"";position:absolute;left:0;top:.25em;bottom:.25em;width:3px;border-radius:9px;background:linear-gradient(var(--blue),var(--cyan))}p{color:#c8d2e3;margin:15px 0}
+    .lead{font-size:clamp(17px,1.6vw,19px);color:#d9e2f1}.callout{margin:24px 0;padding:18px 20px;border:1px solid rgba(255,192,92,.28);border-left:3px solid var(--amber);border-radius:0 13px 13px 0;background:linear-gradient(90deg,rgba(255,192,92,.07),rgba(12,17,28,.55));color:#e7dac3}.callout strong{color:#ffe2a9}
+    .code-card,.diagram{margin:28px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,var(--panel),#090e18);box-shadow:var(--shadow)}.card-bar{display:flex;align-items:center;gap:7px;padding:11px 15px;border-bottom:1px solid var(--line);color:#6f7d96;font:11px var(--mono)}.dot{width:9px;height:9px;border-radius:50%}.r{background:var(--red)}.y{background:var(--amber)}.g{background:var(--green)}pre.prompt{margin:0;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;color:#b7f5e9;font-size:13px;line-height:1.75}.mermaid{padding:25px 12px;text-align:center;overflow-x:auto}.diagram figcaption{padding:0 18px 16px;text-align:center;color:#71809a;font-size:12px}
+    .table-wrap{width:100%;margin:24px 0;overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:rgba(12,17,28,.76)}table{width:100%;min-width:660px;border-collapse:collapse;font-size:14px}th,td{text-align:left;vertical-align:top;padding:13px 15px;border-bottom:1px solid var(--line)}th{color:#7f8ea7;background:rgba(16,24,39,.85);font:11px var(--mono);letter-spacing:.55px;text-transform:uppercase}tr:last-child td{border-bottom:0}td{color:#bcc8da}
+    .principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:14px;margin:26px 0}.principle{padding:20px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(150deg,rgba(16,24,39,.9),rgba(9,14,24,.9))}.principle b{display:block;margin-bottom:7px;font-size:15px}.principle span{color:#8d9bb1;font-size:13px;line-height:1.65}
+    blockquote{margin:28px 0;padding:22px 24px;border-left:3px solid var(--cyan);background:linear-gradient(90deg,rgba(67,224,207,.08),transparent);color:#d5eee9;font-size:clamp(17px,2vw,21px);line-height:1.65}
+    footer{padding:38px 16px 90px;text-align:center;color:#64728a;font:12px var(--mono)}#backBtn{position:fixed;z-index:75;right:18px;bottom:18px;width:44px;height:44px;border:1px solid rgba(94,145,255,.42);border-radius:12px;background:rgba(16,24,39,.84);color:#dce8ff;cursor:pointer;opacity:0;pointer-events:none;transition:.25s;backdrop-filter:blur(10px)}#backBtn.show{opacity:1;pointer-events:auto}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.toc{position:relative;top:0;order:-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px}.toc-title,.toc-note{grid-column:1/-1}.hero:after{opacity:.55}}
+    @media(max-width:520px){.topmeta{display:none}.hero{min-height:auto}.metric-wall{margin-top:-25px}.stat{min-height:165px}h1{font-size:clamp(34px,12vw,53px)}table{min-width:590px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+  <nav class="topbar"><span class="brand"><span class="brand-mark">20</span>AI-Work-Kit 情报周报</span><span class="topmeta">2026-08-25 · 约 10 分钟</span></nav>
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="eyebrow"><span class="pulse"></span>AGENTIC MIGRATION · EVIDENCE FIRST</span>
+      <h1>不是提示词变短了<br>而是环境变成了规格</h1>
+      <p class="dek">Asana 用 Codex 在两周内清掉 Enzyme 迁移余量。真正可迁移的不是五句话提示词，而是可分区任务、仓库范例、机器验收与快速反馈组成的执行环境。</p>
+      <div class="source"><span><b>来源</b> Asana Engineering Team</span><span><b>原文</b> 2026-08-07</span><span><a href="https://asana.com/inside-asana/migrating-off-enzyme-2-weeks">阅读英文一手原文 ↗</a></span></div>
+    </div>
+  </header>
+
+  <div class="metric-wall">
+    <div class="stat amber"><div class="stat-label">原推进余量</div><div class="num" data-to="5" data-suf=" 年">5 年</div><div class="stat-copy">按原有速度估算的<b>剩余工期</b>，不是从零工作量</div></div>
+    <div class="stat green"><div class="stat-label">实际冲刺周期</div><div class="num" data-to="2" data-suf=" 周">2 周</div><div class="stat-copy">约 1.5 周工程时间，跨<b>两个自然周</b></div></div>
+    <div class="stat"><div class="stat-label">峰值并行度</div><div class="num" data-to="4" data-suf=" Agent">4 Agent</div><div class="stat-copy">每个实例指向不同目录，人类每天早晚审查</div></div>
+    <div class="stat amber"><div class="stat-label">模型 + 基础设施</div><div class="num" data-to="12" data-pre="$" data-suf="K">$12K</div><div class="stat-copy">约 $11K 模型费 + $1K 基础设施；<b>自报口径</b></div></div>
+  </div>
+
+  <div class="layout">
+    <article>
+      <section id="intro">
+        <div class="section-no">01 — 文章介绍</div>
+        <h2>两周冲刺站在多年积累之上</h2>
+        <p class="lead">Asana 从 2022 年起把前端测试从 Enzyme 迁到 React Testing Library（RTL）。多个团队持续推进后，按原速度仍约需五年。团队随后把剩余工作交给 Codex，用约一周半工程时间、跨两个自然周清除了 Enzyme。</p>
+        <p>原文依次解释五年问题、实际运行方式、五句话为何足够、阻塞来自哪里，以及为什么 harness 已经成为产品。它没有证明“任意五年项目都能压成两周”，而是展示了一类适合 Agent 的任务形状：目标单一、工作可分区、正确范例已经进入仓库、完成条件可机器验证，人类则集中守住合并边界。</p>
+        <p>对工程团队，这是一个关于代码库可读性、反馈延迟和迁移组织方式的案例；对负责排期与投入决策的人，更重要的信号是：一些长期积压项目的经济性已经改变，但是否适合交给 Agent，必须先看验证结构，而不是先看模型能力。文章的五个主章节与成本附录共同给出了这种判断所需的正反证据。</p>
+        <div class="callout"><strong>证据边界：</strong>约 600 万美元是对完整人工范围的粗略估算；$12K 是模型和基础设施成本。两者不是独立审计的同口径对照，也未包含完整人工审查工时。</div>
+      </section>
+
+      <section id="migration">
+        <div class="section-no">02 — 知识总结</div>
+        <h2>迁移的不只是 API，而是测试哲学</h2>
+        <p>Enzyme 已失去社区支持、难以适配新版 React，也鼓励测试组件内部实现。RTL 把目标转向用户能看到和执行的行为。因此任务不能靠机械替换 import 完成，Agent 必须从既有 RTL 测试、helper 与约定中判断正确结构。</p>
+        <p>此前多年推进并非无效。产品团队逐步迁走各自负责的部分，专项工程沉淀了正确范例和工具；这些积累后来变成 Codex 可读取的隐式规格。最终冲刺的吞吐量不能倒推成项目从零开始的速度。</p>
+        <p>旧测试也不能只做语法层替换。Enzyme 倾向于观察组件内部，RTL 强调用户可见行为；因此 Agent 需要判断测试意图、选择新的查询方式、沿用仓库 helper，并确保迁移后仍覆盖原行为。多年形成的 RTL 代码不是背景材料，而是执行期间最接近真实规范的参考实现。</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>维度</th><th>传统推进</th><th>Codex 冲刺</th><th>口径提醒</th></tr></thead>
+          <tbody>
+            <tr><td>周期</td><td>仍约 5 年</td><td>1.5 周工程时间 / 2 个自然周</td><td>5 年是剩余工期估算</td></tr>
+            <tr><td>并行</td><td>多团队长期分散</td><td>最多 4 Agent，按目录隔离</td><td>目录边界降低并发冲突</td></tr>
+            <tr><td>反馈</td><td>跨团队、周期较长</td><td>typecheck / lint / test / CI</td><td>慢与不一致仍会卡住 Agent</td></tr>
+            <tr><td>成本</td><td>完整范围约 $6M</td><td>模型与基础设施约 $12K</td><td>自报且非严格同口径</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="operation">
+        <div class="section-no">03 — 运行机制</div>
+        <h2>分目录并行，人类守住合并边界</h2>
+        <p>团队没有搭建复杂调度器。最多四个 Codex Agent 同时工作，每个实例指向不同目录；机器持续在线，工程师每天早晚检查进度并审查 pull request。完整指令只表达目标、规范来源、目录范围、测试命令和优先顺序。</p>
+        <div class="code-card"><div class="card-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>goal.txt</div><pre class="prompt">目标：把指定目录中的 Enzyme 测试迁到 RTL
+约束：遵循代码库已有规范与最佳实践
+范围：一次只处理一个目录
+验证：运行指定测试命令
+排序：优先迁移容易转换的文件</pre></div>
+        <p>团队试过 ticket、持续 notes、额外 sub-agent 和更长的 RTL 规范，结果几乎都更差。准确的结论不是“提示词越短越好”，而是：当目标、范例和验证已存在于执行环境，额外协调层会复制状态并增加冲突机会。</p>
+        <p>五句话分别承担清晰职责：目标限定技术方向，目录限定写入边界，仓库规范提供风格与做法，测试命令构成即时验收，优先简单文件则让 Agent 先建立进展并减少早期阻塞。它们没有承担“解释所有 RTL 知识”的任务，因为那部分知识已经能从真实代码中读取。</p>
+        <figure class="diagram"><div class="card-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>migration-loop.mmd</div><pre class="mermaid">
+flowchart LR
+    G["单一迁移目标"] --> P["按目录切分"]
+    P --> A1["Agent 1"]
+    P --> A2["Agent 2"]
+    P --> A3["Agent 3"]
+    P --> A4["Agent 4"]
+    R["RTL 范例与 helper"] --> A1
+    R --> A2
+    R --> A3
+    R --> A4
+    A1 --> V["typecheck / lint / test / CI"]
+    A2 --> V
+    A3 --> V
+    A4 --> V
+    V --> H["人类审查 PR 与例外"]
+    H --> D{"Enzyme 是否清零"}
+    D -->|否| P
+    D -->|是| X["完成迁移"]
+        </pre><figcaption>模型只是链路中段；分区、范例、反馈和审查共同决定有效吞吐。</figcaption></figure>
+        <p>这条链路的每一段都不可替代：任务可分区决定并行是否安全；仓库范例决定生成方向；自动检查决定错误能否快速暴露；人类审查承接语义例外和最终责任；“Enzyme 是否清零”则提供清晰、可查询的完成条件。任何一段缺失，都可能把四倍并行度变成四倍返工。</p>
+      </section>
+
+      <section id="friction">
+        <div class="section-no">04 — 失败模式</div>
+        <h2>真正的瓶颈是陈旧知识与慢反馈</h2>
+        <p>第一个阻塞来自内部文档和 Agent 指南：部分近期内容仍把 Enzyme 写成推荐模式。对人类，这可能只是需要辨别的噪声；对主动检索并模仿上下文的 Agent，它会成为方向相反的控制指令。</p>
+        <p>第二个阻塞来自工具：lint 偶尔超过十分钟，本地检查与 CI 也不完全一致。Agent 必须等待反馈才能进入下一轮判断；反馈慢会限制吞吐，反馈不一致会制造“本地通过、远端失败”的无效循环。</p>
+        <p>原文因此把 harness 定义得很宽：不仅是模型外层的循环，还包括文档、约定、代码范例、测试工具和 CI。它们共同决定 Agent 能看到什么、模仿什么，以及多快知道自己错了。代码里的好品味会被批量复制，糟糕模式也会同样放大；文档过去只是参考资料，现在开始具有控制面的效果。</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>环境资产</th><th>正向作用</th><th>失效方式</th><th>案例证据</th></tr></thead>
+          <tbody>
+            <tr><td>代码范例</td><td>把工程品味变成可模仿结构</td><td>坏模式也被放大</td><td>RTL 测试与 helper 让短指令可行</td></tr>
+            <tr><td>文档 / 指南</td><td>提供显式规则和导航</td><td>陈旧规则主动误导</td><td>部分内容仍推荐 Enzyme</td></tr>
+            <tr><td>本地检查</td><td>快速缩小错误范围</td><td>运行慢时限制吞吐</td><td>lint 偶尔超过 10 分钟</td></tr>
+            <tr><td>CI</td><td>统一集成判定</td><td>与本地不一致形成双重真相</td><td>团队需要人工处理差异</td></tr>
+            <tr><td>PR 审查</td><td>承接语义例外与责任</td><td>容量不足成为新瓶颈</td><td>工程师每天早晚复核</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="limits">
+        <div class="section-no">05 — 证据边界</div>
+        <h2>数字说明机会，但不能直接外推 ROI</h2>
+        <p>结果不仅清除了 Enzyme，还改善测试覆盖、修复质量较差的测试、清理遗留基础设施，并发现一套更老的测试框架。大规模遍历相似工作时，项目范围可能从“替换接口”扩展为“清理整个历史层”。</p>
+        <p>但文章没有给出测试文件总数、Agent 运行小时数、PR 数量、失败与回滚比例、迁移后缺陷率，也没有完整的人类审查工时。最可靠的结论是：这个成熟仓库里的特定迁移实现了数量级压缩。案例证明可行性与任务适配条件，尚未证明普遍的成本倍数。</p>
+        <p>Asana 与 OpenAI 还在持续合作，这让案例具有一手工程细节，也意味着数字来自项目参与方。模型和基础设施成本与完整人工成本估算并不是对照实验：后者包含额外测试修复和遗留清理，前者没有展开人类复核成本。更稳妥的读法，是把这些数字当成重新评估积压迁移的触发器，而不是预算模型的默认参数。</p>
+        <blockquote>五句话不是信息少，而是把信息放在了更接近事实的位置：代码范例、验证命令和明确的完成条件。</blockquote>
+      </section>
+
+      <section id="workflow">
+        <div class="section-no">06 — 工作流提炼</div>
+        <h2>先把环境做成规格，再提高并行度</h2>
+        <div class="principles">
+          <div class="principle"><b>先做任务适配</b><span>确认目标可判定、切片可独立、仓库有正确范例、反馈稳定快速。</span></div>
+          <div class="principle"><b>文档属于控制面</b><span>会被 Agent 读取的规则需要新鲜度与权威源检查，陈旧文档是执行风险。</span></div>
+          <div class="principle"><b>反馈延迟决定容量</b><span>并行度上升后，最慢检查和人类审查队列会成为共享瓶颈。</span></div>
+        </div>
+        <h3>AI-Work-Kit 已有承载与真实缺口</h3>
+        <p>Kit 已有需求验收、测试先行、纵向 Story、Gate 和 Contexts 漂移检测，能够约束“做什么”“何时完成”以及长期文档与代码脱钩的一部分风险。缺口不是再造一个四 Agent 功能，而是大规模 Agent 任务启动前的统一 harness readiness 预检：记录可分区边界、完成判据、范例来源、反馈命令、反馈耗时、CI 一致性和人工审查容量。</p>
+        <p>这个预检应该先作为 workflow checklist 候选进入进化链，而不是直接固化成脚本。它需要回答：切片之间是否共享可变状态；失败能否单独回滚；完成条件是否由命令而非主观描述判定；参考范例是否代表当前方向；验证命令是否足够快且与 CI 同构；人类审查队列能否承接并行产出。只有这些证据齐全，提高并行度才是扩容而非放大不确定性。</p>
+        <h3>自动发现冲突，人类确认权威</h3>
+        <p>预检可以扫描相反范例和陈旧指南，采集检查耗时、本地/CI 差异与重试证据；但关键词不能自动判断一段 Enzyme 内容是历史说明、兼容边界还是错误规范。解释冲突、确认权威源和决定是否优化慢检查，仍应由工程负责人完成。</p>
+        <p>Kit 的 <code>verified_against</code> 与 <code>contexts_stale</code> 已经覆盖一部分长期资料漂移，但本案例暴露的是更靠近执行时刻的冲突：仓库指南、代码范例与当前迁移目标可能同时存在，Agent 必须知道哪一个具有权威性。机器适合报告冲突位置和引用证据，不适合在缺少语义时自动删改规则。</p>
+        <h3>把反馈回路当作系统容量</h3>
+        <p>并行 Agent 增加后，最慢的 lint、测试与审查会成为共享瓶颈。本地和 CI 不一致还会把每个切片都推入额外重试。可以机器采集的不是一个武断的统一时限，而是单次检查耗时、波动、失败重试、环境差异和审查等待时间；是否足够快、是否值得为迁移专门优化，则由工程负责人结合风险与收益判断。</p>
+        <p>最终可迁移的是一条工程次序：先把正确范例、权威文档、可执行验收和快速反馈放进环境，再把目标压缩成短指令；先证明切片能独立验证，再提高并行度；最后把人类注意力集中到冲突、例外和合并责任上。</p>
+      </section>
+    </article>
+
+    <aside class="toc" aria-label="文章目录">
+      <div class="toc-title">ON THIS PAGE</div>
+      <a href="#intro">文章介绍</a><a href="#migration">迁移的不只是 API</a><a href="#operation">运行机制</a><a href="#friction">失败模式</a><a href="#limits">证据边界</a><a href="#workflow">工作流提炼</a>
+      <div class="toc-note">读数先看口径，再看倍数。网页保留原文机制与局限，不把个案写成普遍承诺。</div>
+    </aside>
+  </div>
+
+  <footer>AI-WORK-KIT · WEEKLY INTEL DIGEST · ISSUE 20</footer>
+  <button id="backBtn" type="button" aria-label="返回顶部">↑</button>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    try {
+      mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'dark',themeVariables:{fontFamily:'-apple-system,"PingFang SC",sans-serif',fontSize:'14px',primaryColor:'#101827',primaryTextColor:'#eef3ff',primaryBorderColor:'#344462',lineColor:'#6e7f9d'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:34,rankSpacing:44,padding:12}});
+    } catch (error) { console.error('mermaid-init', error); }
+
+    const progressEl=document.getElementById('progress');
+    const backBtn=document.getElementById('backBtn');
+    addEventListener('scroll',()=>{const root=document.documentElement;const maxScroll=root.scrollHeight-root.clientHeight;progressEl.style.width=(maxScroll>0?root.scrollTop/maxScroll*100:0)+'%';backBtn.classList.toggle('show',scrollY>620);},{passive:true});
+    backBtn.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+
+    document.body.classList.add('js-reveal');
+    const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('in');revealObserver.unobserve(entry.target);}}),{threshold:.06,rootMargin:'0px 0px -4% 0px'});
+    document.querySelectorAll('section').forEach(sectionEl=>revealObserver.observe(sectionEl));
+    setTimeout(()=>document.querySelectorAll('section:not(.in)').forEach(sectionEl=>sectionEl.classList.add('in')),2600);
+
+    const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const counted=new WeakSet();
+    const countObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting||counted.has(entry.target))return;const numberEl=entry.target;counted.add(numberEl);const targetValue=Number(numberEl.dataset.to);const prefix=numberEl.dataset.pre||'';const suffix=numberEl.dataset.suf||'';if(reducedMotion){numberEl.textContent=prefix+targetValue+suffix;return;}let startTime;const duration=950;const animate=timestamp=>{if(!startTime)startTime=timestamp;const phase=Math.min(1,(timestamp-startTime)/duration);const value=Math.round(targetValue*(1-Math.pow(1-phase,3)));numberEl.textContent=prefix+value+suffix;if(phase<1)requestAnimationFrame(animate);};requestAnimationFrame(animate);}),{threshold:.45});
+    document.querySelectorAll('.num[data-to]').forEach(numberEl=>countObserver.observe(numberEl));
+
+    const tocLinks=[...document.querySelectorAll('.toc a')];
+    const sectionObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;tocLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+entry.target.id));}),{rootMargin:'-20% 0px -65% 0px'});
+    document.querySelectorAll('section[id]').forEach(sectionEl=>sectionObserver.observe(sectionEl));
+  </script>
+</body>
+</html>

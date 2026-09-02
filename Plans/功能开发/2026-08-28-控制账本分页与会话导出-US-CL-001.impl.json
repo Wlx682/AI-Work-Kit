@@ -1,0 +1,48 @@
+{
+  "story_id": "US-CL-001",
+  "codebase_available": true,
+  "codebase_root": "/Users/wanglongxiang/git/dsh-control-ledger",
+  "codebase_read": [
+    {"path": "src/types.ts", "reason": "现有 listRuns 仅有 limit request 和 summary[]，需新增兼容的 page 契约"},
+    {"path": "src/index.ts", "reason": "现有 Host 先截最新 limit 条再逐个 readSession，是新增分页 Remote 的编排落点"},
+    {"path": "src/typert.ts", "reason": "每个新增 Remote 必须在包自有 Typert contribution 中注册严格参数"},
+    {"path": "src/client/index.ts", "reason": "当前客户端硬编码 listRuns limit=50，是分页 adapter 与注入边界"},
+    {"path": "src/client/ControlLedgerSection.tsx", "reason": "现有列表只有初始 loading/error/ready，需要游标栈与保留当前页的翻页状态"},
+    {"path": "tests/service.spec.ts", "reason": "现有真实 Cordis/sessionQuery harness 可验证只读当前页、兼容 Remote markers 与错误边界"}
+  ],
+  "target_files": {
+    "modify": [
+      {"path": "src/types.ts", "purpose": "新增 ListControlLedgerRunPageRequest、ControlLedgerRunPage 与不透明 cursor 类型，不改变旧 listRuns 类型", "layer": "Public Contract"},
+      {"path": "src/index.ts", "purpose": "新增 listRunPage Remote，按 cursor 选页后只 readSession 当前页；保留 listRuns", "layer": "Host Application Service"},
+      {"path": "src/typert.ts", "purpose": "注册 listRunPage 严格 request schema 与 result symbol", "layer": "Remote Schema"},
+      {"path": "src/client/index.ts", "purpose": "把列表注入改为按 request 调 listRunPage", "layer": "Client Remote Adapter"},
+      {"path": "src/client/ControlLedgerSection.tsx", "purpose": "接入分页状态、上一页/下一页、页码和保留当前页错误恢复", "layer": "Presentation"},
+      {"path": "src/client/ControlLedgerSection.module.css", "purpose": "增加分页区、禁用/错误与小屏样式", "layer": "Presentation Style"},
+      {"path": "src/client/locales.ts", "purpose": "增加上一页、下一页、页码与分页失败中英文文案", "layer": "Presentation Locale"},
+      {"path": "tests/service.spec.ts", "purpose": "Red 锁定多页、空/末页、新增 Session、失效 cursor、非法 limit 与旧 Remote 兼容", "layer": "Host Integration Test"}
+    ],
+    "create": [
+      {"path": "src/client/pagination.ts", "reason": "用纯状态函数表达 cursor 栈、当前页 request 与首尾能力，避免 React 内散落协议", "naming_basis": "按客户端分页职责命名", "layer": "Client Domain State"},
+      {"path": "tests/client-pagination.spec.ts", "reason": "Red 锁定前后页状态、首尾禁用和 cursor 不解析", "naming_basis": "与纯 pagination helper 对应", "layer": "Client Unit Test"}
+    ]
+  },
+  "module_boundary": {
+    "layer": "public page contract → Host cursor page selection → /api adapter → pure client pagination state → React list rendering",
+    "dependency_rule": "客户端只保存并回传 Host cursor，不解析/构造 cursor；Host 必须在 readSession 前完成 limit/cursor 校验并只投影当前页；旧 listRuns 保留。React 只消费纯分页状态和 injected page loader，不直连 connection。"
+  },
+  "tests": {
+    "red": [
+      {"path": "tests/service.spec.ts", "command": "npm test -- --run tests/service.spec.ts"},
+      {"path": "tests/client-pagination.spec.ts", "command": "npm test -- --run tests/client-pagination.spec.ts"}
+    ],
+    "refactor_regression": ["npm test", "npm run typecheck", "npm run build"]
+  },
+  "risks": [
+    "直接修改 listRuns 返回形状会破坏公开兼容，必须新增 Remote",
+    "offset 会被顶部新增 Session 扰动，cursor 必须锚定上一页末项",
+    "翻页 loading 若清空 ready 数据会造成失败后丢失当前页",
+    "cursor 失效若静默回第一页会制造重复浏览假象"
+  ],
+  "blocked_questions": [],
+  "confirmed": true
+}

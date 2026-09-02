@@ -1,0 +1,53 @@
+skill_run:
+  skill: weekly-intel-digest
+  plan: Plans/情报周报/2026-08-25-第20期.md
+  date: 2026-08-25
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: "按五维加权评分从三篇英文一手候选中选出 49 分最高项"
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: "核对近 8 周原文与主题，确认 Asana 迁移案例未重复"
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: "以既有种子源启动巡检，并扩展到 Asana 工程博客与最新 arXiv"
+    - path: Contexts/情报源/周帖模板.md
+      utility: high
+      reason: "确认原文链接、作者来源与纳米Work托管交接字段"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "约束指标主角化、渐进增强、三宽度自检与托管边界"
+    - path: Contexts/决策/Kit核心原则.md
+      utility: high
+      reason: "判断测试先行、Gate、真理源与写回边界等现有承载"
+    - path: Contexts/决策/Contexts漂移检测协议.md
+      utility: high
+      reason: "对照现有 verified_against 机制，避免重复提出文档漂移能力"
+    - path: Contexts/决策/Skill反馈协议.md
+      utility: high
+      reason: "校准 skill_run 必填字段、utility 取值与进化链语义"
+  contexts_missing:
+    - "大规模Agent任务的harness readiness预检：分区、验收、反馈与审查容量"
+    - "执行前仓库指南、当前目标与代码范例的冲突检测"
+    - "本地检查与CI一致性、反馈延迟和审查排队的可观测指标"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "The five-year problem"
+      - "How it actually went"
+      - "Why a five-sentence prompt was enough"
+      - "What got in the way"
+      - "The harness is the product now"
+      - "What's next"
+      - "A few extra details, for the curious"
+    omitted: []
+    coverage_notes: "全部主章节与成本附录已覆盖；保留任务机制、失败模式、关键数字口径、合作关系与不可泛化边界。"
+  outcome_status: pass
+  friction: "Playwright首轮发现HTML正文压缩过度，补回机制、局限与迁移边界后通过全套自检"
+  revisit_needed: false
+  notes: |
+    candidate_selection: Asana 49/50；SWE-bench Science 41/50；Active-SWE 39/50。按最高分选 Asana。
+    source_stale_warning: Boris Cherny、Cat Wu、Fiona Fung、Anthropic Engineering、Karpathy、Armin Ronacher、OpenAI 官方连续 3 期无入选；arXiv 连续入选，建议人工复核种子源健康与来源结构。
+    browser_check: Mermaid 1/1 SVG；console 0 error；section 全可见；375/768/1440 横溢出均为 0；数字卡最小字号 38px；无 JS 时正文与指标终值可读。
+

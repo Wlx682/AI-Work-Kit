@@ -1,0 +1,82 @@
+{
+  "target_commit": "802186d7b953104c19af2f022683e437015b39d2",
+  "cases": [
+    {
+      "id": "IT-CL-001",
+      "title": "Host 会话游标分页、并发新增与非法边界",
+      "priority": "P0",
+      "type": "host-integration",
+      "preconditions": ["内存 Cordis、SessionStore 与 TestSessionQueryEngine 已挂载"],
+      "test_data": ["5 个有标题 Session", "第一页后新增 1 个 Session", "missing cursor", "limit 0/101/1.5"],
+      "steps": ["调用旧 listRuns 冻结原顺序", "以 limit=2 连续调用 listRunPage", "第一页后插入新 Session 再请求第二页", "请求非法 cursor 与 limit 并观察 readSession spy"],
+      "expected_results": ["三页覆盖全部旧 Session 且无重复/跳项", "仅仍有后续项时返回 nextCursor", "新增 Session 不扰动旧锚点后的下一页", "非法参数在 readSession 前失败", "旧 listRuns 与三个 Remote markers 保持可用"],
+      "automation": "automated",
+      "suite": "npm test -- --run tests/service.spec.ts",
+      "ac_refs": [
+        {"story_id": "US-CL-001", "ac_id": "AC1"},
+        {"story_id": "US-CL-001", "ac_id": "AC2"},
+        {"story_id": "US-CL-001", "ac_id": "AC3"},
+        {"story_id": "US-CL-001", "ac_id": "AC4"}
+      ]
+    },
+    {
+      "id": "IT-CL-002",
+      "title": "客户端前后页 cursor 栈与首尾动作",
+      "priority": "P0",
+      "type": "client-state",
+      "preconditions": ["pagination helper 不依赖 React 或 Host runtime"],
+      "test_data": ["首次无 cursor", "cursor-1", "cursor-2", "undefined nextCursor"],
+      "steps": ["创建第一页状态", "连续推进两页并读取 request", "逐次返回上一页", "在首/末页执行不可用动作"],
+      "expected_results": ["第一页 request 不序列化 cursor", "第二/三页只回传 Host cursor", "页码为 1/2/3", "首页面 previous 与末页 undefined next 均不推进"],
+      "automation": "automated",
+      "suite": "npm test -- --run tests/client-pagination.spec.ts",
+      "ac_refs": [{"story_id": "US-CL-001", "ac_id": "AC5"}]
+    },
+    {
+      "id": "IT-CL-003",
+      "title": "queryRun 固定事件上界与旧分页兼容",
+      "priority": "P0",
+      "type": "host-contract",
+      "preconditions": ["Session 事件 seq 连续且 queryRun 使用 windowControlLedgerEvents"],
+      "test_data": ["seq 0–3", "throughSequence=1", "afterSequence=1", "非法 through=-2", "after=2/through=1"],
+      "steps": ["直接调用纯事件窗口", "经真实 service queryRun 调用 throughSequence=0", "运行未传 throughSequence 的旧事件分页测试"],
+      "expected_results": ["返回事件不超过固定上界", "相等边界返回空页", "非法上下界明确失败", "旧 afterSequence/load-more 语义不变"],
+      "automation": "automated",
+      "suite": "npm test -- --run tests/projection.spec.ts tests/service.spec.ts",
+      "ac_refs": [
+        {"story_id": "US-CL-002", "ac_id": "AC6"},
+        {"story_id": "US-CL-002", "ac_id": "AC9"}
+      ]
+    },
+    {
+      "id": "IT-CL-004",
+      "title": "schema v1 导出完整性、失败中止与安全文件名",
+      "priority": "P0",
+      "type": "client-export",
+      "preconditions": ["可注入 queryRun fake 与固定时钟"],
+      "test_data": ["首次 latestSequence=249", "三页 100/100/50 事件", "后续 summary 已增长到 259", "空 Session", "第二页失败", "含路径字符的标题/runId"],
+      "steps": ["汇集 250 条事件并检查每次 request", "汇集空 Session", "让第二页抛错", "序列化 JSON 并生成文件名"],
+      "expected_results": ["后续请求固定 throughSequence=249 且导出恰好 seq 0–249", "payload 使用首次 summary/dossier 并含 schemaVersion/exportedAt/capturedThroughSequence", "空 Session 只请求一次", "第二页失败时 collector reject 而不返回半结果", "文件名不含跨平台非法字符"],
+      "automation": "automated",
+      "suite": "npm test -- --run tests/client-export.spec.ts",
+      "ac_refs": [
+        {"story_id": "US-CL-002", "ac_id": "AC6"},
+        {"story_id": "US-CL-002", "ac_id": "AC7"},
+        {"story_id": "US-CL-002", "ac_id": "AC8"}
+      ]
+    },
+    {
+      "id": "IT-CL-005",
+      "title": "全量回归、类型、Host/client 连续构建与产物一致",
+      "priority": "P0",
+      "type": "quality-gate",
+      "preconditions": ["checkout target_commit 且工作树 clean", "Node 满足 package engines"],
+      "test_data": ["src/**", "tests/**", "README.md", "lib/**"],
+      "steps": ["运行 npm test", "运行 npm run typecheck", "连续两次运行 npm run build", "每次构建后运行 git diff --exit-code，最后运行 git diff --check"],
+      "expected_results": ["4 files / 31 tests 全部通过", "严格 TypeScript 无错误", "Host tsc 与 client tsdown 两次构建均成功", "两次重建都不改变提交的 lib 产物且无空白错误"],
+      "automation": "automated",
+      "suite": "npm test && npm run typecheck && npm run build && git diff --exit-code && npm run build && git diff --exit-code && git diff --check",
+      "ac_refs": [{"story_id": "US-CL-002", "ac_id": "AC10"}]
+    }
+  ]
+}

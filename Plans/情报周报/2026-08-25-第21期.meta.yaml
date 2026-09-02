@@ -1,0 +1,55 @@
+skill_run:
+  skill: weekly-intel-digest
+  plan: Plans/情报周报/2026-08-25-第21期.md
+  date: 2026-08-25
+  contexts_used:
+    - path: Contexts/情报源/筛选评分标准.md
+      utility: high
+      reason: "以时效、一手性、工程价值、信息密度和可迁移性比较候选并选出 SWE-bench Science"
+    - path: Contexts/情报源/已发去重清单.md
+      utility: high
+      reason: "核对近 8 周原文与主题，排除自我改进和人工监督方向的重复候选"
+    - path: Contexts/情报源/follow名单.md
+      utility: high
+      reason: "从种子源出发扩展检索到最新 arXiv、官方代码、数据集与排行榜"
+    - path: Contexts/情报源/周帖模板.md
+      utility: high
+      reason: "校准双卷元数据、来源交接和纳米Work托管字段"
+    - path: Contexts/规范/炫酷建站规范.md
+      utility: high
+      reason: "约束指标主角化、渐进增强、响应式自检和托管边界"
+    - path: Contexts/决策/2026-08-18-工作流控制就绪度审计报告.md
+      utility: high
+      reason: "确认 Kit 已识别 Outcome Oracle、判定语义与金标治理缺口，避免把旧结论包装成新发现"
+    - path: Skills/test_generator.md
+      utility: high
+      reason: "对照测试计划冻结、测试审核和全套执行门禁，定位双层验证契约的增量空间"
+    - path: Contexts/智能体开发/10-架构代码测试映射.md
+      utility: high
+      reason: "对照现有 evidenceContract 与架构—代码—测试映射，提出最小字段扩展"
+  contexts_missing:
+    - "外部领域知识的来源、假设状态、适用范围与独立验证证据字段"
+    - "按抽象、探索、集成、泛化分型并绑定回归样本的失败归因协议"
+  contexts_stale: []
+  source_coverage:
+    covered_headings:
+      - "Abstract and Introduction"
+      - "Related Work"
+      - "Benchmark Construction"
+      - "Task Formulation and Evaluation Protocol"
+      - "Experiments and Main Results"
+      - "Failure Analysis"
+      - "Scientific Knowledge Ablation"
+      - "Limitations and Conclusion"
+      - "Appendix A: Domain Distribution"
+      - "Appendix B: Complete Task Inventory"
+    omitted: []
+    coverage_notes: "覆盖论文全部正文部分与两项核心附录；保留三种任务范式、证据链、指标定义、八组配置、四类失败、知识消融、样本分布和因果边界。"
+  outcome_status: pass
+  friction: "论文为 24 页高密度预印本，需要把榜单数字还原到任务构造、隐藏 Oracle、失败机制与知识消融，避免只做排行榜摘要"
+  revisit_needed: false
+  notes: |
+    candidate_selection: SWE-bench Science 44/50；Active-SWE 40/50。另两篇分别因与第10/12期自我改进、与第16/18期人工监督主题重叠而淘汰。
+    source_stale_warning: Boris Cherny、Cat Wu、Fiona Fung、Anthropic Engineering、Karpathy、Armin Ronacher、OpenAI 官方已连续至少 3 期无入选；本期通过开放检索补入 2026-08-20 最新 arXiv，建议人工复核种子源健康与来源结构。
+    evidence_boundary: 模型与编码工具未做全交叉实验；知识消融仅两组配置；论文明确不支持统计显著性或因果结论。
+    browser_check: Mermaid 1/1 正常渲染；ECharts 1/1 canvas；console 0 error；15 个正文标题全部可见；375/768/1440 横溢出均为 0；数字卡最小字号 38px；无 JS 时 4 个指标终值、图表静态终值和完整正文可读。
