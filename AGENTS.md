@@ -1,54 +1,39 @@
-# AI-Work-Kit · Codex 项目说明
+# AI-Work-Kit
 
-> 与 Cursor / Claude 共用 Vault。入口约定见 [[Contexts/决策/AI-Work-Kit工作流总览]]。
+AI-Work-Kit 是人主导的 LLM 工作台，不是工作流引擎。唯一长期原则见 [[Knowledge/决策/Kit核心原则]]。
 
-## 核心原则
+## 权责
 
-**只认** [[Contexts/决策/Kit核心原则]]：`Plans/` 任务临时 · `Contexts/` 通用固定 · 做完删 plan。  
-YAML/Epic：[[Templates/模板约定]] · 工作流：[[Contexts/决策/AI-Work-Kit工作流总览]]。
+- 人决定目标、优先级、价值取舍、授权范围和最终是否接受结果。
+- LLM 是临时执行工具：可以读取、分析、生成、修改、运行和提出选项，但不能替人决定目标、业务取舍或对他人的承诺。
+- 当前用户请求是本次工作的最高项目级指令；不要让仓库里的历史文档替用户做决定。
 
-**工作流优先级**：AI-Work-Kit 是跨仓库 workflow 的唯一入口与真源；项目仓库的工作流文档、Skill、脚本和门禁只在 Kit 选定 workflow 后作为执行参考，不得自行抢占入口。
+## 执行
+
+先读取现实上下文，再做当下最小的有效动作。一个动作同时满足以下条件时直接执行，不额外要求用户填写模板或批准步骤：
+
+- 在用户已经表达的目标和授权范围内；
+- 可撤销或影响已经明确；
+- 结果可以用测试、命令、diff、一手来源或用户观察验证。
+
+涉及目标或价值取舍、权限扩大、对外承诺、不可逆影响，或者结果无法验证时，把证据、影响和需要人决定的事项说清楚后停下来。LLM 的自述、置信度和相互认同都不是完成证据。
+
+任务依赖其他人的知识、权限或承诺时，先完成不依赖他们的调查，再为用户整理一份最短的沟通材料：为什么需要对方、需要什么、已有证据和不回应的影响。未经授权不得代表用户联系他人；沉默不等于同意。
+
+## 不设固定流程
+
+- 不使用阶段链、路由器、Epic、Gate、看板或强制 Plan。
+- 不因为任务属于“需求、架构、开发、测试”等类别而强制补齐其它产物。
+- Skill 是按需能力，不定义前后顺序；只加载当前工作真正需要的最小集合。
+- 具体步骤、任务拆分和工具选择在执行时即时形成，用完即止，不沉淀为长期制度。
+
+## 状态与知识
+
+- 对话、代码、测试、diff 和实际产物是默认状态源。
+- 只有任务需要跨会话或交给别人时，才在 `Sessions/` 留一份自由文本快照；只写目标、人的关键决定、已证实事实和未解决问题，不维护阶段、百分比或过程流水。
+- `Knowledge/` 只保存跨任务仍有价值的知识。除非用户明确要求沉淀，或知识文档本身就是交付物，否则不要主动写入。
+- 不在仓库中保存密钥、令牌或其它秘密；只记录变量名和配置方法。
 
 ## 多仓库
 
-- Vault：本仓库。代码：Codex 当前工作目录。仅 Vault 时向用户要代码路径。
-
-## 目录
-
-| 路径 | 用途 |
-|------|------|
-| `Contexts/` | 通用规范与长期资料 |
-| `Templates/` · `Skills/` · `scripts/` | 模板、Skill、脚本 |
-| `.workflows/` | 工具中性的 workflow 蓝图、Schema、运行实例与事件日志 |
-
-## 规则
-
-1. 查资料 → `Plans/` + `Contexts/`（可选 enquire MCP）。
-2. 写 **Contexts 前须用户确认**（「存档到 Contexts」除外）。
-4. **Skill 路由硬规则**（与 `.cursorrules` 一致）：含「界面/对稿/还原/Figma」或 WBS 指定 `figma-ui` → 强制 `figma-ui`，`feature-dev-assistant` 不得替代；WBS 修订/拆任务 → `task-splitter` 或用户确认，禁止擅自推荐 A/B/C 方案。
-5. **反馈回路硬规则**：有 plan 的任务结束必须在 plan 末尾输出 `skill_run` YAML 块；无 plan 的任务不保留完整过程小票，未归位候选写入 `进化/孤立反馈记录.md` 的「待整理」，已当场落地的只在「已归位」补一行摘要。`utility` 二选一：`high`（必给一句话理由）/ `not-needed`。协议：[[Contexts/决策/Skill反馈协议]]；校验：`scripts/plan-gate-check.sh`。
-
-## Skill 表
-
-与 `.cursorrules` Skill 触发一致；显式引用 `@Skills/xxx.md`。
-
-| 说法                          | Skill                                                                    |
-| --------------------------- | ------------------------------------------------------------------------ |
-| 续做                          | `resume-assistant`                                                       |
-| 全流程 / 新项目                  | `workflow-router` → 具体 workflow 蓝图 + `workflow-board-boot.sh` |
-| 合代码 / 合并分支 / 解决合并冲突 | `workflow-router` → `merge-code` → `merge-code-assistant` |
-| 需求/架构/开发/测试/部署/变更           | 见 `.cursorrules`                                                         |
-| PM 物料                       | `material-prep-assistant` → Contexts                                     |
-| 找 CC 文章 / 周报选题 / 海外资讯 / 分享帖 | `weekly-intel-digest` → `Contexts/情报源/`                                  |
-| 提效案例 / 最佳实践 / 技术提交分享 / 产品提效 | `best-practice-digest` → `Contexts/最佳实践/`（附 skill_run 反哺进化链）             |
-| 工作流进化 / 反馈闭环 / skill_run 聚合 / 流程改进沉淀 | `workflow-evolution-assistant` |
-
-全流程步骤结束输出：
-
-```text
-📌 当前阶段：[阶段] | 下一个阶段：[Skill] | 如需中断：/resume plan=Plans/.../xxx.md
-```
-
-## 入口
-
-[[索引]] · [[Contexts/决策/新手引导与最佳实践]] · [[Contexts/决策/Kit核心原则]]
+本仓库保存知识和能力。业务代码以当前工作区或用户指定路径为准；无法可靠确定目标仓库时再询问。

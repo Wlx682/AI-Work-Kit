@@ -1,54 +1,27 @@
 # AI-Work-Kit
 
-Obsidian 知识库 + Cursor / Claude / Codex Skill：模板开工、Epic 闭环、plan 续做。
+一个人主导的 LLM 工作台：人给目标、方向和授权边界，LLM 高效完成明确工作，结果由模型外的证据验证。
 
-## 可运行代码
+它不包含固定工作流、阶段状态机、Epic、Gate 或进度看板。
 
-> 两个独立项目已移出本仓库，与 Kit 并列存放在同一 git workspace 下：
+## 使用
 
-- `../agent`：通用智能体底座。
-- `../knowledge_graph_learning`：R4 知识图谱驱动学习产品（Python 后端 + Flutter 客户端）。
+用 Cursor、Claude Code 或 Codex 打开本仓库，然后直接描述目标。AI 会读取现实上下文，在授权范围内执行可撤销、可验证的动作；需要价值判断、权限扩大、外部承诺或不可逆操作时再请人决定。
 
-Kit 仓库内保留：`.runtime/` 本地运行数据（已忽略）；`tmp/` 只放实验和静态原型。
+核心原则：[Knowledge/决策/Kit核心原则.md](Knowledge/决策/Kit核心原则.md)
+入口索引：[索引.md](索引.md)
 
-## 读文档（按顺序）
+## 目录
 
-1. **[Kit 核心原则](Contexts/决策/Kit核心原则.md)** — 真理源（放哪 / 不放哪 / 做完怎么办）
-2. **[新手引导与最佳实践](Contexts/决策/新手引导与最佳实践.md)** — 3 张地图（入门 / 全流程 / 决策树）
-3. **[工作流总览](Contexts/决策/AI-Work-Kit工作流总览.md)** — Skill 速查 + 看板 + 门禁
-4. **[模板约定](Templates/模板约定.md)** — YAML / Epic 字段 / 续做格式
-5. **[索引](索引.md)** — 目录速查
+- `Knowledge/`：跨任务仍成立的知识。
+- `Skills/`：按需调用的能力；不规定任务顺序。
+- `Sessions/`：仅为跨会话或交接保留的可选快照。
+- `scripts/`：Skill 同步与 Kit 不变量验证。
 
-## 安装
-
-1. Obsidian + Cursor 打开本仓库  
-2. 可选 MCP：`cp .cursor/mcp.json.example .cursor/mcp.json`  
-3. 全局 Skill：`./scripts/sync-agent-skills.sh --sync`（部署到 Claude / Codex；Cursor 可继续 `cp -r .cursor/skills/* ~/.cursor/skills/`）
-4. Claude Code：见 [集成说明](Contexts/Claude-Code集成AI-Work-Kit.md)
-5. Codex：根目录已内置 `AGENTS.md`；执行同步脚本后会生成 `.codex/skills/` 并部署到 `~/.codex/skills/`
-
-## 日常三步
-
-```text
-开始/启动… 或 自然语言或 workflow=client-dev   # 开始一件事（自然语言入口：workflow-router）
-合代码… 或 workflow=merge-code                  # 双边业务意图分析、开发者决策、合并与验证
-/status                           # 看当前卡点（人话摘要：当前 / 卡点 / 下一步 / 继续）
-/resume plan=Plans/... 进度=...    # 续做
-```
-
-命令行等价：
+## 校验与同步
 
 ```bash
-python3 scripts/workflow-status.py --workflow client-dev --epic Plans/Epic/xxx.md
-python3 scripts/workflow-status.py --workflow merge-code
-python3 scripts/test-merge-code-workflow.py             # P0：真实 Git 文件合并场景回归
-python3 scripts/workflow-status.py --workflow computer-mgmt
+python3 scripts/verify-kit.py
+python3 scripts/sync-skills.py --sync
+python3 scripts/sync-skills.py --check
 ```
-
-底层详情才看 `scripts/workflow-gate.sh --json`；日常优先看 `workflow-status.py`。
-
-`workflow-install.py apply` 只用于电脑/Kit 首次安装或环境修复。`workflow-install.py check` 首次运行会缓存工具、Skill、Hook 与全局指令等静态检查；后续任务命中同一环境指纹时只检查端口等运行时状态，环境变化或传入 `--refresh` 才全量重检。`workflow-status.py` 按任务运行，`workflow-plan-init.py` 仅在当前阶段 Plan 缺失时运行。
-
-## License
-
-团队内部使用；开源前检查 `Contexts/`、`Plans/` 敏感信息。

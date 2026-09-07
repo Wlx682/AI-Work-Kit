@@ -1,61 +1,33 @@
-# macOS
+# Operating system and editor state
 .DS_Store
-
-# Obsidian 个人窗口布局
 .obsidian/workspace.json
 .obsidian/graph.json
 
-# MCP 本地路径（用 mcp.json.example 复制后改 vault 路径）
-.cursor/mcp.json
-.cursor/figma.env
-.mcp.json
-
-# Local secrets; keep only the safe example in Git
+# Local configuration and secrets
 .env
 .env.*
 !.env.example
-
-# Claude Code / Codex 个人配置与同步产物（skills 由 scripts/sync-claude-skills.sh 生成）
-# .claude/workflows/*.js 为 Claude 专属引擎脚本，纳入版本库；蓝图真源在 .workflows/blueprints/
+.cursor/mcp.json
+.cursor/figma.env
+.mcp.json
 CLAUDE.local.md
 .claude/settings.local.json
-.claude/skills/
 .claude/scheduled_tasks.json
+
+# Generated project Skill copies; source is Skills/
+.cursor/skills/
+.claude/skills/
 .codex/skills/
 
-# cc-connect 运行产物（系统提示词快照）
+# Runtime and temporary output
 .cc-connect/
-
-# 看板服务运行产物（日志、PID、字节码缓存）
-scripts/.kanban-server.log
-scripts/.kanban-server.pid
-scripts/__pycache__/
-
-# 工作流运行态产物（门禁事件流、run 实例；由 workflow-gate/workflow-run 本地生成，不入库）
-#.workflows/events/
-#.workflows/runs/
-
-# Playwright MCP 临时产物（实测截图、快照、控制台日志）
 .playwright-mcp/
-
-# ai-usage-stats 报告产物
+.runtime/
+.venv/
+tmp/
+__pycache__/
+*.pyc
 ai-usage-report-*.md
 
-# 实验/临时产物（如 figma 验证实验的截图）
-tmp/
-
-# Agent 运行产物
-agent/__pycache__/
-agent/tools/__pycache__/
-agent/**/__pycache__/
-agent/.memory/
-agent/traces/
-agent/.checkpoints/
-
-# 产品与 Agent 的统一本地运行数据
-.runtime/
-
-# Plans/ 纳入版本库（进行中任务可同步；发布前检查敏感信息）
-
-#Ignore vscode AI rules
+# Optional local IDE instructions
 .github/instructions/codacy.instructions.md
