@@ -19,7 +19,6 @@ CONTROL_FILES = (
 )
 FORBIDDEN_ACTIVE_PATHS = (
     "Plans",
-    "Contexts",
     "Templates",
     ".workflows",
     "_Archive_v1",
